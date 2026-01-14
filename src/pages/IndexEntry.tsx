@@ -11,6 +11,11 @@ import {
   ArrowLeft,
   CheckCircle2,
   AlertCircle,
+  Wallet,
+  Banknote,
+  Smartphone,
+  Building2,
+  Receipt,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -55,6 +60,30 @@ const productEntrySchema = z.object({
     }),
 });
 
+// Versement schema
+const versementSchema = z.object({
+  montant: z
+    .string()
+    .refine((val) => val === "" || (!isNaN(parseFloat(val)) && parseFloat(val) >= 0), {
+      message: "Doit être un nombre positif",
+    }),
+  reference: z.string().optional(),
+});
+
+// Bon de valeur schema
+const bonSchema = z.object({
+  nombre: z
+    .string()
+    .refine((val) => val === "" || (!isNaN(parseInt(val)) && parseInt(val) >= 0), {
+      message: "Doit être un nombre positif",
+    }),
+  valeurUnitaire: z
+    .string()
+    .refine((val) => val === "" || (!isNaN(parseFloat(val)) && parseFloat(val) >= 0), {
+      message: "Doit être un nombre positif",
+    }),
+});
+
 // Main form schema
 const indexEntrySchema = z.object({
   date: z.string().min(1, "Date requise"),
@@ -62,6 +91,13 @@ const indexEntrySchema = z.object({
   super2: productEntrySchema,
   gasoil1: productEntrySchema,
   gasoil2: productEntrySchema,
+  // Versements
+  versementMomo: versementSchema,
+  versementBanque: versementSchema,
+  versementLiquidite: versementSchema,
+  // Bons de valeur
+  bonsCarburant: bonSchema,
+  bonsEntreprise: bonSchema,
 });
 
 type IndexEntryForm = z.infer<typeof indexEntrySchema>;
@@ -72,6 +108,11 @@ const defaultValues: IndexEntryForm = {
   super2: { indexArrivee: "", indexDepart: "", jaugeDuJour: "" },
   gasoil1: { indexArrivee: "", indexDepart: "", jaugeDuJour: "" },
   gasoil2: { indexArrivee: "", indexDepart: "", jaugeDuJour: "" },
+  versementMomo: { montant: "", reference: "" },
+  versementBanque: { montant: "", reference: "" },
+  versementLiquidite: { montant: "", reference: "" },
+  bonsCarburant: { nombre: "", valeurUnitaire: "" },
+  bonsEntreprise: { nombre: "", valeurUnitaire: "" },
 };
 
 const IndexEntry = () => {
@@ -360,6 +401,334 @@ const IndexEntry = () => {
                 />
               </div>
             </div>
+
+            {/* Versements Section */}
+            <Card className="bg-card border-border">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Wallet className="w-5 h-5 text-primary" />
+                  Versements du Jour
+                </CardTitle>
+                <CardDescription>
+                  Saisissez les versements effectués par mode de paiement
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {/* MOMO */}
+                  <div className="space-y-3 p-4 rounded-lg bg-secondary/50 border border-border">
+                    <div className="flex items-center gap-2 text-orange-400">
+                      <Smartphone className="w-5 h-5" />
+                      <span className="font-semibold">Mobile Money</span>
+                    </div>
+                    <FormField
+                      control={form.control}
+                      name="versementMomo.montant"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-xs text-muted-foreground">
+                            Montant (FCFA)
+                          </FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              step="1"
+                              placeholder="0"
+                              className="bg-background border-border"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage className="text-xs" />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="versementMomo.reference"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-xs text-muted-foreground">
+                            Référence
+                          </FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="N° transaction"
+                              className="bg-background border-border"
+                              {...field}
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  {/* Banque */}
+                  <div className="space-y-3 p-4 rounded-lg bg-secondary/50 border border-border">
+                    <div className="flex items-center gap-2 text-blue-400">
+                      <Building2 className="w-5 h-5" />
+                      <span className="font-semibold">Virement Bancaire</span>
+                    </div>
+                    <FormField
+                      control={form.control}
+                      name="versementBanque.montant"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-xs text-muted-foreground">
+                            Montant (FCFA)
+                          </FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              step="1"
+                              placeholder="0"
+                              className="bg-background border-border"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage className="text-xs" />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="versementBanque.reference"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-xs text-muted-foreground">
+                            Référence
+                          </FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="N° virement"
+                              className="bg-background border-border"
+                              {...field}
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  {/* Liquidité */}
+                  <div className="space-y-3 p-4 rounded-lg bg-secondary/50 border border-border">
+                    <div className="flex items-center gap-2 text-green-400">
+                      <Banknote className="w-5 h-5" />
+                      <span className="font-semibold">Espèces</span>
+                    </div>
+                    <FormField
+                      control={form.control}
+                      name="versementLiquidite.montant"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-xs text-muted-foreground">
+                            Montant (FCFA)
+                          </FormLabel>
+                          <FormControl>
+                            <Input
+                              type="number"
+                              step="1"
+                              placeholder="0"
+                              className="bg-background border-border"
+                              {...field}
+                            />
+                          </FormControl>
+                          <FormMessage className="text-xs" />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="versementLiquidite.reference"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-xs text-muted-foreground">
+                            Note
+                          </FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="Observation"
+                              className="bg-background border-border"
+                              {...field}
+                            />
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+                </div>
+
+                {/* Total Versements */}
+                {(() => {
+                  const momo = parseFloat(form.watch("versementMomo.montant") || "0");
+                  const banque = parseFloat(form.watch("versementBanque.montant") || "0");
+                  const liquidite = parseFloat(form.watch("versementLiquidite.montant") || "0");
+                  const total = momo + banque + liquidite;
+                  return total > 0 ? (
+                    <div className="mt-4 p-3 rounded-lg bg-primary/10 border border-primary/30 flex items-center justify-between">
+                      <span className="text-sm font-medium">Total Versements</span>
+                      <span className="text-lg font-bold text-primary">
+                        {formatNumber(total)} FCFA
+                      </span>
+                    </div>
+                  ) : null;
+                })()}
+              </CardContent>
+            </Card>
+
+            {/* Bons de Valeur Section */}
+            <Card className="bg-card border-border">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Receipt className="w-5 h-5 text-primary" />
+                  Bons de Valeur
+                </CardTitle>
+                <CardDescription>
+                  Saisissez les bons de carburant et bons entreprise acceptés
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {/* Bons Carburant */}
+                  <div className="space-y-3 p-4 rounded-lg bg-secondary/50 border border-border">
+                    <div className="flex items-center gap-2 text-super">
+                      <Receipt className="w-5 h-5" />
+                      <span className="font-semibold">Bons Carburant</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <FormField
+                        control={form.control}
+                        name="bonsCarburant.nombre"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-xs text-muted-foreground">
+                              Nombre
+                            </FormLabel>
+                            <FormControl>
+                              <Input
+                                type="number"
+                                step="1"
+                                placeholder="0"
+                                className="bg-background border-border"
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormMessage className="text-xs" />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="bonsCarburant.valeurUnitaire"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-xs text-muted-foreground">
+                              Valeur unitaire (FCFA)
+                            </FormLabel>
+                            <FormControl>
+                              <Input
+                                type="number"
+                                step="1"
+                                placeholder="0"
+                                className="bg-background border-border"
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormMessage className="text-xs" />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                    {(() => {
+                      const nombre = parseInt(form.watch("bonsCarburant.nombre") || "0");
+                      const valeur = parseFloat(form.watch("bonsCarburant.valeurUnitaire") || "0");
+                      const total = nombre * valeur;
+                      return total > 0 ? (
+                        <div className="text-sm text-right text-super font-medium">
+                          Total: {formatNumber(total)} FCFA
+                        </div>
+                      ) : null;
+                    })()}
+                  </div>
+
+                  {/* Bons Entreprise */}
+                  <div className="space-y-3 p-4 rounded-lg bg-secondary/50 border border-border">
+                    <div className="flex items-center gap-2 text-gasoil">
+                      <Receipt className="w-5 h-5" />
+                      <span className="font-semibold">Bons Entreprise</span>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <FormField
+                        control={form.control}
+                        name="bonsEntreprise.nombre"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-xs text-muted-foreground">
+                              Nombre
+                            </FormLabel>
+                            <FormControl>
+                              <Input
+                                type="number"
+                                step="1"
+                                placeholder="0"
+                                className="bg-background border-border"
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormMessage className="text-xs" />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="bonsEntreprise.valeurUnitaire"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-xs text-muted-foreground">
+                              Valeur unitaire (FCFA)
+                            </FormLabel>
+                            <FormControl>
+                              <Input
+                                type="number"
+                                step="1"
+                                placeholder="0"
+                                className="bg-background border-border"
+                                {...field}
+                              />
+                            </FormControl>
+                            <FormMessage className="text-xs" />
+                          </FormItem>
+                        )}
+                      />
+                    </div>
+                    {(() => {
+                      const nombre = parseInt(form.watch("bonsEntreprise.nombre") || "0");
+                      const valeur = parseFloat(form.watch("bonsEntreprise.valeurUnitaire") || "0");
+                      const total = nombre * valeur;
+                      return total > 0 ? (
+                        <div className="text-sm text-right text-gasoil font-medium">
+                          Total: {formatNumber(total)} FCFA
+                        </div>
+                      ) : null;
+                    })()}
+                  </div>
+                </div>
+
+                {/* Total Bons */}
+                {(() => {
+                  const bonsCarburant = parseInt(form.watch("bonsCarburant.nombre") || "0") * parseFloat(form.watch("bonsCarburant.valeurUnitaire") || "0");
+                  const bonsEntreprise = parseInt(form.watch("bonsEntreprise.nombre") || "0") * parseFloat(form.watch("bonsEntreprise.valeurUnitaire") || "0");
+                  const total = bonsCarburant + bonsEntreprise;
+                  return total > 0 ? (
+                    <div className="mt-4 p-3 rounded-lg bg-primary/10 border border-primary/30 flex items-center justify-between">
+                      <span className="text-sm font-medium">Total Bons de Valeur</span>
+                      <span className="text-lg font-bold text-primary">
+                        {formatNumber(total)} FCFA
+                      </span>
+                    </div>
+                  ) : null;
+                })()}
+              </CardContent>
+            </Card>
 
             {/* Submit Button */}
             <div className="flex flex-col sm:flex-row gap-3 pt-4">
