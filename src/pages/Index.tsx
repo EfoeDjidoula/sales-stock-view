@@ -18,8 +18,11 @@ import {
   Fuel,
   Package,
   Calendar,
+  PenLine,
 } from "lucide-react";
+import { Link } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
 
 type Period = "day" | "week" | "month";
 
@@ -93,6 +96,12 @@ const Index = () => {
               </div>
             </div>
             <div className="flex flex-wrap items-center gap-3">
+              <Link to="/saisie">
+                <Button className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2">
+                  <PenLine className="w-4 h-4" />
+                  Saisie Index
+                </Button>
+              </Link>
               <StationSelector
                 selectedStation={selectedStation}
                 onSelect={setSelectedStation}
