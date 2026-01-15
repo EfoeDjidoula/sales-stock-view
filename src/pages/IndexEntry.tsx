@@ -16,7 +16,9 @@ import {
   Smartphone,
   Building2,
   Receipt,
+  FileDown,
 } from "lucide-react";
+import { usePdfExport } from "@/hooks/usePdfExport";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -120,6 +122,7 @@ const IndexEntry = () => {
     stations[0]
   );
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const { exportPdf } = usePdfExport();
 
   const form = useForm<IndexEntryForm>({
     resolver: zodResolver(indexEntrySchema),
@@ -782,14 +785,55 @@ const IndexEntry = () => {
 
               return hasData ? (
                 <Card className="bg-gradient-to-br from-primary/10 via-card to-card border-primary/40">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-xl">
-                      <CheckCircle2 className="w-6 h-6 text-primary" />
-                      Récapitulatif Journalier
-                    </CardTitle>
-                    <CardDescription>
-                      Synthèse des ventes, versements et bons de valeur
-                    </CardDescription>
+                  <CardHeader className="flex flex-row items-start justify-between">
+                    <div>
+                      <CardTitle className="flex items-center gap-2 text-xl">
+                        <CheckCircle2 className="w-6 h-6 text-primary" />
+                        Récapitulatif Journalier
+                      </CardTitle>
+                      <CardDescription>
+                        Synthèse des ventes, versements et bons de valeur
+                      </CardDescription>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="shrink-0 gap-2"
+                      onClick={() => {
+                        if (!selectedStation) return;
+                        exportPdf({
+                          stationName: selectedStation.name,
+                          stationLocation: selectedStation.location,
+                          date: form.watch("date"),
+                          super: {
+                            liters: totalSuperLiters,
+                            amount: ventesSuper,
+                          },
+                          gasoil: {
+                            liters: totalGasoilLiters,
+                            amount: ventesGasoil,
+                          },
+                          versements: {
+                            momo,
+                            banque,
+                            liquidite,
+                            total: totalVersements,
+                          },
+                          bons: {
+                            carburant: bonsCarburant,
+                            entreprise: bonsEntreprise,
+                            total: totalBons,
+                          },
+                          totalVentes,
+                          totalRecettes,
+                          ecart,
+                        });
+                      }}
+                    >
+                      <FileDown className="w-4 h-4" />
+                      Export PDF
+                    </Button>
                   </CardHeader>
                   <CardContent className="space-y-6">
                     {/* Ventes Section */}
