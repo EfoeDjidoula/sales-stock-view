@@ -730,6 +730,234 @@ const IndexEntry = () => {
               </CardContent>
             </Card>
 
+            {/* Daily Summary */}
+            {(() => {
+              // Calculate fuel quantities
+              const super1Qty =
+                (parseFloat(form.watch("super1.indexArrivee") || "0") -
+                  parseFloat(form.watch("super1.indexDepart") || "0")) || 0;
+              const super2Qty =
+                (parseFloat(form.watch("super2.indexArrivee") || "0") -
+                  parseFloat(form.watch("super2.indexDepart") || "0")) || 0;
+              const gasoil1Qty =
+                (parseFloat(form.watch("gasoil1.indexArrivee") || "0") -
+                  parseFloat(form.watch("gasoil1.indexDepart") || "0")) || 0;
+              const gasoil2Qty =
+                (parseFloat(form.watch("gasoil2.indexArrivee") || "0") -
+                  parseFloat(form.watch("gasoil2.indexDepart") || "0")) || 0;
+
+              const totalSuperLiters = Math.max(0, super1Qty) + Math.max(0, super2Qty);
+              const totalGasoilLiters = Math.max(0, gasoil1Qty) + Math.max(0, gasoil2Qty);
+
+              // Fuel prices (FCFA per liter)
+              const prixSuper = 630;
+              const prixGasoil = 575;
+
+              const ventesSuper = totalSuperLiters * prixSuper;
+              const ventesGasoil = totalGasoilLiters * prixGasoil;
+              const totalVentes = ventesSuper + ventesGasoil;
+
+              // Calculate payments
+              const momo = parseFloat(form.watch("versementMomo.montant") || "0");
+              const banque = parseFloat(form.watch("versementBanque.montant") || "0");
+              const liquidite = parseFloat(form.watch("versementLiquidite.montant") || "0");
+              const totalVersements = momo + banque + liquidite;
+
+              // Calculate vouchers
+              const bonsCarburant =
+                parseInt(form.watch("bonsCarburant.nombre") || "0") *
+                parseFloat(form.watch("bonsCarburant.valeurUnitaire") || "0");
+              const bonsEntreprise =
+                parseInt(form.watch("bonsEntreprise.nombre") || "0") *
+                parseFloat(form.watch("bonsEntreprise.valeurUnitaire") || "0");
+              const totalBons = bonsCarburant + bonsEntreprise;
+
+              // Total recettes
+              const totalRecettes = totalVersements + totalBons;
+
+              // Difference
+              const ecart = totalRecettes - totalVentes;
+
+              const hasData = totalVentes > 0 || totalVersements > 0 || totalBons > 0;
+
+              return hasData ? (
+                <Card className="bg-gradient-to-br from-primary/10 via-card to-card border-primary/40">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-xl">
+                      <CheckCircle2 className="w-6 h-6 text-primary" />
+                      Récapitulatif Journalier
+                    </CardTitle>
+                    <CardDescription>
+                      Synthèse des ventes, versements et bons de valeur
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    {/* Ventes Section */}
+                    <div className="space-y-3">
+                      <h4 className="font-semibold text-foreground flex items-center gap-2">
+                        <Fuel className="w-4 h-4 text-primary" />
+                        Ventes de Carburant
+                      </h4>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                        <div className="p-3 rounded-lg bg-super/10 border border-super/30">
+                          <div className="flex items-center gap-2 mb-1">
+                            <div className="w-2 h-2 rounded-full bg-super" />
+                            <span className="text-sm text-muted-foreground">Super</span>
+                          </div>
+                          <div className="text-lg font-bold text-super">
+                            {formatNumber(totalSuperLiters)} L
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            {formatNumber(ventesSuper)} FCFA
+                          </div>
+                        </div>
+                        <div className="p-3 rounded-lg bg-gasoil/10 border border-gasoil/30">
+                          <div className="flex items-center gap-2 mb-1">
+                            <div className="w-2 h-2 rounded-full bg-gasoil" />
+                            <span className="text-sm text-muted-foreground">Gasoil</span>
+                          </div>
+                          <div className="text-lg font-bold text-gasoil">
+                            {formatNumber(totalGasoilLiters)} L
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            {formatNumber(ventesGasoil)} FCFA
+                          </div>
+                        </div>
+                        <div className="p-3 rounded-lg bg-primary/10 border border-primary/30">
+                          <div className="text-sm text-muted-foreground mb-1">Total Ventes</div>
+                          <div className="text-xl font-bold text-primary">
+                            {formatNumber(totalVentes)} FCFA
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Versements Section */}
+                    {totalVersements > 0 && (
+                      <div className="space-y-3">
+                        <h4 className="font-semibold text-foreground flex items-center gap-2">
+                          <Wallet className="w-4 h-4 text-primary" />
+                          Versements
+                        </h4>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                          {momo > 0 && (
+                            <div className="p-3 rounded-lg bg-orange-500/10 border border-orange-500/30">
+                              <div className="flex items-center gap-2 mb-1">
+                                <Smartphone className="w-4 h-4 text-orange-400" />
+                                <span className="text-xs text-muted-foreground">MOMO</span>
+                              </div>
+                              <div className="font-semibold text-orange-400">
+                                {formatNumber(momo)} FCFA
+                              </div>
+                            </div>
+                          )}
+                          {banque > 0 && (
+                            <div className="p-3 rounded-lg bg-blue-500/10 border border-blue-500/30">
+                              <div className="flex items-center gap-2 mb-1">
+                                <Building2 className="w-4 h-4 text-blue-400" />
+                                <span className="text-xs text-muted-foreground">Banque</span>
+                              </div>
+                              <div className="font-semibold text-blue-400">
+                                {formatNumber(banque)} FCFA
+                              </div>
+                            </div>
+                          )}
+                          {liquidite > 0 && (
+                            <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/30">
+                              <div className="flex items-center gap-2 mb-1">
+                                <Banknote className="w-4 h-4 text-green-400" />
+                                <span className="text-xs text-muted-foreground">Espèces</span>
+                              </div>
+                              <div className="font-semibold text-green-400">
+                                {formatNumber(liquidite)} FCFA
+                              </div>
+                            </div>
+                          )}
+                          <div className="p-3 rounded-lg bg-primary/10 border border-primary/30">
+                            <div className="text-xs text-muted-foreground mb-1">Total Versements</div>
+                            <div className="font-bold text-primary">
+                              {formatNumber(totalVersements)} FCFA
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Bons de Valeur Section */}
+                    {totalBons > 0 && (
+                      <div className="space-y-3">
+                        <h4 className="font-semibold text-foreground flex items-center gap-2">
+                          <Receipt className="w-4 h-4 text-primary" />
+                          Bons de Valeur
+                        </h4>
+                        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                          {bonsCarburant > 0 && (
+                            <div className="p-3 rounded-lg bg-super/10 border border-super/30">
+                              <div className="text-xs text-muted-foreground mb-1">Bons Carburant</div>
+                              <div className="font-semibold text-super">
+                                {formatNumber(bonsCarburant)} FCFA
+                              </div>
+                            </div>
+                          )}
+                          {bonsEntreprise > 0 && (
+                            <div className="p-3 rounded-lg bg-gasoil/10 border border-gasoil/30">
+                              <div className="text-xs text-muted-foreground mb-1">Bons Entreprise</div>
+                              <div className="font-semibold text-gasoil">
+                                {formatNumber(bonsEntreprise)} FCFA
+                              </div>
+                            </div>
+                          )}
+                          <div className="p-3 rounded-lg bg-primary/10 border border-primary/30">
+                            <div className="text-xs text-muted-foreground mb-1">Total Bons</div>
+                            <div className="font-bold text-primary">
+                              {formatNumber(totalBons)} FCFA
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Final Summary */}
+                    <div className="pt-4 border-t border-border space-y-3">
+                      <div className="flex items-center justify-between p-4 rounded-xl bg-secondary/50 border border-border">
+                        <span className="font-medium">Total Recettes (Versements + Bons)</span>
+                        <span className="text-xl font-bold">{formatNumber(totalRecettes)} FCFA</span>
+                      </div>
+                      <div className="flex items-center justify-between p-4 rounded-xl bg-secondary/50 border border-border">
+                        <span className="font-medium">Total Ventes Attendu</span>
+                        <span className="text-xl font-bold text-primary">{formatNumber(totalVentes)} FCFA</span>
+                      </div>
+                      <div
+                        className={`flex items-center justify-between p-4 rounded-xl border ${
+                          ecart === 0
+                            ? "bg-success/10 border-success/30"
+                            : ecart > 0
+                            ? "bg-success/10 border-success/30"
+                            : "bg-destructive/10 border-destructive/30"
+                        }`}
+                      >
+                        <span className="font-medium">
+                          {ecart >= 0 ? "Excédent" : "Écart (Manquant)"}
+                        </span>
+                        <span
+                          className={`text-xl font-bold ${
+                            ecart === 0
+                              ? "text-success"
+                              : ecart > 0
+                              ? "text-success"
+                              : "text-destructive"
+                          }`}
+                        >
+                          {ecart >= 0 ? "+" : ""}
+                          {formatNumber(ecart)} FCFA
+                        </span>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ) : null;
+            })()}
+
             {/* Submit Button */}
             <div className="flex flex-col sm:flex-row gap-3 pt-4">
               <Button
