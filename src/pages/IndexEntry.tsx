@@ -1,9 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { stations, Station, formatNumber } from "@/data/stationsData";
-import { StationSelector } from "@/components/dashboard/StationSelector";
+import { formatNumber } from "@/data/stationsData";
+import { useStations, useSaveIndexEntry } from "@/hooks/useIndexEntries";
+import { useAuth } from "@/hooks/useAuth";
+import { DbStationSelector } from "@/components/dashboard/DbStationSelector";
 import {
   Fuel,
   Calendar,
@@ -118,11 +120,19 @@ const defaultValues: IndexEntryForm = {
 };
 
 const IndexEntry = () => {
-  const [selectedStation, setSelectedStation] = useState<Station | null>(
-    stations[0]
-  );
+  const { data: dbStations } = useStations();
+  const [selectedStation, setSelectedStation] = useState<{ id: string; name: string; location: string } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { exportPdf } = usePdfExport();
+  const saveIndexEntry = useSaveIndexEntry();
+  const { signOut } = useAuth();
+
+  // Set first station as default when stations load
+  useEffect(() => {
+    if (dbStations && dbStations.length > 0 && !selectedStation) {
+      setSelectedStation(dbStations[0]);
+    }
+  }, [dbStations, selectedStation]);
 
   const form = useForm<IndexEntryForm>({
     resolver: zodResolver(indexEntrySchema),
@@ -137,35 +147,62 @@ const IndexEntry = () => {
 
     setIsSubmitting(true);
 
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1000));
+    try {
+      await saveIndexEntry.mutateAsync({
+        stationId: selectedStation.id,
+        entryDate: data.date,
+        super1: {
+          indexDepart: parseFloat(data.super1.indexDepart) || 0,
+          indexArrivee: parseFloat(data.super1.indexArrivee) || 0,
+          jauge: parseFloat(data.super1.jaugeDuJour) || 0,
+        },
+        super2: {
+          indexDepart: parseFloat(data.super2.indexDepart) || 0,
+          indexArrivee: parseFloat(data.super2.indexArrivee) || 0,
+          jauge: parseFloat(data.super2.jaugeDuJour) || 0,
+        },
+        gasoil1: {
+          indexDepart: parseFloat(data.gasoil1.indexDepart) || 0,
+          indexArrivee: parseFloat(data.gasoil1.indexArrivee) || 0,
+          jauge: parseFloat(data.gasoil1.jaugeDuJour) || 0,
+        },
+        gasoil2: {
+          indexDepart: parseFloat(data.gasoil2.indexDepart) || 0,
+          indexArrivee: parseFloat(data.gasoil2.indexArrivee) || 0,
+          jauge: parseFloat(data.gasoil2.jaugeDuJour) || 0,
+        },
+        versements: {
+          momo: {
+            montant: parseFloat(data.versementMomo.montant) || 0,
+            reference: data.versementMomo.reference,
+          },
+          banque: {
+            montant: parseFloat(data.versementBanque.montant) || 0,
+            reference: data.versementBanque.reference,
+          },
+          liquidite: {
+            montant: parseFloat(data.versementLiquidite.montant) || 0,
+            note: data.versementLiquidite.reference,
+          },
+        },
+        bons: {
+          carburant: {
+            nombre: parseInt(data.bonsCarburant.nombre) || 0,
+            valeur: parseFloat(data.bonsCarburant.valeurUnitaire) || 0,
+          },
+          entreprise: {
+            nombre: parseInt(data.bonsEntreprise.nombre) || 0,
+            valeur: parseFloat(data.bonsEntreprise.valeurUnitaire) || 0,
+          },
+        },
+      });
 
-    // Calculate quantities
-    const super1Qty =
-      parseFloat(data.super1.indexArrivee) -
-      parseFloat(data.super1.indexDepart);
-    const super2Qty =
-      parseFloat(data.super2.indexArrivee) -
-      parseFloat(data.super2.indexDepart);
-    const gasoil1Qty =
-      parseFloat(data.gasoil1.indexArrivee) -
-      parseFloat(data.gasoil1.indexDepart);
-    const gasoil2Qty =
-      parseFloat(data.gasoil2.indexArrivee) -
-      parseFloat(data.gasoil2.indexDepart);
-
-    const totalSuper = super1Qty + super2Qty;
-    const totalGasoil = gasoil1Qty + gasoil2Qty;
-
-    toast.success(
-      `Index enregistrés pour ${selectedStation.name}`,
-      {
-        description: `Super: ${formatNumber(totalSuper)} L | Gasoil: ${formatNumber(totalGasoil)} L`,
-      }
-    );
+      form.reset(defaultValues);
+    } catch (error) {
+      // Error is handled by the mutation
+    }
 
     setIsSubmitting(false);
-    form.reset(defaultValues);
   };
 
   const ProductEntryCard = ({
@@ -302,7 +339,7 @@ const IndexEntry = () => {
               </div>
             </div>
             <div className="flex flex-wrap items-center gap-3">
-              <StationSelector
+              <DbStationSelector
                 selectedStation={selectedStation}
                 onSelect={(s) => s && setSelectedStation(s)}
                 showAll={false}
@@ -358,8 +395,7 @@ const IndexEntry = () => {
                     {selectedStation.name}
                   </h2>
                   <p className="text-sm text-muted-foreground">
-                    {selectedStation.location} •{" "}
-                    {selectedStation.currentStock.length} cuves
+                    {selectedStation.location}
                   </p>
                 </div>
               </div>

@@ -14,7 +14,164 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      index_entries: {
+        Row: {
+          bons_carburant_nombre: number
+          bons_carburant_valeur: number
+          bons_entreprise_nombre: number
+          bons_entreprise_valeur: number
+          created_at: string
+          entry_date: string
+          gasoil1_index_arrivee: number
+          gasoil1_index_depart: number
+          gasoil1_jauge: number
+          gasoil2_index_arrivee: number
+          gasoil2_index_depart: number
+          gasoil2_jauge: number
+          id: string
+          station_id: string
+          super1_index_arrivee: number
+          super1_index_depart: number
+          super1_jauge: number
+          super2_index_arrivee: number
+          super2_index_depart: number
+          super2_jauge: number
+          total_bons: number | null
+          total_gasoil_liters: number | null
+          total_super_liters: number | null
+          total_versements: number | null
+          updated_at: string
+          user_id: string
+          versement_banque: number
+          versement_banque_ref: string | null
+          versement_liquidite: number
+          versement_liquidite_note: string | null
+          versement_momo: number
+          versement_momo_ref: string | null
+        }
+        Insert: {
+          bons_carburant_nombre?: number
+          bons_carburant_valeur?: number
+          bons_entreprise_nombre?: number
+          bons_entreprise_valeur?: number
+          created_at?: string
+          entry_date: string
+          gasoil1_index_arrivee?: number
+          gasoil1_index_depart?: number
+          gasoil1_jauge?: number
+          gasoil2_index_arrivee?: number
+          gasoil2_index_depart?: number
+          gasoil2_jauge?: number
+          id?: string
+          station_id: string
+          super1_index_arrivee?: number
+          super1_index_depart?: number
+          super1_jauge?: number
+          super2_index_arrivee?: number
+          super2_index_depart?: number
+          super2_jauge?: number
+          total_bons?: number | null
+          total_gasoil_liters?: number | null
+          total_super_liters?: number | null
+          total_versements?: number | null
+          updated_at?: string
+          user_id: string
+          versement_banque?: number
+          versement_banque_ref?: string | null
+          versement_liquidite?: number
+          versement_liquidite_note?: string | null
+          versement_momo?: number
+          versement_momo_ref?: string | null
+        }
+        Update: {
+          bons_carburant_nombre?: number
+          bons_carburant_valeur?: number
+          bons_entreprise_nombre?: number
+          bons_entreprise_valeur?: number
+          created_at?: string
+          entry_date?: string
+          gasoil1_index_arrivee?: number
+          gasoil1_index_depart?: number
+          gasoil1_jauge?: number
+          gasoil2_index_arrivee?: number
+          gasoil2_index_depart?: number
+          gasoil2_jauge?: number
+          id?: string
+          station_id?: string
+          super1_index_arrivee?: number
+          super1_index_depart?: number
+          super1_jauge?: number
+          super2_index_arrivee?: number
+          super2_index_depart?: number
+          super2_jauge?: number
+          total_bons?: number | null
+          total_gasoil_liters?: number | null
+          total_super_liters?: number | null
+          total_versements?: number | null
+          updated_at?: string
+          user_id?: string
+          versement_banque?: number
+          versement_banque_ref?: string | null
+          versement_liquidite?: number
+          versement_liquidite_note?: string | null
+          versement_momo?: number
+          versement_momo_ref?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "index_entries_station_id_fkey"
+            columns: ["station_id"]
+            isOneToOne: false
+            referencedRelation: "stations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      profiles: {
+        Row: {
+          created_at: string
+          full_name: string | null
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          full_name?: string | null
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      stations: {
+        Row: {
+          created_at: string
+          id: string
+          location: string
+          name: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          location: string
+          name: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          location?: string
+          name?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
