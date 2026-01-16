@@ -6,6 +6,7 @@ import {
   getStationTotalSales,
   getAllStationsTotalSales,
 } from "@/data/stationsData";
+import { useAuth } from "@/hooks/useAuth";
 import { SalesCard } from "@/components/dashboard/SalesCard";
 import { StationSelector } from "@/components/dashboard/StationSelector";
 import { PeriodTabs } from "@/components/dashboard/PeriodTabs";
@@ -19,6 +20,7 @@ import {
   Package,
   Calendar,
   PenLine,
+  LogOut,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -30,6 +32,7 @@ const Index = () => {
   const [selectedStation, setSelectedStation] = useState<Station | null>(null);
   const [period, setPeriod] = useState<Period>("day");
   const [activeTab, setActiveTab] = useState("ventes");
+  const { signOut } = useAuth();
 
   const getSuperSales = (station: Station | null) => {
     const stationsToCalc = station ? [station] : stations;
@@ -117,6 +120,15 @@ const Index = () => {
                   })}
                 </span>
               </div>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={signOut}
+                className="text-muted-foreground hover:text-destructive hover:border-destructive"
+                title="Se déconnecter"
+              >
+                <LogOut className="w-4 h-4" />
+              </Button>
             </div>
           </div>
         </div>

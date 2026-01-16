@@ -19,6 +19,7 @@ import {
   Building2,
   Receipt,
   FileDown,
+  LogOut,
 } from "lucide-react";
 import { usePdfExport } from "@/hooks/usePdfExport";
 import { Link } from "react-router-dom";
@@ -344,6 +345,15 @@ const IndexEntry = () => {
                 onSelect={(s) => s && setSelectedStation(s)}
                 showAll={false}
               />
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={signOut}
+                className="text-muted-foreground hover:text-destructive hover:border-destructive"
+                title="Se déconnecter"
+              >
+                <LogOut className="w-4 h-4" />
+              </Button>
             </div>
           </div>
         </div>
