@@ -13,6 +13,8 @@ import { PeriodTabs } from "@/components/dashboard/PeriodTabs";
 import { SalesChart } from "@/components/dashboard/SalesChart";
 import { StockModule } from "@/components/dashboard/StockModule";
 import { StationCard } from "@/components/dashboard/StationCard";
+import { OrdersModule } from "@/components/orders/OrdersModule";
+import { SuppliesModule } from "@/components/orders/SuppliesModule";
 import {
   LayoutDashboard,
   TrendingUp,
@@ -20,7 +22,8 @@ import {
   Package,
   Calendar,
   PenLine,
-  
+  FileText,
+  Truck,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -130,7 +133,7 @@ const Index = () => {
       <main className="container mx-auto px-4 py-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <TabsList className="bg-secondary h-auto p-1">
+            <TabsList className="bg-secondary h-auto p-1 flex-wrap">
               <TabsTrigger
                 value="ventes"
                 className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground gap-2 px-4 py-2"
@@ -144,6 +147,20 @@ const Index = () => {
               >
                 <Package className="w-4 h-4" />
                 Stock
+              </TabsTrigger>
+              <TabsTrigger
+                value="commandes"
+                className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground gap-2 px-4 py-2"
+              >
+                <FileText className="w-4 h-4" />
+                Commandes
+              </TabsTrigger>
+              <TabsTrigger
+                value="approvisionnements"
+                className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground gap-2 px-4 py-2"
+              >
+                <Truck className="w-4 h-4" />
+                Approvisionnements
               </TabsTrigger>
               <TabsTrigger
                 value="stations"
@@ -218,6 +235,16 @@ const Index = () => {
           {/* Stock Tab */}
           <TabsContent value="stock" className="animate-fade-in">
             <StockModule station={selectedStation} />
+          </TabsContent>
+
+          {/* Commandes Tab */}
+          <TabsContent value="commandes" className="animate-fade-in">
+            <OrdersModule />
+          </TabsContent>
+
+          {/* Approvisionnements Tab */}
+          <TabsContent value="approvisionnements" className="animate-fade-in">
+            <SuppliesModule />
           </TabsContent>
 
           {/* Stations Tab */}
