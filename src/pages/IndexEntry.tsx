@@ -4,7 +4,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { formatNumber } from "@/data/stationsData";
 import { useStations, useSaveIndexEntry } from "@/hooks/useIndexEntries";
-import { useAuth } from "@/hooks/useAuth";
+import { ProfileMenu } from "@/components/ProfileMenu";
 import { DbStationSelector } from "@/components/dashboard/DbStationSelector";
 import {
   Fuel,
@@ -19,7 +19,7 @@ import {
   Building2,
   Receipt,
   FileDown,
-  LogOut,
+  
 } from "lucide-react";
 import { usePdfExport } from "@/hooks/usePdfExport";
 import { Link } from "react-router-dom";
@@ -126,7 +126,7 @@ const IndexEntry = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { exportPdf } = usePdfExport();
   const saveIndexEntry = useSaveIndexEntry();
-  const { signOut } = useAuth();
+  
 
   // Set first station as default when stations load
   useEffect(() => {
@@ -345,15 +345,7 @@ const IndexEntry = () => {
                 onSelect={(s) => s && setSelectedStation(s)}
                 showAll={false}
               />
-              <Button
-                variant="outline"
-                size="icon"
-                onClick={signOut}
-                className="text-muted-foreground hover:text-destructive hover:border-destructive"
-                title="Se déconnecter"
-              >
-                <LogOut className="w-4 h-4" />
-              </Button>
+              <ProfileMenu />
             </div>
           </div>
         </div>
