@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useSupplies, SupplyInsert } from "@/hooks/useSupplies";
+import { useSupplies, SupplyInsert, ProductType } from "@/hooks/useSupplies";
 import { useOrders } from "@/hooks/useOrders";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -31,6 +31,7 @@ import {
 import { Plus, Trash2, Truck, Loader2, Package } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import { Badge } from "@/components/ui/badge";
 
 const formatCurrency = (value: number) => {
   return new Intl.NumberFormat("fr-FR", {
@@ -38,6 +39,10 @@ const formatCurrency = (value: number) => {
     currency: "XOF",
     minimumFractionDigits: 0,
   }).format(value);
+};
+
+const getProductLabel = (type: ProductType) => {
+  return type === "super" ? "Super" : "Gasoil";
 };
 
 export const SuppliesModule = () => {
@@ -48,6 +53,7 @@ export const SuppliesModule = () => {
   const [formData, setFormData] = useState<SupplyInsert>({
     order_id: "",
     station_id: "",
+    product_type: "super",
     quantity_received: 0,
     reception_date: new Date().toISOString().split("T")[0],
     notes: "",
@@ -61,6 +67,7 @@ export const SuppliesModule = () => {
         ...formData,
         order_id: orderId,
         station_id: order.station_id,
+        product_type: order.product_type,
         quantity_received: order.total_quantity,
       });
     }
@@ -74,6 +81,7 @@ export const SuppliesModule = () => {
       setFormData({
         order_id: "",
         station_id: "",
+        product_type: "super",
         quantity_received: 0,
         reception_date: new Date().toISOString().split("T")[0],
         notes: "",
@@ -137,6 +145,12 @@ export const SuppliesModule = () => {
               {selectedOrder && (
                 <Card className="bg-muted/50">
                   <CardContent className="pt-4 space-y-2 text-sm">
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Produit:</span>
+                      <Badge variant={selectedOrder.product_type === "super" ? "default" : "secondary"} className={selectedOrder.product_type === "super" ? "bg-amber-500" : "bg-emerald-500"}>
+                        {getProductLabel(selectedOrder.product_type)}
+                      </Badge>
+                    </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Station:</span>
                       <span className="font-medium">{selectedOrder.station?.name}</span>
@@ -229,6 +243,7 @@ export const SuppliesModule = () => {
                 <TableHeader>
                   <TableRow>
                     <TableHead>N° Pro Forma</TableHead>
+                    <TableHead>Produit</TableHead>
                     <TableHead>Station</TableHead>
                     <TableHead>Fournisseur</TableHead>
                     <TableHead className="text-right">Qté reçue</TableHead>
@@ -243,6 +258,11 @@ export const SuppliesModule = () => {
                     <TableRow key={supply.id}>
                       <TableCell className="font-medium">
                         {supply.order?.proforma_number || "-"}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={supply.product_type === "super" ? "default" : "secondary"} className={supply.product_type === "super" ? "bg-amber-500 hover:bg-amber-600" : "bg-emerald-500 hover:bg-emerald-600"}>
+                          {getProductLabel(supply.product_type)}
+                        </Badge>
                       </TableCell>
                       <TableCell>{supply.station?.name || "-"}</TableCell>
                       <TableCell>{supply.order?.supplier || "-"}</TableCell>

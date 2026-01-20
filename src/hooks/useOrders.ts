@@ -3,12 +3,15 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 
+export type ProductType = "super" | "gasoil";
+
 export interface Order {
   id: string;
   user_id: string;
   station_id: string;
   proforma_number: string;
   supplier: string;
+  product_type: ProductType;
   unit_price: number;
   total_quantity: number;
   amount_ht: number;
@@ -19,13 +22,14 @@ export interface Order {
   station?: {
     name: string;
     location: string;
-  };
+  } | null;
 }
 
 export interface OrderInsert {
   station_id: string;
   proforma_number: string;
   supplier: string;
+  product_type: ProductType;
   unit_price: number;
   total_quantity: number;
   amount_ht: number;
@@ -52,7 +56,7 @@ export const useOrders = () => {
         .order("created_at", { ascending: false });
 
       if (error) throw error;
-      setOrders(data || []);
+      setOrders((data || []) as Order[]);
     } catch (error: any) {
       toast.error("Erreur lors du chargement des commandes");
       console.error(error);
