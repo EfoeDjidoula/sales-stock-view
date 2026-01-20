@@ -133,6 +133,7 @@ export type Database = {
           amount_ttc: number
           created_at: string
           id: string
+          product_type: string
           proforma_number: string
           station_id: string
           status: string
@@ -147,6 +148,7 @@ export type Database = {
           amount_ttc?: number
           created_at?: string
           id?: string
+          product_type?: string
           proforma_number: string
           station_id: string
           status?: string
@@ -161,6 +163,7 @@ export type Database = {
           amount_ttc?: number
           created_at?: string
           id?: string
+          product_type?: string
           proforma_number?: string
           station_id?: string
           status?: string
@@ -231,6 +234,7 @@ export type Database = {
           id: string
           notes: string | null
           order_id: string
+          product_type: string
           quantity_received: number
           reception_date: string
           station_id: string
@@ -242,6 +246,7 @@ export type Database = {
           id?: string
           notes?: string | null
           order_id: string
+          product_type?: string
           quantity_received?: number
           reception_date?: string
           station_id: string
@@ -253,6 +258,7 @@ export type Database = {
           id?: string
           notes?: string | null
           order_id?: string
+          product_type?: string
           quantity_received?: number
           reception_date?: string
           station_id?: string

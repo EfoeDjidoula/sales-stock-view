@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useOrders, OrderInsert } from "@/hooks/useOrders";
+import { useOrders, OrderInsert, ProductType } from "@/hooks/useOrders";
 import { useStations } from "@/hooks/useStations";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -27,9 +27,10 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Plus, Trash2, FileText, Loader2 } from "lucide-react";
+import { Plus, Trash2, FileText, Loader2, Fuel } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import { Badge } from "@/components/ui/badge";
 
 const formatCurrency = (value: number) => {
   return new Intl.NumberFormat("fr-FR", {
@@ -37,6 +38,10 @@ const formatCurrency = (value: number) => {
     currency: "XOF",
     minimumFractionDigits: 0,
   }).format(value);
+};
+
+const getProductLabel = (type: ProductType) => {
+  return type === "super" ? "Super" : "Gasoil";
 };
 
 export const OrdersModule = () => {
@@ -47,6 +52,7 @@ export const OrdersModule = () => {
     station_id: "",
     proforma_number: "",
     supplier: "",
+    product_type: "super",
     unit_price: 0,
     total_quantity: 0,
     amount_ht: 0,
@@ -76,6 +82,7 @@ export const OrdersModule = () => {
         station_id: "",
         proforma_number: "",
         supplier: "",
+        product_type: "super",
         unit_price: 0,
         total_quantity: 0,
         amount_ht: 0,
@@ -146,6 +153,33 @@ export const OrdersModule = () => {
                     </SelectContent>
                   </Select>
                 </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="product_type">Type de produit</Label>
+                <Select
+                  value={formData.product_type}
+                  onValueChange={(value) => handleInputChange("product_type", value as ProductType)}
+                  required
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder="Sélectionner" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="super">
+                      <div className="flex items-center gap-2">
+                        <Fuel className="w-4 h-4 text-amber-500" />
+                        Super
+                      </div>
+                    </SelectItem>
+                    <SelectItem value="gasoil">
+                      <div className="flex items-center gap-2">
+                        <Fuel className="w-4 h-4 text-emerald-500" />
+                        Gasoil
+                      </div>
+                    </SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="space-y-2">
@@ -239,6 +273,7 @@ export const OrdersModule = () => {
                 <TableHeader>
                   <TableRow>
                     <TableHead>N° Pro Forma</TableHead>
+                    <TableHead>Produit</TableHead>
                     <TableHead>Station</TableHead>
                     <TableHead>Fournisseur</TableHead>
                     <TableHead className="text-right">Prix unit.</TableHead>
@@ -253,6 +288,11 @@ export const OrdersModule = () => {
                   {orders.map((order) => (
                     <TableRow key={order.id}>
                       <TableCell className="font-medium">{order.proforma_number}</TableCell>
+                      <TableCell>
+                        <Badge variant={order.product_type === "super" ? "default" : "secondary"} className={order.product_type === "super" ? "bg-amber-500 hover:bg-amber-600" : "bg-emerald-500 hover:bg-emerald-600"}>
+                          {getProductLabel(order.product_type)}
+                        </Badge>
+                      </TableCell>
                       <TableCell>{order.station?.name || "-"}</TableCell>
                       <TableCell>{order.supplier}</TableCell>
                       <TableCell className="text-right">{formatCurrency(order.unit_price)}</TableCell>
