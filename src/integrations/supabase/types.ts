@@ -127,6 +127,59 @@ export type Database = {
           },
         ]
       }
+      orders: {
+        Row: {
+          amount_ht: number
+          amount_ttc: number
+          created_at: string
+          id: string
+          proforma_number: string
+          station_id: string
+          status: string
+          supplier: string
+          total_quantity: number
+          unit_price: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount_ht?: number
+          amount_ttc?: number
+          created_at?: string
+          id?: string
+          proforma_number: string
+          station_id: string
+          status?: string
+          supplier: string
+          total_quantity?: number
+          unit_price?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount_ht?: number
+          amount_ttc?: number
+          created_at?: string
+          id?: string
+          proforma_number?: string
+          station_id?: string
+          status?: string
+          supplier?: string
+          total_quantity?: number
+          unit_price?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_station_id_fkey"
+            columns: ["station_id"]
+            isOneToOne: false
+            referencedRelation: "stations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           created_at: string
@@ -171,6 +224,57 @@ export type Database = {
           name?: string
         }
         Relationships: []
+      }
+      supplies: {
+        Row: {
+          created_at: string
+          id: string
+          notes: string | null
+          order_id: string
+          quantity_received: number
+          reception_date: string
+          station_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          order_id: string
+          quantity_received?: number
+          reception_date?: string
+          station_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          order_id?: string
+          quantity_received?: number
+          reception_date?: string
+          station_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "supplies_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supplies_station_id_fkey"
+            columns: ["station_id"]
+            isOneToOne: false
+            referencedRelation: "stations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
