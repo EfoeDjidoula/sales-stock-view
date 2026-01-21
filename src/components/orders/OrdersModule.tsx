@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useOrders, OrderInsert, ProductType } from "@/hooks/useOrders";
 import { useStations } from "@/hooks/useStations";
+import { useOrdersPdfExport } from "@/hooks/useOrdersPdfExport";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -27,7 +28,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Plus, Trash2, FileText, Loader2, Fuel } from "lucide-react";
+import { Plus, Trash2, FileText, Loader2, Fuel, Download } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { Badge } from "@/components/ui/badge";
@@ -47,6 +48,7 @@ const getProductLabel = (type: ProductType) => {
 export const OrdersModule = () => {
   const { orders, loading, createOrder, deleteOrder } = useOrders();
   const { stations, loading: stationsLoading } = useStations();
+  const { exportOrdersPdf } = useOrdersPdfExport();
   const [isOpen, setIsOpen] = useState(false);
   const [formData, setFormData] = useState<OrderInsert>({
     station_id: "",
@@ -108,13 +110,20 @@ export const OrdersModule = () => {
             Créez et gérez vos bons de commande (Pro Forma)
           </p>
         </div>
-        <Dialog open={isOpen} onOpenChange={setIsOpen}>
-          <DialogTrigger asChild>
-            <Button className="gap-2">
-              <Plus className="w-4 h-4" />
-              Nouvelle commande
+        <div className="flex items-center gap-2">
+          {orders.length > 0 && (
+            <Button variant="outline" className="gap-2" onClick={() => exportOrdersPdf(orders)}>
+              <Download className="w-4 h-4" />
+              Exporter PDF
             </Button>
-          </DialogTrigger>
+          )}
+          <Dialog open={isOpen} onOpenChange={setIsOpen}>
+            <DialogTrigger asChild>
+              <Button className="gap-2">
+                <Plus className="w-4 h-4" />
+                Nouvelle commande
+              </Button>
+            </DialogTrigger>
           <DialogContent className="sm:max-w-[500px]">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
@@ -254,6 +263,7 @@ export const OrdersModule = () => {
             </form>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       <Card>
