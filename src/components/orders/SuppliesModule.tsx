@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useSupplies, SupplyInsert, ProductType } from "@/hooks/useSupplies";
 import { useOrders } from "@/hooks/useOrders";
+import { useOrdersPdfExport } from "@/hooks/useOrdersPdfExport";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -28,7 +29,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Plus, Trash2, Truck, Loader2, Package } from "lucide-react";
+import { Plus, Trash2, Truck, Loader2, Package, Download } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { Badge } from "@/components/ui/badge";
@@ -48,6 +49,7 @@ const getProductLabel = (type: ProductType) => {
 export const SuppliesModule = () => {
   const { supplies, loading, createSupply, deleteSupply } = useSupplies();
   const { orders, loading: ordersLoading } = useOrders();
+  const { exportSuppliesPdf } = useOrdersPdfExport();
   const [isOpen, setIsOpen] = useState(false);
   const [selectedOrder, setSelectedOrder] = useState<typeof orders[0] | null>(null);
   const [formData, setFormData] = useState<SupplyInsert>({
@@ -107,13 +109,20 @@ export const SuppliesModule = () => {
             Enregistrez les réceptions de carburant pour alimenter le dépôt
           </p>
         </div>
-        <Dialog open={isOpen} onOpenChange={setIsOpen}>
-          <DialogTrigger asChild>
-            <Button className="gap-2">
-              <Plus className="w-4 h-4" />
-              Nouvel approvisionnement
+        <div className="flex items-center gap-2">
+          {supplies.length > 0 && (
+            <Button variant="outline" className="gap-2" onClick={() => exportSuppliesPdf(supplies)}>
+              <Download className="w-4 h-4" />
+              Exporter PDF
             </Button>
-          </DialogTrigger>
+          )}
+          <Dialog open={isOpen} onOpenChange={setIsOpen}>
+            <DialogTrigger asChild>
+              <Button className="gap-2">
+                <Plus className="w-4 h-4" />
+                Nouvel approvisionnement
+              </Button>
+            </DialogTrigger>
           <DialogContent className="sm:max-w-[500px]">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
@@ -224,6 +233,7 @@ export const SuppliesModule = () => {
             </form>
           </DialogContent>
         </Dialog>
+        </div>
       </div>
 
       <Card>
