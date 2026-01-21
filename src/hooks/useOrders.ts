@@ -4,6 +4,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 
 export type ProductType = "super" | "gasoil";
+export type OrderStatus = "pending" | "validated" | "delivered";
 
 export interface Order {
   id: string;
@@ -105,6 +106,28 @@ export const useOrders = () => {
     }
   };
 
+  const updateOrderStatus = async (id: string, status: OrderStatus) => {
+    try {
+      const { error } = await supabase
+        .from("orders")
+        .update({ status })
+        .eq("id", id);
+
+      if (error) throw error;
+      
+      const statusLabels: Record<OrderStatus, string> = {
+        pending: "en attente",
+        validated: "validée",
+        delivered: "livrée",
+      };
+      toast.success(`Commande ${statusLabels[status]}`);
+      await fetchOrders();
+    } catch (error: any) {
+      toast.error("Erreur lors de la mise à jour du statut");
+      console.error(error);
+    }
+  };
+
   const deleteOrder = async (id: string) => {
     try {
       const { error } = await supabase.from("orders").delete().eq("id", id);
@@ -127,6 +150,7 @@ export const useOrders = () => {
     loading,
     createOrder,
     updateOrder,
+    updateOrderStatus,
     deleteOrder,
     refetch: fetchOrders,
   };
