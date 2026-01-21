@@ -15,6 +15,7 @@ import { StockModule } from "@/components/dashboard/StockModule";
 import { StationCard } from "@/components/dashboard/StationCard";
 import { OrdersModule } from "@/components/orders/OrdersModule";
 import { SuppliesModule } from "@/components/orders/SuppliesModule";
+import { UsersModule } from "@/components/users/UsersModule";
 import {
   LayoutDashboard,
   TrendingUp,
@@ -24,6 +25,7 @@ import {
   PenLine,
   FileText,
   Truck,
+  Users,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -169,6 +171,13 @@ const Index = () => {
                 <LayoutDashboard className="w-4 h-4" />
                 Stations
               </TabsTrigger>
+              <TabsTrigger
+                value="utilisateurs"
+                className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground gap-2 px-4 py-2"
+              >
+                <Users className="w-4 h-4" />
+                Utilisateurs
+              </TabsTrigger>
             </TabsList>
 
             {activeTab === "ventes" && (
@@ -271,6 +280,11 @@ const Index = () => {
                 ))}
               </div>
             </div>
+          </TabsContent>
+
+          {/* Utilisateurs Tab */}
+          <TabsContent value="utilisateurs" className="animate-fade-in">
+            <UsersModule />
           </TabsContent>
         </Tabs>
       </main>
