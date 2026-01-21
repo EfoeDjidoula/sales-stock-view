@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useOrders, OrderInsert, ProductType } from "@/hooks/useOrders";
+import { useOrders, OrderInsert, ProductType, OrderStatus } from "@/hooks/useOrders";
 import { useStations } from "@/hooks/useStations";
 import { useOrdersPdfExport } from "@/hooks/useOrdersPdfExport";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -28,7 +28,13 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Plus, Trash2, FileText, Loader2, Fuel, Download } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Plus, Trash2, FileText, Loader2, Fuel, Download, Clock, CheckCircle2, Truck, ChevronDown } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { Badge } from "@/components/ui/badge";
@@ -45,8 +51,67 @@ const getProductLabel = (type: ProductType) => {
   return type === "super" ? "Super" : "Gasoil";
 };
 
+const statusConfig: Record<OrderStatus, { label: string; icon: React.ReactNode; className: string }> = {
+  pending: {
+    label: "En attente",
+    icon: <Clock className="w-3 h-3" />,
+    className: "bg-yellow-100 text-yellow-800 hover:bg-yellow-200 border-yellow-300",
+  },
+  validated: {
+    label: "Validée",
+    icon: <CheckCircle2 className="w-3 h-3" />,
+    className: "bg-blue-100 text-blue-800 hover:bg-blue-200 border-blue-300",
+  },
+  delivered: {
+    label: "Livrée",
+    icon: <Truck className="w-3 h-3" />,
+    className: "bg-green-100 text-green-800 hover:bg-green-200 border-green-300",
+  },
+};
+
+const StatusBadge = ({ 
+  status, 
+  orderId, 
+  onStatusChange 
+}: { 
+  status: OrderStatus; 
+  orderId: string; 
+  onStatusChange: (id: string, status: OrderStatus) => void;
+}) => {
+  const config = statusConfig[status] || statusConfig.pending;
+  
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <Button 
+          variant="outline" 
+          size="sm" 
+          className={`h-7 gap-1 text-xs font-medium border ${config.className}`}
+        >
+          {config.icon}
+          {config.label}
+          <ChevronDown className="w-3 h-3 ml-1" />
+        </Button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start">
+        {(Object.keys(statusConfig) as OrderStatus[]).map((statusKey) => (
+          <DropdownMenuItem
+            key={statusKey}
+            onClick={() => onStatusChange(orderId, statusKey)}
+            className="gap-2"
+          >
+            {statusConfig[statusKey].icon}
+            {statusConfig[statusKey].label}
+            {statusKey === status && <CheckCircle2 className="w-3 h-3 ml-auto text-primary" />}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+};
+
 export const OrdersModule = () => {
-  const { orders, loading, createOrder, deleteOrder } = useOrders();
+  const { orders, loading, createOrder, updateOrderStatus, deleteOrder } = useOrders();
   const { stations, loading: stationsLoading } = useStations();
   const { exportOrdersPdf } = useOrdersPdfExport();
   const [isOpen, setIsOpen] = useState(false);
@@ -283,12 +348,11 @@ export const OrdersModule = () => {
                 <TableHeader>
                   <TableRow>
                     <TableHead>N° Pro Forma</TableHead>
+                    <TableHead>Statut</TableHead>
                     <TableHead>Produit</TableHead>
                     <TableHead>Station</TableHead>
                     <TableHead>Fournisseur</TableHead>
-                    <TableHead className="text-right">Prix unit.</TableHead>
                     <TableHead className="text-right">Quantité</TableHead>
-                    <TableHead className="text-right">Montant HT</TableHead>
                     <TableHead className="text-right">Montant TTC</TableHead>
                     <TableHead>Date</TableHead>
                     <TableHead className="w-[50px]"></TableHead>
@@ -299,15 +363,20 @@ export const OrdersModule = () => {
                     <TableRow key={order.id}>
                       <TableCell className="font-medium">{order.proforma_number}</TableCell>
                       <TableCell>
+                        <StatusBadge 
+                          status={(order.status as OrderStatus) || "pending"} 
+                          orderId={order.id}
+                          onStatusChange={updateOrderStatus}
+                        />
+                      </TableCell>
+                      <TableCell>
                         <Badge variant={order.product_type === "super" ? "default" : "secondary"} className={order.product_type === "super" ? "bg-amber-500 hover:bg-amber-600" : "bg-emerald-500 hover:bg-emerald-600"}>
                           {getProductLabel(order.product_type)}
                         </Badge>
                       </TableCell>
                       <TableCell>{order.station?.name || "-"}</TableCell>
                       <TableCell>{order.supplier}</TableCell>
-                      <TableCell className="text-right">{formatCurrency(order.unit_price)}</TableCell>
                       <TableCell className="text-right">{order.total_quantity.toLocaleString()} L</TableCell>
-                      <TableCell className="text-right">{formatCurrency(order.amount_ht)}</TableCell>
                       <TableCell className="text-right font-semibold">{formatCurrency(order.amount_ttc)}</TableCell>
                       <TableCell>
                         {format(new Date(order.created_at), "dd MMM yyyy", { locale: fr })}
