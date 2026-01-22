@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import {
   stations,
   Station,
@@ -6,6 +6,7 @@ import {
   getStationTotalSales,
   getAllStationsTotalSales,
 } from "@/data/stationsData";
+import { useUserRoles, AppRole } from "@/hooks/useUserRoles";
 import { ProfileMenu } from "@/components/ProfileMenu";
 import { SalesCard } from "@/components/dashboard/SalesCard";
 import { StationSelector } from "@/components/dashboard/StationSelector";
@@ -33,10 +34,33 @@ import { Button } from "@/components/ui/button";
 
 type Period = "day" | "week" | "month";
 
+// Define tab access by role
+const TAB_PERMISSIONS: Record<string, AppRole[]> = {
+  ventes: ["admin", "manager", "operator"],
+  stock: ["admin", "manager", "operator"],
+  commandes: ["admin", "manager"],
+  approvisionnements: ["admin", "manager"],
+  stations: ["admin", "manager", "operator"],
+  utilisateurs: ["admin"],
+};
+
 const Index = () => {
   const [selectedStation, setSelectedStation] = useState<Station | null>(null);
   const [period, setPeriod] = useState<Period>("day");
+  const { currentUserRole, loading: roleLoading } = useUserRoles();
+  
+  // Get allowed tabs for current user
+  const allowedTabs = useMemo(() => {
+    if (!currentUserRole) return ["ventes", "stock", "stations"]; // Default for users without role
+    return Object.entries(TAB_PERMISSIONS)
+      .filter(([_, roles]) => roles.includes(currentUserRole))
+      .map(([tab]) => tab);
+  }, [currentUserRole]);
+
   const [activeTab, setActiveTab] = useState("ventes");
+
+  // Helper to check if tab is allowed
+  const canAccessTab = (tab: string) => allowedTabs.includes(tab);
   
 
   const getSuperSales = (station: Station | null) => {
@@ -136,48 +160,60 @@ const Index = () => {
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <TabsList className="bg-secondary h-auto p-1 flex-wrap">
-              <TabsTrigger
-                value="ventes"
-                className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground gap-2 px-4 py-2"
-              >
-                <TrendingUp className="w-4 h-4" />
-                Ventes
-              </TabsTrigger>
-              <TabsTrigger
-                value="stock"
-                className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground gap-2 px-4 py-2"
-              >
-                <Package className="w-4 h-4" />
-                Stock
-              </TabsTrigger>
-              <TabsTrigger
-                value="commandes"
-                className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground gap-2 px-4 py-2"
-              >
-                <FileText className="w-4 h-4" />
-                Commandes
-              </TabsTrigger>
-              <TabsTrigger
-                value="approvisionnements"
-                className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground gap-2 px-4 py-2"
-              >
-                <Truck className="w-4 h-4" />
-                Approvisionnements
-              </TabsTrigger>
-              <TabsTrigger
-                value="stations"
-                className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground gap-2 px-4 py-2"
-              >
-                <LayoutDashboard className="w-4 h-4" />
-                Stations
-              </TabsTrigger>
-              <TabsTrigger
-                value="utilisateurs"
-                className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground gap-2 px-4 py-2"
-              >
-                <Users className="w-4 h-4" />
-                Utilisateurs
-              </TabsTrigger>
+              {canAccessTab("ventes") && (
+                <TabsTrigger
+                  value="ventes"
+                  className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground gap-2 px-4 py-2"
+                >
+                  <TrendingUp className="w-4 h-4" />
+                  Ventes
+                </TabsTrigger>
+              )}
+              {canAccessTab("stock") && (
+                <TabsTrigger
+                  value="stock"
+                  className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground gap-2 px-4 py-2"
+                >
+                  <Package className="w-4 h-4" />
+                  Stock
+                </TabsTrigger>
+              )}
+              {canAccessTab("commandes") && (
+                <TabsTrigger
+                  value="commandes"
+                  className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground gap-2 px-4 py-2"
+                >
+                  <FileText className="w-4 h-4" />
+                  Commandes
+                </TabsTrigger>
+              )}
+              {canAccessTab("approvisionnements") && (
+                <TabsTrigger
+                  value="approvisionnements"
+                  className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground gap-2 px-4 py-2"
+                >
+                  <Truck className="w-4 h-4" />
+                  Approvisionnements
+                </TabsTrigger>
+              )}
+              {canAccessTab("stations") && (
+                <TabsTrigger
+                  value="stations"
+                  className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground gap-2 px-4 py-2"
+                >
+                  <LayoutDashboard className="w-4 h-4" />
+                  Stations
+                </TabsTrigger>
+              )}
+              {canAccessTab("utilisateurs") && (
+                <TabsTrigger
+                  value="utilisateurs"
+                  className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground gap-2 px-4 py-2"
+                >
+                  <Users className="w-4 h-4" />
+                  Utilisateurs
+                </TabsTrigger>
+              )}
             </TabsList>
 
             {activeTab === "ventes" && (
@@ -247,14 +283,18 @@ const Index = () => {
           </TabsContent>
 
           {/* Commandes Tab */}
-          <TabsContent value="commandes" className="animate-fade-in">
-            <OrdersModule />
-          </TabsContent>
+          {canAccessTab("commandes") && (
+            <TabsContent value="commandes" className="animate-fade-in">
+              <OrdersModule />
+            </TabsContent>
+          )}
 
           {/* Approvisionnements Tab */}
-          <TabsContent value="approvisionnements" className="animate-fade-in">
-            <SuppliesModule />
-          </TabsContent>
+          {canAccessTab("approvisionnements") && (
+            <TabsContent value="approvisionnements" className="animate-fade-in">
+              <SuppliesModule />
+            </TabsContent>
+          )}
 
           {/* Stations Tab */}
           <TabsContent value="stations" className="animate-fade-in">
@@ -283,9 +323,11 @@ const Index = () => {
           </TabsContent>
 
           {/* Utilisateurs Tab */}
-          <TabsContent value="utilisateurs" className="animate-fade-in">
-            <UsersModule />
-          </TabsContent>
+          {canAccessTab("utilisateurs") && (
+            <TabsContent value="utilisateurs" className="animate-fade-in">
+              <UsersModule />
+            </TabsContent>
+          )}
         </Tabs>
       </main>
 
