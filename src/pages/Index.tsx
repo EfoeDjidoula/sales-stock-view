@@ -15,6 +15,7 @@ import { SalesChart } from "@/components/dashboard/SalesChart";
 import { StockModule } from "@/components/dashboard/StockModule";
 import { StationCard } from "@/components/dashboard/StationCard";
 import { OrdersModule } from "@/components/orders/OrdersModule";
+import { AccessDenied } from "@/components/AccessDenied";
 import { SuppliesModule } from "@/components/orders/SuppliesModule";
 import { UsersModule } from "@/components/users/UsersModule";
 import {
@@ -283,18 +284,22 @@ const Index = () => {
           </TabsContent>
 
           {/* Commandes Tab */}
-          {canAccessTab("commandes") && (
-            <TabsContent value="commandes" className="animate-fade-in">
+          <TabsContent value="commandes" className="animate-fade-in">
+            {canAccessTab("commandes") ? (
               <OrdersModule />
-            </TabsContent>
-          )}
+            ) : (
+              <AccessDenied onGoBack={() => setActiveTab("ventes")} />
+            )}
+          </TabsContent>
 
           {/* Approvisionnements Tab */}
-          {canAccessTab("approvisionnements") && (
-            <TabsContent value="approvisionnements" className="animate-fade-in">
+          <TabsContent value="approvisionnements" className="animate-fade-in">
+            {canAccessTab("approvisionnements") ? (
               <SuppliesModule />
-            </TabsContent>
-          )}
+            ) : (
+              <AccessDenied onGoBack={() => setActiveTab("ventes")} />
+            )}
+          </TabsContent>
 
           {/* Stations Tab */}
           <TabsContent value="stations" className="animate-fade-in">
@@ -323,11 +328,13 @@ const Index = () => {
           </TabsContent>
 
           {/* Utilisateurs Tab */}
-          {canAccessTab("utilisateurs") && (
-            <TabsContent value="utilisateurs" className="animate-fade-in">
+          <TabsContent value="utilisateurs" className="animate-fade-in">
+            {canAccessTab("utilisateurs") ? (
               <UsersModule />
-            </TabsContent>
-          )}
+            ) : (
+              <AccessDenied onGoBack={() => setActiveTab("ventes")} />
+            )}
+          </TabsContent>
         </Tabs>
       </main>
 
