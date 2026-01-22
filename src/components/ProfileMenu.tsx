@@ -1,6 +1,7 @@
-import { User, LogOut, Settings } from "lucide-react";
+import { User, LogOut, Settings, Shield, ShieldCheck, ShieldAlert } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useProfile } from "@/hooks/useProfile";
+import { useUserRoles } from "@/hooks/useUserRoles";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
@@ -11,10 +12,30 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Badge } from "@/components/ui/badge";
+
+const ROLE_CONFIG = {
+  admin: {
+    label: "Administrateur",
+    icon: ShieldAlert,
+    variant: "destructive" as const,
+  },
+  manager: {
+    label: "Manager",
+    icon: ShieldCheck,
+    variant: "default" as const,
+  },
+  operator: {
+    label: "Opérateur",
+    icon: Shield,
+    variant: "secondary" as const,
+  },
+};
 
 export const ProfileMenu = () => {
   const { user, signOut } = useAuth();
   const { data: profile } = useProfile();
+  const { currentUserRole } = useUserRoles();
 
   const displayName = profile?.full_name || user?.email?.split("@")[0] || "Utilisateur";
   const initials = displayName
@@ -23,6 +44,9 @@ export const ProfileMenu = () => {
     .join("")
     .toUpperCase()
     .slice(0, 2);
+
+  const roleConfig = currentUserRole ? ROLE_CONFIG[currentUserRole] : null;
+  const RoleIcon = roleConfig?.icon || Shield;
 
   return (
     <DropdownMenu>
@@ -39,15 +63,32 @@ export const ProfileMenu = () => {
           <span className="hidden sm:inline-block text-sm font-medium max-w-[120px] truncate">
             {displayName}
           </span>
+          {roleConfig && (
+            <Badge variant={roleConfig.variant} className="hidden md:flex gap-1 text-xs">
+              <RoleIcon className="w-3 h-3" />
+              {roleConfig.label}
+            </Badge>
+          )}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-56">
         <DropdownMenuLabel className="font-normal">
-          <div className="flex flex-col space-y-1">
+          <div className="flex flex-col space-y-2">
             <p className="text-sm font-medium leading-none">{displayName}</p>
             <p className="text-xs leading-none text-muted-foreground">
               {user?.email}
             </p>
+            {roleConfig && (
+              <Badge variant={roleConfig.variant} className="w-fit gap-1 text-xs">
+                <RoleIcon className="w-3 h-3" />
+                {roleConfig.label}
+              </Badge>
+            )}
+            {!roleConfig && (
+              <Badge variant="outline" className="w-fit text-xs text-muted-foreground">
+                Aucun rôle attribué
+              </Badge>
+            )}
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
