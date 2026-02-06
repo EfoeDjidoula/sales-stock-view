@@ -43,7 +43,7 @@ const TAB_PERMISSIONS: Record<string, AppRole[]> = {
   commandes: ["admin", "manager"],
   approvisionnements: ["admin", "manager"],
   stations: ["admin", "manager", "operator"],
-  utilisateurs: ["admin"],
+  droits: ["admin"],
 };
 
 const Index = () => {
@@ -217,13 +217,13 @@ const Index = () => {
                   Stations
                 </TabsTrigger>
               )}
-              {canAccessTab("utilisateurs") && (
+              {canAccessTab("droits") && (
                 <TabsTrigger
-                  value="utilisateurs"
+                  value="droits"
                   className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground gap-2 px-4 py-2"
                 >
                   <Users className="w-4 h-4" />
-                  Utilisateurs
+                  Gestion des droits
                 </TabsTrigger>
               )}
             </TabsList>
@@ -338,9 +338,9 @@ const Index = () => {
             </div>
           </TabsContent>
 
-          {/* Utilisateurs Tab */}
-          <TabsContent value="utilisateurs" className="animate-fade-in">
-            {canAccessTab("utilisateurs") ? (
+          {/* Gestion des droits Tab */}
+          <TabsContent value="droits" className="animate-fade-in">
+            {canAccessTab("droits") ? (
               <UsersModule />
             ) : (
               <AccessDenied onGoBack={() => setActiveTab("ventes")} />
