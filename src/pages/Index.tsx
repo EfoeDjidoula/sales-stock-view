@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import {
   stations,
   Station,
@@ -32,6 +32,7 @@ import {
 import { Link } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
+import { toast } from "@/hooks/use-toast";
 
 type Period = "day" | "week" | "month";
 
@@ -62,7 +63,17 @@ const Index = () => {
 
   // Helper to check if tab is allowed
   const canAccessTab = (tab: string) => allowedTabs.includes(tab);
-  
+
+  // Show toast when user navigates to unauthorized tab
+  useEffect(() => {
+    if (!canAccessTab(activeTab)) {
+      toast({
+        variant: "destructive",
+        title: "Accès non autorisé",
+        description: "Vous n'avez pas les permissions nécessaires pour accéder à cette section.",
+      });
+    }
+  }, [activeTab, allowedTabs]);
 
   const getSuperSales = (station: Station | null) => {
     const stationsToCalc = station ? [station] : stations;
