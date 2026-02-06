@@ -11,6 +11,7 @@ export interface UserWithRole {
   full_name: string | null;
   role: AppRole | null;
   created_at: string;
+  is_active: boolean;
 }
 
 export const useUserRoles = () => {
@@ -48,10 +49,10 @@ export const useUserRoles = () => {
 
     setLoading(true);
     try {
-      // Fetch profiles with their roles
+      // Fetch profiles with their roles and is_active status
       const { data: profiles, error: profilesError } = await supabase
         .from("profiles")
-        .select("user_id, full_name, created_at");
+        .select("user_id, full_name, created_at, is_active");
 
       if (profilesError) throw profilesError;
 
@@ -69,10 +70,11 @@ export const useUserRoles = () => {
         const userRole = roles?.find((r) => r.user_id === profile.user_id);
         return {
           id: profile.user_id,
-          email: "", // Email not available from profiles
+          email: "",
           full_name: profile.full_name,
           role: userRole?.role as AppRole | null,
           created_at: profile.created_at,
+          is_active: profile.is_active ?? true,
         };
       });
 
@@ -87,7 +89,6 @@ export const useUserRoles = () => {
 
   const assignRole = async (userId: string, role: AppRole) => {
     try {
-      // Check if user already has a role
       const { data: existing } = await supabase
         .from("user_roles")
         .select("id")
@@ -95,7 +96,6 @@ export const useUserRoles = () => {
         .single();
 
       if (existing) {
-        // Update existing role
         const { error } = await supabase
           .from("user_roles")
           .update({ role })
@@ -103,7 +103,6 @@ export const useUserRoles = () => {
 
         if (error) throw error;
       } else {
-        // Insert new role
         const { error } = await supabase
           .from("user_roles")
           .insert({ user_id: userId, role });
@@ -137,6 +136,38 @@ export const useUserRoles = () => {
     }
   };
 
+  const toggleUserActive = async (userId: string, isActive: boolean) => {
+    try {
+      const { error } = await supabase
+        .from("profiles")
+        .update({ is_active: isActive })
+        .eq("user_id", userId);
+
+      if (error) throw error;
+
+      toast.success(isActive ? "Compte activé" : "Compte désactivé");
+      await fetchUsersWithRoles();
+    } catch (error: any) {
+      console.error(error);
+      toast.error("Erreur lors de la modification du statut");
+    }
+  };
+
+  const sendPasswordReset = async (email: string) => {
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth?mode=reset`,
+      });
+
+      if (error) throw error;
+
+      toast.success("Email de réinitialisation envoyé");
+    } catch (error: any) {
+      console.error(error);
+      toast.error("Erreur lors de l'envoi de l'email");
+    }
+  };
+
   useEffect(() => {
     fetchCurrentUserRole();
     fetchUsersWithRoles();
@@ -149,6 +180,8 @@ export const useUserRoles = () => {
     loading,
     assignRole,
     removeRole,
+    toggleUserActive,
+    sendPasswordReset,
     refetch: fetchUsersWithRoles,
   };
 };
