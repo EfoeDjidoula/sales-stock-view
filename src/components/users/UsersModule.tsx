@@ -3,6 +3,8 @@ import { useUserRoles, AppRole } from "@/hooks/useUserRoles";
 import { useAuth } from "@/hooks/useAuth";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -36,9 +38,11 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Shield, ShieldCheck, User, UserCog, Crown, AlertTriangle } from "lucide-react";
+import { Loader2, Shield, ShieldCheck, User, UserCog, Crown, AlertTriangle, UserPlus, Key } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
 
 const roleConfig: Record<AppRole, { label: string; icon: React.ReactNode; className: string; description: string }> = {
   admin: {
@@ -63,11 +67,17 @@ const roleConfig: Record<AppRole, { label: string; icon: React.ReactNode; classN
 
 export const UsersModule = () => {
   const { user } = useAuth();
-  const { users, currentUserRole, isAdmin, loading, assignRole, removeRole } = useUserRoles();
+  const { users, currentUserRole, isAdmin, loading, assignRole, removeRole, refetch } = useUserRoles();
   const [selectedUser, setSelectedUser] = useState<string | null>(null);
   const [selectedRole, setSelectedRole] = useState<AppRole>("operator");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [userToRemove, setUserToRemove] = useState<string | null>(null);
+  const [newUserEmail, setNewUserEmail] = useState("");
+  const [newUserName, setNewUserName] = useState("");
+  const [newUserPassword, setNewUserPassword] = useState("");
+  const [newUserRole, setNewUserRole] = useState<AppRole>("operator");
+  const [isCreating, setIsCreating] = useState(false);
 
   const handleAssignRole = async () => {
     if (!selectedUser) return;
@@ -80,6 +90,77 @@ export const UsersModule = () => {
     if (!userToRemove) return;
     await removeRole(userToRemove);
     setUserToRemove(null);
+  };
+
+  const handleCreateUser = async () => {
+    if (!newUserEmail || !newUserName || !newUserPassword) {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Veuillez remplir tous les champs obligatoires.",
+      });
+      return;
+    }
+
+    if (newUserPassword.length < 6) {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Le mot de passe doit contenir au moins 6 caractères.",
+      });
+      return;
+    }
+
+    setIsCreating(true);
+    try {
+      // Create user with Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: newUserEmail,
+        password: newUserPassword,
+        options: {
+          data: {
+            full_name: newUserName,
+          },
+        },
+      });
+
+      if (authError) throw authError;
+
+      if (authData.user) {
+        // Assign role to the new user
+        const { error: roleError } = await supabase
+          .from("user_roles")
+          .insert({ user_id: authData.user.id, role: newUserRole });
+
+        if (roleError) {
+          console.error("Error assigning role:", roleError);
+        }
+
+        toast({
+          title: "Utilisateur créé",
+          description: `${newUserName} a été créé avec le rôle ${roleConfig[newUserRole].label}.`,
+        });
+
+        // Reset form
+        setNewUserEmail("");
+        setNewUserName("");
+        setNewUserPassword("");
+        setNewUserRole("operator");
+        setIsCreateDialogOpen(false);
+        
+        // Refresh users list
+        refetch();
+      }
+    } catch (error: any) {
+      console.error("Error creating user:", error);
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: error.message || "Impossible de créer l'utilisateur.",
+      });
+    } finally {
+      setIsCreating(false);
+    }
   };
 
   if (loading) {
@@ -167,13 +248,17 @@ export const UsersModule = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between flex-wrap gap-4">
         <div>
-          <h2 className="text-xl font-display font-semibold">Gestion des Utilisateurs</h2>
+          <h2 className="text-xl font-display font-semibold">Gestion des Droits</h2>
           <p className="text-sm text-muted-foreground">
-            Attribuez et gérez les rôles des utilisateurs
+            Créez des profils et gérez les rôles des utilisateurs
           </p>
         </div>
+        <Button onClick={() => setIsCreateDialogOpen(true)} className="gap-2">
+          <UserPlus className="w-4 h-4" />
+          Créer un utilisateur
+        </Button>
       </div>
 
       {/* Role Legend */}
@@ -339,6 +424,91 @@ export const UsersModule = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Create User Dialog */}
+      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <UserPlus className="w-5 h-5" />
+              Créer un utilisateur
+            </DialogTitle>
+            <DialogDescription>
+              Créez un nouveau compte utilisateur et attribuez-lui un rôle.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 pt-4">
+            <div className="space-y-2">
+              <Label htmlFor="fullName">Nom complet *</Label>
+              <Input
+                id="fullName"
+                placeholder="Ex: Jean Dupont"
+                value={newUserName}
+                onChange={(e) => setNewUserName(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="email">Email *</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="Ex: jean.dupont@email.com"
+                value={newUserEmail}
+                onChange={(e) => setNewUserEmail(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="password">Mot de passe *</Label>
+              <Input
+                id="password"
+                type="password"
+                placeholder="Minimum 6 caractères"
+                value={newUserPassword}
+                onChange={(e) => setNewUserPassword(e.target.value)}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="role">Rôle à attribuer</Label>
+              <Select value={newUserRole} onValueChange={(v) => setNewUserRole(v as AppRole)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {(Object.keys(roleConfig) as AppRole[]).map((role) => (
+                    <SelectItem key={role} value={role}>
+                      <div className="flex items-center gap-2">
+                        {roleConfig[role].icon}
+                        <span>{roleConfig[role].label}</span>
+                      </div>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                {roleConfig[newUserRole].description}
+              </p>
+            </div>
+            <div className="flex justify-end gap-2 pt-2">
+              <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)} disabled={isCreating}>
+                Annuler
+              </Button>
+              <Button onClick={handleCreateUser} disabled={isCreating} className="gap-2">
+                {isCreating ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Création...
+                  </>
+                ) : (
+                  <>
+                    <UserPlus className="w-4 h-4" />
+                    Créer
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
