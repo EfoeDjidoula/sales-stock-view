@@ -38,7 +38,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Shield, ShieldCheck, User, UserCog, Crown, AlertTriangle, UserPlus, Key } from "lucide-react";
+import { Loader2, Shield, ShieldCheck, User, UserCog, Crown, AlertTriangle, UserPlus, KeyRound, Power, PowerOff } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
@@ -67,7 +67,7 @@ const roleConfig: Record<AppRole, { label: string; icon: React.ReactNode; classN
 
 export const UsersModule = () => {
   const { user } = useAuth();
-  const { users, currentUserRole, isAdmin, loading, assignRole, removeRole, refetch } = useUserRoles();
+  const { users, currentUserRole, isAdmin, loading, assignRole, removeRole, toggleUserActive, sendPasswordReset, refetch } = useUserRoles();
   const [selectedUser, setSelectedUser] = useState<string | null>(null);
   const [selectedRole, setSelectedRole] = useState<AppRole>("operator");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -78,6 +78,9 @@ export const UsersModule = () => {
   const [newUserPassword, setNewUserPassword] = useState("");
   const [newUserRole, setNewUserRole] = useState<AppRole>("operator");
   const [isCreating, setIsCreating] = useState(false);
+  const [userToToggle, setUserToToggle] = useState<{ id: string; name: string; isActive: boolean } | null>(null);
+  const [userToResetPassword, setUserToResetPassword] = useState<{ id: string; name: string; email: string } | null>(null);
+  const [resetEmail, setResetEmail] = useState("");
 
   const handleAssignRole = async () => {
     if (!selectedUser) return;
@@ -296,6 +299,7 @@ export const UsersModule = () => {
                 <TableHeader>
                   <TableRow>
                     <TableHead>Utilisateur</TableHead>
+                    <TableHead>Statut</TableHead>
                     <TableHead>Rôle actuel</TableHead>
                     <TableHead>Date d'inscription</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
@@ -303,11 +307,11 @@ export const UsersModule = () => {
                 </TableHeader>
                 <TableBody>
                   {users.map((u) => (
-                    <TableRow key={u.id}>
+                    <TableRow key={u.id} className={!u.is_active ? "opacity-60" : ""}>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
-                            <User className="w-4 h-4 text-primary" />
+                          <div className={`w-8 h-8 rounded-full flex items-center justify-center ${u.is_active ? "bg-primary/10" : "bg-muted"}`}>
+                            <User className={`w-4 h-4 ${u.is_active ? "text-primary" : "text-muted-foreground"}`} />
                           </div>
                           <div>
                             <p className="font-medium">{u.full_name || "Sans nom"}</p>
@@ -316,6 +320,14 @@ export const UsersModule = () => {
                             )}
                           </div>
                         </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge 
+                          variant={u.is_active ? "default" : "secondary"}
+                          className={u.is_active ? "bg-green-100 text-green-800 border-green-300" : "bg-gray-100 text-gray-600"}
+                        >
+                          {u.is_active ? "Actif" : "Désactivé"}
+                        </Badge>
                       </TableCell>
                       <TableCell>
                         {u.role ? (
@@ -331,7 +343,7 @@ export const UsersModule = () => {
                         {format(new Date(u.created_at), "dd MMM yyyy", { locale: fr })}
                       </TableCell>
                       <TableCell className="text-right">
-                        <div className="flex items-center justify-end gap-2">
+                        <div className="flex items-center justify-end gap-1 flex-wrap">
                           <Button
                             variant="outline"
                             size="sm"
@@ -343,15 +355,39 @@ export const UsersModule = () => {
                           >
                             {u.role ? "Modifier" : "Attribuer"}
                           </Button>
-                          {u.role && u.id !== user?.id && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="text-destructive hover:text-destructive"
-                              onClick={() => setUserToRemove(u.id)}
-                            >
-                              Retirer
-                            </Button>
+                          {u.id !== user?.id && (
+                            <>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                title="Réinitialiser le mot de passe"
+                                onClick={() => {
+                                  setUserToResetPassword({ id: u.id, name: u.full_name || "Utilisateur", email: "" });
+                                  setResetEmail("");
+                                }}
+                              >
+                                <KeyRound className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                title={u.is_active ? "Désactiver le compte" : "Activer le compte"}
+                                className={u.is_active ? "text-orange-600 hover:text-orange-700" : "text-green-600 hover:text-green-700"}
+                                onClick={() => setUserToToggle({ id: u.id, name: u.full_name || "Utilisateur", isActive: u.is_active })}
+                              >
+                                {u.is_active ? <PowerOff className="w-4 h-4" /> : <Power className="w-4 h-4" />}
+                              </Button>
+                              {u.role && (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="text-destructive hover:text-destructive"
+                                  onClick={() => setUserToRemove(u.id)}
+                                >
+                                  Retirer
+                                </Button>
+                              )}
+                            </>
                           )}
                         </div>
                       </TableCell>
@@ -504,6 +540,99 @@ export const UsersModule = () => {
                     Créer
                   </>
                 )}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Toggle Active Status Confirmation */}
+      <AlertDialog open={!!userToToggle} onOpenChange={() => setUserToToggle(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              {userToToggle?.isActive ? (
+                <PowerOff className="w-5 h-5 text-orange-600" />
+              ) : (
+                <Power className="w-5 h-5 text-green-600" />
+              )}
+              {userToToggle?.isActive ? "Désactiver le compte ?" : "Activer le compte ?"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {userToToggle?.isActive 
+                ? `${userToToggle.name} ne pourra plus se connecter à l'application.`
+                : `${userToToggle?.name} pourra à nouveau se connecter à l'application.`
+              }
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction 
+              onClick={() => {
+                if (userToToggle) {
+                  toggleUserActive(userToToggle.id, !userToToggle.isActive);
+                  setUserToToggle(null);
+                }
+              }}
+              className={userToToggle?.isActive 
+                ? "bg-orange-600 text-white hover:bg-orange-700" 
+                : "bg-green-600 text-white hover:bg-green-700"
+              }
+            >
+              {userToToggle?.isActive ? "Désactiver" : "Activer"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Password Reset Dialog */}
+      <Dialog open={!!userToResetPassword} onOpenChange={() => setUserToResetPassword(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <KeyRound className="w-5 h-5" />
+              Réinitialiser le mot de passe
+            </DialogTitle>
+            <DialogDescription>
+              Envoyez un email de réinitialisation à {userToResetPassword?.name}.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 pt-4">
+            <div className="space-y-2">
+              <Label htmlFor="resetEmail">Email de l'utilisateur</Label>
+              <Input
+                id="resetEmail"
+                type="email"
+                placeholder="Entrez l'email de l'utilisateur"
+                value={resetEmail}
+                onChange={(e) => setResetEmail(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">
+                Un lien de réinitialisation sera envoyé à cette adresse.
+              </p>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setUserToResetPassword(null)}>
+                Annuler
+              </Button>
+              <Button 
+                onClick={() => {
+                  if (resetEmail) {
+                    sendPasswordReset(resetEmail);
+                    setUserToResetPassword(null);
+                    setResetEmail("");
+                  } else {
+                    toast({
+                      variant: "destructive",
+                      title: "Email requis",
+                      description: "Veuillez entrer l'adresse email de l'utilisateur.",
+                    });
+                  }
+                }}
+                className="gap-2"
+              >
+                <KeyRound className="w-4 h-4" />
+                Envoyer le lien
               </Button>
             </div>
           </div>
