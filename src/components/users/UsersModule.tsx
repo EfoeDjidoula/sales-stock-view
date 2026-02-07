@@ -116,44 +116,52 @@ export const UsersModule = () => {
 
     setIsCreating(true);
     try {
-      // Create user with Supabase Auth
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: newUserEmail,
-        password: newUserPassword,
-        options: {
-          data: {
-            full_name: newUserName,
+      // Get the current session token
+      const { data: sessionData } = await supabase.auth.getSession();
+      const accessToken = sessionData?.session?.access_token;
+
+      if (!accessToken) {
+        throw new Error("Session non valide");
+      }
+
+      // Call edge function to create user without affecting current session
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-user`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": `Bearer ${accessToken}`,
           },
-        },
+          body: JSON.stringify({
+            email: newUserEmail,
+            password: newUserPassword,
+            full_name: newUserName,
+            role: newUserRole,
+          }),
+        }
+      );
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || "Erreur lors de la création");
+      }
+
+      toast({
+        title: "Utilisateur créé",
+        description: `${newUserName} a été créé avec le rôle ${roleConfig[newUserRole].label}.`,
       });
 
-      if (authError) throw authError;
-
-      if (authData.user) {
-        // Assign role to the new user
-        const { error: roleError } = await supabase
-          .from("user_roles")
-          .insert({ user_id: authData.user.id, role: newUserRole });
-
-        if (roleError) {
-          console.error("Error assigning role:", roleError);
-        }
-
-        toast({
-          title: "Utilisateur créé",
-          description: `${newUserName} a été créé avec le rôle ${roleConfig[newUserRole].label}.`,
-        });
-
-        // Reset form
-        setNewUserEmail("");
-        setNewUserName("");
-        setNewUserPassword("");
-        setNewUserRole("operator");
-        setIsCreateDialogOpen(false);
-        
-        // Refresh users list
-        refetch();
-      }
+      // Reset form
+      setNewUserEmail("");
+      setNewUserName("");
+      setNewUserPassword("");
+      setNewUserRole("operator");
+      setIsCreateDialogOpen(false);
+      
+      // Refresh users list
+      refetch();
     } catch (error: any) {
       console.error("Error creating user:", error);
       toast({
