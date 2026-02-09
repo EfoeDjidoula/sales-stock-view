@@ -18,6 +18,7 @@ import { OrdersModule } from "@/components/orders/OrdersModule";
 import { AccessDenied } from "@/components/AccessDenied";
 import { SuppliesModule } from "@/components/orders/SuppliesModule";
 import { UsersModule } from "@/components/users/UsersModule";
+import { ExcelImportDialog } from "@/components/import/ExcelImportDialog";
 import {
   LayoutDashboard,
   TrendingUp,
@@ -28,6 +29,7 @@ import {
   FileText,
   Truck,
   Users,
+  Upload,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -140,6 +142,14 @@ const Index = () => {
               </div>
             </div>
             <div className="flex flex-wrap items-center gap-3">
+              <ExcelImportDialog
+                trigger={
+                  <Button variant="outline" className="gap-2">
+                    <Upload className="w-4 h-4" />
+                    Importer Excel
+                  </Button>
+                }
+              />
               <Link to="/saisie">
                 <Button className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2">
                   <PenLine className="w-4 h-4" />
