@@ -1,19 +1,31 @@
-import { Station, formatCurrency, getStationTotalSales } from "@/data/stationsData";
 import { MapPin, Fuel, TrendingUp } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { formatCurrency } from "@/data/stationsData";
 
 interface StationCardProps {
-  station: Station;
+  stationId: string;
+  name: string;
+  location: string;
+  totalSales: number;
+  superJauge: number;
+  gasoilJauge: number;
   period: "day" | "week" | "month";
   onClick: () => void;
   isSelected?: boolean;
 }
 
-export const StationCard = ({ station, period, onClick, isSelected }: StationCardProps) => {
-  const totalSales = getStationTotalSales(station, period);
-  const totalStock = station.currentStock.reduce((sum, s) => sum + s.closingStock, 0);
-  const totalCapacity = station.currentStock.reduce((sum, s) => sum + s.capacity, 0);
-  const stockPercentage = Math.round((totalStock / totalCapacity) * 100);
+export const StationCard = ({
+  stationId,
+  name,
+  location,
+  totalSales,
+  superJauge,
+  gasoilJauge,
+  period,
+  onClick,
+  isSelected,
+}: StationCardProps) => {
+  const totalStock = superJauge + gasoilJauge;
 
   return (
     <button
@@ -25,10 +37,10 @@ export const StationCard = ({ station, period, onClick, isSelected }: StationCar
     >
       <div className="flex items-start justify-between mb-4">
         <div>
-          <h3 className="font-display font-bold text-lg">{station.name}</h3>
+          <h3 className="font-display font-bold text-lg">{name}</h3>
           <div className="flex items-center gap-1 text-sm text-muted-foreground">
             <MapPin className="w-3 h-3" />
-            {station.location}
+            {location}
           </div>
         </div>
         <div className="p-2 rounded-lg bg-primary/10">
@@ -46,21 +58,9 @@ export const StationCard = ({ station, period, onClick, isSelected }: StationCar
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
-          <div className="flex-1">
-            <div className="h-1.5 bg-secondary rounded-full overflow-hidden">
-              <div
-                className={cn(
-                  "h-full rounded-full transition-all",
-                  stockPercentage > 50 ? "bg-success" : stockPercentage > 25 ? "bg-warning" : "bg-destructive"
-                )}
-                style={{ width: `${stockPercentage}%` }}
-              />
-            </div>
-          </div>
-          <span className="text-xs font-medium text-muted-foreground">
-            Stock: {stockPercentage}%
-          </span>
+        <div className="flex items-center gap-4 text-xs text-muted-foreground">
+          <span>Super: {superJauge.toFixed(0)}L jauge</span>
+          <span>Gasoil: {gasoilJauge.toFixed(0)}L jauge</span>
         </div>
       </div>
     </button>
