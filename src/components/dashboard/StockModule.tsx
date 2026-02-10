@@ -1,58 +1,95 @@
-import { Station, stations, formatNumber } from "@/data/stationsData";
+import { formatNumber } from "@/data/stationsData";
 import { StockGauge } from "./StockGauge";
-import { Fuel, Droplet, AlertTriangle } from "lucide-react";
+import { Fuel, Droplet, AlertTriangle, Loader2 } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
 
 interface StockModuleProps {
-  station: Station | null;
+  stationId?: string | null;
 }
 
-export const StockModule = ({ station }: StockModuleProps) => {
-  const displayStations = station ? [station] : stations;
+export const StockModule = ({ stationId }: StockModuleProps) => {
+  const { user } = useAuth();
 
-  const getTotalStock = (product: string) => {
-    return displayStations.reduce((total, s) => {
-      return (
-        total +
-        s.currentStock
-          .filter((stock) => stock.tank.toLowerCase().includes(product.toLowerCase()))
-          .reduce((sum, stock) => sum + stock.closingStock, 0)
-      );
-    }, 0);
-  };
+  // Fetch latest entry per station for jauge data
+  const { data: latestEntries, isLoading } = useQuery({
+    queryKey: ["stock-jauges", stationId],
+    queryFn: async () => {
+      // Get stations first
+      const { data: stations } = await supabase
+        .from("stations")
+        .select("id, name, location")
+        .order("name");
 
-  const getTotalCapacity = (product: string) => {
-    return displayStations.reduce((total, s) => {
-      return (
-        total +
-        s.currentStock
-          .filter((stock) => stock.tank.toLowerCase().includes(product.toLowerCase()))
-          .reduce((sum, stock) => sum + stock.capacity, 0)
-      );
-    }, 0);
-  };
+      if (!stations) return [];
 
-  const getLowStockAlerts = () => {
-    const alerts: { station: string; tank: string; percentage: number }[] = [];
-    displayStations.forEach((s) => {
-      s.currentStock.forEach((stock) => {
-        const percentage = (stock.closingStock / stock.capacity) * 100;
-        if (percentage <= 25) {
-          alerts.push({
-            station: s.name,
-            tank: stock.tank,
-            percentage: Math.round(percentage),
+      const targetStations = stationId
+        ? stations.filter((s) => s.id === stationId)
+        : stations;
+
+      const results = [];
+
+      for (const station of targetStations) {
+        const { data: entry } = await supabase
+          .from("index_entries")
+          .select("*")
+          .eq("station_id", station.id)
+          .order("entry_date", { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (entry) {
+          results.push({
+            stationId: station.id,
+            stationName: station.name,
+            stocks: [
+              { tank: "SUPER 1", jauge: entry.super1_jauge, product: "super" as const },
+              { tank: "SUPER 2", jauge: entry.super2_jauge, product: "super" as const },
+              { tank: "GASOIL 1", jauge: entry.gasoil1_jauge, product: "gasoil" as const },
+              { tank: "GASOIL 2", jauge: entry.gasoil2_jauge, product: "gasoil" as const },
+            ].filter((s) => s.jauge > 0),
           });
         }
-      });
-    });
-    return alerts;
-  };
+      }
 
-  const superStock = getTotalStock("super");
-  const superCapacity = getTotalCapacity("super");
-  const gasoilStock = getTotalStock("gasoil");
-  const gasoilCapacity = getTotalCapacity("gasoil");
-  const lowStockAlerts = getLowStockAlerts();
+      return results;
+    },
+    enabled: !!user,
+  });
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  const entries = latestEntries || [];
+
+  const totalSuper = entries.reduce(
+    (sum, e) => sum + e.stocks.filter((s) => s.product === "super").reduce((s, st) => s + st.jauge, 0),
+    0
+  );
+  const totalGasoil = entries.reduce(
+    (sum, e) => sum + e.stocks.filter((s) => s.product === "gasoil").reduce((s, st) => s + st.jauge, 0),
+    0
+  );
+
+  const lowStockAlerts = entries.flatMap((e) =>
+    e.stocks
+      .filter((s) => s.jauge > 0 && s.jauge < 500)
+      .map((s) => ({ station: e.stationName, tank: s.tank, jauge: s.jauge }))
+  );
+
+  if (entries.length === 0) {
+    return (
+      <div className="flex items-center justify-center py-12 text-muted-foreground">
+        Aucune donnée de stock disponible. Importez un fichier Excel pour voir les jauges.
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -64,25 +101,12 @@ export const StockModule = ({ station }: StockModuleProps) => {
               <Fuel className="w-5 h-5 text-super" />
             </div>
             <div>
-              <h4 className="font-display font-semibold">Stock Super</h4>
-              <p className="text-sm text-muted-foreground">Tous les réservoirs</p>
+              <h4 className="font-display font-semibold">Stock Super (Jauges)</h4>
+              <p className="text-sm text-muted-foreground">Dernière saisie</p>
             </div>
           </div>
-          <div className="space-y-2">
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Disponible</span>
-              <span className="font-bold">{formatNumber(superStock)} L</span>
-            </div>
-            <div className="h-2 bg-secondary rounded-full overflow-hidden">
-              <div
-                className="h-full bg-super rounded-full transition-all duration-500"
-                style={{ width: `${(superStock / superCapacity) * 100}%` }}
-              />
-            </div>
-            <div className="flex justify-between text-xs text-muted-foreground">
-              <span>0</span>
-              <span>{formatNumber(superCapacity)} L</span>
-            </div>
+          <div className="text-2xl font-display font-bold">
+            {formatNumber(totalSuper)} L
           </div>
         </div>
 
@@ -92,25 +116,12 @@ export const StockModule = ({ station }: StockModuleProps) => {
               <Droplet className="w-5 h-5 text-gasoil" />
             </div>
             <div>
-              <h4 className="font-display font-semibold">Stock Gasoil</h4>
-              <p className="text-sm text-muted-foreground">Tous les réservoirs</p>
+              <h4 className="font-display font-semibold">Stock Gasoil (Jauges)</h4>
+              <p className="text-sm text-muted-foreground">Dernière saisie</p>
             </div>
           </div>
-          <div className="space-y-2">
-            <div className="flex justify-between text-sm">
-              <span className="text-muted-foreground">Disponible</span>
-              <span className="font-bold">{formatNumber(gasoilStock)} L</span>
-            </div>
-            <div className="h-2 bg-secondary rounded-full overflow-hidden">
-              <div
-                className="h-full bg-gasoil rounded-full transition-all duration-500"
-                style={{ width: `${(gasoilStock / gasoilCapacity) * 100}%` }}
-              />
-            </div>
-            <div className="flex justify-between text-xs text-muted-foreground">
-              <span>0</span>
-              <span>{formatNumber(gasoilCapacity)} L</span>
-            </div>
+          <div className="text-2xl font-display font-bold">
+            {formatNumber(totalGasoil)} L
           </div>
         </div>
       </div>
@@ -125,7 +136,7 @@ export const StockModule = ({ station }: StockModuleProps) => {
             </h4>
           </div>
           <div className="space-y-2">
-            {lowStockAlerts.slice(0, 3).map((alert, index) => (
+            {lowStockAlerts.map((alert, index) => (
               <div
                 key={index}
                 className="flex items-center justify-between text-sm bg-card/50 rounded-lg px-3 py-2"
@@ -134,7 +145,7 @@ export const StockModule = ({ station }: StockModuleProps) => {
                   <span className="font-medium">{alert.station}</span>
                   <span className="text-muted-foreground"> - {alert.tank}</span>
                 </span>
-                <span className="font-bold text-destructive">{alert.percentage}%</span>
+                <span className="font-bold text-destructive">{formatNumber(alert.jauge)} L</span>
               </div>
             ))}
           </div>
@@ -144,23 +155,23 @@ export const StockModule = ({ station }: StockModuleProps) => {
       {/* Detailed stock by station */}
       <div className="space-y-4">
         <h3 className="text-lg font-display font-semibold">
-          Détail par réservoir
+          Détail des jauges par station
         </h3>
-        {displayStations.map((s) => (
-          <div key={s.id} className="space-y-3">
-            {!station && (
+        {entries.map((entry) => (
+          <div key={entry.stationId} className="space-y-3">
+            {!stationId && (
               <h4 className="text-sm font-medium text-primary uppercase tracking-wider">
-                {s.name}
+                {entry.stationName}
               </h4>
             )}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {s.currentStock.map((stock, index) => (
+              {entry.stocks.map((stock, index) => (
                 <StockGauge
-                  key={`${s.id}-${index}`}
+                  key={`${entry.stationId}-${index}`}
                   tank={stock.tank}
-                  capacity={stock.capacity}
-                  currentStock={stock.closingStock}
-                  product={stock.tank.toLowerCase().includes("super") ? "super" : "gasoil"}
+                  capacity={15000}
+                  currentStock={stock.jauge}
+                  product={stock.product}
                 />
               ))}
             </div>

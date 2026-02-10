@@ -1,15 +1,9 @@
 import { useState, useMemo, useEffect } from "react";
-import {
-  stations,
-  Station,
-  formatCurrency,
-  getStationTotalSales,
-  getAllStationsTotalSales,
-} from "@/data/stationsData";
+import { formatCurrency } from "@/data/stationsData";
 import { useUserRoles, AppRole } from "@/hooks/useUserRoles";
+import { useDashboardData, Period } from "@/hooks/useDashboardData";
 import { ProfileMenu } from "@/components/ProfileMenu";
 import { SalesCard } from "@/components/dashboard/SalesCard";
-import { StationSelector } from "@/components/dashboard/StationSelector";
 import { PeriodTabs } from "@/components/dashboard/PeriodTabs";
 import { SalesChart } from "@/components/dashboard/SalesChart";
 import { StockModule } from "@/components/dashboard/StockModule";
@@ -19,7 +13,9 @@ import { AccessDenied } from "@/components/AccessDenied";
 import { SuppliesModule } from "@/components/orders/SuppliesModule";
 import { UsersModule } from "@/components/users/UsersModule";
 import { ExcelImportDialog } from "@/components/import/ExcelImportDialog";
-import { useExcelExport } from "@/hooks/useExcelExport";
+import { ExcelExportDialog } from "@/components/import/ExcelExportDialog";
+import { DbStationSelector } from "@/components/dashboard/DbStationSelector";
+import type { DbStation } from "@/components/dashboard/DbStationSelector";
 import {
   LayoutDashboard,
   TrendingUp,
@@ -38,8 +34,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
 
-type Period = "day" | "week" | "month";
-
 // Define tab access by role
 const TAB_PERMISSIONS: Record<string, AppRole[]> = {
   ventes: ["admin", "manager", "operator"],
@@ -51,14 +45,16 @@ const TAB_PERMISSIONS: Record<string, AppRole[]> = {
 };
 
 const Index = () => {
-  const [selectedStation, setSelectedStation] = useState<Station | null>(null);
+  const [selectedStation, setSelectedStation] = useState<DbStation | null>(null);
   const [period, setPeriod] = useState<Period>("day");
   const { currentUserRole, loading: roleLoading } = useUserRoles();
-  const { exportToExcel, isExporting } = useExcelExport();
-  
+
+  const { totalSales, totalSuper, totalGasoil, salesByStation, chartData, stations, isLoading } =
+    useDashboardData(period, selectedStation?.id);
+
   // Get allowed tabs for current user
   const allowedTabs = useMemo(() => {
-    if (!currentUserRole) return ["ventes", "stock", "stations"]; // Default for users without role
+    if (!currentUserRole) return ["ventes", "stock", "stations"];
     return Object.entries(TAB_PERMISSIONS)
       .filter(([_, roles]) => roles.includes(currentUserRole))
       .map(([tab]) => tab);
@@ -66,10 +62,8 @@ const Index = () => {
 
   const [activeTab, setActiveTab] = useState("ventes");
 
-  // Helper to check if tab is allowed
   const canAccessTab = (tab: string) => allowedTabs.includes(tab);
 
-  // Show toast when user navigates to unauthorized tab
   useEffect(() => {
     if (!canAccessTab(activeTab)) {
       toast({
@@ -79,51 +73,6 @@ const Index = () => {
       });
     }
   }, [activeTab, allowedTabs]);
-
-  const getSuperSales = (station: Station | null) => {
-    const stationsToCalc = station ? [station] : stations;
-    return stationsToCalc.reduce((total, s) => {
-      const records =
-        period === "day"
-          ? s.dailyRecords.slice(-1)
-          : period === "week"
-          ? s.dailyRecords.slice(-7)
-          : s.dailyRecords;
-      return (
-        total +
-        records.reduce((sum, r) => {
-          const superProduct = r.products.find((p) => p.product === "SUPER");
-          return sum + (superProduct?.amount || 0);
-        }, 0)
-      );
-    }, 0);
-  };
-
-  const getGasoilSales = (station: Station | null) => {
-    const stationsToCalc = station ? [station] : stations;
-    return stationsToCalc.reduce((total, s) => {
-      const records =
-        period === "day"
-          ? s.dailyRecords.slice(-1)
-          : period === "week"
-          ? s.dailyRecords.slice(-7)
-          : s.dailyRecords;
-      return (
-        total +
-        records.reduce((sum, r) => {
-          const gasoilProduct = r.products.find((p) => p.product === "GASOIL");
-          return sum + (gasoilProduct?.amount || 0);
-        }, 0)
-      );
-    }, 0);
-  };
-
-  const totalSales = selectedStation
-    ? getStationTotalSales(selectedStation, period)
-    : getAllStationsTotalSales(period);
-
-  const superSales = getSuperSales(selectedStation);
-  const gasoilSales = getGasoilSales(selectedStation);
 
   return (
     <div className="min-h-screen bg-background">
@@ -153,22 +102,21 @@ const Index = () => {
                   </Button>
                 }
               />
-              <Button
-                variant="outline"
-                className="gap-2"
-                onClick={() => exportToExcel()}
-                disabled={isExporting}
-              >
-                <Download className="w-4 h-4" />
-                {isExporting ? "Export..." : "Exporter"}
-              </Button>
+              <ExcelExportDialog
+                trigger={
+                  <Button variant="outline" className="gap-2">
+                    <Download className="w-4 h-4" />
+                    Exporter
+                  </Button>
+                }
+              />
               <Link to="/saisie">
                 <Button className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2">
                   <PenLine className="w-4 h-4" />
                   Saisie Index
                 </Button>
               </Link>
-              <StationSelector
+              <DbStationSelector
                 selectedStation={selectedStation}
                 onSelect={setSelectedStation}
               />
@@ -257,7 +205,6 @@ const Index = () => {
 
           {/* Ventes Tab */}
           <TabsContent value="ventes" className="space-y-6 animate-fade-in">
-            {/* Sales Summary Cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <SalesCard
                 title="Ventes totales"
@@ -269,43 +216,48 @@ const Index = () => {
                     ? "Cette semaine"
                     : "Ce mois"
                 }
-                trend={8.5}
                 icon={<TrendingUp className="w-5 h-5" />}
                 variant="primary"
               />
               <SalesCard
                 title="Super"
-                value={formatCurrency(superSales)}
-                subtitle={`${Math.round((superSales / totalSales) * 100) || 0}% du total`}
+                value={formatCurrency(totalSuper)}
+                subtitle={`${totalSales > 0 ? Math.round((totalSuper / totalSales) * 100) : 0}% du total`}
                 icon={<Fuel className="w-5 h-5" />}
               />
               <SalesCard
                 title="Gasoil"
-                value={formatCurrency(gasoilSales)}
-                subtitle={`${Math.round((gasoilSales / totalSales) * 100) || 0}% du total`}
+                value={formatCurrency(totalGasoil)}
+                subtitle={`${totalSales > 0 ? Math.round((totalGasoil / totalSales) * 100) : 0}% du total`}
                 icon={<Fuel className="w-5 h-5" />}
               />
             </div>
 
-            {/* Sales Chart */}
-            <SalesChart station={selectedStation} />
+            <SalesChart chartData={chartData} />
 
-            {/* Quick Station Overview */}
             {!selectedStation && (
               <div className="space-y-4">
                 <h2 className="text-lg font-display font-semibold">
                   Performance par station
                 </h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {stations.slice(0, 6).map((station) => (
-                    <StationCard
-                      key={station.id}
-                      station={station}
-                      period={period}
-                      onClick={() => setSelectedStation(station)}
-                      isSelected={selectedStation?.id === station.id}
-                    />
-                  ))}
+                  {stations.map((station) => {
+                    const stationSales = salesByStation.get(station.id);
+                    return (
+                      <StationCard
+                        key={station.id}
+                        stationId={station.id}
+                        name={station.name}
+                        location={station.location}
+                        totalSales={stationSales?.total || 0}
+                        superJauge={stationSales?.superJauge || 0}
+                        gasoilJauge={stationSales?.gasoilJauge || 0}
+                        period={period}
+                        onClick={() => setSelectedStation(station)}
+                        isSelected={selectedStation?.id === station.id}
+                      />
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -313,7 +265,7 @@ const Index = () => {
 
           {/* Stock Tab */}
           <TabsContent value="stock" className="animate-fade-in">
-            <StockModule station={selectedStation} />
+            <StockModule stationId={selectedStation?.id} />
           </TabsContent>
 
           {/* Commandes Tab */}
@@ -344,18 +296,26 @@ const Index = () => {
                 <PeriodTabs selected={period} onSelect={setPeriod} />
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {stations.map((station) => (
-                  <StationCard
-                    key={station.id}
-                    station={station}
-                    period={period}
-                    onClick={() => {
-                      setSelectedStation(station);
-                      setActiveTab("ventes");
-                    }}
-                    isSelected={selectedStation?.id === station.id}
-                  />
-                ))}
+                {stations.map((station) => {
+                  const stationSales = salesByStation.get(station.id);
+                  return (
+                    <StationCard
+                      key={station.id}
+                      stationId={station.id}
+                      name={station.name}
+                      location={station.location}
+                      totalSales={stationSales?.total || 0}
+                      superJauge={stationSales?.superJauge || 0}
+                      gasoilJauge={stationSales?.gasoilJauge || 0}
+                      period={period}
+                      onClick={() => {
+                        setSelectedStation(station);
+                        setActiveTab("ventes");
+                      }}
+                      isSelected={selectedStation?.id === station.id}
+                    />
+                  );
+                })}
               </div>
             </div>
           </TabsContent>

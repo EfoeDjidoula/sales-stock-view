@@ -9,54 +9,13 @@ import {
   ResponsiveContainer,
   Legend,
 } from "recharts";
-import { Station, stations, formatCurrency } from "@/data/stationsData";
+import { formatCurrency } from "@/data/stationsData";
 
 interface SalesChartProps {
-  station: Station | null;
+  chartData: { date: string; super: number; gasoil: number; total: number }[];
 }
 
-export const SalesChart = ({ station }: SalesChartProps) => {
-  const chartData = useMemo(() => {
-    if (station) {
-      return station.dailyRecords.map((record) => ({
-        date: new Date(record.date).toLocaleDateString("fr-FR", {
-          day: "2-digit",
-          month: "short",
-        }),
-        super: record.products.find((p) => p.product === "SUPER")?.amount || 0,
-        gasoil: record.products.find((p) => p.product === "GASOIL")?.amount || 0,
-        total: record.totalSales,
-      }));
-    }
-
-    // Aggregate all stations
-    const dateMap = new Map<string, { super: number; gasoil: number; total: number }>();
-    
-    stations.forEach((s) => {
-      s.dailyRecords.forEach((record) => {
-        const existing = dateMap.get(record.date) || { super: 0, gasoil: 0, total: 0 };
-        const superAmount = record.products.find((p) => p.product === "SUPER")?.amount || 0;
-        const gasoilAmount = record.products.find((p) => p.product === "GASOIL")?.amount || 0;
-        
-        dateMap.set(record.date, {
-          super: existing.super + superAmount,
-          gasoil: existing.gasoil + gasoilAmount,
-          total: existing.total + record.totalSales,
-        });
-      });
-    });
-
-    return Array.from(dateMap.entries())
-      .sort(([a], [b]) => new Date(a).getTime() - new Date(b).getTime())
-      .map(([date, values]) => ({
-        date: new Date(date).toLocaleDateString("fr-FR", {
-          day: "2-digit",
-          month: "short",
-        }),
-        ...values,
-      }));
-  }, [station]);
-
+export const SalesChart = ({ chartData }: SalesChartProps) => {
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
       return (
@@ -77,6 +36,19 @@ export const SalesChart = ({ station }: SalesChartProps) => {
     }
     return null;
   };
+
+  if (chartData.length === 0) {
+    return (
+      <div className="bg-card rounded-xl border border-border p-6">
+        <h3 className="text-lg font-display font-semibold mb-6">
+          Évolution des ventes
+        </h3>
+        <div className="flex items-center justify-center h-[300px] text-muted-foreground">
+          Aucune donnée disponible. Importez un fichier Excel pour voir l'évolution.
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="bg-card rounded-xl border border-border p-6">
