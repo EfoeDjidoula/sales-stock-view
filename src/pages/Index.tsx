@@ -19,6 +19,7 @@ import { AccessDenied } from "@/components/AccessDenied";
 import { SuppliesModule } from "@/components/orders/SuppliesModule";
 import { UsersModule } from "@/components/users/UsersModule";
 import { ExcelImportDialog } from "@/components/import/ExcelImportDialog";
+import { useExcelExport } from "@/hooks/useExcelExport";
 import {
   LayoutDashboard,
   TrendingUp,
@@ -30,6 +31,7 @@ import {
   Truck,
   Users,
   Upload,
+  Download,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -52,6 +54,7 @@ const Index = () => {
   const [selectedStation, setSelectedStation] = useState<Station | null>(null);
   const [period, setPeriod] = useState<Period>("day");
   const { currentUserRole, loading: roleLoading } = useUserRoles();
+  const { exportToExcel, isExporting } = useExcelExport();
   
   // Get allowed tabs for current user
   const allowedTabs = useMemo(() => {
@@ -146,10 +149,19 @@ const Index = () => {
                 trigger={
                   <Button variant="outline" className="gap-2">
                     <Upload className="w-4 h-4" />
-                    Importer Excel
+                    Importer
                   </Button>
                 }
               />
+              <Button
+                variant="outline"
+                className="gap-2"
+                onClick={() => exportToExcel()}
+                disabled={isExporting}
+              >
+                <Download className="w-4 h-4" />
+                {isExporting ? "Export..." : "Exporter"}
+              </Button>
               <Link to="/saisie">
                 <Button className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2">
                   <PenLine className="w-4 h-4" />
