@@ -31,10 +31,12 @@ export const StockModule = ({ stationId }: StockModuleProps) => {
       const results = [];
 
       for (const station of targetStations) {
+        // Get latest entry with non-zero jauge data
         const { data: entry } = await supabase
           .from("index_entries")
           .select("*")
           .eq("station_id", station.id)
+          .or("super1_jauge.gt.0,super2_jauge.gt.0,gasoil1_jauge.gt.0,gasoil2_jauge.gt.0")
           .order("entry_date", { ascending: false })
           .limit(1)
           .maybeSingle();
