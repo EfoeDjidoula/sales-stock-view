@@ -105,12 +105,13 @@ export const useDashboardData = (period: Period, stationId?: string | null) => {
   const entries = entriesQuery.data || [];
 
   const computeSales = (entry: typeof entries[number]): DailySalesData => {
-    const superLiters =
-      (entry.super1_index_arrivee - entry.super1_index_depart) +
-      (entry.super2_index_arrivee - entry.super2_index_depart);
-    const gasoilLiters =
-      (entry.gasoil1_index_arrivee - entry.gasoil1_index_depart) +
-      (entry.gasoil2_index_arrivee - entry.gasoil2_index_depart);
+    const s1 = entry.super1_index_arrivee - entry.super1_index_depart;
+    const s2 = entry.super2_index_arrivee - entry.super2_index_depart;
+    const g1 = entry.gasoil1_index_arrivee - entry.gasoil1_index_depart;
+    const g2 = entry.gasoil2_index_arrivee - entry.gasoil2_index_depart;
+    // Ignore negative diffs (incomplete/empty entries)
+    const superLiters = (s1 > 0 ? s1 : 0) + (s2 > 0 ? s2 : 0);
+    const gasoilLiters = (g1 > 0 ? g1 : 0) + (g2 > 0 ? g2 : 0);
 
     const stationData = entry.stations as unknown as DashboardStation;
 
@@ -154,8 +155,12 @@ export const useDashboardData = (period: Period, stationId?: string | null) => {
     const dateMap = new Map<string, { super: number; gasoil: number }>();
 
     for (const entry of chartEntries) {
-      const superL = (entry.super1_index_arrivee - entry.super1_index_depart) + (entry.super2_index_arrivee - entry.super2_index_depart);
-      const gasoilL = (entry.gasoil1_index_arrivee - entry.gasoil1_index_depart) + (entry.gasoil2_index_arrivee - entry.gasoil2_index_depart);
+      const s1 = entry.super1_index_arrivee - entry.super1_index_depart;
+      const s2 = entry.super2_index_arrivee - entry.super2_index_depart;
+      const g1 = entry.gasoil1_index_arrivee - entry.gasoil1_index_depart;
+      const g2 = entry.gasoil2_index_arrivee - entry.gasoil2_index_depart;
+      const superL = (s1 > 0 ? s1 : 0) + (s2 > 0 ? s2 : 0);
+      const gasoilL = (g1 > 0 ? g1 : 0) + (g2 > 0 ? g2 : 0);
 
       const existing = dateMap.get(entry.entry_date) || { super: 0, gasoil: 0 };
       existing.super += superL * SUPER_PRICE;
