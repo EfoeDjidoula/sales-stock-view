@@ -2,9 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { startOfDay, subDays, startOfWeek, startOfMonth, format } from "date-fns";
-
-const SUPER_PRICE = 695;
-const GASOIL_PRICE = 720;
+import { FUEL_PRICES } from "@/config/prices";
 
 export interface DashboardStation {
   id: string;
@@ -119,9 +117,9 @@ export const useDashboardData = (period: Period, stationId?: string | null) => {
       date: entry.entry_date,
       superLiters,
       gasoilLiters,
-      superAmount: superLiters * SUPER_PRICE,
-      gasoilAmount: gasoilLiters * GASOIL_PRICE,
-      totalAmount: superLiters * SUPER_PRICE + gasoilLiters * GASOIL_PRICE,
+      superAmount: superLiters * FUEL_PRICES.SUPER,
+      gasoilAmount: gasoilLiters * FUEL_PRICES.GASOIL,
+      totalAmount: superLiters * FUEL_PRICES.SUPER + gasoilLiters * FUEL_PRICES.GASOIL,
       stationId: entry.station_id,
       stationName: stationData?.name || "",
       super1Jauge: entry.super1_jauge,
@@ -163,8 +161,8 @@ export const useDashboardData = (period: Period, stationId?: string | null) => {
       const gasoilL = (g1 > 0 ? g1 : 0) + (g2 > 0 ? g2 : 0);
 
       const existing = dateMap.get(entry.entry_date) || { super: 0, gasoil: 0 };
-      existing.super += superL * SUPER_PRICE;
-      existing.gasoil += gasoilL * GASOIL_PRICE;
+      existing.super += superL * FUEL_PRICES.SUPER;
+      existing.gasoil += gasoilL * FUEL_PRICES.GASOIL;
       dateMap.set(entry.entry_date, existing);
     }
 
