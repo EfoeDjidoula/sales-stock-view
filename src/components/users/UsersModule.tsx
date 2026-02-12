@@ -105,11 +105,11 @@ export const UsersModule = () => {
       return;
     }
 
-    if (newUserPassword.length < 6) {
+    if (newUserPassword.length < 8) {
       toast({
         variant: "destructive",
         title: "Erreur",
-        description: "Le mot de passe doit contenir au moins 6 caractères.",
+        description: "Le mot de passe doit contenir au moins 8 caractères.",
       });
       return;
     }
