@@ -12,6 +12,7 @@ import { OrdersModule } from "@/components/orders/OrdersModule";
 import { AccessDenied } from "@/components/AccessDenied";
 import { SuppliesModule } from "@/components/orders/SuppliesModule";
 import { UsersModule } from "@/components/users/UsersModule";
+import { StationManagement } from "@/components/stations/StationManagement";
 import { ExcelImportDialog } from "@/components/import/ExcelImportDialog";
 import { ExcelExportDialog } from "@/components/import/ExcelExportDialog";
 import { DbStationSelector } from "@/components/dashboard/DbStationSelector";
@@ -288,36 +289,7 @@ const Index = () => {
 
           {/* Stations Tab */}
           <TabsContent value="stations" className="animate-fade-in">
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <h2 className="text-lg font-display font-semibold">
-                  Toutes les stations ({stations.length})
-                </h2>
-                <PeriodTabs selected={period} onSelect={setPeriod} />
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {stations.map((station) => {
-                  const stationSales = salesByStation.get(station.id);
-                  return (
-                    <StationCard
-                      key={station.id}
-                      stationId={station.id}
-                      name={station.name}
-                      location={station.location}
-                      totalSales={stationSales?.total || 0}
-                      superJauge={stationSales?.superJauge || 0}
-                      gasoilJauge={stationSales?.gasoilJauge || 0}
-                      period={period}
-                      onClick={() => {
-                        setSelectedStation(station);
-                        setActiveTab("ventes");
-                      }}
-                      isSelected={selectedStation?.id === station.id}
-                    />
-                  );
-                })}
-              </div>
-            </div>
+            <StationManagement isAdmin={currentUserRole === "admin"} />
           </TabsContent>
 
           {/* Gestion des droits Tab */}
