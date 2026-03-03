@@ -4,7 +4,7 @@ import { useDashboardData, Period } from "@/hooks/useDashboardData";
 import { PeriodTabs } from "@/components/dashboard/PeriodTabs";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2, MapPin, Fuel, Loader2, TrendingUp, Droplets } from "lucide-react";
+import { Plus, Pencil, Trash2, MapPin, Fuel, Loader2, TrendingUp, Droplets, Search } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -41,6 +41,7 @@ export const StationManagement = ({ isAdmin }: StationManagementProps) => {
   const { stations, loading, refetch } = useStations();
   const [period, setPeriod] = useState<Period>("day");
   const { salesByStation } = useDashboardData(period);
+  const [searchQuery, setSearchQuery] = useState("");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [editingStation, setEditingStation] = useState<{ id: string; name: string; location: string } | null>(null);
@@ -145,6 +146,15 @@ export const StationManagement = ({ isAdmin }: StationManagementProps) => {
           Gestion des stations ({stations.length})
         </h2>
         <div className="flex items-center gap-3">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+            <Input
+              placeholder="Rechercher une station..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-9 w-[220px]"
+            />
+          </div>
           <PeriodTabs selected={period} onSelect={setPeriod} />
           {isAdmin && (
             <Button onClick={openCreateDialog} className="gap-2">
@@ -156,7 +166,12 @@ export const StationManagement = ({ isAdmin }: StationManagementProps) => {
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {stations.map((station) => {
+        {stations
+          .filter((s) => {
+            const q = searchQuery.toLowerCase();
+            return !q || s.name.toLowerCase().includes(q) || s.location.toLowerCase().includes(q);
+          })
+          .map((station) => {
           const stationSales = salesByStation.get(station.id);
           const totalSales = stationSales?.total || 0;
           const superJauge = stationSales?.superJauge || 0;
