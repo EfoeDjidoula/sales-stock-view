@@ -4,7 +4,7 @@ import { useDashboardData, Period } from "@/hooks/useDashboardData";
 import { PeriodTabs } from "@/components/dashboard/PeriodTabs";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2, MapPin, Fuel, Loader2, TrendingUp, Droplets, Search } from "lucide-react";
+import { Plus, Pencil, Trash2, MapPin, Fuel, Loader2, TrendingUp, Droplets, Search, ArrowUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -42,6 +42,7 @@ export const StationManagement = ({ isAdmin }: StationManagementProps) => {
   const [period, setPeriod] = useState<Period>("day");
   const { salesByStation } = useDashboardData(period);
   const [searchQuery, setSearchQuery] = useState("");
+  const [sortBy, setSortBy] = useState<"name" | "sales">("name");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [editingStation, setEditingStation] = useState<{ id: string; name: string; location: string } | null>(null);
@@ -155,6 +156,15 @@ export const StationManagement = ({ isAdmin }: StationManagementProps) => {
               className="pl-9 w-[220px]"
             />
           </div>
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2"
+            onClick={() => setSortBy(sortBy === "name" ? "sales" : "name")}
+          >
+            <ArrowUpDown className="w-4 h-4" />
+            {sortBy === "name" ? "Nom" : "Ventes ↓"}
+          </Button>
           <PeriodTabs selected={period} onSelect={setPeriod} />
           {isAdmin && (
             <Button onClick={openCreateDialog} className="gap-2">
@@ -170,6 +180,14 @@ export const StationManagement = ({ isAdmin }: StationManagementProps) => {
           .filter((s) => {
             const q = searchQuery.toLowerCase();
             return !q || s.name.toLowerCase().includes(q) || s.location.toLowerCase().includes(q);
+          })
+          .sort((a, b) => {
+            if (sortBy === "sales") {
+              const salesA = salesByStation.get(a.id)?.total || 0;
+              const salesB = salesByStation.get(b.id)?.total || 0;
+              return salesB - salesA;
+            }
+            return a.name.localeCompare(b.name, "fr");
           })
           .map((station) => {
           const stationSales = salesByStation.get(station.id);
