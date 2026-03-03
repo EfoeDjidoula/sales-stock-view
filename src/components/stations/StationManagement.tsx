@@ -1,10 +1,14 @@
 import { useState } from "react";
 import { useStations } from "@/hooks/useStations";
 import { useDashboardData, Period } from "@/hooks/useDashboardData";
+import { useStationAssignments } from "@/hooks/useStationAssignments";
+import { useUserRoles } from "@/hooks/useUserRoles";
 import { PeriodTabs } from "@/components/dashboard/PeriodTabs";
+import { StationAssignmentDialog } from "@/components/stations/StationAssignmentDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2, MapPin, Fuel, Loader2, TrendingUp, Droplets, Search, ArrowUpDown } from "lucide-react";
+import { Plus, Pencil, Trash2, MapPin, Fuel, Loader2, TrendingUp, Droplets, Search, ArrowUpDown, Users } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -41,10 +45,14 @@ export const StationManagement = ({ isAdmin }: StationManagementProps) => {
   const { stations, loading, refetch } = useStations();
   const [period, setPeriod] = useState<Period>("day");
   const { salesByStation } = useDashboardData(period);
+  const { assignments, assignUser, unassignUser, getAssignedUsers } = useStationAssignments();
+  const { users } = useUserRoles();
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<"name" | "sales">("name");
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [assignDialogOpen, setAssignDialogOpen] = useState(false);
+  const [assignStation, setAssignStation] = useState<{ id: string; name: string } | null>(null);
   const [editingStation, setEditingStation] = useState<{ id: string; name: string; location: string } | null>(null);
   const [deletingStation, setDeletingStation] = useState<{ id: string; name: string } | null>(null);
   const [formData, setFormData] = useState<StationFormData>({ name: "", location: "" });
@@ -245,12 +253,42 @@ export const StationManagement = ({ isAdmin }: StationManagementProps) => {
                 </div>
               </div>
 
-              <p className="text-xs text-muted-foreground mb-4">
+              <p className="text-xs text-muted-foreground mb-1">
                 Créée le {new Date(station.created_at).toLocaleDateString("fr-FR")}
               </p>
 
+              {/* Assigned users badges */}
+              {(() => {
+                const assigned = getAssignedUsers(station.id);
+                if (assigned.length === 0) return null;
+                return (
+                  <div className="flex flex-wrap gap-1 mb-3">
+                    {assigned.map((a) => {
+                      const u = users.find((u) => u.id === a.user_id);
+                      return (
+                        <Badge key={a.id} variant="secondary" className="text-xs">
+                          {u?.full_name || a.user_id.slice(0, 8)}
+                        </Badge>
+                      );
+                    })}
+                  </div>
+                );
+              })()}
+
               {isAdmin && (
                 <div className="flex items-center gap-2 pt-3 border-t border-border">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-1.5"
+                    onClick={() => {
+                      setAssignStation({ id: station.id, name: station.name });
+                      setAssignDialogOpen(true);
+                    }}
+                  >
+                    <Users className="w-3.5 h-3.5" />
+                    Assigner
+                  </Button>
                   <Button
                     variant="outline"
                     size="sm"
@@ -340,6 +378,20 @@ export const StationManagement = ({ isAdmin }: StationManagementProps) => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Assignment Dialog */}
+      {assignStation && (
+        <StationAssignmentDialog
+          open={assignDialogOpen}
+          onOpenChange={setAssignDialogOpen}
+          stationName={assignStation.name}
+          stationId={assignStation.id}
+          assignedUsers={getAssignedUsers(assignStation.id)}
+          allUsers={users}
+          onAssign={assignUser}
+          onUnassign={unassignUser}
+        />
+      )}
     </div>
   );
 };
