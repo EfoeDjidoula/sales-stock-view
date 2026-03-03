@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useStations } from "@/hooks/useStations";
-import { useDashboardData } from "@/hooks/useDashboardData";
+import { useDashboardData, Period } from "@/hooks/useDashboardData";
+import { PeriodTabs } from "@/components/dashboard/PeriodTabs";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Plus, Pencil, Trash2, MapPin, Fuel, Loader2, TrendingUp, Droplets } from "lucide-react";
@@ -38,7 +39,8 @@ interface StationManagementProps {
 
 export const StationManagement = ({ isAdmin }: StationManagementProps) => {
   const { stations, loading, refetch } = useStations();
-  const { salesByStation } = useDashboardData("day");
+  const [period, setPeriod] = useState<Period>("day");
+  const { salesByStation } = useDashboardData(period);
   const [dialogOpen, setDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [editingStation, setEditingStation] = useState<{ id: string; name: string; location: string } | null>(null);
@@ -138,16 +140,19 @@ export const StationManagement = ({ isAdmin }: StationManagementProps) => {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <h2 className="text-lg font-display font-semibold">
           Gestion des stations ({stations.length})
         </h2>
-        {isAdmin && (
-          <Button onClick={openCreateDialog} className="gap-2">
-            <Plus className="w-4 h-4" />
-            Ajouter une station
-          </Button>
-        )}
+        <div className="flex items-center gap-3">
+          <PeriodTabs selected={period} onSelect={setPeriod} />
+          {isAdmin && (
+            <Button onClick={openCreateDialog} className="gap-2">
+              <Plus className="w-4 h-4" />
+              Ajouter une station
+            </Button>
+          )}
+        </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -180,7 +185,9 @@ export const StationManagement = ({ isAdmin }: StationManagementProps) => {
                 <div className="flex items-center gap-2">
                   <TrendingUp className="w-4 h-4 text-primary" />
                   <div>
-                    <p className="text-xs text-muted-foreground uppercase tracking-wider">Ventes du jour</p>
+                    <p className="text-xs text-muted-foreground uppercase tracking-wider">
+                      Ventes {period === "day" ? "du jour" : period === "week" ? "de la semaine" : "du mois"}
+                    </p>
                     <p className="text-lg font-display font-bold text-gradient">
                       {formatCurrency(totalSales)}
                     </p>
