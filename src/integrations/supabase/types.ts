@@ -210,6 +210,35 @@ export type Database = {
         }
         Relationships: []
       }
+      station_assignments: {
+        Row: {
+          created_at: string
+          id: string
+          station_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          station_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          station_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "station_assignments_station_id_fkey"
+            columns: ["station_id"]
+            isOneToOne: false
+            referencedRelation: "stations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       stations: {
         Row: {
           created_at: string
