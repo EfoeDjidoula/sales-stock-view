@@ -4,6 +4,27 @@ import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import * as XLSX from "xlsx";
 
+// Excel column structure matching the uploaded file format
+const HEADERS_ROW_1 = [
+  "", "INDEX", "", "", "", "", "", "",
+  "VENTE", "", "", "", "", "", "", "", "", "", "", "", "",
+  "SUIVI STOCK", "", "", "", "", "", "", "", "", "",
+];
+
+const HEADERS_ROW_2 = [
+  "", "PRODUITS", "ARRIVEE", "DEPART", "QUANTITE", "CUMUL", "RET EN CUVE", "SORTIE REELLE",
+  "PU", "MONTANT", "BONS YATT", "BONS CLIENTS & TRANS", "BONS DE VALEUR", "CARTES PREPAYEES", "VENTE RELLE",
+  "VERSEMENT MOMO", "LIQUIDITE", "VERSEMENT BANQUE", "ECART", "BANQUE", "NUM BV",
+  "CUVES", "STOCK OUVERTURE", "DEPOTAGE", "N°BL", "CHAUFFEUR", "ECART AP DEPOTAGE",
+  "SORTIE", "STOCK CLOTURE", "JAUGE DU JOUR", "ECART",
+];
+
+const PRODUCTS = [
+  "SUPER 1", "SUPER 2", "SUPER 3", "SUPER 4",
+  "GASOIL 1", "GASOIL 2", "GASOIL 3", "GASOIL 4",
+  "TOTAL",
+];
+
 export const useExcelExport = () => {
   const { user } = useAuth();
   const [isExporting, setIsExporting] = useState(false);
@@ -17,7 +38,6 @@ export const useExcelExport = () => {
     setIsExporting(true);
 
     try {
-      // Fetch stations
       const { data: stations, error: stationsError } = await supabase
         .from("stations")
         .select("id, name")
@@ -25,7 +45,6 @@ export const useExcelExport = () => {
 
       if (stationsError) throw stationsError;
 
-      // Build date filter
       const now = new Date();
       const targetYear = year ?? now.getFullYear();
       const targetMonth = month ?? now.getMonth() + 1;
@@ -34,7 +53,6 @@ export const useExcelExport = () => {
         ? `${targetYear + 1}-01-01`
         : `${targetYear}-${String(targetMonth + 1).padStart(2, "0")}-01`;
 
-      // Fetch all entries for the period
       const { data: entries, error: entriesError } = await supabase
         .from("index_entries")
         .select("*")
@@ -46,110 +64,118 @@ export const useExcelExport = () => {
 
       const workbook = XLSX.utils.book_new();
 
-      // Create one sheet per station
       for (const station of stations || []) {
         const stationEntries = (entries || []).filter(
           (e) => e.station_id === station.id
         );
 
-        // Build header rows matching import format
-        const headers = [
-          "DATE",
-          "PRODUITS",
-          "ARRIVEE",
-          "DEPART",
-          "JAUGE DU JOUR",
-          "MOMO",
-          "VERSEMENT BANQUE",
-          "NUM BV",
-          "LIQUIDITE",
-          "BONS YATT",
-          "BONS CLIENTS",
+        const rows: (string | number | null)[][] = [
+          HEADERS_ROW_1,
+          HEADERS_ROW_2,
         ];
 
-        const rows: (string | number | null)[][] = [headers];
-
         for (const entry of stationEntries) {
-          const date = entry.entry_date;
-          const products = [
-            {
-              name: "SUPER 1",
-              arrivee: entry.super1_index_arrivee,
-              depart: entry.super1_index_depart,
-              jauge: entry.super1_jauge,
-              isFirst: true,
-            },
-            {
-              name: "SUPER 2",
-              arrivee: entry.super2_index_arrivee,
-              depart: entry.super2_index_depart,
-              jauge: entry.super2_jauge,
-              isFirst: false,
-            },
-            {
-              name: "GASOIL 1",
-              arrivee: entry.gasoil1_index_arrivee,
-              depart: entry.gasoil1_index_depart,
-              jauge: entry.gasoil1_jauge,
-              isFirst: false,
-            },
-            {
-              name: "GASOIL 2",
-              arrivee: entry.gasoil2_index_arrivee,
-              depart: entry.gasoil2_index_depart,
-              jauge: entry.gasoil2_jauge,
-              isFirst: false,
-            },
+          // Format date as M/D/YY
+          const [y, m, d] = entry.entry_date.split("-");
+          const dateStr = `${parseInt(m)}/${parseInt(d)}/${y.slice(2)}`;
+
+          // Calculate quantities
+          const super1Qty = entry.super1_index_arrivee - entry.super1_index_depart;
+          const super2Qty = entry.super2_index_arrivee - entry.super2_index_depart;
+          const gasoil1Qty = entry.gasoil1_index_arrivee - entry.gasoil1_index_depart;
+          const gasoil2Qty = entry.gasoil2_index_arrivee - entry.gasoil2_index_depart;
+          const totalSuper = super1Qty + super2Qty;
+          const totalGasoil = gasoil1Qty + gasoil2Qty;
+          const superAmount = totalSuper * 695;
+          const gasoilAmount = totalGasoil * 720;
+          const totalAmount = superAmount + gasoilAmount;
+
+          const productRows: (string | number | null)[][] = [
+            // SUPER 1 - includes versements/bons data
+            [dateStr, "SUPER 1",
+              entry.super1_index_arrivee, entry.super1_index_depart,
+              super1Qty > 0 ? super1Qty : "-",
+              totalSuper > 0 ? totalSuper : "-", "", totalSuper > 0 ? totalSuper : "-",
+              695, superAmount > 0 ? superAmount : "-",
+              entry.bons_carburant_valeur || "", entry.bons_entreprise_valeur || "", "", "",
+              totalAmount > 0 ? totalAmount : "-",
+              entry.versement_momo || "", entry.versement_liquidite || "",
+              entry.versement_banque || "", "",
+              "", entry.versement_banque_ref || "",
+              `SUPER (1)`, entry.super1_jauge || "", "", "", "", "",
+              totalSuper > 0 ? totalSuper : "-", "", entry.super1_jauge || "", "",
+            ],
+            // SUPER 2
+            ["", "SUPER 2",
+              entry.super2_index_arrivee || "", entry.super2_index_depart || "",
+              super2Qty > 0 ? super2Qty : "-",
+              ...Array(26).fill(""),
+            ],
+            // SUPER 3 (empty if no data)
+            ["", "SUPER 3", "", "", "-", "", "", "",
+              "", "", "", "", "", "", "", "", "", "", "", "", "",
+              `SUPER (2)`, entry.super2_jauge || "", "", "", "", "",
+              "", "", entry.super2_jauge || "", "",
+            ],
+            // SUPER 4
+            ["", "SUPER 4", "", "", "-", ...Array(26).fill("")],
+            // GASOIL 1
+            ["", "GASOIL 1",
+              entry.gasoil1_index_arrivee, entry.gasoil1_index_depart,
+              gasoil1Qty > 0 ? gasoil1Qty : "-",
+              totalGasoil > 0 ? totalGasoil : "-", "", totalGasoil > 0 ? totalGasoil : "-",
+              720, gasoilAmount > 0 ? gasoilAmount : "-",
+              "", "", "", "", "", "", "", "", "", "", "",
+              `GASOIL (1)`, entry.gasoil1_jauge || "", "", "", "", "",
+              totalGasoil > 0 ? totalGasoil : "-", "", entry.gasoil1_jauge || "", "",
+            ],
+            // GASOIL 2
+            ["", "GASOIL 2",
+              entry.gasoil2_index_arrivee || "", entry.gasoil2_index_depart || "",
+              gasoil2Qty > 0 ? gasoil2Qty : "-",
+              ...Array(26).fill(""),
+            ],
+            // GASOIL 3
+            ["", "GASOIL 3", "", "", "-", "", "", "",
+              "", "", `GASOIL (2)`, entry.gasoil2_jauge || "", "", "", "", "", "", "", "", "", "",
+              "", "", "", "", "", "",
+              "", "", entry.gasoil2_jauge || "", "",
+            ],
+            // GASOIL 4
+            ["", "GASOIL 4", "", "", "-", ...Array(26).fill("")],
+            // TOTAL
+            ["", "TOTAL", "", "", "", "", "", "",
+              "", totalAmount > 0 ? totalAmount : "-",
+              entry.bons_carburant_valeur || "", entry.bons_entreprise_valeur || "", "", "",
+              totalAmount > 0 ? totalAmount : "-",
+              entry.versement_momo || "", entry.versement_liquidite || "",
+              entry.versement_banque || "", "", "", "",
+              "", "", "", "", "", "", "", "", "", "",
+            ],
           ];
 
-          for (const p of products) {
-            rows.push([
-              p.isFirst ? date : "",
-              p.name,
-              p.arrivee,
-              p.depart,
-              p.jauge,
-              p.isFirst ? entry.versement_momo : "",
-              p.isFirst ? entry.versement_banque : "",
-              p.isFirst ? (entry.versement_banque_ref || "") : "",
-              p.isFirst ? entry.versement_liquidite : "",
-              p.isFirst ? entry.bons_carburant_valeur : "",
-              p.isFirst ? entry.bons_entreprise_valeur : "",
-            ]);
-          }
-
-          // Add empty separator row between days
-          rows.push([]);
+          rows.push(...productRows);
         }
 
         const worksheet = XLSX.utils.aoa_to_sheet(rows);
 
         // Set column widths
-        worksheet["!cols"] = [
-          { wch: 12 }, // DATE
-          { wch: 12 }, // PRODUITS
-          { wch: 12 }, // ARRIVEE
-          { wch: 12 }, // DEPART
-          { wch: 14 }, // JAUGE
-          { wch: 12 }, // MOMO
-          { wch: 16 }, // BANQUE
-          { wch: 10 }, // NUM BV
-          { wch: 12 }, // LIQUIDITE
-          { wch: 12 }, // BONS YATT
-          { wch: 14 }, // BONS CLIENTS
-        ];
+        worksheet["!cols"] = Array(31).fill(null).map((_, i) => {
+          if (i === 0) return { wch: 10 };
+          if (i === 1) return { wch: 12 };
+          if (i === 2 || i === 3) return { wch: 14 };
+          return { wch: 12 };
+        });
 
-        // Truncate sheet name to 31 chars (Excel limit)
         const sheetName = station.name.substring(0, 31);
         XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
       }
 
-      // Generate and download
       const monthNames = [
         "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
         "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre",
       ];
-      const fileName = `SUIVI_INDEX_YATT_${monthNames[targetMonth - 1]}_${targetYear}.xlsx`;
+      const fileName = `SUIVI_DES_INDEX_DES_STATIONS_YATT_CO_ENERGY_BENIN_${targetYear}_${targetMonth}.xlsx`;
       XLSX.writeFile(workbook, fileName);
 
       toast.success("Export réussi", { description: fileName });
