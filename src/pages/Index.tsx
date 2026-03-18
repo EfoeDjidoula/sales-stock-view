@@ -50,7 +50,9 @@ const TAB_PERMISSIONS: Record<string, AppRole[]> = {
 const Index = () => {
   const [selectedStation, setSelectedStation] = useState<DbStation | null>(null);
   const [period, setPeriod] = useState<Period>("day");
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const { currentUserRole, loading: roleLoading } = useUserRoles();
+  const queryClient = useQueryClient();
 
   const { totalSales, totalSuper, totalGasoil, salesByStation, chartData, stations, isLoading } =
     useDashboardData(period, selectedStation?.id);
