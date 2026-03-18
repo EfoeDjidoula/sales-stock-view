@@ -173,6 +173,19 @@ export const useDashboardData = (period: Period, stationId?: string | null) => {
 
   // Sales by station
   const salesByStation = new Map<string, { total: number; super: number; gasoil: number; name: string; location: string; superJauge: number; gasoilJauge: number }>();
+  
+  // First, initialize with latest jauge data for all stations
+  for (const station of (stationsQuery.data || [])) {
+    const latestJauge = latestJauges.get(station.id);
+    salesByStation.set(station.id, {
+      total: 0, super: 0, gasoil: 0,
+      name: station.name, location: station.location,
+      superJauge: latestJauge?.superJauge || 0,
+      gasoilJauge: latestJauge?.gasoilJauge || 0,
+    });
+  }
+  
+  // Then accumulate sales from the period
   for (const d of salesData) {
     const existing = salesByStation.get(d.stationId) || { total: 0, super: 0, gasoil: 0, name: d.stationName, location: "", superJauge: 0, gasoilJauge: 0 };
     existing.total += d.totalAmount;
