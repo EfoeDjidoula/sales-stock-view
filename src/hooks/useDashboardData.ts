@@ -232,6 +232,6 @@ export const useDashboardData = (period: Period, stationId?: string | null) => {
     salesByStation,
     chartData,
     salesData,
-    isLoading: stationsQuery.isLoading || entriesQuery.isLoading || chartQuery.isLoading,
+    isLoading: stationsQuery.isLoading || entriesQuery.isLoading || chartQuery.isLoading || latestJaugeQuery.isLoading,
   };
 };
