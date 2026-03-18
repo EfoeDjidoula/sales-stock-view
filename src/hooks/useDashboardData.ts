@@ -191,8 +191,7 @@ export const useDashboardData = (period: Period, stationId?: string | null) => {
     existing.total += d.totalAmount;
     existing.super += d.superAmount;
     existing.gasoil += d.gasoilAmount;
-    existing.superJauge = d.super1Jauge + d.super2Jauge; // latest
-    existing.gasoilJauge = d.gasoil1Jauge + d.gasoil2Jauge;
+    // Don't override jauge - we use latest known values from latestJaugeQuery
     salesByStation.set(d.stationId, existing);
   }
 
