@@ -34,7 +34,7 @@ export interface ImportResult {
 const parseNumber = (value: unknown): number => {
   if (value === null || value === undefined || value === "" || value === "-") return 0;
   if (typeof value === "number") return value;
-  const cleaned = String(value).replace(/[,\s]/g, "").replace("-", "0");
+  const cleaned = String(value).replace(/[,\s]/g, "").replace(/^-$/, "0");
   const parsed = parseFloat(cleaned);
   return isNaN(parsed) ? 0 : parsed;
 };
@@ -43,7 +43,6 @@ const parseNumber = (value: unknown): number => {
 const parseExcelDate = (value: unknown): string | null => {
   if (!value) return null;
   
-  // Handle Excel serial date number
   if (typeof value === "number") {
     const date = XLSX.SSF.parse_date_code(value);
     if (date) {
@@ -51,8 +50,8 @@ const parseExcelDate = (value: unknown): string | null => {
     }
   }
   
-  // Handle string date like "1/1/26" or "1/2/26"
   if (typeof value === "string") {
+    // Handle "1/1/26", "1/2/26", "2/15/26" etc.
     const match = value.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
     if (match) {
       const [, month, day, yearShort] = match;
@@ -64,20 +63,14 @@ const parseExcelDate = (value: unknown): string | null => {
   return null;
 };
 
-// Extract station name from sheet name
-const extractStationName = (sheetName: string): string => {
-  // Common patterns: "STATION COTONOU", "STE PORTO-NOVO", etc.
-  return sheetName.trim();
-};
-
-// Parse a single sheet (station) data
+// Parse a single sheet (station) data - matches exact Excel structure
 const parseSheetData = (worksheet: XLSX.WorkSheet, stationName: string): ParsedIndexEntry[] => {
   const entries: ParsedIndexEntry[] = [];
   const data = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as unknown[][];
   
   if (data.length < 3) return entries;
   
-  // Find header row (contains "PRODUITS", "ARRIVEE", "DEPART")
+  // Find header row containing "PRODUITS"
   let headerRowIndex = -1;
   for (let i = 0; i < Math.min(10, data.length); i++) {
     const row = data[i];
@@ -91,7 +84,7 @@ const parseSheetData = (worksheet: XLSX.WorkSheet, stationName: string): ParsedI
   
   const headerRow = data[headerRowIndex] as string[];
   
-  // Find column indices
+  // Find column indices based on Excel header structure
   const findCol = (keywords: string[]): number => {
     return headerRow.findIndex((h) => 
       keywords.some((k) => String(h || "").toUpperCase().includes(k.toUpperCase()))
@@ -101,12 +94,13 @@ const parseSheetData = (worksheet: XLSX.WorkSheet, stationName: string): ParsedI
   const colProduits = findCol(["PRODUITS"]);
   const colArrivee = findCol(["ARRIVEE"]);
   const colDepart = findCol(["DEPART"]);
-  const colMomo = findCol(["MOMO"]);
+  const colMomo = findCol(["MOMO", "VERSEMENT MOMO"]);
   const colLiquidite = findCol(["LIQUIDITE"]);
-  const colBanque = findCol(["VERSEMENT BANQUE", "BANQUE"]);
-  const colNumBV = findCol(["NUM BV", "N° BV"]);
-  const colBonsYatt = findCol(["BONS YATT"]);
-  const colBonsClients = findCol(["BONS CLIENTS"]);
+  const colBanque = findCol(["VERSEMENT BANQUE"]);
+  const colNumBV = findCol(["NUM BV", "N° BV", "N°BV"]);
+  // Handle both naming conventions
+  const colBonsYatt = findCol(["BONS YATT", "BONS DE VALEUR"]);
+  const colBonsClients = findCol(["BONS CLIENTS", "CARTES PREPAYEES"]);
   const colJauge = findCol(["JAUGE DU JOUR", "JAUGE"]);
   
   // Process data rows
@@ -140,51 +134,56 @@ const parseSheetData = (worksheet: XLSX.WorkSheet, stationName: string): ParsedI
     
     if (!currentEntry || !currentDate) continue;
     
-    // Get product type from row
-    const produit = String(row[colProduits] || "").toUpperCase();
+    const produit = String(row[colProduits] || "").toUpperCase().trim();
     const arrivee = parseNumber(row[colArrivee]);
     const depart = parseNumber(row[colDepart]);
+    const jauge = colJauge >= 0 ? parseNumber(row[colJauge]) : 0;
     
-    // Map product rows to entry fields
-    if (produit.includes("SUPER 1") || produit === "SUPER 1") {
-      currentEntry.super1 = { 
-        indexDepart: depart, 
-        indexArrivee: arrivee, 
-        jauge: colJauge >= 0 ? parseNumber(row[colJauge]) : 0 
-      };
-    } else if (produit.includes("SUPER 2") || produit === "SUPER 2") {
-      currentEntry.super2 = { indexDepart: depart, indexArrivee: arrivee, jauge: 0 };
-    } else if (produit.includes("SUPER 3")) {
-      // SUPER 3 & 4 map to SUPER 2 in the simplified model
+    // SUPER 1 & SUPER 2 → super1 (pump group 1)
+    if (produit === "SUPER 1" || produit === "SUPER 2") {
+      currentEntry.super1!.indexDepart += depart;
+      currentEntry.super1!.indexArrivee += arrivee;
+      if (produit === "SUPER 1") currentEntry.super1!.jauge = jauge;
+    }
+    // SUPER 3, 4, 5, 6 → super2 (pump group 2)  
+    else if (produit.startsWith("SUPER") && !produit.includes("TOTAL")) {
       currentEntry.super2!.indexDepart += depart;
       currentEntry.super2!.indexArrivee += arrivee;
-    } else if (produit.includes("SUPER 4")) {
-      currentEntry.super2!.indexDepart += depart;
-      currentEntry.super2!.indexArrivee += arrivee;
-    } else if (produit.includes("GASOIL 1") || produit === "GASOIL 1") {
-      currentEntry.gasoil1 = { 
-        indexDepart: depart, 
-        indexArrivee: arrivee, 
-        jauge: colJauge >= 0 ? parseNumber(row[colJauge]) : 0 
-      };
-    } else if (produit.includes("GASOIL 2") || produit === "GASOIL 2") {
-      currentEntry.gasoil2 = { indexDepart: depart, indexArrivee: arrivee, jauge: 0 };
-    } else if (produit.includes("GASOIL 3")) {
+      if (produit === "SUPER 3") currentEntry.super2!.jauge = jauge;
+    }
+    // GASOIL 1 & GASOIL 2 → gasoil1 (pump group 1)
+    else if (produit === "GASOIL 1" || produit === "GASOIL 2") {
+      currentEntry.gasoil1!.indexDepart += depart;
+      currentEntry.gasoil1!.indexArrivee += arrivee;
+      if (produit === "GASOIL 1") currentEntry.gasoil1!.jauge = jauge;
+    }
+    // GASOIL 3, 4, 5 → gasoil2 (pump group 2)
+    else if (produit.startsWith("GASOIL") && !produit.includes("TOTAL")) {
       currentEntry.gasoil2!.indexDepart += depart;
       currentEntry.gasoil2!.indexArrivee += arrivee;
-    } else if (produit.includes("GASOIL 4")) {
-      currentEntry.gasoil2!.indexDepart += depart;
-      currentEntry.gasoil2!.indexArrivee += arrivee;
+      if (produit === "GASOIL 3") currentEntry.gasoil2!.jauge = jauge;
     }
     
-    // Extract versements and bons from TOTAL row or first product row
-    if (produit.includes("SUPER 1") || produit.includes("TOTAL")) {
+    // Extract versements and bons from SUPER 1 row (first product row of each day)
+    if (produit === "SUPER 1") {
       if (colMomo >= 0) currentEntry.versements!.momo = parseNumber(row[colMomo]);
       if (colLiquidite >= 0) currentEntry.versements!.liquidite = parseNumber(row[colLiquidite]);
       if (colBanque >= 0) currentEntry.versements!.banque = parseNumber(row[colBanque]);
       if (colNumBV >= 0) currentEntry.versements!.banqueRef = String(row[colNumBV] || "");
       if (colBonsYatt >= 0) currentEntry.bons!.yatt = parseNumber(row[colBonsYatt]);
       if (colBonsClients >= 0) currentEntry.bons!.clients = parseNumber(row[colBonsClients]);
+    }
+    // Also check TOTAL row for versements (some sheets put data there)
+    if (produit === "TOTAL") {
+      if (colMomo >= 0 && !currentEntry.versements!.momo) {
+        currentEntry.versements!.momo = parseNumber(row[colMomo]);
+      }
+      if (colLiquidite >= 0 && !currentEntry.versements!.liquidite) {
+        currentEntry.versements!.liquidite = parseNumber(row[colLiquidite]);
+      }
+      if (colBanque >= 0 && !currentEntry.versements!.banque) {
+        currentEntry.versements!.banque = parseNumber(row[colBanque]);
+      }
     }
   }
   
@@ -214,9 +213,10 @@ export const useExcelImport = () => {
           const allEntries: ParsedIndexEntry[] = [];
           
           // Process each sheet (each represents a station)
+          // Skip cover/summary sheets that don't have data
           for (const sheetName of workbook.SheetNames) {
             const worksheet = workbook.Sheets[sheetName];
-            const stationName = extractStationName(sheetName);
+            const stationName = sheetName.trim().toUpperCase();
             const entries = parseSheetData(worksheet, stationName);
             allEntries.push(...entries);
           }
@@ -238,18 +238,16 @@ export const useExcelImport = () => {
       
       const result: ImportResult = { success: 0, failed: 0, errors: [] };
       
-      // First, fetch all stations to map names to IDs
       const { data: stations, error: stationsError } = await supabase
         .from("stations")
         .select("id, name");
       
       if (stationsError) throw new Error(`Erreur de récupération des stations: ${stationsError.message}`);
       
+      // Map station names (case insensitive)
       const stationMap = new Map<string, string>();
       stations?.forEach((s) => {
-        stationMap.set(s.name.toLowerCase(), s.id);
-        // Also try partial matching
-        stationMap.set(s.name.toLowerCase().replace(/station\s*/i, ""), s.id);
+        stationMap.set(s.name.toUpperCase(), s.id);
       });
       
       setProgress({ current: 0, total: entries.length });
@@ -258,14 +256,13 @@ export const useExcelImport = () => {
         const entry = entries[i];
         setProgress({ current: i + 1, total: entries.length });
         
-        // Find station ID
-        const stationKey = entry.stationName.toLowerCase();
-        let stationId = stationMap.get(stationKey);
+        // Direct match on uppercase name
+        let stationId = stationMap.get(entry.stationName.toUpperCase());
         
-        // Try partial match
+        // Try partial match if not found
         if (!stationId) {
           for (const [key, id] of stationMap) {
-            if (stationKey.includes(key) || key.includes(stationKey)) {
+            if (entry.stationName.includes(key) || key.includes(entry.stationName)) {
               stationId = id;
               break;
             }
