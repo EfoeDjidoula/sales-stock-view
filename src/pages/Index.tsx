@@ -29,11 +29,13 @@ import {
   Users,
   Upload,
   Download,
+  RefreshCw,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
+import { useQueryClient } from "@tanstack/react-query";
 
 // Define tab access by role
 const TAB_PERMISSIONS: Record<string, AppRole[]> = {
@@ -48,7 +50,9 @@ const TAB_PERMISSIONS: Record<string, AppRole[]> = {
 const Index = () => {
   const [selectedStation, setSelectedStation] = useState<DbStation | null>(null);
   const [period, setPeriod] = useState<Period>("day");
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const { currentUserRole, loading: roleLoading } = useUserRoles();
+  const queryClient = useQueryClient();
 
   const { totalSales, totalSuper, totalGasoil, salesByStation, chartData, stations, isLoading } =
     useDashboardData(period, selectedStation?.id);
@@ -117,6 +121,28 @@ const Index = () => {
                   Saisie Index
                 </Button>
               </Link>
+              <Button
+                variant="outline"
+                className="gap-2"
+                disabled={isRefreshing}
+                onClick={async () => {
+                  setIsRefreshing(true);
+                  await queryClient.invalidateQueries({ queryKey: ["dashboard-entries"] });
+                  await queryClient.invalidateQueries({ queryKey: ["dashboard-chart"] });
+                  await queryClient.invalidateQueries({ queryKey: ["latest-jauge"] });
+                  await queryClient.invalidateQueries({ queryKey: ["db-stations"] });
+                  await queryClient.invalidateQueries({ queryKey: ["stock-jauges"] });
+                  await queryClient.invalidateQueries({ queryKey: ["indexEntries"] });
+                  await queryClient.invalidateQueries({ queryKey: ["orders"] });
+                  await queryClient.invalidateQueries({ queryKey: ["supplies"] });
+                  await queryClient.invalidateQueries({ queryKey: ["stations"] });
+                  setIsRefreshing(false);
+                  toast({ title: "Données actualisées", description: "Toutes les données ont été rafraîchies." });
+                }}
+              >
+                <RefreshCw className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`} />
+                Actualiser
+              </Button>
               <DbStationSelector
                 selectedStation={selectedStation}
                 onSelect={setSelectedStation}
