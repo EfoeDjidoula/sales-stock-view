@@ -78,6 +78,41 @@ export const useDashboardData = (period: Period, stationId?: string | null) => {
     enabled: !!user,
   });
 
+  // Fetch latest jauge (stock) per station from the most recent complete entry
+  const latestJaugeQuery = useQuery({
+    queryKey: ["latest-jauge", stationId],
+    queryFn: async () => {
+      // Get the latest entry per station where at least one index_arrivee > 0
+      let query = supabase
+        .from("index_entries")
+        .select("station_id, super1_jauge, super2_jauge, gasoil1_jauge, gasoil2_jauge, entry_date, super1_index_arrivee, gasoil1_index_arrivee")
+        .or("super1_index_arrivee.gt.0,super2_index_arrivee.gt.0,gasoil1_index_arrivee.gt.0,gasoil2_index_arrivee.gt.0")
+        .order("entry_date", { ascending: false })
+        .limit(50);
+
+      if (stationId) {
+        query = query.eq("station_id", stationId);
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+
+      // Keep only the latest entry per station
+      const latestByStation = new Map<string, { superJauge: number; gasoilJauge: number; date: string }>();
+      for (const entry of data || []) {
+        if (!latestByStation.has(entry.station_id)) {
+          latestByStation.set(entry.station_id, {
+            superJauge: entry.super1_jauge + entry.super2_jauge,
+            gasoilJauge: entry.gasoil1_jauge + entry.gasoil2_jauge,
+            date: entry.entry_date,
+          });
+        }
+      }
+      return latestByStation;
+    },
+    enabled: !!user,
+  });
+
   // Also fetch recent 30 days for chart regardless of period filter
   const chartQuery = useQuery({
     queryKey: ["dashboard-chart", stationId],
@@ -101,6 +136,7 @@ export const useDashboardData = (period: Period, stationId?: string | null) => {
   });
 
   const entries = entriesQuery.data || [];
+  const latestJauges = latestJaugeQuery.data || new Map();
 
   const computeSales = (entry: typeof entries[number]): DailySalesData => {
     const s1 = entry.super1_index_arrivee - entry.super1_index_depart;
@@ -137,13 +173,25 @@ export const useDashboardData = (period: Period, stationId?: string | null) => {
 
   // Sales by station
   const salesByStation = new Map<string, { total: number; super: number; gasoil: number; name: string; location: string; superJauge: number; gasoilJauge: number }>();
+  
+  // First, initialize with latest jauge data for all stations
+  for (const station of (stationsQuery.data || [])) {
+    const latestJauge = latestJauges.get(station.id);
+    salesByStation.set(station.id, {
+      total: 0, super: 0, gasoil: 0,
+      name: station.name, location: station.location,
+      superJauge: latestJauge?.superJauge || 0,
+      gasoilJauge: latestJauge?.gasoilJauge || 0,
+    });
+  }
+  
+  // Then accumulate sales from the period
   for (const d of salesData) {
     const existing = salesByStation.get(d.stationId) || { total: 0, super: 0, gasoil: 0, name: d.stationName, location: "", superJauge: 0, gasoilJauge: 0 };
     existing.total += d.totalAmount;
     existing.super += d.superAmount;
     existing.gasoil += d.gasoilAmount;
-    existing.superJauge = d.super1Jauge + d.super2Jauge; // latest
-    existing.gasoilJauge = d.gasoil1Jauge + d.gasoil2Jauge;
+    // Don't override jauge - we use latest known values from latestJaugeQuery
     salesByStation.set(d.stationId, existing);
   }
 
@@ -184,6 +232,6 @@ export const useDashboardData = (period: Period, stationId?: string | null) => {
     salesByStation,
     chartData,
     salesData,
-    isLoading: stationsQuery.isLoading || entriesQuery.isLoading || chartQuery.isLoading,
+    isLoading: stationsQuery.isLoading || entriesQuery.isLoading || chartQuery.isLoading || latestJaugeQuery.isLoading,
   };
 };
