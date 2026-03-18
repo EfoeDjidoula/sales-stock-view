@@ -165,6 +165,10 @@ export const useSaveIndexEntry = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["indexEntries"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard-entries"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard-chart"] });
+      queryClient.invalidateQueries({ queryKey: ["latest-jauge"] });
+      queryClient.invalidateQueries({ queryKey: ["stock-jauges"] });
       toast.success("Index enregistrés avec succès");
     },
     onError: (error: Error) => {

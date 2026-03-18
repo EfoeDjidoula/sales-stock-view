@@ -322,6 +322,10 @@ export const useExcelImport = () => {
     },
     onSuccess: (result) => {
       queryClient.invalidateQueries({ queryKey: ["indexEntries"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard-entries"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard-chart"] });
+      queryClient.invalidateQueries({ queryKey: ["latest-jauge"] });
+      queryClient.invalidateQueries({ queryKey: ["stock-jauges"] });
       if (result.success > 0) {
         toast.success(`${result.success} entrées importées avec succès`);
       }
