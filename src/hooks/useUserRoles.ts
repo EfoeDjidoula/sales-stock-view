@@ -138,18 +138,18 @@ export const useUserRoles = () => {
 
   const toggleUserActive = async (userId: string, isActive: boolean) => {
     try {
-      const { error } = await supabase
-        .from("profiles")
-        .update({ is_active: isActive })
-        .eq("user_id", userId);
+      const { data, error } = await supabase.functions.invoke("toggle-user-status", {
+        body: { user_id: userId, is_active: isActive },
+      });
 
       if (error) throw error;
+      if (data?.error) throw new Error(data.error);
 
       toast.success(isActive ? "Compte activé" : "Compte désactivé");
       await fetchUsersWithRoles();
     } catch (error: any) {
       console.error(error);
-      toast.error("Erreur lors de la modification du statut");
+      toast.error(error?.message || "Erreur lors de la modification du statut");
     }
   };
 
