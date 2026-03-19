@@ -3,7 +3,7 @@ import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
-import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
 
 export interface ParsedIndexEntry {
   date: string;
@@ -39,19 +39,34 @@ const parseNumber = (value: unknown): number => {
   return isNaN(parsed) ? 0 : parsed;
 };
 
-// Parse date from Excel serial number or string
+// Parse Excel serial date number to YYYY-MM-DD
+const excelSerialToDate = (serial: number): string | null => {
+  // Excel dates are days since 1900-01-01 (with a bug treating 1900 as leap year)
+  const utcDays = Math.floor(serial) - 25569;
+  const date = new Date(utcDays * 86400000);
+  if (isNaN(date.getTime())) return null;
+  const y = date.getUTCFullYear();
+  const m = String(date.getUTCMonth() + 1).padStart(2, "0");
+  const d = String(date.getUTCDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+};
+
+// Parse date from Excel cell value
 const parseExcelDate = (value: unknown): string | null => {
   if (!value) return null;
-  
-  if (typeof value === "number") {
-    const date = XLSX.SSF.parse_date_code(value);
-    if (date) {
-      return `${date.y}-${String(date.m).padStart(2, "0")}-${String(date.d).padStart(2, "0")}`;
-    }
+
+  if (value instanceof Date) {
+    const y = value.getFullYear();
+    const m = String(value.getMonth() + 1).padStart(2, "0");
+    const d = String(value.getDate()).padStart(2, "0");
+    return `${y}-${m}-${d}`;
   }
-  
+
+  if (typeof value === "number") {
+    return excelSerialToDate(value);
+  }
+
   if (typeof value === "string") {
-    // Handle "1/1/26", "1/2/26", "2/15/26" etc.
     const match = value.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
     if (match) {
       const [, month, day, yearShort] = match;
@@ -59,17 +74,32 @@ const parseExcelDate = (value: unknown): string | null => {
       return `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`;
     }
   }
-  
+
   return null;
 };
 
-// Parse a single sheet (station) data - matches exact Excel structure
-const parseSheetData = (worksheet: XLSX.WorkSheet, stationName: string): ParsedIndexEntry[] => {
+// Convert ExcelJS row to array of values
+const rowToArray = (row: ExcelJS.Row): unknown[] => {
+  const values: unknown[] = [];
+  row.eachCell({ includeEmpty: true }, (cell, colNumber) => {
+    while (values.length < colNumber - 1) values.push(null);
+    values.push(cell.value);
+  });
+  return values;
+};
+
+// Parse a single worksheet (station) data
+const parseWorksheetData = (worksheet: ExcelJS.Worksheet, stationName: string): ParsedIndexEntry[] => {
   const entries: ParsedIndexEntry[] = [];
-  const data = XLSX.utils.sheet_to_json(worksheet, { header: 1 }) as unknown[][];
-  
+
+  // Build a 2D array from the worksheet
+  const data: unknown[][] = [];
+  worksheet.eachRow({ includeEmpty: true }, (row) => {
+    data.push(rowToArray(row));
+  });
+
   if (data.length < 3) return entries;
-  
+
   // Find header row containing "PRODUITS"
   let headerRowIndex = -1;
   for (let i = 0; i < Math.min(10, data.length); i++) {
@@ -79,18 +109,17 @@ const parseSheetData = (worksheet: XLSX.WorkSheet, stationName: string): ParsedI
       break;
     }
   }
-  
+
   if (headerRowIndex === -1) return entries;
-  
+
   const headerRow = data[headerRowIndex] as string[];
-  
-  // Find column indices based on Excel header structure
+
   const findCol = (keywords: string[]): number => {
-    return headerRow.findIndex((h) => 
+    return headerRow.findIndex((h) =>
       keywords.some((k) => String(h || "").toUpperCase().includes(k.toUpperCase()))
     );
   };
-  
+
   const colProduits = findCol(["PRODUITS"]);
   const colArrivee = findCol(["ARRIVEE"]);
   const colDepart = findCol(["DEPART"]);
@@ -98,27 +127,23 @@ const parseSheetData = (worksheet: XLSX.WorkSheet, stationName: string): ParsedI
   const colLiquidite = findCol(["LIQUIDITE"]);
   const colBanque = findCol(["VERSEMENT BANQUE"]);
   const colNumBV = findCol(["NUM BV", "N° BV", "N°BV"]);
-  // Handle both naming conventions
   const colBonsYatt = findCol(["BONS YATT", "BONS DE VALEUR"]);
   const colBonsClients = findCol(["BONS CLIENTS", "CARTES PREPAYEES"]);
   const colJauge = findCol(["JAUGE DU JOUR", "JAUGE"]);
-  
-  // Process data rows
+
   let currentDate: string | null = null;
   let currentEntry: Partial<ParsedIndexEntry> | null = null;
-  
+
   for (let i = headerRowIndex + 1; i < data.length; i++) {
     const row = data[i] as unknown[];
     if (!row || row.length === 0) continue;
-    
-    // Check for new date in first column
+
     const dateValue = parseExcelDate(row[0]);
     if (dateValue) {
-      // Save previous entry
       if (currentEntry && currentEntry.date) {
         entries.push(currentEntry as ParsedIndexEntry);
       }
-      
+
       currentDate = dateValue;
       currentEntry = {
         date: currentDate,
@@ -131,40 +156,32 @@ const parseSheetData = (worksheet: XLSX.WorkSheet, stationName: string): ParsedI
         bons: { yatt: 0, clients: 0 },
       };
     }
-    
+
     if (!currentEntry || !currentDate) continue;
-    
+
     const produit = String(row[colProduits] || "").toUpperCase().trim();
     const arrivee = parseNumber(row[colArrivee]);
     const depart = parseNumber(row[colDepart]);
     const jauge = colJauge >= 0 ? parseNumber(row[colJauge]) : 0;
-    
-    // SUPER 1 & SUPER 2 → super1 (pump group 1)
+
     if (produit === "SUPER 1" || produit === "SUPER 2") {
       currentEntry.super1!.indexDepart += depart;
       currentEntry.super1!.indexArrivee += arrivee;
       if (produit === "SUPER 1") currentEntry.super1!.jauge = jauge;
-    }
-    // SUPER 3, 4, 5, 6 → super2 (pump group 2)  
-    else if (produit.startsWith("SUPER") && !produit.includes("TOTAL")) {
+    } else if (produit.startsWith("SUPER") && !produit.includes("TOTAL")) {
       currentEntry.super2!.indexDepart += depart;
       currentEntry.super2!.indexArrivee += arrivee;
       if (produit === "SUPER 3") currentEntry.super2!.jauge = jauge;
-    }
-    // GASOIL 1 & GASOIL 2 → gasoil1 (pump group 1)
-    else if (produit === "GASOIL 1" || produit === "GASOIL 2") {
+    } else if (produit === "GASOIL 1" || produit === "GASOIL 2") {
       currentEntry.gasoil1!.indexDepart += depart;
       currentEntry.gasoil1!.indexArrivee += arrivee;
       if (produit === "GASOIL 1") currentEntry.gasoil1!.jauge = jauge;
-    }
-    // GASOIL 3, 4, 5 → gasoil2 (pump group 2)
-    else if (produit.startsWith("GASOIL") && !produit.includes("TOTAL")) {
+    } else if (produit.startsWith("GASOIL") && !produit.includes("TOTAL")) {
       currentEntry.gasoil2!.indexDepart += depart;
       currentEntry.gasoil2!.indexArrivee += arrivee;
       if (produit === "GASOIL 3") currentEntry.gasoil2!.jauge = jauge;
     }
-    
-    // Extract versements and bons from SUPER 1 row (first product row of each day)
+
     if (produit === "SUPER 1") {
       if (colMomo >= 0) currentEntry.versements!.momo = parseNumber(row[colMomo]);
       if (colLiquidite >= 0) currentEntry.versements!.liquidite = parseNumber(row[colLiquidite]);
@@ -173,7 +190,6 @@ const parseSheetData = (worksheet: XLSX.WorkSheet, stationName: string): ParsedI
       if (colBonsYatt >= 0) currentEntry.bons!.yatt = parseNumber(row[colBonsYatt]);
       if (colBonsClients >= 0) currentEntry.bons!.clients = parseNumber(row[colBonsClients]);
     }
-    // Also check TOTAL row for versements (some sheets put data there)
     if (produit === "TOTAL") {
       if (colMomo >= 0 && !currentEntry.versements!.momo) {
         currentEntry.versements!.momo = parseNumber(row[colMomo]);
@@ -186,12 +202,11 @@ const parseSheetData = (worksheet: XLSX.WorkSheet, stationName: string): ParsedI
       }
     }
   }
-  
-  // Don't forget the last entry
+
   if (currentEntry && currentEntry.date) {
     entries.push(currentEntry as ParsedIndexEntry);
   }
-  
+
   return entries;
 };
 
@@ -202,64 +217,46 @@ export const useExcelImport = () => {
   const [progress, setProgress] = useState({ current: 0, total: 0 });
 
   const parseExcelFile = async (file: File): Promise<ParsedIndexEntry[]> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      
-      reader.onload = (e) => {
-        try {
-          const data = e.target?.result;
-          const workbook = XLSX.read(data, { type: "binary" });
-          
-          const allEntries: ParsedIndexEntry[] = [];
-          
-          // Process each sheet (each represents a station)
-          // Skip cover/summary sheets that don't have data
-          for (const sheetName of workbook.SheetNames) {
-            const worksheet = workbook.Sheets[sheetName];
-            const stationName = sheetName.trim().toUpperCase();
-            const entries = parseSheetData(worksheet, stationName);
-            allEntries.push(...entries);
-          }
-          
-          resolve(allEntries);
-        } catch (error) {
-          reject(new Error(`Erreur de lecture du fichier Excel: ${error}`));
-        }
-      };
-      
-      reader.onerror = () => reject(new Error("Erreur de lecture du fichier"));
-      reader.readAsBinaryString(file);
+    const arrayBuffer = await file.arrayBuffer();
+    const workbook = new ExcelJS.Workbook();
+    await workbook.xlsx.load(arrayBuffer);
+
+    const allEntries: ParsedIndexEntry[] = [];
+
+    workbook.eachSheet((worksheet) => {
+      const stationName = (worksheet.name || "").trim().toUpperCase();
+      const entries = parseWorksheetData(worksheet, stationName);
+      allEntries.push(...entries);
     });
+
+    return allEntries;
   };
 
   const importMutation = useMutation({
     mutationFn: async (entries: ParsedIndexEntry[]): Promise<ImportResult> => {
       if (!user) throw new Error("Utilisateur non authentifié");
-      
+
       const result: ImportResult = { success: 0, failed: 0, errors: [] };
-      
+
       const { data: stations, error: stationsError } = await supabase
         .from("stations")
         .select("id, name");
-      
+
       if (stationsError) throw new Error(`Erreur de récupération des stations: ${stationsError.message}`);
-      
-      // Map station names (case insensitive)
+
       const stationMap = new Map<string, string>();
       stations?.forEach((s) => {
         stationMap.set(s.name.toUpperCase(), s.id);
       });
-      
+
       setProgress({ current: 0, total: entries.length });
-      
+
       for (let i = 0; i < entries.length; i++) {
         const entry = entries[i];
         setProgress({ current: i + 1, total: entries.length });
-        
-        // Direct match on uppercase name
+
         let stationId = stationMap.get(entry.stationName.toUpperCase());
-        
-        // Try partial match if not found
+
         if (!stationId) {
           for (const [key, id] of stationMap) {
             if (entry.stationName.includes(key) || key.includes(entry.stationName)) {
@@ -268,13 +265,13 @@ export const useExcelImport = () => {
             }
           }
         }
-        
+
         if (!stationId) {
           result.failed++;
           result.errors.push(`Station non trouvée: ${entry.stationName} (${entry.date})`);
           continue;
         }
-        
+
         const dbEntry = {
           user_id: user.id,
           station_id: stationId,
@@ -300,13 +297,13 @@ export const useExcelImport = () => {
           bons_entreprise_nombre: 0,
           bons_entreprise_valeur: entry.bons.clients,
         };
-        
+
         const { error } = await supabase
           .from("index_entries")
           .upsert(dbEntry, {
             onConflict: "user_id,station_id,entry_date",
           });
-        
+
         if (error) {
           result.failed++;
           result.errors.push(`${entry.stationName} ${entry.date}: ${error.message}`);
@@ -314,7 +311,7 @@ export const useExcelImport = () => {
           result.success++;
         }
       }
-      
+
       return result;
     },
     onSuccess: (result) => {
@@ -348,12 +345,12 @@ export const useExcelImport = () => {
         setIsProcessing(false);
         return;
       }
-      
+
       toast.info(`${entries.length} entrées détectées, importation en cours...`);
       await importMutation.mutateAsync(entries);
     } catch (error) {
-      toast.error("Erreur de lecture du fichier", { 
-        description: error instanceof Error ? error.message : "Erreur inconnue" 
+      toast.error("Erreur de lecture du fichier", {
+        description: error instanceof Error ? error.message : "Erreur inconnue",
       });
       setIsProcessing(false);
     }
