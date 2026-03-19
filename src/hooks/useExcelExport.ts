@@ -2,7 +2,7 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
-import * as XLSX from "xlsx";
+import ExcelJS from "exceljs";
 
 // Excel column structure matching the uploaded file format
 const HEADERS_ROW_1 = [
@@ -17,12 +17,6 @@ const HEADERS_ROW_2 = [
   "VERSEMENT MOMO", "LIQUIDITE", "VERSEMENT BANQUE", "ECART", "BANQUE", "NUM BV",
   "CUVES", "STOCK OUVERTURE", "DEPOTAGE", "N°BL", "CHAUFFEUR", "ECART AP DEPOTAGE",
   "SORTIE", "STOCK CLOTURE", "JAUGE DU JOUR", "ECART",
-];
-
-const PRODUCTS = [
-  "SUPER 1", "SUPER 2", "SUPER 3", "SUPER 4",
-  "GASOIL 1", "GASOIL 2", "GASOIL 3", "GASOIL 4",
-  "TOTAL",
 ];
 
 export const useExcelExport = () => {
@@ -62,24 +56,24 @@ export const useExcelExport = () => {
 
       if (entriesError) throw entriesError;
 
-      const workbook = XLSX.utils.book_new();
+      const workbook = new ExcelJS.Workbook();
 
       for (const station of stations || []) {
         const stationEntries = (entries || []).filter(
           (e) => e.station_id === station.id
         );
 
-        const rows: (string | number | null)[][] = [
-          HEADERS_ROW_1,
-          HEADERS_ROW_2,
-        ];
+        const sheetName = station.name.substring(0, 31);
+        const worksheet = workbook.addWorksheet(sheetName);
+
+        // Add header rows
+        worksheet.addRow(HEADERS_ROW_1);
+        worksheet.addRow(HEADERS_ROW_2);
 
         for (const entry of stationEntries) {
-          // Format date as M/D/YY
           const [y, m, d] = entry.entry_date.split("-");
           const dateStr = `${parseInt(m)}/${parseInt(d)}/${y.slice(2)}`;
 
-          // Calculate quantities
           const super1Qty = entry.super1_index_arrivee - entry.super1_index_depart;
           const super2Qty = entry.super2_index_arrivee - entry.super2_index_depart;
           const gasoil1Qty = entry.gasoil1_index_arrivee - entry.gasoil1_index_depart;
@@ -90,93 +84,85 @@ export const useExcelExport = () => {
           const gasoilAmount = totalGasoil * 720;
           const totalAmount = superAmount + gasoilAmount;
 
-          const productRows: (string | number | null)[][] = [
-            // SUPER 1 - includes versements/bons data
+          const dash = (v: number) => (v > 0 ? v : "-");
+
+          const productRows = [
             [dateStr, "SUPER 1",
               entry.super1_index_arrivee, entry.super1_index_depart,
-              super1Qty > 0 ? super1Qty : "-",
-              totalSuper > 0 ? totalSuper : "-", "", totalSuper > 0 ? totalSuper : "-",
-              695, superAmount > 0 ? superAmount : "-",
+              dash(super1Qty), dash(totalSuper), "", dash(totalSuper),
+              695, dash(superAmount),
               entry.bons_carburant_valeur || "", entry.bons_entreprise_valeur || "", "", "",
-              totalAmount > 0 ? totalAmount : "-",
+              dash(totalAmount),
               entry.versement_momo || "", entry.versement_liquidite || "",
               entry.versement_banque || "", "",
               "", entry.versement_banque_ref || "",
-              `SUPER (1)`, entry.super1_jauge || "", "", "", "", "",
-              totalSuper > 0 ? totalSuper : "-", "", entry.super1_jauge || "", "",
+              "SUPER (1)", entry.super1_jauge || "", "", "", "", "",
+              dash(totalSuper), "", entry.super1_jauge || "", "",
             ],
-            // SUPER 2
             ["", "SUPER 2",
               entry.super2_index_arrivee || "", entry.super2_index_depart || "",
-              super2Qty > 0 ? super2Qty : "-",
+              dash(super2Qty),
               ...Array(26).fill(""),
             ],
-            // SUPER 3 (empty if no data)
             ["", "SUPER 3", "", "", "-", "", "", "",
               "", "", "", "", "", "", "", "", "", "", "", "", "",
-              `SUPER (2)`, entry.super2_jauge || "", "", "", "", "",
+              "SUPER (2)", entry.super2_jauge || "", "", "", "", "",
               "", "", entry.super2_jauge || "", "",
             ],
-            // SUPER 4
             ["", "SUPER 4", "", "", "-", ...Array(26).fill("")],
-            // GASOIL 1
             ["", "GASOIL 1",
               entry.gasoil1_index_arrivee, entry.gasoil1_index_depart,
-              gasoil1Qty > 0 ? gasoil1Qty : "-",
-              totalGasoil > 0 ? totalGasoil : "-", "", totalGasoil > 0 ? totalGasoil : "-",
-              720, gasoilAmount > 0 ? gasoilAmount : "-",
+              dash(gasoil1Qty), dash(totalGasoil), "", dash(totalGasoil),
+              720, dash(gasoilAmount),
               "", "", "", "", "", "", "", "", "", "", "",
-              `GASOIL (1)`, entry.gasoil1_jauge || "", "", "", "", "",
-              totalGasoil > 0 ? totalGasoil : "-", "", entry.gasoil1_jauge || "", "",
+              "GASOIL (1)", entry.gasoil1_jauge || "", "", "", "", "",
+              dash(totalGasoil), "", entry.gasoil1_jauge || "", "",
             ],
-            // GASOIL 2
             ["", "GASOIL 2",
               entry.gasoil2_index_arrivee || "", entry.gasoil2_index_depart || "",
-              gasoil2Qty > 0 ? gasoil2Qty : "-",
+              dash(gasoil2Qty),
               ...Array(26).fill(""),
             ],
-            // GASOIL 3
             ["", "GASOIL 3", "", "", "-", "", "", "",
-              "", "", `GASOIL (2)`, entry.gasoil2_jauge || "", "", "", "", "", "", "", "", "", "",
+              "", "", "GASOIL (2)", entry.gasoil2_jauge || "", "", "", "", "", "", "", "", "", "",
               "", "", "", "", "", "",
               "", "", entry.gasoil2_jauge || "", "",
             ],
-            // GASOIL 4
             ["", "GASOIL 4", "", "", "-", ...Array(26).fill("")],
-            // TOTAL
             ["", "TOTAL", "", "", "", "", "", "",
-              "", totalAmount > 0 ? totalAmount : "-",
+              "", dash(totalAmount),
               entry.bons_carburant_valeur || "", entry.bons_entreprise_valeur || "", "", "",
-              totalAmount > 0 ? totalAmount : "-",
+              dash(totalAmount),
               entry.versement_momo || "", entry.versement_liquidite || "",
               entry.versement_banque || "", "", "", "",
               "", "", "", "", "", "", "", "", "", "",
             ],
           ];
 
-          rows.push(...productRows);
+          for (const row of productRows) {
+            worksheet.addRow(row);
+          }
         }
 
-        const worksheet = XLSX.utils.aoa_to_sheet(rows);
-
         // Set column widths
-        worksheet["!cols"] = Array(31).fill(null).map((_, i) => {
-          if (i === 0) return { wch: 10 };
-          if (i === 1) return { wch: 12 };
-          if (i === 2 || i === 3) return { wch: 14 };
-          return { wch: 12 };
-        });
-
-        const sheetName = station.name.substring(0, 31);
-        XLSX.utils.book_append_sheet(workbook, worksheet, sheetName);
+        worksheet.columns = Array(31).fill(null).map((_, i) => ({
+          width: i === 0 ? 10 : i === 1 ? 12 : (i === 2 || i === 3) ? 14 : 12,
+        }));
       }
 
-      const monthNames = [
-        "Janvier", "Février", "Mars", "Avril", "Mai", "Juin",
-        "Juillet", "Août", "Septembre", "Octobre", "Novembre", "Décembre",
-      ];
       const fileName = `SUIVI_DES_INDEX_DES_STATIONS_YATT_CO_ENERGY_BENIN_${targetYear}_${targetMonth}.xlsx`;
-      XLSX.writeFile(workbook, fileName);
+
+      // Generate buffer and trigger download
+      const buffer = await workbook.xlsx.writeBuffer();
+      const blob = new Blob([buffer], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
 
       toast.success("Export réussi", { description: fileName });
     } catch (error) {
