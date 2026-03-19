@@ -260,7 +260,12 @@ export const StationManagement = ({ isAdmin }: StationManagementProps) => {
               {/* Assigned users badges */}
               {(() => {
                 const assigned = getAssignedUsers(station.id);
-                if (assigned.length === 0) return null;
+                if (assigned.length === 0) return (
+                  <div className="flex items-center gap-1.5 mb-3 px-2 py-1.5 rounded-md bg-destructive/10 border border-destructive/20">
+                    <Users className="w-3.5 h-3.5 text-destructive" />
+                    <span className="text-xs font-medium text-destructive">Aucun opérateur assigné</span>
+                  </div>
+                );
                 return (
                   <div className="flex flex-wrap gap-1 mb-3">
                     {assigned.map((a) => {
