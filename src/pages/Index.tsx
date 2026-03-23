@@ -13,6 +13,7 @@ import { AccessDenied } from "@/components/AccessDenied";
 import { SuppliesModule } from "@/components/orders/SuppliesModule";
 import { UsersModule } from "@/components/users/UsersModule";
 import { StationManagement } from "@/components/stations/StationManagement";
+import { FiscalYearModule } from "@/components/fiscal/FiscalYearModule";
 import { ExcelImportDialog } from "@/components/import/ExcelImportDialog";
 import { ExcelExportDialog } from "@/components/import/ExcelExportDialog";
 import { DbStationSelector } from "@/components/dashboard/DbStationSelector";
