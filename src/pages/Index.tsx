@@ -31,6 +31,7 @@ import {
   Upload,
   Download,
   RefreshCw,
+  BookOpen,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
