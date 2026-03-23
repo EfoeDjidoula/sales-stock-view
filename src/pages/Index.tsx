@@ -217,6 +217,15 @@ const Index = () => {
                   Stations
                 </TabsTrigger>
               )}
+              {canAccessTab("exercices") && (
+                <TabsTrigger
+                  value="exercices"
+                  className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground gap-2 px-4 py-2"
+                >
+                  <BookOpen className="w-4 h-4" />
+                  Exercices
+                </TabsTrigger>
+              )}
               {canAccessTab("droits") && (
                 <TabsTrigger
                   value="droits"
