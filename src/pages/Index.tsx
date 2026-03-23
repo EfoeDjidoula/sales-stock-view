@@ -13,6 +13,7 @@ import { AccessDenied } from "@/components/AccessDenied";
 import { SuppliesModule } from "@/components/orders/SuppliesModule";
 import { UsersModule } from "@/components/users/UsersModule";
 import { StationManagement } from "@/components/stations/StationManagement";
+import { FiscalYearModule } from "@/components/fiscal/FiscalYearModule";
 import { ExcelImportDialog } from "@/components/import/ExcelImportDialog";
 import { ExcelExportDialog } from "@/components/import/ExcelExportDialog";
 import { DbStationSelector } from "@/components/dashboard/DbStationSelector";
@@ -30,6 +31,7 @@ import {
   Upload,
   Download,
   RefreshCw,
+  BookOpen,
 } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -44,6 +46,7 @@ const TAB_PERMISSIONS: Record<string, AppRole[]> = {
   commandes: ["admin", "manager"],
   approvisionnements: ["admin", "manager"],
   stations: ["admin", "manager", "operator"],
+  exercices: ["admin"],
   droits: ["admin"],
 };
 
@@ -214,6 +217,15 @@ const Index = () => {
                   Stations
                 </TabsTrigger>
               )}
+              {canAccessTab("exercices") && (
+                <TabsTrigger
+                  value="exercices"
+                  className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground gap-2 px-4 py-2"
+                >
+                  <BookOpen className="w-4 h-4" />
+                  Exercices
+                </TabsTrigger>
+              )}
               {canAccessTab("droits") && (
                 <TabsTrigger
                   value="droits"
@@ -316,6 +328,14 @@ const Index = () => {
           {/* Stations Tab */}
           <TabsContent value="stations" className="animate-fade-in">
             <StationManagement isAdmin={currentUserRole === "admin"} />
+          </TabsContent>
+          {/* Exercices Tab */}
+          <TabsContent value="exercices" className="animate-fade-in">
+            {canAccessTab("exercices") ? (
+              <FiscalYearModule />
+            ) : (
+              <AccessDenied onGoBack={() => setActiveTab("ventes")} />
+            )}
           </TabsContent>
 
           {/* Gestion des droits Tab */}
