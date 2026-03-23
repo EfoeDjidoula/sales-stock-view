@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      fiscal_years: {
+        Row: {
+          closed_at: string | null
+          created_at: string
+          created_by: string
+          id: string
+          opened_at: string
+          status: string
+          updated_at: string
+          year: number
+        }
+        Insert: {
+          closed_at?: string | null
+          created_at?: string
+          created_by: string
+          id?: string
+          opened_at?: string
+          status?: string
+          updated_at?: string
+          year: number
+        }
+        Update: {
+          closed_at?: string | null
+          created_at?: string
+          created_by?: string
+          id?: string
+          opened_at?: string
+          status?: string
+          updated_at?: string
+          year?: number
+        }
+        Relationships: []
+      }
       index_entries: {
         Row: {
           bons_carburant_nombre: number
