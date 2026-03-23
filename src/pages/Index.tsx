@@ -329,6 +329,14 @@ const Index = () => {
           <TabsContent value="stations" className="animate-fade-in">
             <StationManagement isAdmin={currentUserRole === "admin"} />
           </TabsContent>
+          {/* Exercices Tab */}
+          <TabsContent value="exercices" className="animate-fade-in">
+            {canAccessTab("exercices") ? (
+              <FiscalYearModule />
+            ) : (
+              <AccessDenied onGoBack={() => setActiveTab("ventes")} />
+            )}
+          </TabsContent>
 
           {/* Gestion des droits Tab */}
           <TabsContent value="droits" className="animate-fade-in">
