@@ -128,11 +128,11 @@ const defaultValues: IndexEntryForm = {
 const IndexEntry = () => {
   const { data: dbStations } = useStations();
   const { fiscalYears } = useFiscalYears();
+  const { user } = useAuth();
   const [selectedStation, setSelectedStation] = useState<{ id: string; name: string; location: string } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { exportPdf } = usePdfExport();
   const saveIndexEntry = useSaveIndexEntry();
-  
 
   // Set first station as default when stations load
   useEffect(() => {
@@ -157,6 +157,42 @@ const IndexEntry = () => {
   }, [selectedDate, fiscalYears]);
 
   const isFiscalYearClosed = fiscalYearStatus?.status === "closed";
+
+  // Fetch previous entry to auto-fill index départ
+  const { data: previousEntry } = useQuery({
+    queryKey: ["previous-entry", selectedStation?.id, selectedDate],
+    queryFn: async () => {
+      if (!selectedStation?.id || !selectedDate) return null;
+      const { data, error } = await supabase
+        .from("index_entries")
+        .select("super1_index_arrivee, super2_index_arrivee, gasoil1_index_arrivee, gasoil2_index_arrivee, entry_date")
+        .eq("station_id", selectedStation.id)
+        .lt("entry_date", selectedDate)
+        .order("entry_date", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!selectedStation?.id && !!selectedDate && !!user,
+  });
+
+  // Auto-fill index départ from previous entry's index arrivée
+  useEffect(() => {
+    if (previousEntry) {
+      form.setValue("super1.indexDepart", String(previousEntry.super1_index_arrivee ?? 0));
+      form.setValue("super2.indexDepart", String(previousEntry.super2_index_arrivee ?? 0));
+      form.setValue("gasoil1.indexDepart", String(previousEntry.gasoil1_index_arrivee ?? 0));
+      form.setValue("gasoil2.indexDepart", String(previousEntry.gasoil2_index_arrivee ?? 0));
+    } else {
+      form.setValue("super1.indexDepart", "");
+      form.setValue("super2.indexDepart", "");
+      form.setValue("gasoil1.indexDepart", "");
+      form.setValue("gasoil2.indexDepart", "");
+    }
+  }, [previousEntry, form]);
+
+  const hasPreviousEntry = !!previousEntry;
 
   const onSubmit = async (data: IndexEntryForm) => {
     if (!selectedStation) {
