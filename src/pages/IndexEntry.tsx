@@ -401,6 +401,20 @@ const IndexEntry = () => {
               </CardContent>
             </Card>
 
+            {/* Fiscal Year Closed Warning */}
+            {isFiscalYearClosed && (
+              <div className="flex items-center gap-3 bg-destructive/10 border border-destructive/30 rounded-lg p-4">
+                <Lock className="w-5 h-5 text-destructive shrink-0" />
+                <div>
+                  <p className="font-semibold text-destructive">
+                    Exercice {fiscalYearStatus.year} clôturé
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Les saisies sont bloquées pour cette période. Contactez un administrateur pour réouvrir l'exercice.
+                  </p>
+                </div>
+              </div>
+            )}
             {/* Station Info */}
             {selectedStation && (
               <div className="bg-card rounded-xl border border-primary/30 p-4 flex items-center gap-4">
