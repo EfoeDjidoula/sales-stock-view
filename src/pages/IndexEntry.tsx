@@ -5,6 +5,9 @@ import { z } from "zod";
 import { formatNumber } from "@/data/stationsData";
 import { useStations, useSaveIndexEntry } from "@/hooks/useIndexEntries";
 import { useFiscalYears } from "@/hooks/useFiscalYears";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "@/hooks/useAuth";
 import { ProfileMenu } from "@/components/ProfileMenu";
 import { DbStationSelector } from "@/components/dashboard/DbStationSelector";
 import {
@@ -55,8 +58,7 @@ const productEntrySchema = z.object({
     }),
   indexDepart: z
     .string()
-    .min(1, "Index requis")
-    .refine((val) => !isNaN(parseFloat(val)) && parseFloat(val) >= 0, {
+    .refine((val) => val === "" || (!isNaN(parseFloat(val)) && parseFloat(val) >= 0), {
       message: "Doit être un nombre positif",
     }),
   jaugeDuJour: z
@@ -125,11 +127,11 @@ const defaultValues: IndexEntryForm = {
 const IndexEntry = () => {
   const { data: dbStations } = useStations();
   const { fiscalYears } = useFiscalYears();
+  const { user } = useAuth();
   const [selectedStation, setSelectedStation] = useState<{ id: string; name: string; location: string } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { exportPdf } = usePdfExport();
   const saveIndexEntry = useSaveIndexEntry();
-  
 
   // Set first station as default when stations load
   useEffect(() => {
@@ -154,6 +156,42 @@ const IndexEntry = () => {
   }, [selectedDate, fiscalYears]);
 
   const isFiscalYearClosed = fiscalYearStatus?.status === "closed";
+
+  // Fetch previous entry to auto-fill index départ
+  const { data: previousEntry } = useQuery({
+    queryKey: ["previous-entry", selectedStation?.id, selectedDate],
+    queryFn: async () => {
+      if (!selectedStation?.id || !selectedDate) return null;
+      const { data, error } = await supabase
+        .from("index_entries")
+        .select("super1_index_arrivee, super2_index_arrivee, gasoil1_index_arrivee, gasoil2_index_arrivee, entry_date")
+        .eq("station_id", selectedStation.id)
+        .lt("entry_date", selectedDate)
+        .order("entry_date", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (error) throw error;
+      return data;
+    },
+    enabled: !!selectedStation?.id && !!selectedDate && !!user,
+  });
+
+  // Auto-fill index départ from previous entry's index arrivée
+  useEffect(() => {
+    if (previousEntry) {
+      form.setValue("super1.indexDepart", String(previousEntry.super1_index_arrivee ?? 0));
+      form.setValue("super2.indexDepart", String(previousEntry.super2_index_arrivee ?? 0));
+      form.setValue("gasoil1.indexDepart", String(previousEntry.gasoil1_index_arrivee ?? 0));
+      form.setValue("gasoil2.indexDepart", String(previousEntry.gasoil2_index_arrivee ?? 0));
+    } else {
+      form.setValue("super1.indexDepart", "");
+      form.setValue("super2.indexDepart", "");
+      form.setValue("gasoil1.indexDepart", "");
+      form.setValue("gasoil2.indexDepart", "");
+    }
+  }, [previousEntry, form]);
+
+  const hasPreviousEntry = !!previousEntry;
 
   const onSubmit = async (data: IndexEntryForm) => {
     if (!selectedStation) {
@@ -225,10 +263,12 @@ const IndexEntry = () => {
     title,
     fieldPrefix,
     productType,
+    disableDepart,
   }: {
     title: string;
     fieldPrefix: "super1" | "super2" | "gasoil1" | "gasoil2";
     productType: "super" | "gasoil";
+    disableDepart: boolean;
   }) => {
     const colorClass = productType === "super" ? "super" : "gasoil";
 
@@ -265,14 +305,16 @@ const IndexEntry = () => {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-xs text-muted-foreground">
-                    Index Départ
+                    Index Départ {disableDepart && "(veille)"}
                   </FormLabel>
                   <FormControl>
                     <Input
                       type="number"
                       step="0.01"
                       placeholder="0.00"
-                      className="bg-secondary border-border"
+                      className={`border-border ${disableDepart ? "bg-muted text-muted-foreground cursor-not-allowed" : "bg-secondary"}`}
+                      readOnly={disableDepart}
+                      tabIndex={disableDepart ? -1 : undefined}
                       {...field}
                     />
                   </FormControl>
@@ -443,11 +485,13 @@ const IndexEntry = () => {
                   title="Super - Pompe 1 & 2"
                   fieldPrefix="super1"
                   productType="super"
+                  disableDepart={hasPreviousEntry}
                 />
                 <ProductEntryCard
                   title="Super - Pompe 3 & 4"
                   fieldPrefix="super2"
                   productType="super"
+                  disableDepart={hasPreviousEntry}
                 />
               </div>
             </div>
@@ -463,11 +507,13 @@ const IndexEntry = () => {
                   title="Gasoil - Pompe 1 & 2"
                   fieldPrefix="gasoil1"
                   productType="gasoil"
+                  disableDepart={hasPreviousEntry}
                 />
                 <ProductEntryCard
                   title="Gasoil - Pompe 3 & 4"
                   fieldPrefix="gasoil2"
                   productType="gasoil"
+                  disableDepart={hasPreviousEntry}
                 />
               </div>
             </div>
