@@ -5,6 +5,9 @@ import { z } from "zod";
 import { formatNumber } from "@/data/stationsData";
 import { useStations, useSaveIndexEntry } from "@/hooks/useIndexEntries";
 import { useFiscalYears } from "@/hooks/useFiscalYears";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery } from "@tanstack/react-query";
+import { useAuth } from "@/hooks/useAuth";
 import { ProfileMenu } from "@/components/ProfileMenu";
 import { DbStationSelector } from "@/components/dashboard/DbStationSelector";
 import {
