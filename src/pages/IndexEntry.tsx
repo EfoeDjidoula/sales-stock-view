@@ -1,9 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { formatNumber } from "@/data/stationsData";
 import { useStations, useSaveIndexEntry } from "@/hooks/useIndexEntries";
+import { useFiscalYears } from "@/hooks/useFiscalYears";
 import { ProfileMenu } from "@/components/ProfileMenu";
 import { DbStationSelector } from "@/components/dashboard/DbStationSelector";
 import {
@@ -17,6 +18,7 @@ import {
   Banknote,
   Smartphone,
   Building2,
+  Lock,
   Receipt,
   FileDown,
   
@@ -122,6 +124,7 @@ const defaultValues: IndexEntryForm = {
 
 const IndexEntry = () => {
   const { data: dbStations } = useStations();
+  const { fiscalYears } = useFiscalYears();
   const [selectedStation, setSelectedStation] = useState<{ id: string; name: string; location: string } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { exportPdf } = usePdfExport();
@@ -139,6 +142,18 @@ const IndexEntry = () => {
     resolver: zodResolver(indexEntrySchema),
     defaultValues,
   });
+
+  // Check if the selected date's fiscal year is closed
+  const selectedDate = form.watch("date");
+  const fiscalYearStatus = useMemo(() => {
+    if (!selectedDate || !fiscalYears.length) return null;
+    const year = new Date(selectedDate).getFullYear();
+    const fy = fiscalYears.find((f) => f.year === year);
+    if (!fy) return null;
+    return fy;
+  }, [selectedDate, fiscalYears]);
+
+  const isFiscalYearClosed = fiscalYearStatus?.status === "closed";
 
   const onSubmit = async (data: IndexEntryForm) => {
     if (!selectedStation) {
@@ -386,6 +401,20 @@ const IndexEntry = () => {
               </CardContent>
             </Card>
 
+            {/* Fiscal Year Closed Warning */}
+            {isFiscalYearClosed && (
+              <div className="flex items-center gap-3 bg-destructive/10 border border-destructive/30 rounded-lg p-4">
+                <Lock className="w-5 h-5 text-destructive shrink-0" />
+                <div>
+                  <p className="font-semibold text-destructive">
+                    Exercice {fiscalYearStatus.year} clôturé
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    Les saisies sont bloquées pour cette période. Contactez un administrateur pour réouvrir l'exercice.
+                  </p>
+                </div>
+              </div>
+            )}
             {/* Station Info */}
             {selectedStation && (
               <div className="bg-card rounded-xl border border-primary/30 p-4 flex items-center gap-4">
@@ -1046,7 +1075,7 @@ const IndexEntry = () => {
                 type="submit"
                 size="lg"
                 className="flex-1 sm:flex-none bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
-                disabled={isSubmitting}
+                disabled={isSubmitting || isFiscalYearClosed}
               >
                 {isSubmitting ? (
                   <>
