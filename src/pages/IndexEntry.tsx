@@ -1,9 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { formatNumber } from "@/data/stationsData";
 import { useStations, useSaveIndexEntry } from "@/hooks/useIndexEntries";
+import { useFiscalYears } from "@/hooks/useFiscalYears";
 import { ProfileMenu } from "@/components/ProfileMenu";
 import { DbStationSelector } from "@/components/dashboard/DbStationSelector";
 import {
@@ -17,6 +18,7 @@ import {
   Banknote,
   Smartphone,
   Building2,
+  Lock,
   Receipt,
   FileDown,
   
