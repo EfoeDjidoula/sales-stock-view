@@ -264,10 +264,12 @@ const IndexEntry = () => {
     title,
     fieldPrefix,
     productType,
+    disableDepart,
   }: {
     title: string;
     fieldPrefix: "super1" | "super2" | "gasoil1" | "gasoil2";
     productType: "super" | "gasoil";
+    disableDepart: boolean;
   }) => {
     const colorClass = productType === "super" ? "super" : "gasoil";
 
@@ -311,14 +313,12 @@ const IndexEntry = () => {
                       type="number"
                       step="0.01"
                       placeholder="0.00"
-                      className="bg-secondary border-border"
+                      className={`border-border ${disableDepart ? "bg-muted text-muted-foreground cursor-not-allowed" : "bg-secondary"}`}
+                      readOnly={disableDepart}
+                      tabIndex={disableDepart ? -1 : undefined}
                       {...field}
                     />
                   </FormControl>
-                  <FormMessage className="text-xs" />
-                </FormItem>
-              )}
-            />
             <FormField
               control={form.control}
               name={`${fieldPrefix}.indexArrivee`}
