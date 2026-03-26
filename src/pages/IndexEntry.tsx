@@ -306,7 +306,7 @@ const IndexEntry = () => {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-xs text-muted-foreground">
-                    Index Départ
+                    Index Départ {disableDepart && "(veille)"}
                   </FormLabel>
                   <FormControl>
                     <Input
@@ -319,6 +319,10 @@ const IndexEntry = () => {
                       {...field}
                     />
                   </FormControl>
+                  <FormMessage className="text-xs" />
+                </FormItem>
+              )}
+            />
             <FormField
               control={form.control}
               name={`${fieldPrefix}.indexArrivee`}
