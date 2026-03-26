@@ -486,11 +486,13 @@ const IndexEntry = () => {
                   title="Super - Pompe 1 & 2"
                   fieldPrefix="super1"
                   productType="super"
+                  disableDepart={hasPreviousEntry}
                 />
                 <ProductEntryCard
                   title="Super - Pompe 3 & 4"
                   fieldPrefix="super2"
                   productType="super"
+                  disableDepart={hasPreviousEntry}
                 />
               </div>
             </div>
@@ -506,11 +508,13 @@ const IndexEntry = () => {
                   title="Gasoil - Pompe 1 & 2"
                   fieldPrefix="gasoil1"
                   productType="gasoil"
+                  disableDepart={hasPreviousEntry}
                 />
                 <ProductEntryCard
                   title="Gasoil - Pompe 3 & 4"
                   fieldPrefix="gasoil2"
                   productType="gasoil"
+                  disableDepart={hasPreviousEntry}
                 />
               </div>
             </div>
