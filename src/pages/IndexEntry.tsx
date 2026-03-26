@@ -1075,7 +1075,7 @@ const IndexEntry = () => {
                 type="submit"
                 size="lg"
                 className="flex-1 sm:flex-none bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
-                disabled={isSubmitting}
+                disabled={isSubmitting || isFiscalYearClosed}
               >
                 {isSubmitting ? (
                   <>
