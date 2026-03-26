@@ -58,8 +58,7 @@ const productEntrySchema = z.object({
     }),
   indexDepart: z
     .string()
-    .min(1, "Index requis")
-    .refine((val) => !isNaN(parseFloat(val)) && parseFloat(val) >= 0, {
+    .refine((val) => val === "" || (!isNaN(parseFloat(val)) && parseFloat(val) >= 0), {
       message: "Doit être un nombre positif",
     }),
   jaugeDuJour: z
