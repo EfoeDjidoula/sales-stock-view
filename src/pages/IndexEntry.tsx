@@ -124,6 +124,7 @@ const defaultValues: IndexEntryForm = {
 
 const IndexEntry = () => {
   const { data: dbStations } = useStations();
+  const { fiscalYears } = useFiscalYears();
   const [selectedStation, setSelectedStation] = useState<{ id: string; name: string; location: string } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const { exportPdf } = usePdfExport();
@@ -141,6 +142,18 @@ const IndexEntry = () => {
     resolver: zodResolver(indexEntrySchema),
     defaultValues,
   });
+
+  // Check if the selected date's fiscal year is closed
+  const selectedDate = form.watch("date");
+  const fiscalYearStatus = useMemo(() => {
+    if (!selectedDate || !fiscalYears.length) return null;
+    const year = new Date(selectedDate).getFullYear();
+    const fy = fiscalYears.find((f) => f.year === year);
+    if (!fy) return null;
+    return fy;
+  }, [selectedDate, fiscalYears]);
+
+  const isFiscalYearClosed = fiscalYearStatus?.status === "closed";
 
   const onSubmit = async (data: IndexEntryForm) => {
     if (!selectedStation) {
