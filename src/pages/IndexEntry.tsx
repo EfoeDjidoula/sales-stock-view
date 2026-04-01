@@ -474,6 +474,49 @@ const IndexEntry = () => {
               </div>
             )}
 
+            {/* Previous entry indicator */}
+            {selectedStation && (
+              <div className={`flex items-center gap-3 rounded-lg p-4 border ${
+                previousEntry
+                  ? "bg-primary/5 border-primary/20"
+                  : "bg-warning/10 border-warning/30"
+              }`}>
+                {previousEntry ? (
+                  <>
+                    <CheckCircle2 className="w-5 h-5 text-primary shrink-0" />
+                    <div>
+                      <p className="text-sm font-medium">
+                        Index de départ pré-remplis depuis le{" "}
+                        <span className="font-bold text-primary">
+                          {new Date(previousEntry.entry_date).toLocaleDateString("fr-FR", {
+                            weekday: "long",
+                            day: "numeric",
+                            month: "long",
+                            year: "numeric",
+                          })}
+                        </span>
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Les index de départ sont verrouillés et correspondent aux index d'arrivée de la dernière saisie.
+                      </p>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <AlertCircle className="w-5 h-5 text-warning shrink-0" />
+                    <div>
+                      <p className="text-sm font-medium text-warning">
+                        Aucune saisie précédente trouvée
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        Les index de départ sont en saisie libre. Renseignez les valeurs initiales des compteurs.
+                      </p>
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
+
             {/* Super Section */}
             <div className="space-y-4">
               <h3 className="text-lg font-display font-semibold flex items-center gap-2">
