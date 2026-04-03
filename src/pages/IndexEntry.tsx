@@ -1235,14 +1235,6 @@ const IndexEntry = () => {
               </Button>
             </div>
 
-            {/* Form Status */}
-            {form.formState.isSubmitSuccessful && (
-              <div className="flex items-center gap-2 text-success bg-success/10 border border-success/30 rounded-lg p-4">
-                <CheckCircle2 className="w-5 h-5" />
-                <span>Les index ont été enregistrés avec succès</span>
-              </div>
-            )}
-
             {Object.keys(form.formState.errors).length > 0 && (
               <div className="flex items-center gap-2 text-destructive bg-destructive/10 border border-destructive/30 rounded-lg p-4">
                 <AlertCircle className="w-5 h-5" />
@@ -1254,6 +1246,126 @@ const IndexEntry = () => {
           </form>
         </Form>
       </main>
+
+      {/* Submission Summary Modal */}
+      {submissionSummary && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
+          <Card className="w-full max-w-lg mx-4 shadow-xl border-primary/30">
+            <CardHeader className="pb-4">
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center gap-2 text-lg">
+                  <ClipboardCheck className="w-5 h-5 text-success" />
+                  Récapitulatif de saisie
+                </CardTitle>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => setSubmissionSummary(null)}
+                >
+                  <X className="w-4 h-4" />
+                </Button>
+              </div>
+              <CardDescription>
+                {submissionSummary.stationName} —{" "}
+                {new Date(submissionSummary.date).toLocaleDateString("fr-FR", {
+                  weekday: "long",
+                  day: "numeric",
+                  month: "long",
+                  year: "numeric",
+                })}
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-5">
+              {/* Quantities */}
+              <div>
+                <h4 className="text-sm font-semibold text-muted-foreground mb-2 flex items-center gap-2">
+                  <Fuel className="w-4 h-4" /> Quantités vendues
+                </h4>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="rounded-lg bg-primary/5 border border-primary/20 p-3">
+                    <p className="text-xs text-muted-foreground">Super</p>
+                    <p className="text-lg font-bold">{formatNumber(submissionSummary.superLiters)} L</p>
+                    <p className="text-xs text-muted-foreground">{formatNumber(submissionSummary.superAmount)} FCFA</p>
+                  </div>
+                  <div className="rounded-lg bg-accent/50 border border-border p-3">
+                    <p className="text-xs text-muted-foreground">Gasoil</p>
+                    <p className="text-lg font-bold">{formatNumber(submissionSummary.gasoilLiters)} L</p>
+                    <p className="text-xs text-muted-foreground">{formatNumber(submissionSummary.gasoilAmount)} FCFA</p>
+                  </div>
+                </div>
+                <div className="mt-2 text-right text-sm font-semibold">
+                  Total : {formatNumber(submissionSummary.superAmount + submissionSummary.gasoilAmount)} FCFA
+                </div>
+              </div>
+
+              {/* Versements */}
+              <div>
+                <h4 className="text-sm font-semibold text-muted-foreground mb-2 flex items-center gap-2">
+                  <Wallet className="w-4 h-4" /> Versements
+                </h4>
+                <div className="space-y-1.5 text-sm">
+                  <div className="flex justify-between">
+                    <span className="flex items-center gap-1.5 text-muted-foreground">
+                      <Smartphone className="w-3.5 h-3.5" /> MOMO
+                    </span>
+                    <span className="font-medium">{formatNumber(submissionSummary.momo)} FCFA</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="flex items-center gap-1.5 text-muted-foreground">
+                      <Building2 className="w-3.5 h-3.5" /> Banque
+                    </span>
+                    <span className="font-medium">{formatNumber(submissionSummary.banque)} FCFA</span>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="flex items-center gap-1.5 text-muted-foreground">
+                      <Banknote className="w-3.5 h-3.5" /> Espèces
+                    </span>
+                    <span className="font-medium">{formatNumber(submissionSummary.liquidite)} FCFA</span>
+                  </div>
+                  <div className="flex justify-between border-t border-border pt-1.5 font-semibold">
+                    <span>Total versements</span>
+                    <span>{formatNumber(submissionSummary.totalVersements)} FCFA</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Bons */}
+              {submissionSummary.totalBons > 0 && (
+                <div>
+                  <h4 className="text-sm font-semibold text-muted-foreground mb-2 flex items-center gap-2">
+                    <Receipt className="w-4 h-4" /> Bons de valeur
+                  </h4>
+                  <div className="space-y-1.5 text-sm">
+                    {submissionSummary.bonsCarburant > 0 && (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Bons carburant</span>
+                        <span className="font-medium">{formatNumber(submissionSummary.bonsCarburant)} FCFA</span>
+                      </div>
+                    )}
+                    {submissionSummary.bonsEntreprise > 0 && (
+                      <div className="flex justify-between">
+                        <span className="text-muted-foreground">Bons entreprise</span>
+                        <span className="font-medium">{formatNumber(submissionSummary.bonsEntreprise)} FCFA</span>
+                      </div>
+                    )}
+                    <div className="flex justify-between border-t border-border pt-1.5 font-semibold">
+                      <span>Total bons</span>
+                      <span>{formatNumber(submissionSummary.totalBons)} FCFA</span>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              <Button
+                className="w-full"
+                onClick={() => setSubmissionSummary(null)}
+              >
+                Fermer
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      )}
 
       {/* Footer */}
       <footer className="border-t border-border mt-8 py-6">
