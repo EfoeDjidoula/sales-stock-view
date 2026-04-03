@@ -24,8 +24,10 @@ import {
   Lock,
   Receipt,
   FileDown,
-  
+  ClipboardCheck,
+  X,
 } from "lucide-react";
+import { FUEL_PRICES } from "@/config/prices";
 import { usePdfExport } from "@/hooks/usePdfExport";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
