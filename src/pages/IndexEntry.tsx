@@ -1356,12 +1356,46 @@ const IndexEntry = () => {
                 </div>
               )}
 
-              <Button
-                className="w-full"
-                onClick={() => setSubmissionSummary(null)}
-              >
-                Fermer
-              </Button>
+              <div className="flex gap-3">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => {
+                    const totalVentes = submissionSummary.superAmount + submissionSummary.gasoilAmount;
+                    const totalRecettes = submissionSummary.totalVersements + submissionSummary.totalBons;
+                    exportPdf({
+                      stationName: submissionSummary.stationName,
+                      stationLocation: selectedStation?.location || "",
+                      date: submissionSummary.date,
+                      super: { liters: submissionSummary.superLiters, amount: submissionSummary.superAmount },
+                      gasoil: { liters: submissionSummary.gasoilLiters, amount: submissionSummary.gasoilAmount },
+                      versements: {
+                        momo: submissionSummary.momo,
+                        banque: submissionSummary.banque,
+                        liquidite: submissionSummary.liquidite,
+                        total: submissionSummary.totalVersements,
+                      },
+                      bons: {
+                        carburant: submissionSummary.bonsCarburant,
+                        entreprise: submissionSummary.bonsEntreprise,
+                        total: submissionSummary.totalBons,
+                      },
+                      totalVentes,
+                      totalRecettes,
+                      ecart: totalRecettes - totalVentes,
+                    });
+                  }}
+                >
+                  <FileDown className="w-4 h-4 mr-2" />
+                  Exporter PDF
+                </Button>
+                <Button
+                  className="flex-1"
+                  onClick={() => setSubmissionSummary(null)}
+                >
+                  Fermer
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </div>
