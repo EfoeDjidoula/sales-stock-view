@@ -268,6 +268,35 @@ const IndexEntry = () => {
         },
       });
 
+      // Compute summary
+      const s1 = (parseFloat(data.super1.indexArrivee) || 0) - (parseFloat(data.super1.indexDepart) || 0);
+      const s2 = (parseFloat(data.super2.indexArrivee) || 0) - (parseFloat(data.super2.indexDepart) || 0);
+      const g1 = (parseFloat(data.gasoil1.indexArrivee) || 0) - (parseFloat(data.gasoil1.indexDepart) || 0);
+      const g2 = (parseFloat(data.gasoil2.indexArrivee) || 0) - (parseFloat(data.gasoil2.indexDepart) || 0);
+      const superLiters = Math.max(0, s1) + Math.max(0, s2);
+      const gasoilLiters = Math.max(0, g1) + Math.max(0, g2);
+      const momo = parseFloat(data.versementMomo.montant) || 0;
+      const banque = parseFloat(data.versementBanque.montant) || 0;
+      const liquidite = parseFloat(data.versementLiquidite.montant) || 0;
+      const bonsCarb = (parseInt(data.bonsCarburant.nombre) || 0) * (parseFloat(data.bonsCarburant.valeurUnitaire) || 0);
+      const bonsEntr = (parseInt(data.bonsEntreprise.nombre) || 0) * (parseFloat(data.bonsEntreprise.valeurUnitaire) || 0);
+
+      setSubmissionSummary({
+        stationName: selectedStation!.name,
+        date: data.date,
+        superLiters,
+        gasoilLiters,
+        superAmount: superLiters * FUEL_PRICES.SUPER,
+        gasoilAmount: gasoilLiters * FUEL_PRICES.GASOIL,
+        momo,
+        banque,
+        liquidite,
+        totalVersements: momo + banque + liquidite,
+        bonsCarburant: bonsCarb,
+        bonsEntreprise: bonsEntr,
+        totalBons: bonsCarb + bonsEntr,
+      });
+
       form.reset(defaultValues);
     } catch (error) {
       // Error is handled by the mutation
