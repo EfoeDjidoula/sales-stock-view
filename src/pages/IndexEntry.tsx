@@ -132,6 +132,21 @@ const IndexEntry = () => {
   const { user } = useAuth();
   const [selectedStation, setSelectedStation] = useState<{ id: string; name: string; location: string } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submissionSummary, setSubmissionSummary] = useState<{
+    stationName: string;
+    date: string;
+    superLiters: number;
+    gasoilLiters: number;
+    superAmount: number;
+    gasoilAmount: number;
+    momo: number;
+    banque: number;
+    liquidite: number;
+    totalVersements: number;
+    bonsCarburant: number;
+    bonsEntreprise: number;
+    totalBons: number;
+  } | null>(null);
   const { exportPdf } = usePdfExport();
   const saveIndexEntry = useSaveIndexEntry();
 
