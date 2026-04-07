@@ -275,6 +275,8 @@ const Index = () => {
 
             <SalesChart chartData={chartData} />
 
+            <SalesTrendByStation rawChartEntries={chartRawEntries} stations={stations} />
+
             {!selectedStation && (
               <div className="space-y-4">
                 <h2 className="text-lg font-display font-semibold">
