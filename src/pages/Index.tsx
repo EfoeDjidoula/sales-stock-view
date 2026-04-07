@@ -6,6 +6,7 @@ import { ProfileMenu } from "@/components/ProfileMenu";
 import { SalesCard } from "@/components/dashboard/SalesCard";
 import { PeriodTabs } from "@/components/dashboard/PeriodTabs";
 import { SalesChart } from "@/components/dashboard/SalesChart";
+import { SalesTrendByStation } from "@/components/dashboard/SalesTrendByStation";
 import { StockModule } from "@/components/dashboard/StockModule";
 import { StationCard } from "@/components/dashboard/StationCard";
 import { OrdersModule } from "@/components/orders/OrdersModule";
