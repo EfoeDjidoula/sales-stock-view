@@ -58,7 +58,7 @@ const Index = () => {
   const { currentUserRole, loading: roleLoading } = useUserRoles();
   const queryClient = useQueryClient();
 
-  const { totalSales, totalSuper, totalGasoil, salesByStation, chartData, stations, isLoading } =
+  const { totalSales, totalSuper, totalGasoil, salesByStation, chartData, chartRawEntries, stations, isLoading } =
     useDashboardData(period, selectedStation?.id);
 
   // Get allowed tabs for current user
