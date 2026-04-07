@@ -6,6 +6,7 @@ import { ProfileMenu } from "@/components/ProfileMenu";
 import { SalesCard } from "@/components/dashboard/SalesCard";
 import { PeriodTabs } from "@/components/dashboard/PeriodTabs";
 import { SalesChart } from "@/components/dashboard/SalesChart";
+import { SalesTrendByStation } from "@/components/dashboard/SalesTrendByStation";
 import { StockModule } from "@/components/dashboard/StockModule";
 import { StationCard } from "@/components/dashboard/StationCard";
 import { OrdersModule } from "@/components/orders/OrdersModule";
@@ -57,7 +58,7 @@ const Index = () => {
   const { currentUserRole, loading: roleLoading } = useUserRoles();
   const queryClient = useQueryClient();
 
-  const { totalSales, totalSuper, totalGasoil, salesByStation, chartData, stations, isLoading } =
+  const { totalSales, totalSuper, totalGasoil, salesByStation, chartData, chartRawEntries, stations, isLoading } =
     useDashboardData(period, selectedStation?.id);
 
   // Get allowed tabs for current user
@@ -273,6 +274,8 @@ const Index = () => {
             </div>
 
             <SalesChart chartData={chartData} />
+
+            <SalesTrendByStation rawChartEntries={chartRawEntries} stations={stations} />
 
             {!selectedStation && (
               <div className="space-y-4">
