@@ -231,6 +231,7 @@ export const useDashboardData = (period: Period, stationId?: string | null) => {
     totalGasoil,
     salesByStation,
     chartData,
+    chartRawEntries: chartQuery.data || [],
     salesData,
     isLoading: stationsQuery.isLoading || entriesQuery.isLoading || chartQuery.isLoading || latestJaugeQuery.isLoading,
   };
