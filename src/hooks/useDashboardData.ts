@@ -117,11 +117,13 @@ export const useDashboardData = (period: Period, stationId?: string | null) => {
   const chartQuery = useQuery({
     queryKey: ["dashboard-chart", stationId],
     queryFn: async () => {
+      const today = format(new Date(), "yyyy-MM-dd");
       const thirtyDaysAgo = format(subDays(new Date(), 30), "yyyy-MM-dd");
       let query = supabase
         .from("index_entries")
         .select("entry_date, station_id, super1_index_depart, super1_index_arrivee, super2_index_depart, super2_index_arrivee, gasoil1_index_depart, gasoil1_index_arrivee, gasoil2_index_depart, gasoil2_index_arrivee, stations(name)")
         .gte("entry_date", thirtyDaysAgo)
+        .lte("entry_date", today)
         .order("entry_date", { ascending: true });
 
       if (stationId) {
