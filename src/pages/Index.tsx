@@ -194,6 +194,15 @@ const Index = () => {
                   Stock
                 </TabsTrigger>
               )}
+              {canAccessTab("historique") && (
+                <TabsTrigger
+                  value="historique"
+                  className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground gap-2 px-4 py-2"
+                >
+                  <History className="w-4 h-4" />
+                  Historique
+                </TabsTrigger>
+              )}
               {canAccessTab("commandes") && (
                 <TabsTrigger
                   value="commandes"
