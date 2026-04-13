@@ -46,6 +46,7 @@ import { useQueryClient } from "@tanstack/react-query";
 const TAB_PERMISSIONS: Record<string, AppRole[]> = {
   ventes: ["admin", "manager", "operator"],
   stock: ["admin", "manager", "operator"],
+  historique: ["admin", "manager", "operator"],
   commandes: ["admin", "manager"],
   approvisionnements: ["admin", "manager"],
   stations: ["admin", "manager", "operator"],
