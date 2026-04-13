@@ -28,6 +28,8 @@ import {
   Calendar,
   PenLine,
   FileText,
+  History,
+  Truck,
   Truck,
   Users,
   Upload,
