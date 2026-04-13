@@ -29,7 +29,6 @@ import {
   PenLine,
   FileText,
   History,
-  FileText,
   Truck,
   Users,
   Upload,
