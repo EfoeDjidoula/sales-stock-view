@@ -29,7 +29,7 @@ import {
   PenLine,
   FileText,
   History,
-  Truck,
+  FileText,
   Truck,
   Users,
   Upload,
