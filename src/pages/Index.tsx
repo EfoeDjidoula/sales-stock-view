@@ -322,6 +322,11 @@ const Index = () => {
             <StockModule stationId={selectedStation?.id} />
           </TabsContent>
 
+          {/* Historique Tab */}
+          <TabsContent value="historique" className="animate-fade-in">
+            <HistoryModule />
+          </TabsContent>
+
           {/* Commandes Tab */}
           <TabsContent value="commandes" className="animate-fade-in">
             {canAccessTab("commandes") ? (
