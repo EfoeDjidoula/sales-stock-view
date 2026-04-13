@@ -15,6 +15,7 @@ import { SuppliesModule } from "@/components/orders/SuppliesModule";
 import { UsersModule } from "@/components/users/UsersModule";
 import { StationManagement } from "@/components/stations/StationManagement";
 import { FiscalYearModule } from "@/components/fiscal/FiscalYearModule";
+import { HistoryModule } from "@/components/history/HistoryModule";
 import { ExcelImportDialog } from "@/components/import/ExcelImportDialog";
 import { ExcelExportDialog } from "@/components/import/ExcelExportDialog";
 import { DbStationSelector } from "@/components/dashboard/DbStationSelector";
@@ -27,6 +28,7 @@ import {
   Calendar,
   PenLine,
   FileText,
+  History,
   Truck,
   Users,
   Upload,
@@ -44,6 +46,7 @@ import { useQueryClient } from "@tanstack/react-query";
 const TAB_PERMISSIONS: Record<string, AppRole[]> = {
   ventes: ["admin", "manager", "operator"],
   stock: ["admin", "manager", "operator"],
+  historique: ["admin", "manager", "operator"],
   commandes: ["admin", "manager"],
   approvisionnements: ["admin", "manager"],
   stations: ["admin", "manager", "operator"],
@@ -191,6 +194,15 @@ const Index = () => {
                   Stock
                 </TabsTrigger>
               )}
+              {canAccessTab("historique") && (
+                <TabsTrigger
+                  value="historique"
+                  className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground gap-2 px-4 py-2"
+                >
+                  <History className="w-4 h-4" />
+                  Historique
+                </TabsTrigger>
+              )}
               {canAccessTab("commandes") && (
                 <TabsTrigger
                   value="commandes"
@@ -308,6 +320,11 @@ const Index = () => {
           {/* Stock Tab */}
           <TabsContent value="stock" className="animate-fade-in">
             <StockModule stationId={selectedStation?.id} />
+          </TabsContent>
+
+          {/* Historique Tab */}
+          <TabsContent value="historique" className="animate-fade-in">
+            <HistoryModule />
           </TabsContent>
 
           {/* Commandes Tab */}
