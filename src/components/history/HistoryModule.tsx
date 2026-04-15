@@ -172,7 +172,7 @@ export const HistoryModule = () => {
                   {entries.map(entry => {
                     const { superL, gasoilL } = computeLiters(entry);
                     const amount = superL * FUEL_PRICES.SUPER + gasoilL * FUEL_PRICES.GASOIL;
-                    const versements = entry.versement_momo + entry.versement_banque + entry.versement_liquidite;
+                    const versements = computeVersements(entry);
                     const bons = entry.bons_carburant_valeur + entry.bons_entreprise_valeur;
                     return (
                       <TableRow key={entry.id}>
