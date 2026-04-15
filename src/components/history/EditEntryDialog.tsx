@@ -132,6 +132,7 @@ export const EditEntryDialog = ({ entry, open, onOpenChange }: EditEntryDialogPr
       <Label className="text-xs text-muted-foreground">{label}</Label>
       <Input
         type={type}
+        min={type === "number" ? "0" : undefined}
         value={(form as any)[field]}
         onChange={e => updateField(field, e.target.value)}
         className="h-8 text-sm"
