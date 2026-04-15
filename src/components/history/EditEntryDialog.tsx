@@ -105,6 +105,10 @@ export const EditEntryDialog = ({ entry, open, onOpenChange }: EditEntryDialogPr
 
   const handleSave = async () => {
     if (!entry) return;
+    if (hasValidationErrors()) {
+      toast.error("Les valeurs négatives ne sont pas autorisées");
+      return;
+    }
     setSaving(true);
     try {
       const { error } = await supabase
