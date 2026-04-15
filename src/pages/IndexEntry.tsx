@@ -641,6 +641,7 @@ const IndexEntry = () => {
                             <Input
                               type="number"
                               step="1"
+                              min="0"
                               placeholder="0"
                               className="bg-background border-border"
                               {...field}
@@ -688,6 +689,7 @@ const IndexEntry = () => {
                             <Input
                               type="number"
                               step="1"
+                              min="0"
                               placeholder="0"
                               className="bg-background border-border"
                               {...field}
@@ -735,6 +737,7 @@ const IndexEntry = () => {
                             <Input
                               type="number"
                               step="1"
+                              min="0"
                               placeholder="0"
                               className="bg-background border-border"
                               {...field}
