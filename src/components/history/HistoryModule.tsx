@@ -37,6 +37,10 @@ export const HistoryModule = () => {
     return { superL: s1 + s2, gasoilL: g1 + g2 };
   };
 
+  const computeVersements = (entry: IndexEntry) => {
+    return Math.max(0, entry.versement_momo) + Math.max(0, entry.versement_banque) + Math.max(0, entry.versement_liquidite);
+  };
+
   const totals = useMemo(() => {
     if (!entries) return { superL: 0, gasoilL: 0, amount: 0, versements: 0 };
     return entries.reduce((acc, e) => {
@@ -44,7 +48,7 @@ export const HistoryModule = () => {
       acc.superL += superL;
       acc.gasoilL += gasoilL;
       acc.amount += superL * FUEL_PRICES.SUPER + gasoilL * FUEL_PRICES.GASOIL;
-      acc.versements += e.versement_momo + e.versement_banque + e.versement_liquidite;
+      acc.versements += computeVersements(e);
       return acc;
     }, { superL: 0, gasoilL: 0, amount: 0, versements: 0 });
   }, [entries]);
