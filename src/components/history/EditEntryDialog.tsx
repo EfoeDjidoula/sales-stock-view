@@ -82,14 +82,33 @@ export const EditEntryDialog = ({ entry, open, onOpenChange }: EditEntryDialogPr
       "bons_carburant_nombre", "bons_carburant_valeur",
       "bons_entreprise_nombre", "bons_entreprise_valeur",
     ];
-    setForm(prev => ({
-      ...prev,
-      [field]: numFields.includes(field) ? (parseFloat(value) || 0) : value,
-    }));
+    if (numFields.includes(field)) {
+      const num = parseFloat(value) || 0;
+      setForm(prev => ({ ...prev, [field]: Math.max(0, num) }));
+    } else {
+      setForm(prev => ({ ...prev, [field]: value }));
+    }
+  };
+
+  const hasValidationErrors = () => {
+    const numericFields = [
+      "super1_index_depart", "super1_index_arrivee", "super1_jauge",
+      "super2_index_depart", "super2_index_arrivee", "super2_jauge",
+      "gasoil1_index_depart", "gasoil1_index_arrivee", "gasoil1_jauge",
+      "gasoil2_index_depart", "gasoil2_index_arrivee", "gasoil2_jauge",
+      "versement_momo", "versement_banque", "versement_liquidite",
+      "bons_carburant_nombre", "bons_carburant_valeur",
+      "bons_entreprise_nombre", "bons_entreprise_valeur",
+    ];
+    return numericFields.some(f => (form as any)[f] < 0);
   };
 
   const handleSave = async () => {
     if (!entry) return;
+    if (hasValidationErrors()) {
+      toast.error("Les valeurs négatives ne sont pas autorisées");
+      return;
+    }
     setSaving(true);
     try {
       const { error } = await supabase
@@ -117,6 +136,7 @@ export const EditEntryDialog = ({ entry, open, onOpenChange }: EditEntryDialogPr
       <Label className="text-xs text-muted-foreground">{label}</Label>
       <Input
         type={type}
+        min={type === "number" ? "0" : undefined}
         value={(form as any)[field]}
         onChange={e => updateField(field, e.target.value)}
         className="h-8 text-sm"

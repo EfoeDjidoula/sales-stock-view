@@ -357,6 +357,7 @@ const IndexEntry = () => {
                     <Input
                       type="number"
                       step="0.01"
+                      min="0"
                       placeholder="0.00"
                       className={`border-border ${disableDepart ? "bg-muted text-muted-foreground cursor-not-allowed" : "bg-secondary"}`}
                       readOnly={disableDepart}
@@ -380,6 +381,7 @@ const IndexEntry = () => {
                     <Input
                       type="number"
                       step="0.01"
+                      min="0"
                       placeholder="0.00"
                       className="bg-secondary border-border"
                       {...field}
@@ -399,13 +401,14 @@ const IndexEntry = () => {
                   Jauge du Jour (L)
                 </FormLabel>
                 <FormControl>
-                  <Input
-                    type="number"
-                    step="1"
-                    placeholder="0"
-                    className="bg-secondary border-border"
-                    {...field}
-                  />
+                   <Input
+                     type="number"
+                     step="1"
+                     min="0"
+                     placeholder="0"
+                     className="bg-secondary border-border"
+                     {...field}
+                   />
                 </FormControl>
                 <FormMessage className="text-xs" />
               </FormItem>
@@ -638,6 +641,7 @@ const IndexEntry = () => {
                             <Input
                               type="number"
                               step="1"
+                              min="0"
                               placeholder="0"
                               className="bg-background border-border"
                               {...field}
@@ -685,6 +689,7 @@ const IndexEntry = () => {
                             <Input
                               type="number"
                               step="1"
+                              min="0"
                               placeholder="0"
                               className="bg-background border-border"
                               {...field}
@@ -732,6 +737,7 @@ const IndexEntry = () => {
                             <Input
                               type="number"
                               step="1"
+                              min="0"
                               placeholder="0"
                               className="bg-background border-border"
                               {...field}
@@ -812,6 +818,7 @@ const IndexEntry = () => {
                               <Input
                                 type="number"
                                 step="1"
+                                min="0"
                                 placeholder="0"
                                 className="bg-background border-border"
                                 {...field}
@@ -833,6 +840,7 @@ const IndexEntry = () => {
                               <Input
                                 type="number"
                                 step="1"
+                                min="0"
                                 placeholder="0"
                                 className="bg-background border-border"
                                 {...field}
@@ -874,6 +882,7 @@ const IndexEntry = () => {
                               <Input
                                 type="number"
                                 step="1"
+                                min="0"
                                 placeholder="0"
                                 className="bg-background border-border"
                                 {...field}
@@ -895,6 +904,7 @@ const IndexEntry = () => {
                               <Input
                                 type="number"
                                 step="1"
+                                min="0"
                                 placeholder="0"
                                 className="bg-background border-border"
                                 {...field}
