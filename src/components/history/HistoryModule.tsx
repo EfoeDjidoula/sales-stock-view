@@ -25,10 +25,31 @@ export const HistoryModule = () => {
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
   const [endDate, setEndDate] = useState<Date | undefined>(undefined);
   const [editEntry, setEditEntry] = useState<IndexEntry | null>(null);
+  const [deleteEntry, setDeleteEntry] = useState<IndexEntry | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const queryClient = useQueryClient();
 
   const startStr = startDate ? format(startDate, "yyyy-MM-dd") : undefined;
   const endStr = endDate ? format(endDate, "yyyy-MM-dd") : undefined;
   const stationId = stationFilter === "all" ? undefined : stationFilter;
+
+  const handleDelete = async () => {
+    if (!deleteEntry) return;
+    setDeleting(true);
+    const { error } = await supabase.from("index_entries").delete().eq("id", deleteEntry.id);
+    setDeleting(false);
+    if (error) {
+      toast.error("Erreur lors de la suppression", { description: error.message });
+      return;
+    }
+    toast.success("Saisie supprimée");
+    queryClient.invalidateQueries({ queryKey: ["indexEntries"] });
+    queryClient.invalidateQueries({ queryKey: ["dashboard-entries"] });
+    queryClient.invalidateQueries({ queryKey: ["dashboard-chart"] });
+    queryClient.invalidateQueries({ queryKey: ["latest-jauge"] });
+    queryClient.invalidateQueries({ queryKey: ["stock-jauges"] });
+    setDeleteEntry(null);
+  };
 
   const { data: entries, isLoading } = useIndexEntries(stationId, startStr, endStr);
   const { data: stations } = useStations();
