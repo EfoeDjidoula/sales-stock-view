@@ -214,6 +214,9 @@ export const HistoryModule = () => {
                           <Button variant="ghost" size="icon" onClick={() => setEditEntry(entry)} title="Modifier">
                             <Pencil className="w-4 h-4" />
                           </Button>
+                          <Button variant="ghost" size="icon" onClick={() => setDeleteEntry(entry)} title="Supprimer" className="text-destructive hover:text-destructive">
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
                         </TableCell>
                       </TableRow>
                     );
