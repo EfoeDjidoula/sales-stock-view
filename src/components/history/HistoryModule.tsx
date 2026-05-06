@@ -229,6 +229,29 @@ export const HistoryModule = () => {
       </Card>
 
       <EditEntryDialog entry={editEntry} open={!!editEntry} onOpenChange={open => { if (!open) setEditEntry(null); }} />
+
+      <AlertDialog open={!!deleteEntry} onOpenChange={open => { if (!open && !deleting) setDeleteEntry(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Supprimer cette saisie ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {deleteEntry && (
+                <>
+                  Vous êtes sur le point de supprimer la saisie du{" "}
+                  <strong>{new Date(deleteEntry.entry_date).toLocaleDateString("fr-FR")}</strong>{" "}
+                  pour la station <strong>{deleteEntry.stations?.name}</strong>. Cette action est irréversible.
+                </>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Annuler</AlertDialogCancel>
+            <AlertDialogAction onClick={(e) => { e.preventDefault(); handleDelete(); }} disabled={deleting} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              {deleting ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Suppression...</> : "Supprimer"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
