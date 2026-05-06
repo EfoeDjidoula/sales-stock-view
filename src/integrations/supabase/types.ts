@@ -216,6 +216,146 @@ export type Database = {
           },
         ]
       }
+      perequation_entries: {
+        Row: {
+          bl_number: string | null
+          created_at: string
+          delivery_date: string
+          id: string
+          notes: string | null
+          product_type: string
+          quantity_liters: number
+          rate_per_liter: number
+          received_date: string | null
+          station_id: string
+          status: string
+          supply_id: string | null
+          total_amount: number
+          updated_at: string
+          user_id: string
+          zone_id: string | null
+        }
+        Insert: {
+          bl_number?: string | null
+          created_at?: string
+          delivery_date?: string
+          id?: string
+          notes?: string | null
+          product_type: string
+          quantity_liters?: number
+          rate_per_liter?: number
+          received_date?: string | null
+          station_id: string
+          status?: string
+          supply_id?: string | null
+          total_amount?: number
+          updated_at?: string
+          user_id: string
+          zone_id?: string | null
+        }
+        Update: {
+          bl_number?: string | null
+          created_at?: string
+          delivery_date?: string
+          id?: string
+          notes?: string | null
+          product_type?: string
+          quantity_liters?: number
+          rate_per_liter?: number
+          received_date?: string | null
+          station_id?: string
+          status?: string
+          supply_id?: string | null
+          total_amount?: number
+          updated_at?: string
+          user_id?: string
+          zone_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "perequation_entries_supply_id_fkey"
+            columns: ["supply_id"]
+            isOneToOne: false
+            referencedRelation: "supplies"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "perequation_entries_zone_id_fkey"
+            columns: ["zone_id"]
+            isOneToOne: false
+            referencedRelation: "perequation_zones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      perequation_rates: {
+        Row: {
+          created_at: string
+          created_by: string
+          effective_from: string
+          id: string
+          product_type: string
+          rate_per_liter: number
+          updated_at: string
+          zone_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          effective_from?: string
+          id?: string
+          product_type: string
+          rate_per_liter?: number
+          updated_at?: string
+          zone_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          effective_from?: string
+          id?: string
+          product_type?: string
+          rate_per_liter?: number
+          updated_at?: string
+          zone_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "perequation_rates_zone_id_fkey"
+            columns: ["zone_id"]
+            isOneToOne: false
+            referencedRelation: "perequation_zones"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      perequation_zones: {
+        Row: {
+          created_at: string
+          created_by: string
+          description: string | null
+          id: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          description?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          id?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -278,20 +418,31 @@ export type Database = {
           id: string
           location: string
           name: string
+          zone_id: string | null
         }
         Insert: {
           created_at?: string
           id?: string
           location: string
           name: string
+          zone_id?: string | null
         }
         Update: {
           created_at?: string
           id?: string
           location?: string
           name?: string
+          zone_id?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "stations_zone_id_fkey"
+            columns: ["zone_id"]
+            isOneToOne: false
+            referencedRelation: "perequation_zones"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       supplies: {
         Row: {
