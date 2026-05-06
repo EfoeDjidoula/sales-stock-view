@@ -6,7 +6,11 @@ import { FUEL_PRICES } from "@/config/prices";
 import { EditEntryDialog } from "./EditEntryDialog";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
-import { Calendar as CalendarIcon, Search, Pencil } from "lucide-react";
+import { Calendar as CalendarIcon, Search, Pencil, Trash2, Loader2 } from "lucide-react";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -21,10 +25,31 @@ export const HistoryModule = () => {
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
   const [endDate, setEndDate] = useState<Date | undefined>(undefined);
   const [editEntry, setEditEntry] = useState<IndexEntry | null>(null);
+  const [deleteEntry, setDeleteEntry] = useState<IndexEntry | null>(null);
+  const [deleting, setDeleting] = useState(false);
+  const queryClient = useQueryClient();
 
   const startStr = startDate ? format(startDate, "yyyy-MM-dd") : undefined;
   const endStr = endDate ? format(endDate, "yyyy-MM-dd") : undefined;
   const stationId = stationFilter === "all" ? undefined : stationFilter;
+
+  const handleDelete = async () => {
+    if (!deleteEntry) return;
+    setDeleting(true);
+    const { error } = await supabase.from("index_entries").delete().eq("id", deleteEntry.id);
+    setDeleting(false);
+    if (error) {
+      toast.error("Erreur lors de la suppression", { description: error.message });
+      return;
+    }
+    toast.success("Saisie supprimée");
+    queryClient.invalidateQueries({ queryKey: ["indexEntries"] });
+    queryClient.invalidateQueries({ queryKey: ["dashboard-entries"] });
+    queryClient.invalidateQueries({ queryKey: ["dashboard-chart"] });
+    queryClient.invalidateQueries({ queryKey: ["latest-jauge"] });
+    queryClient.invalidateQueries({ queryKey: ["stock-jauges"] });
+    setDeleteEntry(null);
+  };
 
   const { data: entries, isLoading } = useIndexEntries(stationId, startStr, endStr);
   const { data: stations } = useStations();
@@ -189,6 +214,9 @@ export const HistoryModule = () => {
                           <Button variant="ghost" size="icon" onClick={() => setEditEntry(entry)} title="Modifier">
                             <Pencil className="w-4 h-4" />
                           </Button>
+                          <Button variant="ghost" size="icon" onClick={() => setDeleteEntry(entry)} title="Supprimer" className="text-destructive hover:text-destructive">
+                            <Trash2 className="w-4 h-4" />
+                          </Button>
                         </TableCell>
                       </TableRow>
                     );
@@ -201,6 +229,29 @@ export const HistoryModule = () => {
       </Card>
 
       <EditEntryDialog entry={editEntry} open={!!editEntry} onOpenChange={open => { if (!open) setEditEntry(null); }} />
+
+      <AlertDialog open={!!deleteEntry} onOpenChange={open => { if (!open && !deleting) setDeleteEntry(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Supprimer cette saisie ?</AlertDialogTitle>
+            <AlertDialogDescription>
+              {deleteEntry && (
+                <>
+                  Vous êtes sur le point de supprimer la saisie du{" "}
+                  <strong>{new Date(deleteEntry.entry_date).toLocaleDateString("fr-FR")}</strong>{" "}
+                  pour la station <strong>{deleteEntry.stations?.name}</strong>. Cette action est irréversible.
+                </>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleting}>Annuler</AlertDialogCancel>
+            <AlertDialogAction onClick={(e) => { e.preventDefault(); handleDelete(); }} disabled={deleting} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              {deleting ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Suppression...</> : "Supprimer"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
