@@ -16,6 +16,7 @@ import { UsersModule } from "@/components/users/UsersModule";
 import { StationManagement } from "@/components/stations/StationManagement";
 import { FiscalYearModule } from "@/components/fiscal/FiscalYearModule";
 import { HistoryModule } from "@/components/history/HistoryModule";
+import { PerequationModule } from "@/components/perequation/PerequationModule";
 import { ExcelImportDialog } from "@/components/import/ExcelImportDialog";
 import { ExcelExportDialog } from "@/components/import/ExcelExportDialog";
 import { DbStationSelector } from "@/components/dashboard/DbStationSelector";
@@ -31,6 +32,7 @@ import {
   History,
   Truck,
   Users,
+  Coins,
   Upload,
   Download,
   RefreshCw,
@@ -49,6 +51,7 @@ const TAB_PERMISSIONS: Record<string, AppRole[]> = {
   historique: ["admin", "manager", "operator"],
   commandes: ["admin", "manager"],
   approvisionnements: ["admin", "manager"],
+  perequation: ["admin", "manager", "operator"],
   stations: ["admin", "manager", "operator"],
   exercices: ["admin"],
   droits: ["admin"],
@@ -221,6 +224,15 @@ const Index = () => {
                   Approvisionnements
                 </TabsTrigger>
               )}
+              {canAccessTab("perequation") && (
+                <TabsTrigger
+                  value="perequation"
+                  className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground gap-2 px-4 py-2"
+                >
+                  <Coins className="w-4 h-4" />
+                  Péréquation
+                </TabsTrigger>
+              )}
               {canAccessTab("stations") && (
                 <TabsTrigger
                   value="stations"
@@ -340,6 +352,15 @@ const Index = () => {
           <TabsContent value="approvisionnements" className="animate-fade-in">
             {canAccessTab("approvisionnements") ? (
               <SuppliesModule />
+            ) : (
+              <AccessDenied onGoBack={() => setActiveTab("ventes")} />
+            )}
+          </TabsContent>
+
+          {/* Péréquation Tab */}
+          <TabsContent value="perequation" className="animate-fade-in">
+            {canAccessTab("perequation") ? (
+              <PerequationModule />
             ) : (
               <AccessDenied onGoBack={() => setActiveTab("ventes")} />
             )}
