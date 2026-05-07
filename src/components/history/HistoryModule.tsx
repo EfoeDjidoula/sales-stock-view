@@ -8,6 +8,7 @@ import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { Calendar as CalendarIcon, Search, Pencil, Trash2, Loader2 } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
@@ -27,6 +28,7 @@ export const HistoryModule = () => {
   const [editEntry, setEditEntry] = useState<IndexEntry | null>(null);
   const [deleteEntry, setDeleteEntry] = useState<IndexEntry | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const queryClient = useQueryClient();
 
   const startStr = startDate ? format(startDate, "yyyy-MM-dd") : undefined;
@@ -43,14 +45,19 @@ export const HistoryModule = () => {
       return;
     }
     toast.success("Saisie supprimée");
-    await Promise.all([
-      queryClient.invalidateQueries({ queryKey: ["indexEntries"], refetchType: "all" }),
-      queryClient.invalidateQueries({ queryKey: ["dashboard-entries"], refetchType: "all" }),
-      queryClient.invalidateQueries({ queryKey: ["dashboard-chart"], refetchType: "all" }),
-      queryClient.invalidateQueries({ queryKey: ["latest-jauge"], refetchType: "all" }),
-      queryClient.invalidateQueries({ queryKey: ["stock-jauges"], refetchType: "all" }),
-      queryClient.invalidateQueries({ queryKey: ["previous-entry"], refetchType: "all" }),
-    ]);
+    setIsRefreshing(true);
+    try {
+      await Promise.all([
+        queryClient.refetchQueries({ queryKey: ["indexEntries"], type: "all" }),
+        queryClient.refetchQueries({ queryKey: ["dashboard-entries"], type: "all" }),
+        queryClient.refetchQueries({ queryKey: ["dashboard-chart"], type: "all" }),
+        queryClient.refetchQueries({ queryKey: ["latest-jauge"], type: "all" }),
+        queryClient.refetchQueries({ queryKey: ["stock-jauges"], type: "all" }),
+        queryClient.refetchQueries({ queryKey: ["previous-entry"], type: "all" }),
+      ]);
+    } finally {
+      setIsRefreshing(false);
+    }
     setDeleteEntry(null);
   };
 
@@ -154,28 +161,71 @@ export const HistoryModule = () => {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <Card className="p-3">
           <p className="text-xs text-muted-foreground">Super (L)</p>
-          <p className="text-lg font-bold">{totals.superL.toLocaleString("fr-FR")}</p>
+          {isLoading || isRefreshing ? (
+            <Skeleton className="h-7 w-24 mt-1" />
+          ) : (
+            <p className="text-lg font-bold">{totals.superL.toLocaleString("fr-FR")}</p>
+          )}
         </Card>
         <Card className="p-3">
           <p className="text-xs text-muted-foreground">Gasoil (L)</p>
-          <p className="text-lg font-bold">{totals.gasoilL.toLocaleString("fr-FR")}</p>
+          {isLoading || isRefreshing ? (
+            <Skeleton className="h-7 w-24 mt-1" />
+          ) : (
+            <p className="text-lg font-bold">{totals.gasoilL.toLocaleString("fr-FR")}</p>
+          )}
         </Card>
         <Card className="p-3">
           <p className="text-xs text-muted-foreground">Montant total</p>
-          <p className="text-lg font-bold">{formatCurrency(totals.amount)}</p>
+          {isLoading || isRefreshing ? (
+            <Skeleton className="h-7 w-28 mt-1" />
+          ) : (
+            <p className="text-lg font-bold">{formatCurrency(totals.amount)}</p>
+          )}
         </Card>
         <Card className="p-3">
           <p className="text-xs text-muted-foreground">Versements</p>
-          <p className="text-lg font-bold">{formatCurrency(totals.versements)}</p>
+          {isLoading || isRefreshing ? (
+            <Skeleton className="h-7 w-28 mt-1" />
+          ) : (
+            <p className="text-lg font-bold">{formatCurrency(totals.versements)}</p>
+          )}
         </Card>
       </div>
 
       {/* Table */}
       <Card>
         <CardContent className="p-0">
-          {isLoading ? (
-            <div className="flex items-center justify-center py-12">
-              <div className="animate-spin w-6 h-6 border-2 border-primary border-t-transparent rounded-full" />
+          {isLoading || isRefreshing ? (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Station</TableHead>
+                    <TableHead className="text-right">Super (L)</TableHead>
+                    <TableHead className="text-right">Gasoil (L)</TableHead>
+                    <TableHead className="text-right">Montant</TableHead>
+                    <TableHead className="text-right">Versements</TableHead>
+                    <TableHead className="text-right">Bons</TableHead>
+                    <TableHead className="text-center">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {Array.from({ length: 5 }).map((_, i) => (
+                    <TableRow key={i}>
+                      <TableCell><Skeleton className="h-4 w-20" /></TableCell>
+                      <TableCell><Skeleton className="h-4 w-28" /></TableCell>
+                      <TableCell className="text-right"><Skeleton className="h-4 w-16 ml-auto" /></TableCell>
+                      <TableCell className="text-right"><Skeleton className="h-4 w-16 ml-auto" /></TableCell>
+                      <TableCell className="text-right"><Skeleton className="h-4 w-20 ml-auto" /></TableCell>
+                      <TableCell className="text-right"><Skeleton className="h-4 w-20 ml-auto" /></TableCell>
+                      <TableCell className="text-right"><Skeleton className="h-4 w-16 ml-auto" /></TableCell>
+                      <TableCell className="text-center"><Skeleton className="h-8 w-16 mx-auto" /></TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </div>
           ) : !entries?.length ? (
             <div className="text-center py-12 text-muted-foreground">
