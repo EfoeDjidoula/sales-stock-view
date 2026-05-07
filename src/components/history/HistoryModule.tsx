@@ -161,19 +161,35 @@ export const HistoryModule = () => {
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <Card className="p-3">
           <p className="text-xs text-muted-foreground">Super (L)</p>
-          <p className="text-lg font-bold">{totals.superL.toLocaleString("fr-FR")}</p>
+          {isLoading || isRefreshing ? (
+            <Skeleton className="h-7 w-24 mt-1" />
+          ) : (
+            <p className="text-lg font-bold">{totals.superL.toLocaleString("fr-FR")}</p>
+          )}
         </Card>
         <Card className="p-3">
           <p className="text-xs text-muted-foreground">Gasoil (L)</p>
-          <p className="text-lg font-bold">{totals.gasoilL.toLocaleString("fr-FR")}</p>
+          {isLoading || isRefreshing ? (
+            <Skeleton className="h-7 w-24 mt-1" />
+          ) : (
+            <p className="text-lg font-bold">{totals.gasoilL.toLocaleString("fr-FR")}</p>
+          )}
         </Card>
         <Card className="p-3">
           <p className="text-xs text-muted-foreground">Montant total</p>
-          <p className="text-lg font-bold">{formatCurrency(totals.amount)}</p>
+          {isLoading || isRefreshing ? (
+            <Skeleton className="h-7 w-28 mt-1" />
+          ) : (
+            <p className="text-lg font-bold">{formatCurrency(totals.amount)}</p>
+          )}
         </Card>
         <Card className="p-3">
           <p className="text-xs text-muted-foreground">Versements</p>
-          <p className="text-lg font-bold">{formatCurrency(totals.versements)}</p>
+          {isLoading || isRefreshing ? (
+            <Skeleton className="h-7 w-28 mt-1" />
+          ) : (
+            <p className="text-lg font-bold">{formatCurrency(totals.versements)}</p>
+          )}
         </Card>
       </div>
 
