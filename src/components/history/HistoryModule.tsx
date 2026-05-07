@@ -28,6 +28,7 @@ export const HistoryModule = () => {
   const [editEntry, setEditEntry] = useState<IndexEntry | null>(null);
   const [deleteEntry, setDeleteEntry] = useState<IndexEntry | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   const queryClient = useQueryClient();
 
   const startStr = startDate ? format(startDate, "yyyy-MM-dd") : undefined;
@@ -44,14 +45,19 @@ export const HistoryModule = () => {
       return;
     }
     toast.success("Saisie supprimée");
-    await Promise.all([
-      queryClient.invalidateQueries({ queryKey: ["indexEntries"], refetchType: "all" }),
-      queryClient.invalidateQueries({ queryKey: ["dashboard-entries"], refetchType: "all" }),
-      queryClient.invalidateQueries({ queryKey: ["dashboard-chart"], refetchType: "all" }),
-      queryClient.invalidateQueries({ queryKey: ["latest-jauge"], refetchType: "all" }),
-      queryClient.invalidateQueries({ queryKey: ["stock-jauges"], refetchType: "all" }),
-      queryClient.invalidateQueries({ queryKey: ["previous-entry"], refetchType: "all" }),
-    ]);
+    setIsRefreshing(true);
+    try {
+      await Promise.all([
+        queryClient.refetchQueries({ queryKey: ["indexEntries"], type: "all" }),
+        queryClient.refetchQueries({ queryKey: ["dashboard-entries"], type: "all" }),
+        queryClient.refetchQueries({ queryKey: ["dashboard-chart"], type: "all" }),
+        queryClient.refetchQueries({ queryKey: ["latest-jauge"], type: "all" }),
+        queryClient.refetchQueries({ queryKey: ["stock-jauges"], type: "all" }),
+        queryClient.refetchQueries({ queryKey: ["previous-entry"], type: "all" }),
+      ]);
+    } finally {
+      setIsRefreshing(false);
+    }
     setDeleteEntry(null);
   };
 
