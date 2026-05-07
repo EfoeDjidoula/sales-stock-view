@@ -43,11 +43,14 @@ export const HistoryModule = () => {
       return;
     }
     toast.success("Saisie supprimée");
-    queryClient.invalidateQueries({ queryKey: ["indexEntries"] });
-    queryClient.invalidateQueries({ queryKey: ["dashboard-entries"] });
-    queryClient.invalidateQueries({ queryKey: ["dashboard-chart"] });
-    queryClient.invalidateQueries({ queryKey: ["latest-jauge"] });
-    queryClient.invalidateQueries({ queryKey: ["stock-jauges"] });
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: ["indexEntries"], refetchType: "all" }),
+      queryClient.invalidateQueries({ queryKey: ["dashboard-entries"], refetchType: "all" }),
+      queryClient.invalidateQueries({ queryKey: ["dashboard-chart"], refetchType: "all" }),
+      queryClient.invalidateQueries({ queryKey: ["latest-jauge"], refetchType: "all" }),
+      queryClient.invalidateQueries({ queryKey: ["stock-jauges"], refetchType: "all" }),
+      queryClient.invalidateQueries({ queryKey: ["previous-entry"], refetchType: "all" }),
+    ]);
     setDeleteEntry(null);
   };
 
