@@ -269,63 +269,87 @@ const Index = () => {
 
           {/* Ventes Tab */}
           <TabsContent value="ventes" className="space-y-6 animate-fade-in">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <SalesCard
-                title="Ventes totales"
-                value={formatCurrency(totalSales)}
-                subtitle={
-                  period === "day"
-                    ? "Aujourd'hui"
-                    : period === "week"
-                    ? "Cette semaine"
-                    : "Ce mois"
-                }
-                icon={<TrendingUp className="w-5 h-5" />}
-                variant="primary"
-              />
-              <SalesCard
-                title="Super"
-                value={formatCurrency(totalSuper)}
-                subtitle={`${totalSales > 0 ? Math.round((totalSuper / totalSales) * 100) : 0}% du total`}
-                icon={<Fuel className="w-5 h-5" />}
-              />
-              <SalesCard
-                title="Gasoil"
-                value={formatCurrency(totalGasoil)}
-                subtitle={`${totalSales > 0 ? Math.round((totalGasoil / totalSales) * 100) : 0}% du total`}
-                icon={<Fuel className="w-5 h-5" />}
-              />
-            </div>
-
-            <SalesChart chartData={chartData} />
-
-            <SalesTrendByStation rawChartEntries={chartRawEntries} stations={stations} />
-
-            {!selectedStation && (
-              <div className="space-y-4">
-                <h2 className="text-lg font-display font-semibold">
-                  Performance par station
-                </h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {stations.map((station) => {
-                    const stationSales = salesByStation.get(station.id);
-                    return (
-                      <StationCard
-                        key={station.id}
-                        stationId={station.id}
-                        name={station.name}
-                        location={station.location}
-                        totalSales={stationSales?.total || 0}
-                        superJauge={stationSales?.superJauge || 0}
-                        gasoilJauge={stationSales?.gasoilJauge || 0}
-                        period={period}
-                        onClick={() => setSelectedStation(station)}
-                        isSelected={selectedStation?.id === station.id}
-                      />
-                    );
-                  })}
+            {isFetching ? (
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {[0, 1, 2].map((i) => (
+                    <Skeleton key={i} className="h-28 w-full rounded-xl" />
+                  ))}
                 </div>
-              </div>
+                <Skeleton className="h-[360px] w-full rounded-xl" />
+                <Skeleton className="h-[420px] w-full rounded-xl" />
+                {!selectedStation && (
+                  <div className="space-y-4">
+                    <Skeleton className="h-6 w-64" />
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {[0, 1, 2, 3, 4, 5].map((i) => (
+                        <Skeleton key={i} className="h-44 w-full rounded-xl" />
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </>
+            ) : (
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <SalesCard
+                    title="Ventes totales"
+                    value={formatCurrency(totalSales)}
+                    subtitle={
+                      period === "day"
+                        ? "Aujourd'hui"
+                        : period === "week"
+                        ? "Cette semaine"
+                        : "Ce mois"
+                    }
+                    icon={<TrendingUp className="w-5 h-5" />}
+                    variant="primary"
+                  />
+                  <SalesCard
+                    title="Super"
+                    value={formatCurrency(totalSuper)}
+                    subtitle={`${totalSales > 0 ? Math.round((totalSuper / totalSales) * 100) : 0}% du total`}
+                    icon={<Fuel className="w-5 h-5" />}
+                  />
+                  <SalesCard
+                    title="Gasoil"
+                    value={formatCurrency(totalGasoil)}
+                    subtitle={`${totalSales > 0 ? Math.round((totalGasoil / totalSales) * 100) : 0}% du total`}
+                    icon={<Fuel className="w-5 h-5" />}
+                  />
+                </div>
+
+                <SalesChart chartData={chartData} />
+
+                <SalesTrendByStation rawChartEntries={chartRawEntries} stations={stations} />
+
+                {!selectedStation && (
+                  <div className="space-y-4">
+                    <h2 className="text-lg font-display font-semibold">
+                      Performance par station
+                    </h2>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                      {stations.map((station) => {
+                        const stationSales = salesByStation.get(station.id);
+                        return (
+                          <StationCard
+                            key={station.id}
+                            stationId={station.id}
+                            name={station.name}
+                            location={station.location}
+                            totalSales={stationSales?.total || 0}
+                            superJauge={stationSales?.superJauge || 0}
+                            gasoilJauge={stationSales?.gasoilJauge || 0}
+                            period={period}
+                            onClick={() => setSelectedStation(station)}
+                            isSelected={selectedStation?.id === station.id}
+                          />
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+              </>
             )}
           </TabsContent>
 
