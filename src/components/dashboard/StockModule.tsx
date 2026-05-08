@@ -1,9 +1,10 @@
 import { formatNumber } from "@/data/stationsData";
 import { StockGauge } from "./StockGauge";
-import { Fuel, Droplet, AlertTriangle, Loader2 } from "lucide-react";
+import { Fuel, Droplet, AlertTriangle } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface StockModuleProps {
   stationId?: string | null;
@@ -13,7 +14,7 @@ export const StockModule = ({ stationId }: StockModuleProps) => {
   const { user } = useAuth();
 
   // Fetch latest entry per station for jauge data
-  const { data: latestEntries, isLoading } = useQuery({
+  const { data: latestEntries, isLoading, isFetching } = useQuery({
     queryKey: ["stock-jauges", stationId],
     queryFn: async () => {
       // Get stations first
@@ -60,14 +61,7 @@ export const StockModule = ({ stationId }: StockModuleProps) => {
     enabled: !!user,
   });
 
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center py-12">
-        <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
-      </div>
-    );
-  }
-
+  const isPending = isLoading || isFetching;
   const entries = latestEntries || [];
 
   const totalSuper = entries.reduce(
@@ -85,51 +79,54 @@ export const StockModule = ({ stationId }: StockModuleProps) => {
       .map((s) => ({ station: e.stationName, tank: s.tank, jauge: s.jauge }))
   );
 
-  if (entries.length === 0) {
-    return (
-      <div className="flex items-center justify-center py-12 text-muted-foreground">
-        Aucune donnée de stock disponible. Importez un fichier Excel pour voir les jauges.
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-6">
       {/* Summary cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div className="bg-card rounded-xl border border-super/30 p-5">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="p-2.5 rounded-lg bg-super/10">
-              <Fuel className="w-5 h-5 text-super" />
+        {isPending ? (
+          <>
+            <Skeleton className="h-36 w-full rounded-xl" />
+            <Skeleton className="h-36 w-full rounded-xl" />
+          </>
+        ) : (
+          <>
+            <div className="bg-card rounded-xl border border-super/30 p-5">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2.5 rounded-lg bg-super/10">
+                  <Fuel className="w-5 h-5 text-super" />
+                </div>
+                <div>
+                  <h4 className="font-display font-semibold">Stock Super (Jauges)</h4>
+                  <p className="text-sm text-muted-foreground">Dernière saisie</p>
+                </div>
+              </div>
+              <div className="text-2xl font-display font-bold">
+                {formatNumber(totalSuper)} L
+              </div>
             </div>
-            <div>
-              <h4 className="font-display font-semibold">Stock Super (Jauges)</h4>
-              <p className="text-sm text-muted-foreground">Dernière saisie</p>
-            </div>
-          </div>
-          <div className="text-2xl font-display font-bold">
-            {formatNumber(totalSuper)} L
-          </div>
-        </div>
 
-        <div className="bg-card rounded-xl border border-gasoil/30 p-5">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="p-2.5 rounded-lg bg-gasoil/10">
-              <Droplet className="w-5 h-5 text-gasoil" />
+            <div className="bg-card rounded-xl border border-gasoil/30 p-5">
+              <div className="flex items-center gap-3 mb-4">
+                <div className="p-2.5 rounded-lg bg-gasoil/10">
+                  <Droplet className="w-5 h-5 text-gasoil" />
+                </div>
+                <div>
+                  <h4 className="font-display font-semibold">Stock Gasoil (Jauges)</h4>
+                  <p className="text-sm text-muted-foreground">Dernière saisie</p>
+                </div>
+              </div>
+              <div className="text-2xl font-display font-bold">
+                {formatNumber(totalGasoil)} L
+              </div>
             </div>
-            <div>
-              <h4 className="font-display font-semibold">Stock Gasoil (Jauges)</h4>
-              <p className="text-sm text-muted-foreground">Dernière saisie</p>
-            </div>
-          </div>
-          <div className="text-2xl font-display font-bold">
-            {formatNumber(totalGasoil)} L
-          </div>
-        </div>
+          </>
+        )}
       </div>
 
       {/* Low stock alerts */}
-      {lowStockAlerts.length > 0 && (
+      {isPending ? (
+        <Skeleton className="h-24 w-full rounded-xl" />
+      ) : lowStockAlerts.length > 0 ? (
         <div className="bg-destructive/10 border border-destructive/30 rounded-xl p-4">
           <div className="flex items-center gap-2 mb-3">
             <AlertTriangle className="w-5 h-5 text-destructive" />
@@ -152,34 +149,58 @@ export const StockModule = ({ stationId }: StockModuleProps) => {
             ))}
           </div>
         </div>
-      )}
+      ) : null}
 
       {/* Detailed stock by station */}
-      <div className="space-y-4">
-        <h3 className="text-lg font-display font-semibold">
-          Détail des jauges par station
-        </h3>
-        {entries.map((entry) => (
-          <div key={entry.stationId} className="space-y-3">
-            {!stationId && (
-              <h4 className="text-sm font-medium text-primary uppercase tracking-wider">
-                {entry.stationName}
-              </h4>
-            )}
+      {isPending ? (
+        <div className="space-y-4">
+          <Skeleton className="h-6 w-64" />
+          <div className="space-y-3">
+            <Skeleton className="h-4 w-32" />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {entry.stocks.map((stock, index) => (
-                <StockGauge
-                  key={`${entry.stationId}-${index}`}
-                  tank={stock.tank}
-                  capacity={15000}
-                  currentStock={stock.jauge}
-                  product={stock.product}
-                />
-              ))}
+              <Skeleton className="h-32 w-full rounded-xl" />
+              <Skeleton className="h-32 w-full rounded-xl" />
             </div>
           </div>
-        ))}
-      </div>
+          <div className="space-y-3">
+            <Skeleton className="h-4 w-32" />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <Skeleton className="h-32 w-full rounded-xl" />
+              <Skeleton className="h-32 w-full rounded-xl" />
+            </div>
+          </div>
+        </div>
+      ) : entries.length === 0 ? (
+        <div className="flex items-center justify-center py-12 text-muted-foreground">
+          Aucune donnée de stock disponible. Importez un fichier Excel pour voir les jauges.
+        </div>
+      ) : (
+        <div className="space-y-4">
+          <h3 className="text-lg font-display font-semibold">
+            Détail des jauges par station
+          </h3>
+          {entries.map((entry) => (
+            <div key={entry.stationId} className="space-y-3">
+              {!stationId && (
+                <h4 className="text-sm font-medium text-primary uppercase tracking-wider">
+                  {entry.stationName}
+                </h4>
+              )}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                {entry.stocks.map((stock, index) => (
+                  <StockGauge
+                    key={`${entry.stationId}-${index}`}
+                    tank={stock.tank}
+                    capacity={15000}
+                    currentStock={stock.jauge}
+                    product={stock.product}
+                  />
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
     </div>
   );
 };
