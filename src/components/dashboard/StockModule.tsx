@@ -1,9 +1,10 @@
 import { formatNumber } from "@/data/stationsData";
 import { StockGauge } from "./StockGauge";
-import { Fuel, Droplet, AlertTriangle, Loader2 } from "lucide-react";
+import { Fuel, Droplet, AlertTriangle } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface StockModuleProps {
   stationId?: string | null;
