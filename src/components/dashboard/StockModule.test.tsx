@@ -24,7 +24,6 @@ const mockStockData = [
     stocks: [
       { tank: "SUPER 1", jauge: 8000, product: "super" as const },
       { tank: "GASOIL 1", jauge: 12000, product: "gasoil" as const },
-      // jauge < 500 to trigger low stock alert section
       { tank: "SUPER 2", jauge: 200, product: "super" as const },
     ],
   },
@@ -56,41 +55,33 @@ const setQueryError = (message: string) => {
 };
 
 /**
- * Skeleton "regions" we expect to be visible while the Stock module is refetching.
- *
- * The component renders three distinct skeleton blocks (see StockModule.tsx):
- *   1. Two summary cards (Stock Super + Stock Gasoil totals) — h-36 rounded-xl
- *   2. One low-stock alerts placeholder — h-24 rounded-xl
- *   3. Detailed station list — header (h-6 w-64) + 4 gauge cards (h-32 rounded-xl)
+ * Stable, semantic data-testid based queries.
+ * Avoids relying on Tailwind utility classes which may change.
  */
-const querySkeletonRegions = (container: HTMLElement) => {
-  const skeletons = Array.from(container.querySelectorAll<HTMLElement>(".animate-pulse"));
+const queryRegions = (container: HTMLElement) => ({
+  // Skeleton regions
+  summarySkeletonSuper: container.querySelector('[data-testid="stock-summary-skeleton-super"]'),
+  summarySkeletonGasoil: container.querySelector('[data-testid="stock-summary-skeleton-gasoil"]'),
+  alertsSkeleton: container.querySelector('[data-testid="stock-alerts-skeleton"]'),
+  listSkeleton: container.querySelector('[data-testid="stock-list-skeleton"]'),
+  listSkeletonHeader: container.querySelector('[data-testid="stock-list-skeleton-header"]'),
+  listSkeletonGauges: container.querySelectorAll('[data-testid="stock-list-skeleton-gauge"]'),
 
-  const has = (predicate: (el: HTMLElement) => boolean) => skeletons.some(predicate);
+  // Real regions
+  summarySuper: container.querySelector('[data-testid="stock-summary-super"]'),
+  summaryGasoil: container.querySelector('[data-testid="stock-summary-gasoil"]'),
+  alerts: container.querySelector('[data-testid="stock-alerts"]'),
+  list: container.querySelector('[data-testid="stock-list"]'),
+  listStations: container.querySelectorAll('[data-testid="stock-list-station"]'),
+  errorBlock: container.querySelector('[data-testid="stock-error"]'),
+});
 
-  return {
-    skeletons,
-    summaryCards: skeletons.filter((el) => el.classList.contains("h-36")),
-    alertsPlaceholder: skeletons.find((el) => el.classList.contains("h-24")),
-    listHeader: skeletons.find(
-      (el) => el.classList.contains("h-6") && el.classList.contains("w-64")
-    ),
-    gaugeCards: skeletons.filter((el) => el.classList.contains("h-32")),
-    realSummaryCardsVisible:
-      !!container.querySelector(".border-super\\/30") &&
-      !!container.querySelector(".border-gasoil\\/30"),
-    realAlertsVisible: !!container.querySelector(".border-destructive\\/30"),
-    realGaugesVisible: !!container.querySelector(".bg-card.rounded-xl.border.border-border"),
-    has,
-  };
-};
-
-describe("StockModule — targeted skeleton coverage during refetch", () => {
+describe("StockModule — semantic skeleton coverage via data-testid", () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it("renders real Stock components (no skeletons) when idle", () => {
+  it("renders real Stock regions (no skeletons) when idle", () => {
     setQueryState(false);
 
     const { container } = render(
@@ -99,52 +90,24 @@ describe("StockModule — targeted skeleton coverage during refetch", () => {
       </TestWrapper>
     );
 
-    const regions = querySkeletonRegions(container);
+    const r = queryRegions(container);
 
-    expect(regions.skeletons.length).toBe(0);
-    expect(regions.realSummaryCardsVisible).toBe(true);
-    expect(regions.realAlertsVisible).toBe(true); // mock contains a low-stock tank
-    expect(regions.realGaugesVisible).toBe(true);
+    // No skeleton region present
+    expect(r.summarySkeletonSuper).toBeNull();
+    expect(r.summarySkeletonGasoil).toBeNull();
+    expect(r.alertsSkeleton).toBeNull();
+    expect(r.listSkeleton).toBeNull();
+
+    // All real regions visible
+    expect(r.summarySuper).not.toBeNull();
+    expect(r.summaryGasoil).not.toBeNull();
+    expect(r.alerts).not.toBeNull(); // mock contains a low-stock tank
+    expect(r.list).not.toBeNull();
+    expect(r.listStations.length).toBe(1);
+    expect(r.errorBlock).toBeNull();
   });
 
-  it("shows skeletons on totals cards, alerts block AND station list during refetch", async () => {
-    setQueryState(false);
-
-    const { rerender, container } = render(
-      <TestWrapper>
-        <StockModule />
-      </TestWrapper>
-    );
-
-    // Trigger refetch (simulates post-deletion or post-edit invalidation).
-    setQueryState(true);
-    rerender(
-      <TestWrapper>
-        <StockModule />
-      </TestWrapper>
-    );
-
-    await waitFor(() => {
-      const r = querySkeletonRegions(container);
-
-      // 1. Totals cards: exactly 2 skeleton placeholders (Super + Gasoil).
-      expect(r.summaryCards.length).toBe(2);
-
-      // 2. Low stock alerts: skeleton placeholder visible.
-      expect(r.alertsPlaceholder).toBeDefined();
-
-      // 3. Detailed station list: header + 4 gauge card skeletons visible.
-      expect(r.listHeader).toBeDefined();
-      expect(r.gaugeCards.length).toBe(4);
-
-      // Real data components must be hidden during refetch to avoid stale UI.
-      expect(r.realSummaryCardsVisible).toBe(false);
-      expect(r.realAlertsVisible).toBe(false);
-      expect(r.realGaugesVisible).toBe(false);
-    });
-  });
-
-  it("hides all skeleton regions and restores real components after refetch completes (no reload)", async () => {
+  it("shows skeletons on totals, alerts AND station list during refetch", async () => {
     setQueryState(false);
 
     const { rerender, container } = render(
@@ -161,7 +124,42 @@ describe("StockModule — targeted skeleton coverage during refetch", () => {
     );
 
     await waitFor(() => {
-      expect(querySkeletonRegions(container).skeletons.length).toBeGreaterThan(0);
+      const r = queryRegions(container);
+
+      // Skeletons by region
+      expect(r.summarySkeletonSuper).not.toBeNull();
+      expect(r.summarySkeletonGasoil).not.toBeNull();
+      expect(r.alertsSkeleton).not.toBeNull();
+      expect(r.listSkeleton).not.toBeNull();
+      expect(r.listSkeletonHeader).not.toBeNull();
+      expect(r.listSkeletonGauges.length).toBe(4);
+
+      // Real regions hidden during refetch
+      expect(r.summarySuper).toBeNull();
+      expect(r.summaryGasoil).toBeNull();
+      expect(r.alerts).toBeNull();
+      expect(r.list).toBeNull();
+    });
+  });
+
+  it("clears skeleton regions and restores real ones after refetch (no reload)", async () => {
+    setQueryState(false);
+
+    const { rerender, container } = render(
+      <TestWrapper>
+        <StockModule />
+      </TestWrapper>
+    );
+
+    setQueryState(true);
+    rerender(
+      <TestWrapper>
+        <StockModule />
+      </TestWrapper>
+    );
+
+    await waitFor(() => {
+      expect(queryRegions(container).listSkeleton).not.toBeNull();
     });
 
     setQueryState(false);
@@ -172,33 +170,28 @@ describe("StockModule — targeted skeleton coverage during refetch", () => {
     );
 
     await waitFor(() => {
-      const r = querySkeletonRegions(container);
+      const r = queryRegions(container);
 
-      // All skeleton regions cleared.
-      expect(r.skeletons.length).toBe(0);
-      expect(r.summaryCards.length).toBe(0);
-      expect(r.alertsPlaceholder).toBeUndefined();
-      expect(r.listHeader).toBeUndefined();
-      expect(r.gaugeCards.length).toBe(0);
+      expect(r.summarySkeletonSuper).toBeNull();
+      expect(r.summarySkeletonGasoil).toBeNull();
+      expect(r.alertsSkeleton).toBeNull();
+      expect(r.listSkeleton).toBeNull();
 
-      // Real components restored.
-      expect(r.realSummaryCardsVisible).toBe(true);
-      expect(r.realAlertsVisible).toBe(true);
-      expect(r.realGaugesVisible).toBe(true);
+      expect(r.summarySuper).not.toBeNull();
+      expect(r.summaryGasoil).not.toBeNull();
+      expect(r.alerts).not.toBeNull();
+      expect(r.list).not.toBeNull();
     });
   });
 
-  it("clears skeletons and shows error message when refetch fails (no stuck skeletons)", async () => {
-    // Idle: real components rendered.
+  it("clears skeletons and shows error region when refetch fails", async () => {
     setQueryState(false);
-    const { rerender, container, queryByTestId } = render(
+    const { rerender, container } = render(
       <TestWrapper>
         <StockModule />
       </TestWrapper>
     );
-    expect(querySkeletonRegions(container).skeletons.length).toBe(0);
 
-    // Refetch starts -> skeletons appear.
     setQueryState(true);
     rerender(
       <TestWrapper>
@@ -206,10 +199,9 @@ describe("StockModule — targeted skeleton coverage during refetch", () => {
       </TestWrapper>
     );
     await waitFor(() => {
-      expect(querySkeletonRegions(container).skeletons.length).toBeGreaterThan(0);
+      expect(queryRegions(container).listSkeleton).not.toBeNull();
     });
 
-    // Refetch fails -> skeletons must clear and error message must show.
     setQueryError("Network failure");
     rerender(
       <TestWrapper>
@@ -218,25 +210,23 @@ describe("StockModule — targeted skeleton coverage during refetch", () => {
     );
 
     await waitFor(() => {
-      const r = querySkeletonRegions(container);
+      const r = queryRegions(container);
 
-      // No skeleton stays stuck.
-      expect(r.skeletons.length).toBe(0);
-      expect(r.summaryCards.length).toBe(0);
-      expect(r.alertsPlaceholder).toBeUndefined();
-      expect(r.listHeader).toBeUndefined();
-      expect(r.gaugeCards.length).toBe(0);
+      // No skeleton region stays stuck
+      expect(r.summarySkeletonSuper).toBeNull();
+      expect(r.summarySkeletonGasoil).toBeNull();
+      expect(r.alertsSkeleton).toBeNull();
+      expect(r.listSkeleton).toBeNull();
 
-      // Stale real components must not be shown alongside the error.
-      expect(r.realSummaryCardsVisible).toBe(false);
-      expect(r.realGaugesVisible).toBe(false);
+      // No stale real region
+      expect(r.summarySuper).toBeNull();
+      expect(r.list).toBeNull();
 
-      // Error UI is rendered correctly.
-      const errorBlock = queryByTestId("stock-error");
-      expect(errorBlock).not.toBeNull();
-      expect(errorBlock?.getAttribute("role")).toBe("alert");
-      expect(errorBlock?.textContent ?? "").toContain("Erreur lors du chargement des stocks");
-      expect(errorBlock?.textContent ?? "").toContain("Network failure");
+      // Error region rendered correctly
+      expect(r.errorBlock).not.toBeNull();
+      expect(r.errorBlock?.getAttribute("role")).toBe("alert");
+      expect(r.errorBlock?.textContent ?? "").toContain("Erreur lors du chargement des stocks");
+      expect(r.errorBlock?.textContent ?? "").toContain("Network failure");
     });
   });
 });
