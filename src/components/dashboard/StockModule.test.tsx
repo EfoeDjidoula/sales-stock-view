@@ -40,6 +40,18 @@ const setQueryState = (isFetching: boolean) => {
     data: mockStockData,
     isLoading: false,
     isFetching,
+    isError: false,
+    error: null,
+  });
+};
+
+const setQueryError = (message: string) => {
+  (useQuery as ReturnType<typeof vi.fn>).mockReturnValue({
+    data: undefined,
+    isLoading: false,
+    isFetching: false,
+    isError: true,
+    error: new Error(message),
   });
 };
 
