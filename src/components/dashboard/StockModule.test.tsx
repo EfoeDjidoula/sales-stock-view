@@ -108,4 +108,59 @@ describe("StockModule — skeletons during post-deletion refetch", () => {
       expect(container.querySelectorAll(".animate-pulse").length).toBe(0);
     });
   });
+
+  it("shows skeletons while refetching after an edit (update), then hides them without page reload", async () => {
+    (useQuery as ReturnType<typeof vi.fn>).mockReturnValue({
+      data: mockStockData,
+      isLoading: false,
+      isFetching: false,
+    });
+
+    const { rerender, container } = render(
+      <TestWrapper>
+        <StockModule />
+      </TestWrapper>
+    );
+
+    // Sanity: no skeletons when idle.
+    await waitFor(() => {
+      expect(container.querySelectorAll(".animate-pulse").length).toBe(0);
+    });
+
+    // Simulate refetch triggered by an external edit (e.g. EditEntryDialog invalidating queries).
+    (useQuery as ReturnType<typeof vi.fn>).mockReturnValue({
+      data: mockStockData,
+      isLoading: false,
+      isFetching: true,
+    });
+
+    rerender(
+      <TestWrapper>
+        <StockModule />
+      </TestWrapper>
+    );
+
+    // Skeletons should appear during the refetch window.
+    await waitFor(() => {
+      expect(container.querySelectorAll(".animate-pulse").length).toBeGreaterThan(0);
+    });
+
+    // Refetch completes.
+    (useQuery as ReturnType<typeof vi.fn>).mockReturnValue({
+      data: mockStockData,
+      isLoading: false,
+      isFetching: false,
+    });
+
+    rerender(
+      <TestWrapper>
+        <StockModule />
+      </TestWrapper>
+    );
+
+    // Skeletons should disappear.
+    await waitFor(() => {
+      expect(container.querySelectorAll(".animate-pulse").length).toBe(0);
+    });
+  });
 });
