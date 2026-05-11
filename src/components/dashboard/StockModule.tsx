@@ -79,6 +79,22 @@ export const StockModule = ({ stationId }: StockModuleProps) => {
       .map((s) => ({ station: e.stationName, tank: s.tank, jauge: s.jauge }))
   );
 
+  if (isError && !isPending) {
+    return (
+      <div
+        role="alert"
+        data-testid="stock-error"
+        className="bg-destructive/10 border border-destructive/30 rounded-xl p-4 flex items-center gap-2 text-destructive"
+      >
+        <AlertTriangle className="w-5 h-5" />
+        <span className="font-medium">
+          Erreur lors du chargement des stocks
+          {error instanceof Error ? ` : ${error.message}` : ""}
+        </span>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Summary cards */}
