@@ -187,4 +187,56 @@ describe("StockModule — targeted skeleton coverage during refetch", () => {
       expect(r.realGaugesVisible).toBe(true);
     });
   });
+
+  it("clears skeletons and shows error message when refetch fails (no stuck skeletons)", async () => {
+    // Idle: real components rendered.
+    setQueryState(false);
+    const { rerender, container, queryByTestId } = render(
+      <TestWrapper>
+        <StockModule />
+      </TestWrapper>
+    );
+    expect(querySkeletonRegions(container).skeletons.length).toBe(0);
+
+    // Refetch starts -> skeletons appear.
+    setQueryState(true);
+    rerender(
+      <TestWrapper>
+        <StockModule />
+      </TestWrapper>
+    );
+    await waitFor(() => {
+      expect(querySkeletonRegions(container).skeletons.length).toBeGreaterThan(0);
+    });
+
+    // Refetch fails -> skeletons must clear and error message must show.
+    setQueryError("Network failure");
+    rerender(
+      <TestWrapper>
+        <StockModule />
+      </TestWrapper>
+    );
+
+    await waitFor(() => {
+      const r = querySkeletonRegions(container);
+
+      // No skeleton stays stuck.
+      expect(r.skeletons.length).toBe(0);
+      expect(r.summaryCards.length).toBe(0);
+      expect(r.alertsPlaceholder).toBeUndefined();
+      expect(r.listHeader).toBeUndefined();
+      expect(r.gaugeCards.length).toBe(0);
+
+      // Stale real components must not be shown alongside the error.
+      expect(r.realSummaryCardsVisible).toBe(false);
+      expect(r.realGaugesVisible).toBe(false);
+
+      // Error UI is rendered correctly.
+      const errorBlock = queryByTestId("stock-error");
+      expect(errorBlock).not.toBeNull();
+      expect(errorBlock?.getAttribute("role")).toBe("alert");
+      expect(errorBlock?.textContent ?? "").toContain("Erreur lors du chargement des stocks");
+      expect(errorBlock?.textContent ?? "").toContain("Network failure");
+    });
+  });
 });
