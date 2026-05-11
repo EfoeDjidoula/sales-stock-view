@@ -100,13 +100,13 @@ export const StockModule = ({ stationId }: StockModuleProps) => {
       {/* Summary cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {isPending ? (
-          <>
-            <Skeleton className="h-36 w-full rounded-xl" />
-            <Skeleton className="h-36 w-full rounded-xl" />
-          </>
+          <div data-testid="stock-summary-skeleton" className="contents">
+            <Skeleton data-testid="stock-summary-skeleton-super" className="h-36 w-full rounded-xl" />
+            <Skeleton data-testid="stock-summary-skeleton-gasoil" className="h-36 w-full rounded-xl" />
+          </div>
         ) : (
           <>
-            <div className="bg-card rounded-xl border border-super/30 p-5">
+            <div data-testid="stock-summary-super" className="bg-card rounded-xl border border-super/30 p-5">
               <div className="flex items-center gap-3 mb-4">
                 <div className="p-2.5 rounded-lg bg-super/10">
                   <Fuel className="w-5 h-5 text-super" />
@@ -121,7 +121,7 @@ export const StockModule = ({ stationId }: StockModuleProps) => {
               </div>
             </div>
 
-            <div className="bg-card rounded-xl border border-gasoil/30 p-5">
+            <div data-testid="stock-summary-gasoil" className="bg-card rounded-xl border border-gasoil/30 p-5">
               <div className="flex items-center gap-3 mb-4">
                 <div className="p-2.5 rounded-lg bg-gasoil/10">
                   <Droplet className="w-5 h-5 text-gasoil" />
@@ -141,9 +141,9 @@ export const StockModule = ({ stationId }: StockModuleProps) => {
 
       {/* Low stock alerts */}
       {isPending ? (
-        <Skeleton className="h-24 w-full rounded-xl" />
+        <Skeleton data-testid="stock-alerts-skeleton" className="h-24 w-full rounded-xl" />
       ) : lowStockAlerts.length > 0 ? (
-        <div className="bg-destructive/10 border border-destructive/30 rounded-xl p-4">
+        <div data-testid="stock-alerts" className="bg-destructive/10 border border-destructive/30 rounded-xl p-4">
           <div className="flex items-center gap-2 mb-3">
             <AlertTriangle className="w-5 h-5 text-destructive" />
             <h4 className="font-display font-semibold text-destructive">
