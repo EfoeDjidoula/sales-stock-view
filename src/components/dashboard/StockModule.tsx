@@ -169,34 +169,34 @@ export const StockModule = ({ stationId }: StockModuleProps) => {
 
       {/* Detailed stock by station */}
       {isPending ? (
-        <div className="space-y-4">
-          <Skeleton className="h-6 w-64" />
+        <div data-testid="stock-list-skeleton" className="space-y-4">
+          <Skeleton data-testid="stock-list-skeleton-header" className="h-6 w-64" />
           <div className="space-y-3">
             <Skeleton className="h-4 w-32" />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <Skeleton className="h-32 w-full rounded-xl" />
-              <Skeleton className="h-32 w-full rounded-xl" />
+              <Skeleton data-testid="stock-list-skeleton-gauge" className="h-32 w-full rounded-xl" />
+              <Skeleton data-testid="stock-list-skeleton-gauge" className="h-32 w-full rounded-xl" />
             </div>
           </div>
           <div className="space-y-3">
             <Skeleton className="h-4 w-32" />
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              <Skeleton className="h-32 w-full rounded-xl" />
-              <Skeleton className="h-32 w-full rounded-xl" />
+              <Skeleton data-testid="stock-list-skeleton-gauge" className="h-32 w-full rounded-xl" />
+              <Skeleton data-testid="stock-list-skeleton-gauge" className="h-32 w-full rounded-xl" />
             </div>
           </div>
         </div>
       ) : entries.length === 0 ? (
-        <div className="flex items-center justify-center py-12 text-muted-foreground">
+        <div data-testid="stock-empty" className="flex items-center justify-center py-12 text-muted-foreground">
           Aucune donnée de stock disponible. Importez un fichier Excel pour voir les jauges.
         </div>
       ) : (
-        <div className="space-y-4">
+        <div data-testid="stock-list" className="space-y-4">
           <h3 className="text-lg font-display font-semibold">
             Détail des jauges par station
           </h3>
           {entries.map((entry) => (
-            <div key={entry.stationId} className="space-y-3">
+            <div key={entry.stationId} data-testid="stock-list-station" className="space-y-3">
               {!stationId && (
                 <h4 className="text-sm font-medium text-primary uppercase tracking-wider">
                   {entry.stationName}
