@@ -14,7 +14,7 @@ export const StockModule = ({ stationId }: StockModuleProps) => {
   const { user } = useAuth();
 
   // Fetch latest entry per station for jauge data
-  const { data: latestEntries, isLoading, isFetching } = useQuery({
+  const { data: latestEntries, isLoading, isFetching, isError, error } = useQuery({
     queryKey: ["stock-jauges", stationId],
     queryFn: async () => {
       // Get stations first
