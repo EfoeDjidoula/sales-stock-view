@@ -7,11 +7,13 @@ import { PeriodTabs } from "@/components/dashboard/PeriodTabs";
 import { StationAssignmentDialog } from "@/components/stations/StationAssignmentDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2, MapPin, Fuel, Loader2, TrendingUp, Droplets, Search, ArrowUpDown, Users } from "lucide-react";
+import { Plus, Pencil, Trash2, MapPin, Fuel, Loader2, TrendingUp, Droplets, Search, ArrowUpDown, Users, Settings2, List } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { StationConfigModule } from "@/components/stations/StationConfigModule";
 import { formatCurrency } from "@/data/stationsData";
 import {
   Dialog,
@@ -150,6 +152,17 @@ export const StationManagement = ({ isAdmin }: StationManagementProps) => {
 
   return (
     <div className="space-y-4">
+      <Tabs defaultValue="list" className="space-y-4">
+        <TabsList className="bg-secondary">
+          <TabsTrigger value="list" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+            <List className="w-4 h-4" /> Liste des stations
+          </TabsTrigger>
+          <TabsTrigger value="config" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+            <Settings2 className="w-4 h-4" /> Cuves & Pompes
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="list" className="space-y-4 mt-0">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <h2 className="text-lg font-display font-semibold">
           Gestion des stations ({stations.length})
@@ -317,6 +330,12 @@ export const StationManagement = ({ isAdmin }: StationManagementProps) => {
           );
         })}
       </div>
+        </TabsContent>
+
+        <TabsContent value="config" className="mt-0">
+          <StationConfigModule isAdmin={isAdmin} />
+        </TabsContent>
+      </Tabs>
 
       {/* Create/Edit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={(open) => { if (!open) { resetForm(); } setDialogOpen(open); }}>
