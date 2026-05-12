@@ -7,11 +7,13 @@ import { PeriodTabs } from "@/components/dashboard/PeriodTabs";
 import { StationAssignmentDialog } from "@/components/stations/StationAssignmentDialog";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { Plus, Pencil, Trash2, MapPin, Fuel, Loader2, TrendingUp, Droplets, Search, ArrowUpDown, Users } from "lucide-react";
+import { Plus, Pencil, Trash2, MapPin, Fuel, Loader2, TrendingUp, Droplets, Search, ArrowUpDown, Users, Settings2, List } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { StationConfigModule } from "@/components/stations/StationConfigModule";
 import { formatCurrency } from "@/data/stationsData";
 import {
   Dialog,
