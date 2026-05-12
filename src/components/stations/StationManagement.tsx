@@ -330,6 +330,12 @@ export const StationManagement = ({ isAdmin }: StationManagementProps) => {
           );
         })}
       </div>
+        </TabsContent>
+
+        <TabsContent value="config" className="mt-0">
+          <StationConfigModule isAdmin={isAdmin} />
+        </TabsContent>
+      </Tabs>
 
       {/* Create/Edit Dialog */}
       <Dialog open={dialogOpen} onOpenChange={(open) => { if (!open) { resetForm(); } setDialogOpen(open); }}>
