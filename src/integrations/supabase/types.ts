@@ -383,6 +383,54 @@ export type Database = {
         }
         Relationships: []
       }
+      pumps: {
+        Row: {
+          created_at: string
+          id: string
+          name: string
+          position: number
+          product_type: string
+          station_id: string
+          tank_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          name: string
+          position?: number
+          product_type: string
+          station_id: string
+          tank_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          name?: string
+          position?: number
+          product_type?: string
+          station_id?: string
+          tank_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pumps_station_id_fkey"
+            columns: ["station_id"]
+            isOneToOne: false
+            referencedRelation: "stations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pumps_tank_id_fkey"
+            columns: ["tank_id"]
+            isOneToOne: false
+            referencedRelation: "tanks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       station_assignments: {
         Row: {
           created_at: string
@@ -491,6 +539,47 @@ export type Database = {
           },
           {
             foreignKeyName: "supplies_station_id_fkey"
+            columns: ["station_id"]
+            isOneToOne: false
+            referencedRelation: "stations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tanks: {
+        Row: {
+          capacity_liters: number
+          created_at: string
+          id: string
+          name: string
+          notes: string | null
+          product_type: string
+          station_id: string
+          updated_at: string
+        }
+        Insert: {
+          capacity_liters?: number
+          created_at?: string
+          id?: string
+          name: string
+          notes?: string | null
+          product_type: string
+          station_id: string
+          updated_at?: string
+        }
+        Update: {
+          capacity_liters?: number
+          created_at?: string
+          id?: string
+          name?: string
+          notes?: string | null
+          product_type?: string
+          station_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tanks_station_id_fkey"
             columns: ["station_id"]
             isOneToOne: false
             referencedRelation: "stations"
