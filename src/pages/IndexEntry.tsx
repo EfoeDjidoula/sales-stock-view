@@ -3,13 +3,17 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { formatNumber } from "@/data/stationsData";
-import { useStations, useSaveIndexEntry } from "@/hooks/useIndexEntries";
+import { useStations, useSaveIndexEntry, type PumpEntryInput } from "@/hooks/useIndexEntries";
 import { useFiscalYears } from "@/hooks/useFiscalYears";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { ProfileMenu } from "@/components/ProfileMenu";
 import { DbStationSelector } from "@/components/dashboard/DbStationSelector";
+import { usePumps } from "@/hooks/usePumps";
+import { useTanks } from "@/hooks/useTanks";
+import { usePumpIndexEntries, usePreviousPumpIndex } from "@/hooks/usePumpIndexEntries";
+import { DynamicPumpEntry, type PumpRow, type TankJauge } from "@/components/index-entry/DynamicPumpEntry";
 import {
   Fuel,
   Calendar,
@@ -157,6 +161,45 @@ const IndexEntry = () => {
     }
   }, [dbStations, selectedStation]);
 
+  // --- Dynamic pump/tank configuration ---
+  const { pumps } = usePumps(selectedStation?.id);
+  const { tanks } = useTanks(selectedStation?.id);
+  const hasDynamicConfig = pumps.length > 0;
+
+  const [pumpRows, setPumpRows] = useState<Record<string, PumpRow>>({});
+  const [tankJauges, setTankJauges] = useState<Record<string, TankJauge>>({});
+
+  // Initialize empty rows whenever pumps/tanks change
+  useEffect(() => {
+    setPumpRows((prev) => {
+      const next: Record<string, PumpRow> = {};
+      for (const p of pumps) {
+        next[p.id] = prev[p.id] || {
+          pumpId: p.id,
+          tankId: p.tank_id,
+          productType: p.product_type,
+          indexDepart: "",
+          indexArrivee: "",
+        };
+        // Keep tank/product in sync with config
+        next[p.id].tankId = p.tank_id;
+        next[p.id].productType = p.product_type;
+      }
+      return next;
+    });
+    setTankJauges((prev) => {
+      const next: Record<string, TankJauge> = {};
+      for (const t of tanks) {
+        next[t.id] = prev[t.id] || {
+          tankId: t.id,
+          productType: t.product_type,
+          jauge: "",
+        };
+      }
+      return next;
+    });
+  }, [pumps, tanks]);
+
   const form = useForm<IndexEntryForm>({
     resolver: zodResolver(indexEntrySchema),
     defaultValues,
@@ -210,6 +253,103 @@ const IndexEntry = () => {
 
   const hasPreviousEntry = !!previousEntry;
 
+  // Pump-level: previous index_arrivee per pump (for auto-fill in dynamic mode)
+  const pumpIds = useMemo(() => pumps.map((p) => p.id), [pumps]);
+  const { data: previousPumpIndex = {} } = usePreviousPumpIndex(
+    selectedStation?.id,
+    pumpIds,
+    selectedDate,
+  );
+  const hasAnyPreviousPump = Object.keys(previousPumpIndex).length > 0;
+
+  // Pre-fill pump rows + tank jauges from existing entry on the same date (edit case)
+  const { data: existingPumpEntries = [] } = usePumpIndexEntries(selectedStation?.id, selectedDate);
+  useEffect(() => {
+    if (!existingPumpEntries.length) return;
+    setPumpRows((prev) => {
+      const next = { ...prev };
+      for (const e of existingPumpEntries) {
+        if (next[e.pump_id]) {
+          next[e.pump_id] = {
+            ...next[e.pump_id],
+            indexDepart: String(e.index_depart),
+            indexArrivee: String(e.index_arrivee),
+          };
+        }
+      }
+      return next;
+    });
+  }, [existingPumpEntries]);
+
+  const handlePumpChange = (pumpId: string, patch: Partial<PumpRow>) => {
+    setPumpRows((prev) => ({
+      ...prev,
+      [pumpId]: { ...prev[pumpId], ...patch },
+    }));
+  };
+  const handleJaugeChange = (tankId: string, value: string) => {
+    setTankJauges((prev) => ({
+      ...prev,
+      [tankId]: { ...prev[tankId], jauge: value },
+    }));
+  };
+
+  /** Aggregate dynamic pump rows + tank jauges into legacy super1/super2/gasoil1/gasoil2 slots
+   *  so existing dashboards/stocks (which read these columns) keep working seamlessly.
+   *  Strategy: sum all super pumps into super1, all gasoil pumps into gasoil1.
+   *  Jauges: first super tank → super1.jauge, second → super2.jauge (same for gasoil).
+   */
+  const buildLegacyFromDynamic = () => {
+    const sumByProduct = (product: "super" | "gasoil") => {
+      let depart = 0;
+      let arrivee = 0;
+      for (const p of pumps.filter((x) => x.product_type === product)) {
+        const r = pumpRows[p.id];
+        if (!r) continue;
+        depart += parseFloat(r.indexDepart) || 0;
+        arrivee += parseFloat(r.indexArrivee) || 0;
+      }
+      return { depart, arrivee };
+    };
+    const superTanks = tanks.filter((t) => t.product_type === "super");
+    const gasoilTanks = tanks.filter((t) => t.product_type === "gasoil");
+    const jaugeOf = (t?: { id: string }) =>
+      t ? parseFloat(tankJauges[t.id]?.jauge || "0") || 0 : 0;
+
+    const s = sumByProduct("super");
+    const g = sumByProduct("gasoil");
+    return {
+      super1: { indexDepart: s.depart, indexArrivee: s.arrivee, jauge: jaugeOf(superTanks[0]) },
+      super2: { indexDepart: 0, indexArrivee: 0, jauge: jaugeOf(superTanks[1]) },
+      gasoil1: { indexDepart: g.depart, indexArrivee: g.arrivee, jauge: jaugeOf(gasoilTanks[0]) },
+      gasoil2: { indexDepart: 0, indexArrivee: 0, jauge: jaugeOf(gasoilTanks[1]) },
+    };
+  };
+
+  const buildPumpEntries = (): PumpEntryInput[] =>
+    pumps.map((p) => {
+      const r = pumpRows[p.id];
+      return {
+        pumpId: p.id,
+        tankId: p.tank_id,
+        productType: p.product_type,
+        indexDepart: parseFloat(r?.indexDepart || "0") || 0,
+        indexArrivee: parseFloat(r?.indexArrivee || "0") || 0,
+      };
+    });
+
+  // In dynamic mode, satisfy legacy zod validation by setting placeholder "0" values.
+  useEffect(() => {
+    if (!hasDynamicConfig) return;
+    (["super1", "super2", "gasoil1", "gasoil2"] as const).forEach((k) => {
+      form.setValue(`${k}.indexArrivee`, "0");
+      form.setValue(`${k}.indexDepart`, "0");
+      form.setValue(`${k}.jaugeDuJour`, "0");
+    });
+  }, [hasDynamicConfig, form]);
+
+
+
   const onSubmit = async (data: IndexEntryForm) => {
     if (!selectedStation) {
       toast.error("Veuillez sélectionner une station");
@@ -219,29 +359,37 @@ const IndexEntry = () => {
     setIsSubmitting(true);
 
     try {
+      // In dynamic mode, override legacy values with aggregated pump data and pass pumpEntries
+      const legacy = hasDynamicConfig
+        ? buildLegacyFromDynamic()
+        : {
+            super1: {
+              indexDepart: parseFloat(data.super1.indexDepart) || 0,
+              indexArrivee: parseFloat(data.super1.indexArrivee) || 0,
+              jauge: parseFloat(data.super1.jaugeDuJour) || 0,
+            },
+            super2: {
+              indexDepart: parseFloat(data.super2.indexDepart) || 0,
+              indexArrivee: parseFloat(data.super2.indexArrivee) || 0,
+              jauge: parseFloat(data.super2.jaugeDuJour) || 0,
+            },
+            gasoil1: {
+              indexDepart: parseFloat(data.gasoil1.indexDepart) || 0,
+              indexArrivee: parseFloat(data.gasoil1.indexArrivee) || 0,
+              jauge: parseFloat(data.gasoil1.jaugeDuJour) || 0,
+            },
+            gasoil2: {
+              indexDepart: parseFloat(data.gasoil2.indexDepart) || 0,
+              indexArrivee: parseFloat(data.gasoil2.indexArrivee) || 0,
+              jauge: parseFloat(data.gasoil2.jaugeDuJour) || 0,
+            },
+          };
+
       await saveIndexEntry.mutateAsync({
         stationId: selectedStation.id,
         entryDate: data.date,
-        super1: {
-          indexDepart: parseFloat(data.super1.indexDepart) || 0,
-          indexArrivee: parseFloat(data.super1.indexArrivee) || 0,
-          jauge: parseFloat(data.super1.jaugeDuJour) || 0,
-        },
-        super2: {
-          indexDepart: parseFloat(data.super2.indexDepart) || 0,
-          indexArrivee: parseFloat(data.super2.indexArrivee) || 0,
-          jauge: parseFloat(data.super2.jaugeDuJour) || 0,
-        },
-        gasoil1: {
-          indexDepart: parseFloat(data.gasoil1.indexDepart) || 0,
-          indexArrivee: parseFloat(data.gasoil1.indexArrivee) || 0,
-          jauge: parseFloat(data.gasoil1.jaugeDuJour) || 0,
-        },
-        gasoil2: {
-          indexDepart: parseFloat(data.gasoil2.indexDepart) || 0,
-          indexArrivee: parseFloat(data.gasoil2.indexArrivee) || 0,
-          jauge: parseFloat(data.gasoil2.jaugeDuJour) || 0,
-        },
+        ...legacy,
+        pumpEntries: hasDynamicConfig ? buildPumpEntries() : undefined,
         versements: {
           momo: {
             montant: parseFloat(data.versementMomo.montant) || 0,
@@ -268,11 +416,11 @@ const IndexEntry = () => {
         },
       });
 
-      // Compute summary
-      const s1 = (parseFloat(data.super1.indexArrivee) || 0) - (parseFloat(data.super1.indexDepart) || 0);
-      const s2 = (parseFloat(data.super2.indexArrivee) || 0) - (parseFloat(data.super2.indexDepart) || 0);
-      const g1 = (parseFloat(data.gasoil1.indexArrivee) || 0) - (parseFloat(data.gasoil1.indexDepart) || 0);
-      const g2 = (parseFloat(data.gasoil2.indexArrivee) || 0) - (parseFloat(data.gasoil2.indexDepart) || 0);
+      // Compute summary from the legacy values (which already reflect dynamic aggregation)
+      const s1 = legacy.super1.indexArrivee - legacy.super1.indexDepart;
+      const s2 = legacy.super2.indexArrivee - legacy.super2.indexDepart;
+      const g1 = legacy.gasoil1.indexArrivee - legacy.gasoil1.indexDepart;
+      const g2 = legacy.gasoil2.indexArrivee - legacy.gasoil2.indexDepart;
       const superLiters = Math.max(0, s1) + Math.max(0, s2);
       const gasoilLiters = Math.max(0, g1) + Math.max(0, g2);
       const momo = parseFloat(data.versementMomo.montant) || 0;
@@ -298,6 +446,22 @@ const IndexEntry = () => {
       });
 
       form.reset(defaultValues);
+      if (hasDynamicConfig) {
+        setPumpRows((prev) => {
+          const next: Record<string, PumpRow> = {};
+          for (const id of Object.keys(prev)) {
+            next[id] = { ...prev[id], indexDepart: "", indexArrivee: "" };
+          }
+          return next;
+        });
+        setTankJauges((prev) => {
+          const next: Record<string, TankJauge> = {};
+          for (const id of Object.keys(prev)) {
+            next[id] = { ...prev[id], jauge: "" };
+          }
+          return next;
+        });
+      }
     } catch (error) {
       // Error is handled by the mutation
     }
@@ -566,49 +730,76 @@ const IndexEntry = () => {
               </div>
             )}
 
-            {/* Super Section */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-display font-semibold flex items-center gap-2">
-                <div className="w-4 h-4 rounded-full bg-super" />
-                Carburant Super
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <ProductEntryCard
-                  title="Super - Pompe 1 & 2"
-                  fieldPrefix="super1"
-                  productType="super"
-                  disableDepart={hasPreviousEntry}
-                />
-                <ProductEntryCard
-                  title="Super - Pompe 3 & 4"
-                  fieldPrefix="super2"
-                  productType="super"
-                  disableDepart={hasPreviousEntry}
+            {hasDynamicConfig ? (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <h3 className="text-lg font-display font-semibold flex items-center gap-2">
+                    <Fuel className="w-5 h-5 text-primary" />
+                    Saisie par pompe & cuve
+                  </h3>
+                  <span className="text-xs text-muted-foreground">
+                    {pumps.length} pompe(s) · {tanks.length} cuve(s) configurée(s)
+                  </span>
+                </div>
+                <DynamicPumpEntry
+                  pumps={pumps}
+                  tanks={tanks}
+                  pumpRows={pumpRows}
+                  tankJauges={tankJauges}
+                  previousIndex={previousPumpIndex}
+                  hasPrevious={hasAnyPreviousPump}
+                  onChangePump={handlePumpChange}
+                  onChangeJauge={handleJaugeChange}
+                  disabled={isFiscalYearClosed}
                 />
               </div>
-            </div>
+            ) : (
+              <>
+                {/* Super Section (legacy) */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-display font-semibold flex items-center gap-2">
+                    <div className="w-4 h-4 rounded-full bg-super" />
+                    Carburant Super
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <ProductEntryCard
+                      title="Super - Pompe 1 & 2"
+                      fieldPrefix="super1"
+                      productType="super"
+                      disableDepart={hasPreviousEntry}
+                    />
+                    <ProductEntryCard
+                      title="Super - Pompe 3 & 4"
+                      fieldPrefix="super2"
+                      productType="super"
+                      disableDepart={hasPreviousEntry}
+                    />
+                  </div>
+                </div>
 
-            {/* Gasoil Section */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-display font-semibold flex items-center gap-2">
-                <div className="w-4 h-4 rounded-full bg-gasoil" />
-                Carburant Gasoil
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <ProductEntryCard
-                  title="Gasoil - Pompe 1 & 2"
-                  fieldPrefix="gasoil1"
-                  productType="gasoil"
-                  disableDepart={hasPreviousEntry}
-                />
-                <ProductEntryCard
-                  title="Gasoil - Pompe 3 & 4"
-                  fieldPrefix="gasoil2"
-                  productType="gasoil"
-                  disableDepart={hasPreviousEntry}
-                />
-              </div>
-            </div>
+                {/* Gasoil Section (legacy) */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-display font-semibold flex items-center gap-2">
+                    <div className="w-4 h-4 rounded-full bg-gasoil" />
+                    Carburant Gasoil
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <ProductEntryCard
+                      title="Gasoil - Pompe 1 & 2"
+                      fieldPrefix="gasoil1"
+                      productType="gasoil"
+                      disableDepart={hasPreviousEntry}
+                    />
+                    <ProductEntryCard
+                      title="Gasoil - Pompe 3 & 4"
+                      fieldPrefix="gasoil2"
+                      productType="gasoil"
+                      disableDepart={hasPreviousEntry}
+                    />
+                  </div>
+                </div>
+              </>
+            )}
 
             {/* Versements Section */}
             <Card className="bg-card border-border">

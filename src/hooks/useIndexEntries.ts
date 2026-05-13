@@ -3,6 +3,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 
+export interface PumpEntryInput {
+  pumpId: string;
+  tankId: string | null;
+  productType: "super" | "gasoil";
+  indexDepart: number;
+  indexArrivee: number;
+}
+
 export interface IndexEntryData {
   stationId: string;
   entryDate: string;
@@ -10,6 +18,8 @@ export interface IndexEntryData {
   super2: { indexDepart: number; indexArrivee: number; jauge: number };
   gasoil1: { indexDepart: number; indexArrivee: number; jauge: number };
   gasoil2: { indexDepart: number; indexArrivee: number; jauge: number };
+  /** Optional dynamic pump-level rows (when station has pumps configured). */
+  pumpEntries?: PumpEntryInput[];
   versements: {
     momo: { montant: number; reference?: string };
     banque: { montant: number; reference?: string };
@@ -161,6 +171,31 @@ export const useSaveIndexEntry = () => {
         .single();
 
       if (error) throw error;
+
+      // Persist pump-level rows if provided
+      if (data.pumpEntries && data.pumpEntries.length > 0) {
+        // Wipe out previous pump rows for this entry to avoid stale lines (pump removed/relinked)
+        const { error: delErr } = await supabase
+          .from("pump_index_entries")
+          .delete()
+          .eq("entry_id", result.id);
+        if (delErr) throw delErr;
+
+        const rows = data.pumpEntries.map((p) => ({
+          entry_id: result.id,
+          pump_id: p.pumpId,
+          tank_id: p.tankId,
+          station_id: data.stationId,
+          user_id: user.id,
+          entry_date: data.entryDate,
+          product_type: p.productType,
+          index_depart: p.indexDepart,
+          index_arrivee: p.indexArrivee,
+        }));
+        const { error: insErr } = await supabase.from("pump_index_entries").insert(rows);
+        if (insErr) throw insErr;
+      }
+
       return result;
     },
     onSuccess: () => {
@@ -169,6 +204,8 @@ export const useSaveIndexEntry = () => {
       queryClient.invalidateQueries({ queryKey: ["dashboard-chart"] });
       queryClient.invalidateQueries({ queryKey: ["latest-jauge"] });
       queryClient.invalidateQueries({ queryKey: ["stock-jauges"] });
+      queryClient.invalidateQueries({ queryKey: ["pump-index-entries"] });
+      queryClient.invalidateQueries({ queryKey: ["previous-pump-index"] });
       toast.success("Index enregistrés avec succès");
     },
     onError: (error: Error) => {
