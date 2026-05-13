@@ -161,6 +161,45 @@ const IndexEntry = () => {
     }
   }, [dbStations, selectedStation]);
 
+  // --- Dynamic pump/tank configuration ---
+  const { pumps } = usePumps(selectedStation?.id);
+  const { tanks } = useTanks(selectedStation?.id);
+  const hasDynamicConfig = pumps.length > 0;
+
+  const [pumpRows, setPumpRows] = useState<Record<string, PumpRow>>({});
+  const [tankJauges, setTankJauges] = useState<Record<string, TankJauge>>({});
+
+  // Initialize empty rows whenever pumps/tanks change
+  useEffect(() => {
+    setPumpRows((prev) => {
+      const next: Record<string, PumpRow> = {};
+      for (const p of pumps) {
+        next[p.id] = prev[p.id] || {
+          pumpId: p.id,
+          tankId: p.tank_id,
+          productType: p.product_type,
+          indexDepart: "",
+          indexArrivee: "",
+        };
+        // Keep tank/product in sync with config
+        next[p.id].tankId = p.tank_id;
+        next[p.id].productType = p.product_type;
+      }
+      return next;
+    });
+    setTankJauges((prev) => {
+      const next: Record<string, TankJauge> = {};
+      for (const t of tanks) {
+        next[t.id] = prev[t.id] || {
+          tankId: t.id,
+          productType: t.product_type,
+          jauge: "",
+        };
+      }
+      return next;
+    });
+  }, [pumps, tanks]);
+
   const form = useForm<IndexEntryForm>({
     resolver: zodResolver(indexEntrySchema),
     defaultValues,
