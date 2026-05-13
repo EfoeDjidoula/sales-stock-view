@@ -326,8 +326,16 @@ const IndexEntry = () => {
     };
   };
 
-  const buildPumpEntries = (): PumpEntryInput[] =>
-    pumps.map((p) => {
+  // In dynamic mode, satisfy legacy zod validation by setting placeholder "0" values.
+  useEffect(() => {
+    if (!hasDynamicConfig) return;
+    (["super1", "super2", "gasoil1", "gasoil2"] as const).forEach((k) => {
+      form.setValue(`${k}.indexArrivee`, "0");
+      form.setValue(`${k}.indexDepart`, "0");
+      form.setValue(`${k}.jaugeDuJour`, "0");
+    });
+  }, [hasDynamicConfig, form]);
+
       const r = pumpRows[p.id];
       return {
         pumpId: p.id,
