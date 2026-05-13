@@ -3,13 +3,17 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { formatNumber } from "@/data/stationsData";
-import { useStations, useSaveIndexEntry } from "@/hooks/useIndexEntries";
+import { useStations, useSaveIndexEntry, type PumpEntryInput } from "@/hooks/useIndexEntries";
 import { useFiscalYears } from "@/hooks/useFiscalYears";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { ProfileMenu } from "@/components/ProfileMenu";
 import { DbStationSelector } from "@/components/dashboard/DbStationSelector";
+import { usePumps } from "@/hooks/usePumps";
+import { useTanks } from "@/hooks/useTanks";
+import { usePumpIndexEntries, usePreviousPumpIndex } from "@/hooks/usePumpIndexEntries";
+import { DynamicPumpEntry, type PumpRow, type TankJauge } from "@/components/index-entry/DynamicPumpEntry";
 import {
   Fuel,
   Calendar,
