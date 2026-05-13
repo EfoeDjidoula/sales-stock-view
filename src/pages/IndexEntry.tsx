@@ -253,6 +253,92 @@ const IndexEntry = () => {
 
   const hasPreviousEntry = !!previousEntry;
 
+  // Pump-level: previous index_arrivee per pump (for auto-fill in dynamic mode)
+  const pumpIds = useMemo(() => pumps.map((p) => p.id), [pumps]);
+  const { data: previousPumpIndex = {} } = usePreviousPumpIndex(
+    selectedStation?.id,
+    pumpIds,
+    selectedDate,
+  );
+  const hasAnyPreviousPump = Object.keys(previousPumpIndex).length > 0;
+
+  // Pre-fill pump rows + tank jauges from existing entry on the same date (edit case)
+  const { data: existingPumpEntries = [] } = usePumpIndexEntries(selectedStation?.id, selectedDate);
+  useEffect(() => {
+    if (!existingPumpEntries.length) return;
+    setPumpRows((prev) => {
+      const next = { ...prev };
+      for (const e of existingPumpEntries) {
+        if (next[e.pump_id]) {
+          next[e.pump_id] = {
+            ...next[e.pump_id],
+            indexDepart: String(e.index_depart),
+            indexArrivee: String(e.index_arrivee),
+          };
+        }
+      }
+      return next;
+    });
+  }, [existingPumpEntries]);
+
+  const handlePumpChange = (pumpId: string, patch: Partial<PumpRow>) => {
+    setPumpRows((prev) => ({
+      ...prev,
+      [pumpId]: { ...prev[pumpId], ...patch },
+    }));
+  };
+  const handleJaugeChange = (tankId: string, value: string) => {
+    setTankJauges((prev) => ({
+      ...prev,
+      [tankId]: { ...prev[tankId], jauge: value },
+    }));
+  };
+
+  /** Aggregate dynamic pump rows + tank jauges into legacy super1/super2/gasoil1/gasoil2 slots
+   *  so existing dashboards/stocks (which read these columns) keep working seamlessly.
+   *  Strategy: sum all super pumps into super1, all gasoil pumps into gasoil1.
+   *  Jauges: first super tank → super1.jauge, second → super2.jauge (same for gasoil).
+   */
+  const buildLegacyFromDynamic = () => {
+    const sumByProduct = (product: "super" | "gasoil") => {
+      let depart = 0;
+      let arrivee = 0;
+      for (const p of pumps.filter((x) => x.product_type === product)) {
+        const r = pumpRows[p.id];
+        if (!r) continue;
+        depart += parseFloat(r.indexDepart) || 0;
+        arrivee += parseFloat(r.indexArrivee) || 0;
+      }
+      return { depart, arrivee };
+    };
+    const superTanks = tanks.filter((t) => t.product_type === "super");
+    const gasoilTanks = tanks.filter((t) => t.product_type === "gasoil");
+    const jaugeOf = (t?: { id: string }) =>
+      t ? parseFloat(tankJauges[t.id]?.jauge || "0") || 0 : 0;
+
+    const s = sumByProduct("super");
+    const g = sumByProduct("gasoil");
+    return {
+      super1: { indexDepart: s.depart, indexArrivee: s.arrivee, jauge: jaugeOf(superTanks[0]) },
+      super2: { indexDepart: 0, indexArrivee: 0, jauge: jaugeOf(superTanks[1]) },
+      gasoil1: { indexDepart: g.depart, indexArrivee: g.arrivee, jauge: jaugeOf(gasoilTanks[0]) },
+      gasoil2: { indexDepart: 0, indexArrivee: 0, jauge: jaugeOf(gasoilTanks[1]) },
+    };
+  };
+
+  const buildPumpEntries = (): PumpEntryInput[] =>
+    pumps.map((p) => {
+      const r = pumpRows[p.id];
+      return {
+        pumpId: p.id,
+        tankId: p.tank_id,
+        productType: p.product_type,
+        indexDepart: parseFloat(r?.indexDepart || "0") || 0,
+        indexArrivee: parseFloat(r?.indexArrivee || "0") || 0,
+      };
+    });
+
+
   const onSubmit = async (data: IndexEntryForm) => {
     if (!selectedStation) {
       toast.error("Veuillez sélectionner une station");
