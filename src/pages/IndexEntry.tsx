@@ -730,49 +730,76 @@ const IndexEntry = () => {
               </div>
             )}
 
-            {/* Super Section */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-display font-semibold flex items-center gap-2">
-                <div className="w-4 h-4 rounded-full bg-super" />
-                Carburant Super
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <ProductEntryCard
-                  title="Super - Pompe 1 & 2"
-                  fieldPrefix="super1"
-                  productType="super"
-                  disableDepart={hasPreviousEntry}
-                />
-                <ProductEntryCard
-                  title="Super - Pompe 3 & 4"
-                  fieldPrefix="super2"
-                  productType="super"
-                  disableDepart={hasPreviousEntry}
+            {hasDynamicConfig ? (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between flex-wrap gap-2">
+                  <h3 className="text-lg font-display font-semibold flex items-center gap-2">
+                    <Fuel className="w-5 h-5 text-primary" />
+                    Saisie par pompe & cuve
+                  </h3>
+                  <span className="text-xs text-muted-foreground">
+                    {pumps.length} pompe(s) · {tanks.length} cuve(s) configurée(s)
+                  </span>
+                </div>
+                <DynamicPumpEntry
+                  pumps={pumps}
+                  tanks={tanks}
+                  pumpRows={pumpRows}
+                  tankJauges={tankJauges}
+                  previousIndex={previousPumpIndex}
+                  hasPrevious={hasAnyPreviousPump}
+                  onChangePump={handlePumpChange}
+                  onChangeJauge={handleJaugeChange}
+                  disabled={isFiscalYearClosed}
                 />
               </div>
-            </div>
+            ) : (
+              <>
+                {/* Super Section (legacy) */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-display font-semibold flex items-center gap-2">
+                    <div className="w-4 h-4 rounded-full bg-super" />
+                    Carburant Super
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <ProductEntryCard
+                      title="Super - Pompe 1 & 2"
+                      fieldPrefix="super1"
+                      productType="super"
+                      disableDepart={hasPreviousEntry}
+                    />
+                    <ProductEntryCard
+                      title="Super - Pompe 3 & 4"
+                      fieldPrefix="super2"
+                      productType="super"
+                      disableDepart={hasPreviousEntry}
+                    />
+                  </div>
+                </div>
 
-            {/* Gasoil Section */}
-            <div className="space-y-4">
-              <h3 className="text-lg font-display font-semibold flex items-center gap-2">
-                <div className="w-4 h-4 rounded-full bg-gasoil" />
-                Carburant Gasoil
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <ProductEntryCard
-                  title="Gasoil - Pompe 1 & 2"
-                  fieldPrefix="gasoil1"
-                  productType="gasoil"
-                  disableDepart={hasPreviousEntry}
-                />
-                <ProductEntryCard
-                  title="Gasoil - Pompe 3 & 4"
-                  fieldPrefix="gasoil2"
-                  productType="gasoil"
-                  disableDepart={hasPreviousEntry}
-                />
-              </div>
-            </div>
+                {/* Gasoil Section (legacy) */}
+                <div className="space-y-4">
+                  <h3 className="text-lg font-display font-semibold flex items-center gap-2">
+                    <div className="w-4 h-4 rounded-full bg-gasoil" />
+                    Carburant Gasoil
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <ProductEntryCard
+                      title="Gasoil - Pompe 1 & 2"
+                      fieldPrefix="gasoil1"
+                      productType="gasoil"
+                      disableDepart={hasPreviousEntry}
+                    />
+                    <ProductEntryCard
+                      title="Gasoil - Pompe 3 & 4"
+                      fieldPrefix="gasoil2"
+                      productType="gasoil"
+                      disableDepart={hasPreviousEntry}
+                    />
+                  </div>
+                </div>
+              </>
+            )}
 
             {/* Versements Section */}
             <Card className="bg-card border-border">
