@@ -171,6 +171,31 @@ export const useSaveIndexEntry = () => {
         .single();
 
       if (error) throw error;
+
+      // Persist pump-level rows if provided
+      if (data.pumpEntries && data.pumpEntries.length > 0) {
+        // Wipe out previous pump rows for this entry to avoid stale lines (pump removed/relinked)
+        const { error: delErr } = await supabase
+          .from("pump_index_entries")
+          .delete()
+          .eq("entry_id", result.id);
+        if (delErr) throw delErr;
+
+        const rows = data.pumpEntries.map((p) => ({
+          entry_id: result.id,
+          pump_id: p.pumpId,
+          tank_id: p.tankId,
+          station_id: data.stationId,
+          user_id: user.id,
+          entry_date: data.entryDate,
+          product_type: p.productType,
+          index_depart: p.indexDepart,
+          index_arrivee: p.indexArrivee,
+        }));
+        const { error: insErr } = await supabase.from("pump_index_entries").insert(rows);
+        if (insErr) throw insErr;
+      }
+
       return result;
     },
     onSuccess: () => {
