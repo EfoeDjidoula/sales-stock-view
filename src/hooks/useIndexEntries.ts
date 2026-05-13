@@ -3,6 +3,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 
+export interface PumpEntryInput {
+  pumpId: string;
+  tankId: string | null;
+  productType: "super" | "gasoil";
+  indexDepart: number;
+  indexArrivee: number;
+}
+
 export interface IndexEntryData {
   stationId: string;
   entryDate: string;
@@ -10,6 +18,8 @@ export interface IndexEntryData {
   super2: { indexDepart: number; indexArrivee: number; jauge: number };
   gasoil1: { indexDepart: number; indexArrivee: number; jauge: number };
   gasoil2: { indexDepart: number; indexArrivee: number; jauge: number };
+  /** Optional dynamic pump-level rows (when station has pumps configured). */
+  pumpEntries?: PumpEntryInput[];
   versements: {
     momo: { montant: number; reference?: string };
     banque: { montant: number; reference?: string };
