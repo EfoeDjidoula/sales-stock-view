@@ -348,29 +348,37 @@ const IndexEntry = () => {
     setIsSubmitting(true);
 
     try {
+      // In dynamic mode, override legacy values with aggregated pump data and pass pumpEntries
+      const legacy = hasDynamicConfig
+        ? buildLegacyFromDynamic()
+        : {
+            super1: {
+              indexDepart: parseFloat(data.super1.indexDepart) || 0,
+              indexArrivee: parseFloat(data.super1.indexArrivee) || 0,
+              jauge: parseFloat(data.super1.jaugeDuJour) || 0,
+            },
+            super2: {
+              indexDepart: parseFloat(data.super2.indexDepart) || 0,
+              indexArrivee: parseFloat(data.super2.indexArrivee) || 0,
+              jauge: parseFloat(data.super2.jaugeDuJour) || 0,
+            },
+            gasoil1: {
+              indexDepart: parseFloat(data.gasoil1.indexDepart) || 0,
+              indexArrivee: parseFloat(data.gasoil1.indexArrivee) || 0,
+              jauge: parseFloat(data.gasoil1.jaugeDuJour) || 0,
+            },
+            gasoil2: {
+              indexDepart: parseFloat(data.gasoil2.indexDepart) || 0,
+              indexArrivee: parseFloat(data.gasoil2.indexArrivee) || 0,
+              jauge: parseFloat(data.gasoil2.jaugeDuJour) || 0,
+            },
+          };
+
       await saveIndexEntry.mutateAsync({
         stationId: selectedStation.id,
         entryDate: data.date,
-        super1: {
-          indexDepart: parseFloat(data.super1.indexDepart) || 0,
-          indexArrivee: parseFloat(data.super1.indexArrivee) || 0,
-          jauge: parseFloat(data.super1.jaugeDuJour) || 0,
-        },
-        super2: {
-          indexDepart: parseFloat(data.super2.indexDepart) || 0,
-          indexArrivee: parseFloat(data.super2.indexArrivee) || 0,
-          jauge: parseFloat(data.super2.jaugeDuJour) || 0,
-        },
-        gasoil1: {
-          indexDepart: parseFloat(data.gasoil1.indexDepart) || 0,
-          indexArrivee: parseFloat(data.gasoil1.indexArrivee) || 0,
-          jauge: parseFloat(data.gasoil1.jaugeDuJour) || 0,
-        },
-        gasoil2: {
-          indexDepart: parseFloat(data.gasoil2.indexDepart) || 0,
-          indexArrivee: parseFloat(data.gasoil2.indexArrivee) || 0,
-          jauge: parseFloat(data.gasoil2.jaugeDuJour) || 0,
-        },
+        ...legacy,
+        pumpEntries: hasDynamicConfig ? buildPumpEntries() : undefined,
         versements: {
           momo: {
             montant: parseFloat(data.versementMomo.montant) || 0,
@@ -397,11 +405,11 @@ const IndexEntry = () => {
         },
       });
 
-      // Compute summary
-      const s1 = (parseFloat(data.super1.indexArrivee) || 0) - (parseFloat(data.super1.indexDepart) || 0);
-      const s2 = (parseFloat(data.super2.indexArrivee) || 0) - (parseFloat(data.super2.indexDepart) || 0);
-      const g1 = (parseFloat(data.gasoil1.indexArrivee) || 0) - (parseFloat(data.gasoil1.indexDepart) || 0);
-      const g2 = (parseFloat(data.gasoil2.indexArrivee) || 0) - (parseFloat(data.gasoil2.indexDepart) || 0);
+      // Compute summary from the legacy values (which already reflect dynamic aggregation)
+      const s1 = legacy.super1.indexArrivee - legacy.super1.indexDepart;
+      const s2 = legacy.super2.indexArrivee - legacy.super2.indexDepart;
+      const g1 = legacy.gasoil1.indexArrivee - legacy.gasoil1.indexDepart;
+      const g2 = legacy.gasoil2.indexArrivee - legacy.gasoil2.indexDepart;
       const superLiters = Math.max(0, s1) + Math.max(0, s2);
       const gasoilLiters = Math.max(0, g1) + Math.max(0, g2);
       const momo = parseFloat(data.versementMomo.montant) || 0;
@@ -427,6 +435,22 @@ const IndexEntry = () => {
       });
 
       form.reset(defaultValues);
+      if (hasDynamicConfig) {
+        setPumpRows((prev) => {
+          const next: Record<string, PumpRow> = {};
+          for (const id of Object.keys(prev)) {
+            next[id] = { ...prev[id], indexDepart: "", indexArrivee: "" };
+          }
+          return next;
+        });
+        setTankJauges((prev) => {
+          const next: Record<string, TankJauge> = {};
+          for (const id of Object.keys(prev)) {
+            next[id] = { ...prev[id], jauge: "" };
+          }
+          return next;
+        });
+      }
     } catch (error) {
       // Error is handled by the mutation
     }
