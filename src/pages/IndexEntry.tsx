@@ -326,6 +326,18 @@ const IndexEntry = () => {
     };
   };
 
+  const buildPumpEntries = (): PumpEntryInput[] =>
+    pumps.map((p) => {
+      const r = pumpRows[p.id];
+      return {
+        pumpId: p.id,
+        tankId: p.tank_id,
+        productType: p.product_type,
+        indexDepart: parseFloat(r?.indexDepart || "0") || 0,
+        indexArrivee: parseFloat(r?.indexArrivee || "0") || 0,
+      };
+    });
+
   // In dynamic mode, satisfy legacy zod validation by setting placeholder "0" values.
   useEffect(() => {
     if (!hasDynamicConfig) return;
@@ -336,15 +348,6 @@ const IndexEntry = () => {
     });
   }, [hasDynamicConfig, form]);
 
-      const r = pumpRows[p.id];
-      return {
-        pumpId: p.id,
-        tankId: p.tank_id,
-        productType: p.product_type,
-        indexDepart: parseFloat(r?.indexDepart || "0") || 0,
-        indexArrivee: parseFloat(r?.indexArrivee || "0") || 0,
-      };
-    });
 
 
   const onSubmit = async (data: IndexEntryForm) => {
