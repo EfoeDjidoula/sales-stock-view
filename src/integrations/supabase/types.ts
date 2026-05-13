@@ -383,6 +383,76 @@ export type Database = {
         }
         Relationships: []
       }
+      pump_index_entries: {
+        Row: {
+          created_at: string
+          entry_date: string
+          entry_id: string
+          id: string
+          index_arrivee: number
+          index_depart: number
+          liters_sold: number | null
+          product_type: string
+          pump_id: string
+          station_id: string
+          tank_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          entry_date: string
+          entry_id: string
+          id?: string
+          index_arrivee?: number
+          index_depart?: number
+          liters_sold?: number | null
+          product_type: string
+          pump_id: string
+          station_id: string
+          tank_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          entry_date?: string
+          entry_id?: string
+          id?: string
+          index_arrivee?: number
+          index_depart?: number
+          liters_sold?: number | null
+          product_type?: string
+          pump_id?: string
+          station_id?: string
+          tank_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pump_index_entries_entry_id_fkey"
+            columns: ["entry_id"]
+            isOneToOne: false
+            referencedRelation: "index_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pump_index_entries_pump_id_fkey"
+            columns: ["pump_id"]
+            isOneToOne: false
+            referencedRelation: "pumps"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pump_index_entries_tank_id_fkey"
+            columns: ["tank_id"]
+            isOneToOne: false
+            referencedRelation: "tanks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       pumps: {
         Row: {
           created_at: string
@@ -610,7 +680,24 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      tank_destocking_daily: {
+        Row: {
+          entry_date: string | null
+          product_type: string | null
+          station_id: string | null
+          tank_id: string | null
+          total_liters: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pump_index_entries_tank_id_fkey"
+            columns: ["tank_id"]
+            isOneToOne: false
+            referencedRelation: "tanks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Functions: {
       get_user_role: {
