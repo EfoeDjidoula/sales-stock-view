@@ -218,15 +218,46 @@ export const useExcelImport = () => {
 
   const parseExcelFile = async (file: File): Promise<ParsedIndexEntry[]> => {
     const arrayBuffer = await file.arrayBuffer();
+
+    // Detect the real file signature (extensions can lie).
+    const sig = new Uint8Array(arrayBuffer.slice(0, 8));
+    const isZip = sig[0] === 0x50 && sig[1] === 0x4b; // "PK" → real .xlsx
+    const isOle2 =
+      sig[0] === 0xd0 && sig[1] === 0xcf && sig[2] === 0x11 && sig[3] === 0xe0; // legacy .xls
+
+    if (isOle2) {
+      throw new Error(
+        "Ce fichier est au format Excel ancien (.xls). Ouvrez-le dans Excel ou Google Sheets puis enregistrez-le au format .xlsx avant de réimporter.",
+      );
+    }
+
+    if (!isZip) {
+      throw new Error(
+        "Le fichier n'est pas un classeur Excel valide (.xlsx). Vérifiez qu'il n'est pas corrompu ni renommé, puis réessayez.",
+      );
+    }
+
     const workbook = new ExcelJS.Workbook();
-    await workbook.xlsx.load(arrayBuffer);
+    try {
+      await workbook.xlsx.load(arrayBuffer);
+    } catch (e) {
+      throw new Error(
+        "Impossible de lire le contenu du fichier Excel. Réenregistrez-le depuis Excel au format .xlsx (Classeur Excel) puis réessayez." +
+          (e instanceof Error ? ` (${e.message})` : ""),
+      );
+    }
 
     const allEntries: ParsedIndexEntry[] = [];
 
     workbook.eachSheet((worksheet) => {
-      const stationName = (worksheet.name || "").trim().toUpperCase();
-      const entries = parseWorksheetData(worksheet, stationName);
-      allEntries.push(...entries);
+      try {
+        const stationName = (worksheet.name || "").trim().toUpperCase();
+        const entries = parseWorksheetData(worksheet, stationName);
+        allEntries.push(...entries);
+      } catch (e) {
+        // A single malformed sheet shouldn't block the whole import.
+        console.error(`Erreur de lecture de l'onglet "${worksheet.name}":`, e);
+      }
     });
 
     return allEntries;
