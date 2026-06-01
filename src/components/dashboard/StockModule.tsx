@@ -29,6 +29,23 @@ export const StockModule = ({ stationId }: StockModuleProps) => {
         ? stations.filter((s) => s.id === stationId)
         : stations;
 
+      // Load configured tanks (capacity per station) once
+      let tanksQuery = supabase
+        .from("tanks")
+        .select("id, station_id, name, product_type, capacity_liters")
+        .order("product_type")
+        .order("name");
+      if (stationId) tanksQuery = tanksQuery.eq("station_id", stationId);
+      const { data: tanksData } = await tanksQuery;
+      const allTanks = (tanksData || []) as Array<{
+        id: string;
+        station_id: string;
+        name: string;
+        product_type: "super" | "gasoil";
+        capacity_liters: number;
+      }>;
+
+      const DEFAULT_CAPACITY = 15000;
       const results = [];
 
       for (const station of targetStations) {
@@ -42,18 +59,45 @@ export const StockModule = ({ stationId }: StockModuleProps) => {
           .limit(1)
           .maybeSingle();
 
-        if (entry) {
-          results.push({
-            stationId: station.id,
-            stationName: station.name,
-            stocks: [
-              { tank: "SUPER 1", jauge: entry.super1_jauge, product: "super" as const },
-              { tank: "SUPER 2", jauge: entry.super2_jauge, product: "super" as const },
-              { tank: "GASOIL 1", jauge: entry.gasoil1_jauge, product: "gasoil" as const },
-              { tank: "GASOIL 2", jauge: entry.gasoil2_jauge, product: "gasoil" as const },
-            ].filter((s) => s.jauge > 0),
+        if (!entry) continue;
+
+        const stationTanks = allTanks.filter((t) => t.station_id === station.id);
+        const jaugesByProduct: Record<"super" | "gasoil", number[]> = {
+          super: [entry.super1_jauge, entry.super2_jauge],
+          gasoil: [entry.gasoil1_jauge, entry.gasoil2_jauge],
+        };
+
+        let stocks: Array<{ tank: string; jauge: number; product: "super" | "gasoil"; capacity: number }>;
+
+        if (stationTanks.length > 0) {
+          // Driven by the station's configured tanks: name + real capacity.
+          // Legacy jauge columns are mapped per product type, in tank order.
+          const cursor: Record<"super" | "gasoil", number> = { super: 0, gasoil: 0 };
+          stocks = stationTanks.map((t) => {
+            const idx = cursor[t.product_type]++;
+            const jauge = jaugesByProduct[t.product_type][idx] ?? 0;
+            return {
+              tank: t.name,
+              jauge,
+              product: t.product_type,
+              capacity: Number(t.capacity_liters) || DEFAULT_CAPACITY,
+            };
           });
+        } else {
+          // Fallback: stations without configured tanks keep the legacy layout.
+          stocks = [
+            { tank: "SUPER 1", jauge: entry.super1_jauge, product: "super" as const, capacity: DEFAULT_CAPACITY },
+            { tank: "SUPER 2", jauge: entry.super2_jauge, product: "super" as const, capacity: DEFAULT_CAPACITY },
+            { tank: "GASOIL 1", jauge: entry.gasoil1_jauge, product: "gasoil" as const, capacity: DEFAULT_CAPACITY },
+            { tank: "GASOIL 2", jauge: entry.gasoil2_jauge, product: "gasoil" as const, capacity: DEFAULT_CAPACITY },
+          ];
         }
+
+        results.push({
+          stationId: station.id,
+          stationName: station.name,
+          stocks: stocks.filter((s) => s.jauge > 0),
+        });
       }
 
       return results;
@@ -207,7 +251,7 @@ export const StockModule = ({ stationId }: StockModuleProps) => {
                   <StockGauge
                     key={`${entry.stationId}-${index}`}
                     tank={stock.tank}
-                    capacity={15000}
+                    capacity={(stock as { capacity?: number }).capacity ?? 15000}
                     currentStock={stock.jauge}
                     product={stock.product}
                   />
