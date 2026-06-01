@@ -86,16 +86,14 @@ export const ExcelImportDialog = ({ trigger }: ExcelImportDialogProps) => {
   const handleDrop = async (e: React.DragEvent) => {
     e.preventDefault();
     const file = e.dataTransfer.files[0];
-    if (file && file.name.match(/\.(xlsx|xls)$/i)) {
-      setSelectedFile(file);
-      setImportStatus("preview");
-      try {
-        const entries = await parseExcelFile(file);
-        setPreview(entries);
-      } catch {
-        setPreview([]);
-      }
+    if (!file) return;
+    if (!file.name.match(/\.(xlsx|xls)$/i)) {
+      toast.error("Format non pris en charge", {
+        description: "Déposez un fichier Excel .xlsx (ou .xls).",
+      });
+      return;
     }
+    await loadPreview(file);
   };
 
   // Group preview by station
