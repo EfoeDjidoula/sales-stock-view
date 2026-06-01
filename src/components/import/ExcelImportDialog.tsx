@@ -27,29 +27,41 @@ export const ExcelImportDialog = ({ trigger }: ExcelImportDialogProps) => {
   
   const { importFile, parseExcelFile, isProcessing, progress } = useExcelImport();
 
-  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    
-    // Validate file type
-    const validTypes = [
-      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-      "application/vnd.ms-excel",
-    ];
-    
-    if (!validTypes.includes(file.type) && !file.name.match(/\.(xlsx|xls)$/i)) {
-      return;
-    }
-    
+  const loadPreview = async (file: File) => {
     setSelectedFile(file);
     setImportStatus("preview");
-    
     try {
       const entries = await parseExcelFile(file);
       setPreview(entries);
-    } catch {
+      if (entries.length === 0) {
+        toast.warning("Aucune donnée détectée", {
+          description: "Le fichier a été lu mais aucune ligne exploitable n'a été trouvée.",
+        });
+      }
+    } catch (error) {
       setPreview([]);
+      setImportStatus("idle");
+      setSelectedFile(null);
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      toast.error("Impossible de charger le fichier", {
+        description: error instanceof Error ? error.message : "Format .xlsx ou .xls non pris en charge.",
+      });
     }
+  };
+
+  const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.name.match(/\.(xlsx|xls)$/i)) {
+      toast.error("Format non pris en charge", {
+        description: "Sélectionnez un fichier Excel .xlsx (ou .xls).",
+      });
+      if (fileInputRef.current) fileInputRef.current.value = "";
+      return;
+    }
+
+    await loadPreview(file);
   };
 
   const handleImport = async () => {
