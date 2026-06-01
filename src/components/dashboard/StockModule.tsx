@@ -251,7 +251,7 @@ export const StockModule = ({ stationId }: StockModuleProps) => {
                   <StockGauge
                     key={`${entry.stationId}-${index}`}
                     tank={stock.tank}
-                    capacity={15000}
+                    capacity={(stock as { capacity?: number }).capacity ?? 15000}
                     currentStock={stock.jauge}
                     product={stock.product}
                   />
