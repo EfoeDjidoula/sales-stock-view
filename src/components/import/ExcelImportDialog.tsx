@@ -13,6 +13,7 @@ import { Progress } from "@/components/ui/progress";
 import { useExcelImport, ParsedIndexEntry } from "@/hooks/useExcelImport";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
 
 interface ExcelImportDialogProps {
   trigger?: React.ReactNode;
