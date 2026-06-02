@@ -146,8 +146,26 @@ export const ExcelImportDialog = ({ trigger }: ExcelImportDialogProps) => {
                 Glissez-déposez votre fichier Excel ici, ou cliquez pour parcourir
               </p>
               <p className="text-xs text-muted-foreground">
-                Formats acceptés: .xlsx, .xls
+                Formats acceptés: .xlsx (recommandé), .xls
               </p>
+            </div>
+          )}
+
+          {importStatus === "idle" && (
+            <div className="flex items-center justify-between rounded-lg border border-border/60 bg-secondary/40 px-3 py-2">
+              <p className="text-xs text-muted-foreground">
+                Besoin du bon format&nbsp;? Téléchargez le modèle officiel.
+              </p>
+              <a
+                href="/MODELE_IMPORT_INDEX.xlsx"
+                download
+                onClick={(e) => e.stopPropagation()}
+              >
+                <Button variant="outline" size="sm" className="gap-2">
+                  <FileSpreadsheet className="w-4 h-4" />
+                  Modèle Excel
+                </Button>
+              </a>
             </div>
           )}
 
