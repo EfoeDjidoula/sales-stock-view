@@ -43,7 +43,29 @@ const getPeriodRange = (period: Period) => {
 
 export const useDashboardData = (period: Period, stationId?: string | null) => {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const range = getPeriodRange(period);
+
+  // Mise à jour systématique : rafraîchit le tableau de bord et le graphique
+  // dès qu'une saisie d'index change (insertion, modification, suppression).
+  useEffect(() => {
+    if (!user) return;
+    const invalidate = () => {
+      queryClient.invalidateQueries({ queryKey: ["dashboard-entries"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard-chart"] });
+      queryClient.invalidateQueries({ queryKey: ["latest-jauge"] });
+    };
+    const channel = supabase
+      .channel("dashboard-realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "index_entries" }, invalidate)
+      .on("postgres_changes", { event: "*", schema: "public", table: "pump_index_entries" }, invalidate)
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, queryClient]);
+
+
 
   const stationsQuery = useQuery({
     queryKey: ["db-stations"],
