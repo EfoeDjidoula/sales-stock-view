@@ -186,7 +186,7 @@ export const StockGauge = ({ tank, capacity, currentStock, product }: StockGauge
         <div className="flex-1 min-w-0 space-y-2">
           <div>
             <p className="text-lg font-display font-bold text-foreground leading-none">
-              {formatNumber(currentStock)} <span className="text-sm font-normal text-muted-foreground">L</span>
+              {formatNumber(Math.round(animatedStock))} <span className="text-sm font-normal text-muted-foreground">L</span>
             </p>
             <p className="text-xs text-muted-foreground mt-1">
               Capacité {formatNumber(capacity)} L
@@ -194,9 +194,10 @@ export const StockGauge = ({ tank, capacity, currentStock, product }: StockGauge
           </div>
           <div className="h-1.5 rounded-full bg-secondary overflow-hidden">
             <div
-              className="h-full rounded-full transition-all duration-700"
+              className="h-full rounded-full"
               style={{ width: `${clamped}%`, background: `hsl(${statusVar})` }}
             />
+
           </div>
         </div>
       </div>
