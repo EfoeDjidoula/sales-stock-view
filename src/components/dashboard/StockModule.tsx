@@ -1,7 +1,8 @@
 import { formatNumber } from "@/data/stationsData";
 import { StockGauge } from "./StockGauge";
 import { Fuel, Droplet, AlertTriangle } from "lucide-react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -12,6 +13,28 @@ interface StockModuleProps {
 
 export const StockModule = ({ stationId }: StockModuleProps) => {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
+
+  // Mise à jour en temps réel : rafraîchit les jauges de stock et synchronise
+  // avec le tableau de bord dès qu'une saisie d'index change.
+  useEffect(() => {
+    if (!user) return;
+    const invalidate = () => {
+      queryClient.invalidateQueries({ queryKey: ["stock-jauges"] });
+      queryClient.invalidateQueries({ queryKey: ["latest-jauge"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard-chart"] });
+      queryClient.invalidateQueries({ queryKey: ["dashboard-entries"] });
+    };
+    const channel = supabase
+      .channel("stock-realtime")
+      .on("postgres_changes", { event: "*", schema: "public", table: "index_entries" }, invalidate)
+      .on("postgres_changes", { event: "*", schema: "public", table: "pump_index_entries" }, invalidate)
+      .subscribe();
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, queryClient]);
+
 
   // Fetch latest entry per station for jauge data
   const { data: latestEntries, isLoading, isFetching, isError, error } = useQuery({
