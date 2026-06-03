@@ -106,11 +106,12 @@ export const StockGauge = ({ tank, capacity, currentStock, product }: StockGauge
                 border: "1px solid hsl(var(--border))",
               }}
             >
-              {/* Liquid fill */}
+              {/* Liquid fill — height driven per-frame for lag-free realtime sync */}
               <div
-                className="tank-3d__liquid absolute left-0 right-0 bottom-0 overflow-hidden transition-[height] duration-700 ease-out"
+                className="absolute left-0 right-0 bottom-0 overflow-hidden"
                 style={{ height: `${clamped}%` }}
               >
+
                 {/* base liquid with vertical sheen */}
                 <div
                   className="absolute inset-0"
