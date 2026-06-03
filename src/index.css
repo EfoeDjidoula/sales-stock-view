@@ -175,23 +175,39 @@
   100% { transform: translateY(-120px) scale(1); opacity: 0; }
 }
 
-@keyframes tank-level-rise {
-  from { height: 0%; }
-}
+
+
 
 .tank-3d {
   perspective: 600px;
 }
-.tank-3d__liquid {
-  animation: tank-level-rise 1.2s cubic-bezier(0.22, 1, 0.36, 1);
-}
 .tank-3d__wave {
   animation: tank-wave 3.5s linear infinite;
+  backface-visibility: hidden;
 }
 .tank-3d__wave--back {
   animation: tank-wave-slow 5s linear infinite;
+  backface-visibility: hidden;
 }
 .tank-3d__bubble {
   animation: tank-bubble 4s ease-in infinite;
+  backface-visibility: hidden;
 }
+
+/* Pause every looping animation when the gauge is scrolled offscreen. */
+.tank-anim-paused .tank-3d__wave,
+.tank-anim-paused .tank-3d__wave--back,
+.tank-anim-paused .tank-3d__bubble {
+  animation-play-state: paused;
+}
+
+/* Respect user/device reduced-motion: no looping work on weak hardware. */
+@media (prefers-reduced-motion: reduce) {
+  .tank-3d__wave,
+  .tank-3d__wave--back,
+  .tank-3d__bubble {
+    animation: none !important;
+  }
+}
+
 
