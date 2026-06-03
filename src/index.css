@@ -175,9 +175,8 @@
   100% { transform: translateY(-120px) scale(1); opacity: 0; }
 }
 
-@keyframes tank-level-rise {
-  from { height: 0%; }
-}
+
+
 
 .tank-3d {
   perspective: 600px;
