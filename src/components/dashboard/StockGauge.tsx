@@ -176,7 +176,7 @@ export const StockGauge = ({ tank, capacity, currentStock, product }: StockGauge
                 className="text-base font-display font-bold"
                 style={{ color: "hsl(0 0% 100%)", textShadow: "0 1px 4px hsl(0 0% 0% / 0.7)" }}
               >
-                {percentage}%
+                {Math.round(clamped)}%
               </span>
             </div>
           </div>
