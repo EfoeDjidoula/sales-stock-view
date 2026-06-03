@@ -1,5 +1,6 @@
 import { cn } from "@/lib/utils";
 import { formatNumber } from "@/data/stationsData";
+import { useEffect, useRef, useState } from "react";
 
 interface StockGaugeProps {
   tank: string;
@@ -8,9 +9,43 @@ interface StockGaugeProps {
   product: "super" | "gasoil";
 }
 
+/** Smoothly tweens a numeric value with requestAnimationFrame, reacting
+ *  instantly to live (realtime) prop changes without perceptible lag. */
+const useTweenedValue = (target: number, duration = 700) => {
+  const [value, setValue] = useState(target);
+  const fromRef = useRef(target);
+  const startRef = useRef<number | null>(null);
+  const rafRef = useRef<number>();
+
+  useEffect(() => {
+    fromRef.current = value;
+    startRef.current = null;
+    const from = fromRef.current;
+    const delta = target - from;
+    if (delta === 0) return;
+
+    const step = (ts: number) => {
+      if (startRef.current === null) startRef.current = ts;
+      const t = Math.min((ts - startRef.current) / duration, 1);
+      const eased = 1 - Math.pow(1 - t, 3); // easeOutCubic
+      setValue(from + delta * eased);
+      if (t < 1) rafRef.current = requestAnimationFrame(step);
+    };
+    rafRef.current = requestAnimationFrame(step);
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [target, duration]);
+
+  return value;
+};
+
 export const StockGauge = ({ tank, capacity, currentStock, product }: StockGaugeProps) => {
+  const animatedStock = useTweenedValue(currentStock);
   const percentage = capacity > 0 ? Math.round((currentStock / capacity) * 100) : 0;
-  const clamped = Math.min(Math.max(percentage, 0), 100);
+  const animatedPct = capacity > 0 ? (animatedStock / capacity) * 100 : 0;
+  const clamped = Math.min(Math.max(animatedPct, 0), 100);
 
   const getStatusText = () => {
     if (percentage <= 20) return "Critique";
@@ -23,6 +58,7 @@ export const StockGauge = ({ tank, capacity, currentStock, product }: StockGauge
   const liquidVar = product === "super" ? "var(--super)" : "var(--gasoil)";
   const statusVar =
     percentage <= 20 ? "var(--destructive)" : percentage <= 40 ? "var(--warning)" : "var(--success)";
+
 
   return (
     <div className="bg-card rounded-xl border border-border p-4 hover:border-primary/30 transition-colors">
