@@ -1,5 +1,6 @@
 import { cn } from "@/lib/utils";
 import { formatNumber } from "@/data/stationsData";
+import { useEffect, useRef, useState } from "react";
 
 interface StockGaugeProps {
   tank: string;
@@ -8,9 +9,43 @@ interface StockGaugeProps {
   product: "super" | "gasoil";
 }
 
+/** Smoothly tweens a numeric value with requestAnimationFrame, reacting
+ *  instantly to live (realtime) prop changes without perceptible lag. */
+const useTweenedValue = (target: number, duration = 700) => {
+  const [value, setValue] = useState(target);
+  const fromRef = useRef(target);
+  const startRef = useRef<number | null>(null);
+  const rafRef = useRef<number>();
+
+  useEffect(() => {
+    fromRef.current = value;
+    startRef.current = null;
+    const from = fromRef.current;
+    const delta = target - from;
+    if (delta === 0) return;
+
+    const step = (ts: number) => {
+      if (startRef.current === null) startRef.current = ts;
+      const t = Math.min((ts - startRef.current) / duration, 1);
+      const eased = 1 - Math.pow(1 - t, 3); // easeOutCubic
+      setValue(from + delta * eased);
+      if (t < 1) rafRef.current = requestAnimationFrame(step);
+    };
+    rafRef.current = requestAnimationFrame(step);
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [target, duration]);
+
+  return value;
+};
+
 export const StockGauge = ({ tank, capacity, currentStock, product }: StockGaugeProps) => {
+  const animatedStock = useTweenedValue(currentStock);
   const percentage = capacity > 0 ? Math.round((currentStock / capacity) * 100) : 0;
-  const clamped = Math.min(Math.max(percentage, 0), 100);
+  const animatedPct = capacity > 0 ? (animatedStock / capacity) * 100 : 0;
+  const clamped = Math.min(Math.max(animatedPct, 0), 100);
 
   const getStatusText = () => {
     if (percentage <= 20) return "Critique";
@@ -23,6 +58,7 @@ export const StockGauge = ({ tank, capacity, currentStock, product }: StockGauge
   const liquidVar = product === "super" ? "var(--super)" : "var(--gasoil)";
   const statusVar =
     percentage <= 20 ? "var(--destructive)" : percentage <= 40 ? "var(--warning)" : "var(--success)";
+
 
   return (
     <div className="bg-card rounded-xl border border-border p-4 hover:border-primary/30 transition-colors">
@@ -70,11 +106,12 @@ export const StockGauge = ({ tank, capacity, currentStock, product }: StockGauge
                 border: "1px solid hsl(var(--border))",
               }}
             >
-              {/* Liquid fill */}
+              {/* Liquid fill — height driven per-frame for lag-free realtime sync */}
               <div
-                className="tank-3d__liquid absolute left-0 right-0 bottom-0 overflow-hidden transition-[height] duration-700 ease-out"
+                className="absolute left-0 right-0 bottom-0 overflow-hidden"
                 style={{ height: `${clamped}%` }}
               >
+
                 {/* base liquid with vertical sheen */}
                 <div
                   className="absolute inset-0"
@@ -139,7 +176,7 @@ export const StockGauge = ({ tank, capacity, currentStock, product }: StockGauge
                 className="text-base font-display font-bold"
                 style={{ color: "hsl(0 0% 100%)", textShadow: "0 1px 4px hsl(0 0% 0% / 0.7)" }}
               >
-                {percentage}%
+                {Math.round(clamped)}%
               </span>
             </div>
           </div>
@@ -149,7 +186,7 @@ export const StockGauge = ({ tank, capacity, currentStock, product }: StockGauge
         <div className="flex-1 min-w-0 space-y-2">
           <div>
             <p className="text-lg font-display font-bold text-foreground leading-none">
-              {formatNumber(currentStock)} <span className="text-sm font-normal text-muted-foreground">L</span>
+              {formatNumber(Math.round(animatedStock))} <span className="text-sm font-normal text-muted-foreground">L</span>
             </p>
             <p className="text-xs text-muted-foreground mt-1">
               Capacité {formatNumber(capacity)} L
@@ -157,9 +194,10 @@ export const StockGauge = ({ tank, capacity, currentStock, product }: StockGauge
           </div>
           <div className="h-1.5 rounded-full bg-secondary overflow-hidden">
             <div
-              className="h-full rounded-full transition-all duration-700"
+              className="h-full rounded-full"
               style={{ width: `${clamped}%`, background: `hsl(${statusVar})` }}
             />
+
           </div>
         </div>
       </div>
