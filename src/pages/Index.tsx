@@ -394,6 +394,17 @@ const Index = () => {
             )}
           </TabsContent>
 
+          {/* Dépotages Tab */}
+          <TabsContent value="depotage" className="animate-fade-in">
+            {canAccessTab("depotage") ? (
+              <DepotageModule />
+            ) : (
+              <AccessDenied onGoBack={() => setActiveTab("ventes")} />
+            )}
+          </TabsContent>
+
+
+
           {/* Péréquation Tab */}
           <TabsContent value="perequation" className="animate-fade-in">
             {canAccessTab("perequation") ? (
