@@ -32,6 +32,7 @@ import {
   FileText,
   History,
   Truck,
+  Droplets,
   Users,
   Coins,
   Upload,
