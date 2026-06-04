@@ -14,6 +14,78 @@ export type Database = {
   }
   public: {
     Tables: {
+      depotages: {
+        Row: {
+          created_at: string
+          depotage_date: string
+          ecart: number | null
+          id: string
+          notes: string | null
+          product_type: string
+          quantity_to_unload: number
+          quantity_unloaded: number
+          station_id: string
+          tank_capacity_liters: number
+          tank_id: string | null
+          tolerance_rate: number
+          truck_nominal_capacity: number
+          truck_registration: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          depotage_date?: string
+          ecart?: number | null
+          id?: string
+          notes?: string | null
+          product_type?: string
+          quantity_to_unload?: number
+          quantity_unloaded?: number
+          station_id: string
+          tank_capacity_liters?: number
+          tank_id?: string | null
+          tolerance_rate?: number
+          truck_nominal_capacity?: number
+          truck_registration: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          depotage_date?: string
+          ecart?: number | null
+          id?: string
+          notes?: string | null
+          product_type?: string
+          quantity_to_unload?: number
+          quantity_unloaded?: number
+          station_id?: string
+          tank_capacity_liters?: number
+          tank_id?: string | null
+          tolerance_rate?: number
+          truck_nominal_capacity?: number
+          truck_registration?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "depotages_station_id_fkey"
+            columns: ["station_id"]
+            isOneToOne: false
+            referencedRelation: "stations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "depotages_tank_id_fkey"
+            columns: ["tank_id"]
+            isOneToOne: false
+            referencedRelation: "tanks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       fiscal_years: {
         Row: {
           closed_at: string | null

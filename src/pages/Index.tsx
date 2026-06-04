@@ -12,6 +12,7 @@ import { StationCard } from "@/components/dashboard/StationCard";
 import { OrdersModule } from "@/components/orders/OrdersModule";
 import { AccessDenied } from "@/components/AccessDenied";
 import { SuppliesModule } from "@/components/orders/SuppliesModule";
+import { DepotageModule } from "@/components/depotage/DepotageModule";
 import { UsersModule } from "@/components/users/UsersModule";
 import { StationManagement } from "@/components/stations/StationManagement";
 import { FiscalYearModule } from "@/components/fiscal/FiscalYearModule";
@@ -31,6 +32,7 @@ import {
   FileText,
   History,
   Truck,
+  Droplets,
   Users,
   Coins,
   Upload,
@@ -54,6 +56,7 @@ const TAB_PERMISSIONS: Record<string, AppRole[]> = {
   approvisionnements: ["admin", "manager"],
   perequation: ["admin", "manager", "operator"],
   stations: ["admin", "manager", "operator"],
+  depotage: ["admin", "manager", "operator"],
   exercices: ["admin"],
   droits: ["admin"],
 };
@@ -225,6 +228,15 @@ const Index = () => {
                   Approvisionnements
                 </TabsTrigger>
               )}
+              {canAccessTab("depotage") && (
+                <TabsTrigger
+                  value="depotage"
+                  className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground gap-2 px-4 py-2"
+                >
+                  <Droplets className="w-4 h-4" />
+                  Dépotages
+                </TabsTrigger>
+              )}
               {canAccessTab("perequation") && (
                 <TabsTrigger
                   value="perequation"
@@ -381,6 +393,17 @@ const Index = () => {
               <AccessDenied onGoBack={() => setActiveTab("ventes")} />
             )}
           </TabsContent>
+
+          {/* Dépotages Tab */}
+          <TabsContent value="depotage" className="animate-fade-in">
+            {canAccessTab("depotage") ? (
+              <DepotageModule />
+            ) : (
+              <AccessDenied onGoBack={() => setActiveTab("ventes")} />
+            )}
+          </TabsContent>
+
+
 
           {/* Péréquation Tab */}
           <TabsContent value="perequation" className="animate-fade-in">
