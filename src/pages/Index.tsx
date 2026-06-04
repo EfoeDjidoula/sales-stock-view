@@ -12,6 +12,7 @@ import { StationCard } from "@/components/dashboard/StationCard";
 import { OrdersModule } from "@/components/orders/OrdersModule";
 import { AccessDenied } from "@/components/AccessDenied";
 import { SuppliesModule } from "@/components/orders/SuppliesModule";
+import { DepotageModule } from "@/components/depotage/DepotageModule";
 import { UsersModule } from "@/components/users/UsersModule";
 import { StationManagement } from "@/components/stations/StationManagement";
 import { FiscalYearModule } from "@/components/fiscal/FiscalYearModule";
