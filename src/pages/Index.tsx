@@ -227,6 +227,15 @@ const Index = () => {
                   Approvisionnements
                 </TabsTrigger>
               )}
+              {canAccessTab("depotage") && (
+                <TabsTrigger
+                  value="depotage"
+                  className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground gap-2 px-4 py-2"
+                >
+                  <Droplets className="w-4 h-4" />
+                  Dépotages
+                </TabsTrigger>
+              )}
               {canAccessTab("perequation") && (
                 <TabsTrigger
                   value="perequation"
