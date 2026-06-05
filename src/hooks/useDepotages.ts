@@ -10,6 +10,7 @@ export interface Depotage {
   user_id: string;
   station_id: string;
   tank_id: string | null;
+  truck_id: string | null;
   product_type: ProductType;
   truck_registration: string;
   truck_nominal_capacity: number;
@@ -18,6 +19,12 @@ export interface Depotage {
   quantity_unloaded: number;
   tolerance_rate: number;
   ecart: number;
+  stock_before: number;
+  gauge_after: number;
+  stock_theoretical: number;
+  depotage_ecart: number;
+  start_time: string | null;
+  end_time: string | null;
   depotage_date: string;
   notes: string | null;
   created_at: string;
@@ -29,6 +36,7 @@ export interface Depotage {
 export interface DepotageInsert {
   station_id: string;
   tank_id: string | null;
+  truck_id: string | null;
   product_type: ProductType;
   truck_registration: string;
   truck_nominal_capacity: number;
@@ -36,6 +44,10 @@ export interface DepotageInsert {
   quantity_to_unload: number;
   quantity_unloaded: number;
   tolerance_rate: number;
+  stock_before: number;
+  gauge_after: number;
+  start_time: string | null;
+  end_time: string | null;
   depotage_date: string;
   notes?: string;
 }
