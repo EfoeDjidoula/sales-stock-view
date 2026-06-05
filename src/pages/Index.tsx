@@ -240,6 +240,15 @@ const Index = () => {
                   Dépotages
                 </TabsTrigger>
               )}
+              {canAccessTab("camions") && (
+                <TabsTrigger
+                  value="camions"
+                  className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground gap-2 px-4 py-2"
+                >
+                  <Truck className="w-4 h-4" />
+                  Camions
+                </TabsTrigger>
+              )}
               {canAccessTab("perequation") && (
                 <TabsTrigger
                   value="perequation"
