@@ -1,7 +1,9 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useDepotages, DepotageInsert, ProductType } from "@/hooks/useDepotages";
 import { useStations } from "@/hooks/useStations";
 import { useTanks } from "@/hooks/useTanks";
+import { useTrucks } from "@/hooks/useTrucks";
+import { useTankLatestStock } from "@/hooks/useTankLatestStock";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -31,7 +33,7 @@ import {
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Plus, Trash2, Truck, Loader2, Droplets, AlertTriangle, CheckCircle2 } from "lucide-react";
+import { Plus, Trash2, Loader2, Droplets, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { toast } from "sonner";
@@ -41,6 +43,7 @@ const getProductLabel = (type: ProductType) => (type === "super" ? "Super" : "Ga
 const emptyForm = (): DepotageInsert => ({
   station_id: "",
   tank_id: null,
+  truck_id: null,
   product_type: "super",
   truck_registration: "",
   truck_nominal_capacity: 0,
@@ -48,6 +51,10 @@ const emptyForm = (): DepotageInsert => ({
   quantity_to_unload: 0,
   quantity_unloaded: 0,
   tolerance_rate: 0.5,
+  stock_before: 0,
+  gauge_after: 0,
+  start_time: "",
+  end_time: "",
   depotage_date: new Date().toISOString().split("T")[0],
   notes: "",
 });
@@ -57,6 +64,8 @@ const toleranceLiters = (qty: number, rate: number) => (qty * rate) / 100;
 
 const isWithinTolerance = (ecart: number, qty: number, rate: number) =>
   Math.abs(ecart) <= toleranceLiters(qty, rate);
+
+const fmt = (n: number) => n.toLocaleString(undefined, { maximumFractionDigits: 2 });
 
 // Validation côté UI : renvoie la liste des messages d'erreur (vide si valide)
 const validateDepotage = (f: DepotageInsert): string[] => {
@@ -69,6 +78,8 @@ const validateDepotage = (f: DepotageInsert): string[] => {
   if (f.truck_nominal_capacity < 0) errors.push("La capacité nominale du camion ne peut pas être négative.");
   if (f.quantity_to_unload < 0) errors.push("La quantité à dépoter ne peut pas être négative.");
   if (f.quantity_unloaded < 0) errors.push("La quantité réellement dépotée ne peut pas être négative.");
+  if (f.stock_before < 0) errors.push("Le stock précédent ne peut pas être négatif.");
+  if (f.gauge_after < 0) errors.push("La jauge après dépotage ne peut pas être négative.");
 
   if (!f.tolerance_rate || f.tolerance_rate <= 0) {
     errors.push("Le taux de tolérance est obligatoire et doit être supérieur à 0.");
@@ -78,14 +89,18 @@ const validateDepotage = (f: DepotageInsert): string[] => {
 
   if (f.tank_capacity_liters > 0 && f.quantity_to_unload > f.tank_capacity_liters) {
     errors.push(
-      `La quantité à dépoter (${f.quantity_to_unload.toLocaleString()} L) dépasse la capacité de la cuve (${f.tank_capacity_liters.toLocaleString()} L).`
+      `La quantité à dépoter (${fmt(f.quantity_to_unload)} L) dépasse la capacité de la cuve (${fmt(f.tank_capacity_liters)} L).`
     );
   }
 
-  if (f.tank_capacity_liters > 0 && f.quantity_unloaded > f.tank_capacity_liters) {
+  if (f.tank_capacity_liters > 0 && f.gauge_after > f.tank_capacity_liters) {
     errors.push(
-      `La quantité réellement dépotée (${f.quantity_unloaded.toLocaleString()} L) dépasse la capacité de la cuve (${f.tank_capacity_liters.toLocaleString()} L).`
+      `La jauge après dépotage (${fmt(f.gauge_after)} L) dépasse la capacité de la cuve (${fmt(f.tank_capacity_liters)} L).`
     );
+  }
+
+  if (f.start_time && f.end_time && f.end_time < f.start_time) {
+    errors.push("L'heure de fin doit être postérieure à l'heure de début.");
   }
 
   return errors;
@@ -94,6 +109,7 @@ const validateDepotage = (f: DepotageInsert): string[] => {
 export const DepotageModule = () => {
   const { depotages, loading, createDepotage, deleteDepotage } = useDepotages();
   const { stations, loading: stationsLoading } = useStations();
+  const { trucks } = useTrucks();
   const [isOpen, setIsOpen] = useState(false);
   const [formData, setFormData] = useState<DepotageInsert>(emptyForm());
   const [errors, setErrors] = useState<string[]>([]);
@@ -105,12 +121,25 @@ export const DepotageModule = () => {
     [tanks, formData.product_type]
   );
 
+  // Stock précédent automatique de la cuve concernée
+  const { stock: latestStock } = useTankLatestStock(
+    formData.station_id || undefined,
+    formData.tank_id,
+    formData.product_type
+  );
+
+  useEffect(() => {
+    if (latestStock != null) {
+      setFormData((f) => ({ ...f, stock_before: latestStock }));
+    }
+  }, [latestStock]);
+
   const handleStationSelect = (stationId: string) => {
-    setFormData((f) => ({ ...f, station_id: stationId, tank_id: null, tank_capacity_liters: 0 }));
+    setFormData((f) => ({ ...f, station_id: stationId, tank_id: null, tank_capacity_liters: 0, stock_before: 0 }));
   };
 
   const handleProductSelect = (product: ProductType) => {
-    setFormData((f) => ({ ...f, product_type: product, tank_id: null, tank_capacity_liters: 0 }));
+    setFormData((f) => ({ ...f, product_type: product, tank_id: null, tank_capacity_liters: 0, stock_before: 0 }));
   };
 
   const handleTankSelect = (tankId: string) => {
@@ -118,8 +147,17 @@ export const DepotageModule = () => {
     setFormData((f) => ({
       ...f,
       tank_id: tankId,
-      // Copie de la capacité de la cuve installée sur la station
       tank_capacity_liters: tank ? tank.capacity_liters : 0,
+    }));
+  };
+
+  const handleTruckSelect = (truckId: string) => {
+    const truck = trucks.find((t) => t.id === truckId);
+    setFormData((f) => ({
+      ...f,
+      truck_id: truckId,
+      truck_registration: truck ? truck.registration : f.truck_registration,
+      truck_nominal_capacity: truck ? truck.nominal_capacity : f.truck_nominal_capacity,
     }));
   };
 
@@ -131,7 +169,12 @@ export const DepotageModule = () => {
       toast.error("Veuillez corriger les erreurs du formulaire");
       return;
     }
-    const result = await createDepotage(formData);
+    const payload: DepotageInsert = {
+      ...formData,
+      start_time: formData.start_time || null,
+      end_time: formData.end_time || null,
+    };
+    const result = await createDepotage(payload);
     if (result) {
       setIsOpen(false);
       setErrors([]);
@@ -143,6 +186,8 @@ export const DepotageModule = () => {
   const previewEcart = formData.quantity_unloaded - formData.quantity_to_unload;
   const previewSeuil = toleranceLiters(formData.quantity_to_unload, formData.tolerance_rate);
   const previewConforme = isWithinTolerance(previewEcart, formData.quantity_to_unload, formData.tolerance_rate);
+  const previewTheoretical = formData.stock_before + formData.quantity_unloaded;
+  const previewDepotageEcart = formData.gauge_after - previewTheoretical;
 
   if (loading) {
     return (
@@ -168,7 +213,7 @@ export const DepotageModule = () => {
               Nouveau dépotage
             </Button>
           </DialogTrigger>
-          <DialogContent className="sm:max-w-[560px] max-h-[90vh] overflow-y-auto">
+          <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <Droplets className="w-5 h-5" />
@@ -239,9 +284,28 @@ export const DepotageModule = () => {
                 </Select>
                 {formData.tank_id && (
                   <p className="text-xs text-muted-foreground">
-                    Capacité de la cuve : {formData.tank_capacity_liters.toLocaleString()} L
+                    Capacité de la cuve : {formData.tank_capacity_liters.toLocaleString()} L · Stock précédent : {fmt(formData.stock_before)} L
                   </p>
                 )}
+              </div>
+
+              <div className="space-y-2">
+                <Label>Camion</Label>
+                <Select
+                  value={formData.truck_id || ""}
+                  onValueChange={handleTruckSelect}
+                >
+                  <SelectTrigger>
+                    <SelectValue placeholder={trucks.length ? "Sélectionner un camion" : "Aucun camion enregistré"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {trucks.map((t) => (
+                      <SelectItem key={t.id} value={t.id}>
+                        {t.registration} — {t.driver_name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
@@ -295,6 +359,50 @@ export const DepotageModule = () => {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
+                  <Label htmlFor="stock_before">Stock précédent cuve (L)</Label>
+                  <Input
+                    id="stock_before"
+                    type="number"
+                    min={0}
+                    value={formData.stock_before || ""}
+                    onChange={(e) => setFormData({ ...formData, stock_before: Number(e.target.value) })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="gauge_after">Jauge après dépotage (L)</Label>
+                  <Input
+                    id="gauge_after"
+                    type="number"
+                    min={0}
+                    value={formData.gauge_after || ""}
+                    onChange={(e) => setFormData({ ...formData, gauge_after: Number(e.target.value) })}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="start_time">Heure début dépotage</Label>
+                  <Input
+                    id="start_time"
+                    type="time"
+                    value={formData.start_time || ""}
+                    onChange={(e) => setFormData({ ...formData, start_time: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="end_time">Heure fin dépotage</Label>
+                  <Input
+                    id="end_time"
+                    type="time"
+                    value={formData.end_time || ""}
+                    onChange={(e) => setFormData({ ...formData, end_time: e.target.value })}
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
                   <Label htmlFor="tolerance_rate">Taux de tolérance (%)</Label>
                   <Input
                     id="tolerance_rate"
@@ -322,14 +430,33 @@ export const DepotageModule = () => {
                 <Card className="bg-muted/50">
                   <CardContent className="pt-4 space-y-2 text-sm">
                     <div className="flex justify-between">
+                      <span className="text-muted-foreground">Stock précédent cuve :</span>
+                      <span>{fmt(formData.stock_before)} L</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Stock théorique après dépotage :</span>
+                      <span>{fmt(previewTheoretical)} L</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Jauge après dépotage :</span>
+                      <span>{fmt(formData.gauge_after)} L</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-muted-foreground">Écart dépotage (jauge − théorique) :</span>
+                      <span className={previewDepotageEcart === 0 ? "" : "text-destructive"}>
+                        {previewDepotageEcart > 0 ? "+" : ""}
+                        {fmt(previewDepotageEcart)} L
+                      </span>
+                    </div>
+                    <div className="border-t border-border pt-2 flex justify-between">
                       <span className="text-muted-foreground">Seuil de tolérance :</span>
-                      <span>± {previewSeuil.toLocaleString(undefined, { maximumFractionDigits: 2 })} L</span>
+                      <span>± {fmt(previewSeuil)} L</span>
                     </div>
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Écart (réel − à dépoter) :</span>
                       <span className={previewEcart === 0 ? "" : previewConforme ? "text-emerald-500" : "text-destructive"}>
                         {previewEcart > 0 ? "+" : ""}
-                        {previewEcart.toLocaleString(undefined, { maximumFractionDigits: 2 })} L
+                        {fmt(previewEcart)} L
                       </span>
                     </div>
                     <div className="flex justify-between items-center">
@@ -392,10 +519,13 @@ export const DepotageModule = () => {
                     <TableHead>Cuve</TableHead>
                     <TableHead>Produit</TableHead>
                     <TableHead>Immat. camion</TableHead>
-                    <TableHead className="text-right">Cap. nominale</TableHead>
                     <TableHead className="text-right">À dépoter</TableHead>
                     <TableHead className="text-right">Dépotée</TableHead>
-                    <TableHead className="text-right">Tolérance</TableHead>
+                    <TableHead className="text-right">Stock préc.</TableHead>
+                    <TableHead className="text-right">Théorique</TableHead>
+                    <TableHead className="text-right">Jauge après</TableHead>
+                    <TableHead className="text-right">Écart dépot.</TableHead>
+                    <TableHead>Horaires</TableHead>
                     <TableHead className="text-right">Écart</TableHead>
                     <TableHead>Statut</TableHead>
                     <TableHead className="w-[50px]"></TableHead>
@@ -418,13 +548,21 @@ export const DepotageModule = () => {
                           </Badge>
                         </TableCell>
                         <TableCell className="font-medium">{d.truck_registration}</TableCell>
-                        <TableCell className="text-right">{d.truck_nominal_capacity.toLocaleString()} L</TableCell>
-                        <TableCell className="text-right">{d.quantity_to_unload.toLocaleString()} L</TableCell>
-                        <TableCell className="text-right">{d.quantity_unloaded.toLocaleString()} L</TableCell>
-                        <TableCell className="text-right">{d.tolerance_rate}%</TableCell>
+                        <TableCell className="text-right">{fmt(d.quantity_to_unload)} L</TableCell>
+                        <TableCell className="text-right">{fmt(d.quantity_unloaded)} L</TableCell>
+                        <TableCell className="text-right">{fmt(d.stock_before)} L</TableCell>
+                        <TableCell className="text-right">{fmt(d.stock_theoretical)} L</TableCell>
+                        <TableCell className="text-right">{fmt(d.gauge_after)} L</TableCell>
+                        <TableCell className={`text-right font-semibold ${d.depotage_ecart === 0 ? "" : "text-destructive"}`}>
+                          {d.depotage_ecart > 0 ? "+" : ""}
+                          {fmt(d.depotage_ecart)} L
+                        </TableCell>
+                        <TableCell className="whitespace-nowrap text-sm text-muted-foreground">
+                          {d.start_time ? d.start_time.slice(0, 5) : "—"} → {d.end_time ? d.end_time.slice(0, 5) : "—"}
+                        </TableCell>
                         <TableCell className={`text-right font-semibold ${d.ecart === 0 ? "" : conforme ? "text-emerald-500" : "text-destructive"}`}>
                           {d.ecart > 0 ? "+" : ""}
-                          {d.ecart.toLocaleString(undefined, { maximumFractionDigits: 2 })} L
+                          {fmt(d.ecart)} L
                         </TableCell>
                         <TableCell>
                           {conforme ? (

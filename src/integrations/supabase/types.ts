@@ -18,16 +18,23 @@ export type Database = {
         Row: {
           created_at: string
           depotage_date: string
+          depotage_ecart: number | null
           ecart: number | null
+          end_time: string | null
+          gauge_after: number
           id: string
           notes: string | null
           product_type: string
           quantity_to_unload: number
           quantity_unloaded: number
+          start_time: string | null
           station_id: string
+          stock_before: number
+          stock_theoretical: number | null
           tank_capacity_liters: number
           tank_id: string | null
           tolerance_rate: number
+          truck_id: string | null
           truck_nominal_capacity: number
           truck_registration: string
           updated_at: string
@@ -36,16 +43,23 @@ export type Database = {
         Insert: {
           created_at?: string
           depotage_date?: string
+          depotage_ecart?: number | null
           ecart?: number | null
+          end_time?: string | null
+          gauge_after?: number
           id?: string
           notes?: string | null
           product_type?: string
           quantity_to_unload?: number
           quantity_unloaded?: number
+          start_time?: string | null
           station_id: string
+          stock_before?: number
+          stock_theoretical?: number | null
           tank_capacity_liters?: number
           tank_id?: string | null
           tolerance_rate?: number
+          truck_id?: string | null
           truck_nominal_capacity?: number
           truck_registration: string
           updated_at?: string
@@ -54,16 +68,23 @@ export type Database = {
         Update: {
           created_at?: string
           depotage_date?: string
+          depotage_ecart?: number | null
           ecart?: number | null
+          end_time?: string | null
+          gauge_after?: number
           id?: string
           notes?: string | null
           product_type?: string
           quantity_to_unload?: number
           quantity_unloaded?: number
+          start_time?: string | null
           station_id?: string
+          stock_before?: number
+          stock_theoretical?: number | null
           tank_capacity_liters?: number
           tank_id?: string | null
           tolerance_rate?: number
+          truck_id?: string | null
           truck_nominal_capacity?: number
           truck_registration?: string
           updated_at?: string
@@ -728,6 +749,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      trucks: {
+        Row: {
+          compartment_count: number
+          compartments: Json
+          created_at: string
+          driver_name: string
+          id: string
+          nominal_capacity: number
+          notes: string | null
+          registration: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          compartment_count?: number
+          compartments?: Json
+          created_at?: string
+          driver_name: string
+          id?: string
+          nominal_capacity?: number
+          notes?: string | null
+          registration: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          compartment_count?: number
+          compartments?: Json
+          created_at?: string
+          driver_name?: string
+          id?: string
+          nominal_capacity?: number
+          notes?: string | null
+          registration?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       user_roles: {
         Row: {

@@ -13,6 +13,7 @@ import { OrdersModule } from "@/components/orders/OrdersModule";
 import { AccessDenied } from "@/components/AccessDenied";
 import { SuppliesModule } from "@/components/orders/SuppliesModule";
 import { DepotageModule } from "@/components/depotage/DepotageModule";
+import { TrucksModule } from "@/components/trucks/TrucksModule";
 import { UsersModule } from "@/components/users/UsersModule";
 import { StationManagement } from "@/components/stations/StationManagement";
 import { FiscalYearModule } from "@/components/fiscal/FiscalYearModule";
@@ -57,6 +58,8 @@ const TAB_PERMISSIONS: Record<string, AppRole[]> = {
   perequation: ["admin", "manager", "operator"],
   stations: ["admin", "manager", "operator"],
   depotage: ["admin", "manager", "operator"],
+  camions: ["admin", "manager", "operator"],
+
   exercices: ["admin"],
   droits: ["admin"],
 };
@@ -237,6 +240,15 @@ const Index = () => {
                   Dépotages
                 </TabsTrigger>
               )}
+              {canAccessTab("camions") && (
+                <TabsTrigger
+                  value="camions"
+                  className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground gap-2 px-4 py-2"
+                >
+                  <Truck className="w-4 h-4" />
+                  Camions
+                </TabsTrigger>
+              )}
               {canAccessTab("perequation") && (
                 <TabsTrigger
                   value="perequation"
@@ -402,6 +414,17 @@ const Index = () => {
               <AccessDenied onGoBack={() => setActiveTab("ventes")} />
             )}
           </TabsContent>
+
+          {/* Camions Tab */}
+          <TabsContent value="camions" className="animate-fade-in">
+            {canAccessTab("camions") ? (
+              <TrucksModule />
+            ) : (
+              <AccessDenied onGoBack={() => setActiveTab("ventes")} />
+            )}
+          </TabsContent>
+
+
 
 
 
