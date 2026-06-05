@@ -161,7 +161,7 @@ export const DepotageModule = () => {
             Suivez les dépotages des camions, la tolérance appliquée et les écarts par cuve
           </p>
         </div>
-        <Dialog open={isOpen} onOpenChange={setIsOpen}>
+        <Dialog open={isOpen} onOpenChange={(open) => { setIsOpen(open); if (!open) setErrors([]); }}>
           <DialogTrigger asChild>
             <Button className="gap-2">
               <Plus className="w-4 h-4" />
