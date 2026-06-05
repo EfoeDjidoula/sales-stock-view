@@ -30,9 +30,11 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Plus, Trash2, Truck, Loader2, Droplets, AlertTriangle, CheckCircle2 } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
+import { toast } from "sonner";
 
 const getProductLabel = (type: ProductType) => (type === "super" ? "Super" : "Gasoil");
 
