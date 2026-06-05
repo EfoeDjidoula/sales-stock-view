@@ -56,11 +56,45 @@ const toleranceLiters = (qty: number, rate: number) => (qty * rate) / 100;
 const isWithinTolerance = (ecart: number, qty: number, rate: number) =>
   Math.abs(ecart) <= toleranceLiters(qty, rate);
 
+// Validation côté UI : renvoie la liste des messages d'erreur (vide si valide)
+const validateDepotage = (f: DepotageInsert): string[] => {
+  const errors: string[] = [];
+
+  if (!f.station_id) errors.push("Veuillez sélectionner une station.");
+  if (!f.tank_id) errors.push("Veuillez sélectionner une cuve.");
+  if (!f.truck_registration.trim()) errors.push("L'immatriculation du camion est obligatoire.");
+
+  if (f.truck_nominal_capacity < 0) errors.push("La capacité nominale du camion ne peut pas être négative.");
+  if (f.quantity_to_unload < 0) errors.push("La quantité à dépoter ne peut pas être négative.");
+  if (f.quantity_unloaded < 0) errors.push("La quantité réellement dépotée ne peut pas être négative.");
+
+  if (!f.tolerance_rate || f.tolerance_rate <= 0) {
+    errors.push("Le taux de tolérance est obligatoire et doit être supérieur à 0.");
+  }
+
+  if (f.quantity_to_unload <= 0) errors.push("La quantité à dépoter doit être supérieure à 0.");
+
+  if (f.tank_capacity_liters > 0 && f.quantity_to_unload > f.tank_capacity_liters) {
+    errors.push(
+      `La quantité à dépoter (${f.quantity_to_unload.toLocaleString()} L) dépasse la capacité de la cuve (${f.tank_capacity_liters.toLocaleString()} L).`
+    );
+  }
+
+  if (f.tank_capacity_liters > 0 && f.quantity_unloaded > f.tank_capacity_liters) {
+    errors.push(
+      `La quantité réellement dépotée (${f.quantity_unloaded.toLocaleString()} L) dépasse la capacité de la cuve (${f.tank_capacity_liters.toLocaleString()} L).`
+    );
+  }
+
+  return errors;
+};
+
 export const DepotageModule = () => {
   const { depotages, loading, createDepotage, deleteDepotage } = useDepotages();
   const { stations, loading: stationsLoading } = useStations();
   const [isOpen, setIsOpen] = useState(false);
   const [formData, setFormData] = useState<DepotageInsert>(emptyForm());
+  const [errors, setErrors] = useState<string[]>([]);
 
   // Cuves de la station sélectionnée dans le formulaire
   const { tanks } = useTanks(formData.station_id || undefined);
@@ -89,9 +123,16 @@ export const DepotageModule = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const validationErrors = validateDepotage(formData);
+    setErrors(validationErrors);
+    if (validationErrors.length > 0) {
+      toast.error("Veuillez corriger les erreurs du formulaire");
+      return;
+    }
     const result = await createDepotage(formData);
     if (result) {
       setIsOpen(false);
+      setErrors([]);
       setFormData(emptyForm());
     }
   };
