@@ -415,6 +415,17 @@ const Index = () => {
             )}
           </TabsContent>
 
+          {/* Camions Tab */}
+          <TabsContent value="camions" className="animate-fade-in">
+            {canAccessTab("camions") ? (
+              <TrucksModule />
+            ) : (
+              <AccessDenied onGoBack={() => setActiveTab("ventes")} />
+            )}
+          </TabsContent>
+
+
+
 
 
           {/* Péréquation Tab */}
