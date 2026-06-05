@@ -176,6 +176,19 @@ export const DepotageModule = () => {
               </DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4 mt-4">
+              {errors.length > 0 && (
+                <Alert variant="destructive">
+                  <AlertTriangle className="w-4 h-4" />
+                  <AlertTitle>Erreurs de saisie</AlertTitle>
+                  <AlertDescription>
+                    <ul className="list-disc pl-4 space-y-1">
+                      {errors.map((err, i) => (
+                        <li key={i}>{err}</li>
+                      ))}
+                    </ul>
+                  </AlertDescription>
+                </Alert>
+              )}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Station</Label>
