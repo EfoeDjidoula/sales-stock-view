@@ -67,6 +67,16 @@ const isWithinTolerance = (ecart: number, qty: number, rate: number) =>
 
 const fmt = (n: number) => n.toLocaleString(undefined, { maximumFractionDigits: 2 });
 
+// Renvoie l'heure (HH:MM) une minute après l'heure fournie, plafonnée à 23:59
+const nextMinute = (time: string): string => {
+  const [h, m] = time.split(":").map(Number);
+  if (Number.isNaN(h) || Number.isNaN(m)) return time;
+  const total = Math.min(h * 60 + m + 1, 23 * 60 + 59);
+  const nh = Math.floor(total / 60);
+  const nm = total % 60;
+  return `${String(nh).padStart(2, "0")}:${String(nm).padStart(2, "0")}`;
+};
+
 // Capacité totale exploitable d'un camion (somme des compartiments si définis, sinon capacité nominale)
 const truckUsableCapacity = (truck?: { nominal_capacity: number; compartments: number[] } | null): number => {
   if (!truck) return 0;
@@ -443,8 +453,17 @@ export const DepotageModule = () => {
                     id="start_time"
                     type="time"
                     value={formData.start_time || ""}
-                    max={formData.end_time || undefined}
-                    onChange={(e) => setFormData({ ...formData, start_time: e.target.value })}
+                    onChange={(e) => {
+                      const start = e.target.value;
+                      setFormData((prev) => {
+                        let end = prev.end_time;
+                        // Si l'heure de fin n'est plus strictement postérieure, on l'ajuste
+                        if (start && end && end <= start) {
+                          end = nextMinute(start);
+                        }
+                        return { ...prev, start_time: start, end_time: end };
+                      });
+                    }}
                   />
                 </div>
                 <div className="space-y-2">
