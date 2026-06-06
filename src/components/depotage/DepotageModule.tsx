@@ -443,8 +443,17 @@ export const DepotageModule = () => {
                     id="start_time"
                     type="time"
                     value={formData.start_time || ""}
-                    max={formData.end_time || undefined}
-                    onChange={(e) => setFormData({ ...formData, start_time: e.target.value })}
+                    onChange={(e) => {
+                      const start = e.target.value;
+                      setFormData((prev) => {
+                        let end = prev.end_time;
+                        // Si l'heure de fin n'est plus strictement postérieure, on l'ajuste
+                        if (start && end && end <= start) {
+                          end = nextMinute(start);
+                        }
+                        return { ...prev, start_time: start, end_time: end };
+                      });
+                    }}
                   />
                 </div>
                 <div className="space-y-2">
