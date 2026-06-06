@@ -443,6 +443,7 @@ export const DepotageModule = () => {
                     id="start_time"
                     type="time"
                     value={formData.start_time || ""}
+                    max={formData.end_time || undefined}
                     onChange={(e) => setFormData({ ...formData, start_time: e.target.value })}
                   />
                 </div>
@@ -452,6 +453,8 @@ export const DepotageModule = () => {
                     id="end_time"
                     type="time"
                     value={formData.end_time || ""}
+                    min={formData.start_time || undefined}
+                    disabled={!formData.start_time}
                     onChange={(e) => setFormData({ ...formData, end_time: e.target.value })}
                   />
                 </div>
