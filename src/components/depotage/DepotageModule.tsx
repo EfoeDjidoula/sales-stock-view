@@ -67,8 +67,21 @@ const isWithinTolerance = (ecart: number, qty: number, rate: number) =>
 
 const fmt = (n: number) => n.toLocaleString(undefined, { maximumFractionDigits: 2 });
 
+// Capacité totale exploitable d'un camion (somme des compartiments si définis, sinon capacité nominale)
+const truckUsableCapacity = (truck?: { nominal_capacity: number; compartments: number[] } | null): number => {
+  if (!truck) return 0;
+  const compartmentsTotal = Array.isArray(truck.compartments)
+    ? truck.compartments.reduce((sum, c) => sum + (Number(c) || 0), 0)
+    : 0;
+  if (compartmentsTotal > 0) return compartmentsTotal;
+  return truck.nominal_capacity || 0;
+};
+
 // Validation côté UI : renvoie la liste des messages d'erreur (vide si valide)
-const validateDepotage = (f: DepotageInsert): string[] => {
+const validateDepotage = (
+  f: DepotageInsert,
+  truck?: { nominal_capacity: number; compartments: number[] } | null
+): string[] => {
   const errors: string[] = [];
 
   if (!f.station_id) errors.push("Veuillez sélectionner une station.");
@@ -83,6 +96,9 @@ const validateDepotage = (f: DepotageInsert): string[] => {
 
   if (!f.tolerance_rate || f.tolerance_rate <= 0) {
     errors.push("Le taux de tolérance est obligatoire et doit être supérieur à 0.");
+  }
+  if (f.tolerance_rate > 100) {
+    errors.push("Le taux de tolérance ne peut pas dépasser 100 %.");
   }
 
   if (f.quantity_to_unload <= 0) errors.push("La quantité à dépoter doit être supérieure à 0.");
@@ -99,8 +115,47 @@ const validateDepotage = (f: DepotageInsert): string[] => {
     );
   }
 
-  if (f.start_time && f.end_time && f.end_time < f.start_time) {
-    errors.push("L'heure de fin doit être postérieure à l'heure de début.");
+  // Contrôles liés à la capacité des compartiments du camion sélectionné
+  const truckCapacity = truckUsableCapacity(truck);
+  if (truckCapacity > 0) {
+    if (f.quantity_to_unload > truckCapacity) {
+      errors.push(
+        `La quantité à dépoter (${fmt(f.quantity_to_unload)} L) dépasse la capacité des compartiments du camion (${fmt(truckCapacity)} L).`
+      );
+    }
+    if (f.quantity_unloaded > truckCapacity) {
+      errors.push(
+        `La quantité réellement dépotée (${fmt(f.quantity_unloaded)} L) dépasse la capacité des compartiments du camion (${fmt(truckCapacity)} L).`
+      );
+    }
+    // La tolérance en litres doit rester cohérente avec la capacité du camion
+    const tolLiters = toleranceLiters(f.quantity_to_unload, f.tolerance_rate);
+    if (f.quantity_to_unload + tolLiters > truckCapacity) {
+      errors.push(
+        `La quantité à dépoter plus la tolérance (${fmt(f.quantity_to_unload + tolLiters)} L) dépasse la capacité du camion (${fmt(truckCapacity)} L).`
+      );
+    }
+  }
+
+  // Validation des horodatages
+  const timeRe = /^([01]\d|2[0-3]):[0-5]\d$/;
+  if (f.start_time && !timeRe.test(f.start_time)) {
+    errors.push("L'heure de début est invalide.");
+  }
+  if (f.end_time && !timeRe.test(f.end_time)) {
+    errors.push("L'heure de fin est invalide.");
+  }
+  if (f.end_time && !f.start_time) {
+    errors.push("Veuillez renseigner l'heure de début avant l'heure de fin.");
+  }
+  if (
+    f.start_time &&
+    f.end_time &&
+    timeRe.test(f.start_time) &&
+    timeRe.test(f.end_time) &&
+    f.end_time <= f.start_time
+  ) {
+    errors.push("L'heure de fin doit être strictement postérieure à l'heure de début.");
   }
 
   return errors;
