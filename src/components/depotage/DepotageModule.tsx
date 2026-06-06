@@ -218,7 +218,8 @@ export const DepotageModule = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const validationErrors = validateDepotage(formData);
+    const selectedTruck = trucks.find((t) => t.id === formData.truck_id) || null;
+    const validationErrors = validateDepotage(formData, selectedTruck);
     setErrors(validationErrors);
     if (validationErrors.length > 0) {
       toast.error("Veuillez corriger les erreurs du formulaire");
