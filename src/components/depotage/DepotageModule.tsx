@@ -271,12 +271,12 @@ export const DepotageModule = () => {
     }
   };
 
-  // Aperçu en direct dans le formulaire
-  const previewEcart = formData.quantity_unloaded - formData.quantity_to_unload;
+  // Aperçu en direct dans le formulaire (alimenté par les champs auto-recalculés de formData)
+  const previewEcart = formData.ecart;
   const previewSeuil = toleranceLiters(formData.quantity_to_unload, formData.tolerance_rate);
   const previewConforme = isWithinTolerance(previewEcart, formData.quantity_to_unload, formData.tolerance_rate);
-  const previewTheoretical = formData.stock_before + formData.quantity_unloaded;
-  const previewDepotageEcart = formData.gauge_after - previewTheoretical;
+  const previewTheoretical = formData.stock_theoretical;
+  const previewDepotageEcart = formData.depotage_ecart;
 
   if (loading) {
     return (
