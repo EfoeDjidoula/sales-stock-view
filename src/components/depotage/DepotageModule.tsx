@@ -205,17 +205,18 @@ export const DepotageModule = () => {
 
   // Recalcule en temps réel les champs dépendants (stock théorique, jauge, écart)
   useEffect(() => {
-    const theoretical = formData.stock_before + formData.quantity_unloaded;
     setFormData((f) => {
+      const theoretical = f.stock_before + f.quantity_unloaded;
       const nextGauge = gaugeAuto ? theoretical : f.gauge_after;
       return {
         ...f,
+        ecart: f.quantity_unloaded - f.quantity_to_unload,
         stock_theoretical: theoretical,
         gauge_after: nextGauge,
         depotage_ecart: nextGauge - theoretical,
       };
     });
-  }, [formData.stock_before, formData.quantity_unloaded, gaugeAuto]);
+  }, [formData.stock_before, formData.quantity_unloaded, formData.quantity_to_unload, gaugeAuto]);
 
   const handleStationSelect = (stationId: string) => {
     setFormData((f) => ({ ...f, station_id: stationId, tank_id: null, tank_capacity_liters: 0, stock_before: 0 }));
