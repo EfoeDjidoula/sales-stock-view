@@ -454,14 +454,40 @@ export const DepotageModule = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="gauge_after">Jauge après dépotage (L)</Label>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="gauge_after">Jauge après dépotage (L)</Label>
+                    {!gaugeAuto && (
+                      <button
+                        type="button"
+                        onClick={() => setGaugeAuto(true)}
+                        className="text-xs text-primary hover:underline"
+                      >
+                        Revenir à la jauge théorique
+                      </button>
+                    )}
+                  </div>
                   <Input
                     id="gauge_after"
                     type="number"
                     min={0}
                     value={formData.gauge_after || ""}
-                    onChange={(e) => setFormData({ ...formData, gauge_after: Number(e.target.value) })}
+                    onChange={(e) => {
+                      setGaugeAuto(false);
+                      setFormData((f) => {
+                        const value = Number(e.target.value);
+                        return {
+                          ...f,
+                          gauge_after: value,
+                          depotage_ecart: value - (f.stock_before + f.quantity_unloaded),
+                        };
+                      });
+                    }}
                   />
+                  {gaugeAuto && (
+                    <p className="text-xs text-muted-foreground">
+                      Valeur automatique = stock précédent + quantité dépotée. Modifiez ce champ pour saisir une jauge réelle.
+                    </p>
+                  )}
                 </div>
               </div>
 
