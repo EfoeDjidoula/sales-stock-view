@@ -425,7 +425,7 @@ export const DepotageModule = () => {
                     type="number"
                     min={0}
                     value={formData.quantity_to_unload || ""}
-                    onChange={(e) => setFormData({ ...formData, quantity_to_unload: Number(e.target.value) })}
+                    onChange={(e) => setFormData((f) => ({ ...f, quantity_to_unload: Number(e.target.value) }))}
                     required
                   />
                 </div>
@@ -436,7 +436,7 @@ export const DepotageModule = () => {
                     type="number"
                     min={0}
                     value={formData.quantity_unloaded || ""}
-                    onChange={(e) => setFormData({ ...formData, quantity_unloaded: Number(e.target.value) })}
+                    onChange={(e) => setFormData((f) => ({ ...f, quantity_unloaded: Number(e.target.value) }))}
                     required
                   />
                 </div>
