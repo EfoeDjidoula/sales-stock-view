@@ -450,7 +450,7 @@ export const DepotageModule = () => {
                     type="number"
                     min={0}
                     value={formData.stock_before || ""}
-                    onChange={(e) => setFormData({ ...formData, stock_before: Number(e.target.value) })}
+                    onChange={(e) => setFormData((f) => ({ ...f, stock_before: Number(e.target.value) }))}
                   />
                 </div>
                 <div className="space-y-2">
