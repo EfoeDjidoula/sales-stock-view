@@ -258,11 +258,15 @@ export const DepotageModule = () => {
       ...formData,
       start_time: formData.start_time || null,
       end_time: formData.end_time || null,
+      ecart: formData.quantity_unloaded - formData.quantity_to_unload,
+      stock_theoretical: formData.stock_before + formData.quantity_unloaded,
+      depotage_ecart: formData.gauge_after - (formData.stock_before + formData.quantity_unloaded),
     };
     const result = await createDepotage(payload);
     if (result) {
       setIsOpen(false);
       setErrors([]);
+      setGaugeAuto(true);
       setFormData(emptyForm());
     }
   };
