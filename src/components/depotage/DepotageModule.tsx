@@ -51,8 +51,11 @@ const emptyForm = (): DepotageInsert => ({
   quantity_to_unload: 0,
   quantity_unloaded: 0,
   tolerance_rate: 0.5,
+  ecart: 0,
   stock_before: 0,
   gauge_after: 0,
+  stock_theoretical: 0,
+  depotage_ecart: 0,
   start_time: "",
   end_time: "",
   depotage_date: new Date().toISOString().split("T")[0],
@@ -178,6 +181,7 @@ export const DepotageModule = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [formData, setFormData] = useState<DepotageInsert>(emptyForm());
   const [errors, setErrors] = useState<string[]>([]);
+  const [gaugeAuto, setGaugeAuto] = useState(true);
 
   // Cuves de la station sélectionnée dans le formulaire
   const { tanks } = useTanks(formData.station_id || undefined);
@@ -198,6 +202,21 @@ export const DepotageModule = () => {
       setFormData((f) => ({ ...f, stock_before: latestStock }));
     }
   }, [latestStock]);
+
+  // Recalcule en temps réel les champs dépendants (stock théorique, jauge, écart)
+  useEffect(() => {
+    setFormData((f) => {
+      const theoretical = f.stock_before + f.quantity_unloaded;
+      const nextGauge = gaugeAuto ? theoretical : f.gauge_after;
+      return {
+        ...f,
+        ecart: f.quantity_unloaded - f.quantity_to_unload,
+        stock_theoretical: theoretical,
+        gauge_after: nextGauge,
+        depotage_ecart: nextGauge - theoretical,
+      };
+    });
+  }, [formData.stock_before, formData.quantity_unloaded, formData.quantity_to_unload, gaugeAuto]);
 
   const handleStationSelect = (stationId: string) => {
     setFormData((f) => ({ ...f, station_id: stationId, tank_id: null, tank_capacity_liters: 0, stock_before: 0 }));
@@ -239,21 +258,25 @@ export const DepotageModule = () => {
       ...formData,
       start_time: formData.start_time || null,
       end_time: formData.end_time || null,
+      ecart: formData.quantity_unloaded - formData.quantity_to_unload,
+      stock_theoretical: formData.stock_before + formData.quantity_unloaded,
+      depotage_ecart: formData.gauge_after - (formData.stock_before + formData.quantity_unloaded),
     };
     const result = await createDepotage(payload);
     if (result) {
       setIsOpen(false);
       setErrors([]);
+      setGaugeAuto(true);
       setFormData(emptyForm());
     }
   };
 
-  // Aperçu en direct dans le formulaire
-  const previewEcart = formData.quantity_unloaded - formData.quantity_to_unload;
+  // Aperçu en direct dans le formulaire (alimenté par les champs auto-recalculés de formData)
+  const previewEcart = formData.ecart;
   const previewSeuil = toleranceLiters(formData.quantity_to_unload, formData.tolerance_rate);
   const previewConforme = isWithinTolerance(previewEcart, formData.quantity_to_unload, formData.tolerance_rate);
-  const previewTheoretical = formData.stock_before + formData.quantity_unloaded;
-  const previewDepotageEcart = formData.gauge_after - previewTheoretical;
+  const previewTheoretical = formData.stock_theoretical;
+  const previewDepotageEcart = formData.depotage_ecart;
 
   if (loading) {
     return (
@@ -272,7 +295,7 @@ export const DepotageModule = () => {
             Suivez les dépotages des camions, la tolérance appliquée et les écarts par cuve
           </p>
         </div>
-        <Dialog open={isOpen} onOpenChange={(open) => { setIsOpen(open); if (!open) setErrors([]); }}>
+        <Dialog open={isOpen} onOpenChange={(open) => { setIsOpen(open); if (!open) { setErrors([]); setGaugeAuto(true); } }}>
           <DialogTrigger asChild>
             <Button className="gap-2">
               <Plus className="w-4 h-4" />
@@ -406,7 +429,7 @@ export const DepotageModule = () => {
                     type="number"
                     min={0}
                     value={formData.quantity_to_unload || ""}
-                    onChange={(e) => setFormData({ ...formData, quantity_to_unload: Number(e.target.value) })}
+                    onChange={(e) => setFormData((f) => ({ ...f, quantity_to_unload: Number(e.target.value) }))}
                     required
                   />
                 </div>
@@ -417,7 +440,7 @@ export const DepotageModule = () => {
                     type="number"
                     min={0}
                     value={formData.quantity_unloaded || ""}
-                    onChange={(e) => setFormData({ ...formData, quantity_unloaded: Number(e.target.value) })}
+                    onChange={(e) => setFormData((f) => ({ ...f, quantity_unloaded: Number(e.target.value) }))}
                     required
                   />
                 </div>
@@ -431,18 +454,44 @@ export const DepotageModule = () => {
                     type="number"
                     min={0}
                     value={formData.stock_before || ""}
-                    onChange={(e) => setFormData({ ...formData, stock_before: Number(e.target.value) })}
+                    onChange={(e) => setFormData((f) => ({ ...f, stock_before: Number(e.target.value) }))}
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="gauge_after">Jauge après dépotage (L)</Label>
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="gauge_after">Jauge après dépotage (L)</Label>
+                    {!gaugeAuto && (
+                      <button
+                        type="button"
+                        onClick={() => setGaugeAuto(true)}
+                        className="text-xs text-primary hover:underline"
+                      >
+                        Revenir à la jauge théorique
+                      </button>
+                    )}
+                  </div>
                   <Input
                     id="gauge_after"
                     type="number"
                     min={0}
                     value={formData.gauge_after || ""}
-                    onChange={(e) => setFormData({ ...formData, gauge_after: Number(e.target.value) })}
+                    onChange={(e) => {
+                      setGaugeAuto(false);
+                      setFormData((f) => {
+                        const value = Number(e.target.value);
+                        return {
+                          ...f,
+                          gauge_after: value,
+                          depotage_ecart: value - (f.stock_before + f.quantity_unloaded),
+                        };
+                      });
+                    }}
                   />
+                  {gaugeAuto && (
+                    <p className="text-xs text-muted-foreground">
+                      Valeur automatique = stock précédent + quantité dépotée. Modifiez ce champ pour saisir une jauge réelle.
+                    </p>
+                  )}
                 </div>
               </div>
 
@@ -505,8 +554,11 @@ export const DepotageModule = () => {
               </div>
 
               {formData.quantity_to_unload > 0 && (
-                <Card className="bg-muted/50">
-                  <CardContent className="pt-4 space-y-2 text-sm">
+                <Card className="bg-muted/50 border-primary/20">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-semibold">Calcul en temps réel</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-2 text-sm">
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Stock précédent cuve :</span>
                       <span>{fmt(formData.stock_before)} L</span>
