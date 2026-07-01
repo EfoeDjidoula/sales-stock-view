@@ -554,8 +554,11 @@ export const DepotageModule = () => {
               </div>
 
               {formData.quantity_to_unload > 0 && (
-                <Card className="bg-muted/50">
-                  <CardContent className="pt-4 space-y-2 text-sm">
+                <Card className="bg-muted/50 border-primary/20">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-semibold">Calcul en temps réel</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-2 text-sm">
                     <div className="flex justify-between">
                       <span className="text-muted-foreground">Stock précédent cuve :</span>
                       <span>{fmt(formData.stock_before)} L</span>
