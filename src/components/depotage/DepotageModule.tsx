@@ -181,6 +181,7 @@ export const DepotageModule = () => {
   const [isOpen, setIsOpen] = useState(false);
   const [formData, setFormData] = useState<DepotageInsert>(emptyForm());
   const [errors, setErrors] = useState<string[]>([]);
+  const [gaugeAuto, setGaugeAuto] = useState(true);
 
   // Cuves de la station sélectionnée dans le formulaire
   const { tanks } = useTanks(formData.station_id || undefined);
