@@ -44,8 +44,11 @@ export interface DepotageInsert {
   quantity_to_unload: number;
   quantity_unloaded: number;
   tolerance_rate: number;
+  ecart: number;
   stock_before: number;
   gauge_after: number;
+  stock_theoretical: number;
+  depotage_ecart: number;
   start_time: string | null;
   end_time: string | null;
   depotage_date: string;
