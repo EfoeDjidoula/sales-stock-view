@@ -199,9 +199,33 @@ export const DepotageModule = () => {
 
   useEffect(() => {
     if (latestStock != null) {
-      setFormData((f) => ({ ...f, stock_before: latestStock }));
+      setFormData((f) => ({
+        ...f,
+        stock_before: latestStock,
+        stock_theoretical: latestStock + f.quantity_unloaded,
+        ...(gaugeAuto ? { gauge_after: latestStock + f.quantity_unloaded } : {}),
+      }));
     }
   }, [latestStock]);
+
+  // Recalcule en temps réel les champs dépendants lorsque la quantité ou le stock changent
+  useEffect(() => {
+    if (gaugeAuto) {
+      const theoretical = formData.stock_before + formData.quantity_unloaded;
+      setFormData((f) => ({
+        ...f,
+        stock_theoretical: theoretical,
+        gauge_after: theoretical,
+        depotage_ecart: 0,
+      }));
+    } else {
+      setFormData((f) => ({
+        ...f,
+        stock_theoretical: f.stock_before + f.quantity_unloaded,
+        depotage_ecart: f.gauge_after - (f.stock_before + f.quantity_unloaded),
+      }));
+    }
+  }, [formData.stock_before, formData.quantity_unloaded, gaugeAuto]);
 
   const handleStationSelect = (stationId: string) => {
     setFormData((f) => ({ ...f, station_id: stationId, tank_id: null, tank_capacity_liters: 0, stock_before: 0 }));
