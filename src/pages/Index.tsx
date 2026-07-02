@@ -44,7 +44,11 @@ import {
   Settings2,
   ShieldCheck,
   ChevronDown,
+  Building2,
+  Contact,
 } from "lucide-react";
+import { ClientsModule } from "@/components/clients/ClientsModule";
+import { SuppliersModule } from "@/components/suppliers/SuppliersModule";
 import { Link } from "react-router-dom";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import {
