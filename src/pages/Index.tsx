@@ -40,9 +40,21 @@ import {
   Download,
   RefreshCw,
   BookOpen,
+  BarChart3,
+  Settings2,
+  ShieldCheck,
+  ChevronDown,
 } from "lucide-react";
 import { Link } from "react-router-dom";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Tabs, TabsContent } from "@/components/ui/tabs";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "@/hooks/use-toast";
@@ -63,6 +75,36 @@ const TAB_PERMISSIONS: Record<string, AppRole[]> = {
   exercices: ["admin"],
   droits: ["admin"],
 };
+
+// Metadata (label + icon) for each tab
+const TAB_META: Record<string, { label: string; icon: typeof TrendingUp }> = {
+  ventes: { label: "Ventes", icon: TrendingUp },
+  stock: { label: "Stock", icon: Package },
+  historique: { label: "Historique", icon: History },
+  commandes: { label: "Commandes", icon: FileText },
+  approvisionnements: { label: "Approvisionnements", icon: Truck },
+  depotage: { label: "Dépotages", icon: Droplets },
+  camions: { label: "Camions", icon: Truck },
+  stations: { label: "Stations", icon: LayoutDashboard },
+  perequation: { label: "Péréquation", icon: Coins },
+  exercices: { label: "Exercices", icon: BookOpen },
+  droits: { label: "Gestion des droits", icon: Users },
+};
+
+// Grouped navigation structure
+const TAB_GROUPS: {
+  id: string;
+  label: string;
+  icon: typeof TrendingUp;
+  tabs: string[];
+}[] = [
+  { id: "suivi", label: "Suivi & Analyse", icon: BarChart3, tabs: ["ventes", "stock", "historique"] },
+  { id: "logistique", label: "Logistique & Flux", icon: Truck, tabs: ["commandes", "approvisionnements", "depotage", "camions"] },
+  { id: "config", label: "Configuration", icon: Settings2, tabs: ["stations", "perequation"] },
+  { id: "admin", label: "Administration", icon: ShieldCheck, tabs: ["exercices", "droits"] },
+];
+
+
 
 const Index = () => {
   const [selectedStation, setSelectedStation] = useState<DbStation | null>(null);
@@ -185,107 +227,57 @@ const Index = () => {
       <main className="container mx-auto px-4 py-6">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <TabsList className="bg-secondary h-auto p-1 flex-wrap">
-              {canAccessTab("ventes") && (
-                <TabsTrigger
-                  value="ventes"
-                  className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground gap-2 px-4 py-2"
-                >
-                  <TrendingUp className="w-4 h-4" />
-                  Ventes
-                </TabsTrigger>
-              )}
-              {canAccessTab("stock") && (
-                <TabsTrigger
-                  value="stock"
-                  className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground gap-2 px-4 py-2"
-                >
-                  <Package className="w-4 h-4" />
-                  Stock
-                </TabsTrigger>
-              )}
-              {canAccessTab("historique") && (
-                <TabsTrigger
-                  value="historique"
-                  className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground gap-2 px-4 py-2"
-                >
-                  <History className="w-4 h-4" />
-                  Historique
-                </TabsTrigger>
-              )}
-              {canAccessTab("commandes") && (
-                <TabsTrigger
-                  value="commandes"
-                  className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground gap-2 px-4 py-2"
-                >
-                  <FileText className="w-4 h-4" />
-                  Commandes
-                </TabsTrigger>
-              )}
-              {canAccessTab("approvisionnements") && (
-                <TabsTrigger
-                  value="approvisionnements"
-                  className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground gap-2 px-4 py-2"
-                >
-                  <Truck className="w-4 h-4" />
-                  Approvisionnements
-                </TabsTrigger>
-              )}
-              {canAccessTab("depotage") && (
-                <TabsTrigger
-                  value="depotage"
-                  className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground gap-2 px-4 py-2"
-                >
-                  <Droplets className="w-4 h-4" />
-                  Dépotages
-                </TabsTrigger>
-              )}
-              {canAccessTab("camions") && (
-                <TabsTrigger
-                  value="camions"
-                  className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground gap-2 px-4 py-2"
-                >
-                  <Truck className="w-4 h-4" />
-                  Camions
-                </TabsTrigger>
-              )}
-              {canAccessTab("perequation") && (
-                <TabsTrigger
-                  value="perequation"
-                  className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground gap-2 px-4 py-2"
-                >
-                  <Coins className="w-4 h-4" />
-                  Péréquation
-                </TabsTrigger>
-              )}
-              {canAccessTab("stations") && (
-                <TabsTrigger
-                  value="stations"
-                  className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground gap-2 px-4 py-2"
-                >
-                  <LayoutDashboard className="w-4 h-4" />
-                  Stations
-                </TabsTrigger>
-              )}
-              {canAccessTab("exercices") && (
-                <TabsTrigger
-                  value="exercices"
-                  className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground gap-2 px-4 py-2"
-                >
-                  <BookOpen className="w-4 h-4" />
-                  Exercices
-                </TabsTrigger>
-              )}
-              {canAccessTab("droits") && (
-                <TabsTrigger
-                  value="droits"
-                  className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground gap-2 px-4 py-2"
-                >
-                  <Users className="w-4 h-4" />
-                  Gestion des droits
-                </TabsTrigger>
-              )}
-            </TabsList>
+            <div className="flex flex-wrap gap-2 bg-secondary rounded-lg p-1">
+              {TAB_GROUPS.map((group) => {
+                const visibleTabs = group.tabs.filter(canAccessTab);
+                if (visibleTabs.length === 0) return null;
+                const isGroupActive = visibleTabs.includes(activeTab);
+                const activeMeta = isGroupActive ? TAB_META[activeTab] : null;
+                const GroupIcon = group.icon;
+                return (
+                  <DropdownMenu key={group.id}>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        className={`gap-2 px-4 py-2 h-auto ${
+                          isGroupActive
+                            ? "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground"
+                            : "hover:bg-background/60"
+                        }`}
+                      >
+                        <GroupIcon className="w-4 h-4" />
+                        <span>{group.label}</span>
+                        {activeMeta && (
+                          <span className="opacity-80">· {activeMeta.label}</span>
+                        )}
+                        <ChevronDown className="w-3.5 h-3.5 opacity-70" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="start" className="w-56">
+                      <DropdownMenuLabel>{group.label}</DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      {visibleTabs.map((tab) => {
+                        const meta = TAB_META[tab];
+                        const ItemIcon = meta.icon;
+                        return (
+                          <DropdownMenuItem
+                            key={tab}
+                            onSelect={() => setActiveTab(tab)}
+                            className={`gap-2 cursor-pointer ${
+                              activeTab === tab ? "bg-accent text-accent-foreground" : ""
+                            }`}
+                          >
+                            <ItemIcon className="w-4 h-4" />
+                            {meta.label}
+                          </DropdownMenuItem>
+                        );
+                      })}
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                );
+              })}
+            </div>
+
 
             {activeTab === "ventes" && (
               <PeriodTabs selected={period} onSelect={setPeriod} />
