@@ -425,6 +425,24 @@ const Index = () => {
             )}
           </TabsContent>
 
+          <TabsContent value="clients" className="animate-fade-in">
+            {canAccessTab("clients") ? (
+              <ClientsModule />
+            ) : (
+              <AccessDenied onGoBack={() => setActiveTab("ventes")} />
+            )}
+          </TabsContent>
+
+          <TabsContent value="fournisseurs" className="animate-fade-in">
+            {canAccessTab("fournisseurs") ? (
+              <SuppliersModule />
+            ) : (
+              <AccessDenied onGoBack={() => setActiveTab("ventes")} />
+            )}
+          </TabsContent>
+
+
+
 
 
 
