@@ -44,7 +44,11 @@ import {
   Settings2,
   ShieldCheck,
   ChevronDown,
+  Building2,
+  Contact,
 } from "lucide-react";
+import { ClientsModule } from "@/components/clients/ClientsModule";
+import { SuppliersModule } from "@/components/suppliers/SuppliersModule";
 import { Link } from "react-router-dom";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import {
@@ -71,6 +75,8 @@ const TAB_PERMISSIONS: Record<string, AppRole[]> = {
   stations: ["admin", "manager", "operator"],
   depotage: ["admin", "manager", "operator"],
   camions: ["admin", "manager", "operator"],
+  clients: ["admin", "manager", "operator"],
+  fournisseurs: ["admin", "manager", "operator"],
 
   exercices: ["admin"],
   droits: ["admin"],
@@ -87,6 +93,8 @@ const TAB_META: Record<string, { label: string; icon: typeof TrendingUp }> = {
   camions: { label: "Camions", icon: Truck },
   stations: { label: "Stations", icon: LayoutDashboard },
   perequation: { label: "Péréquation", icon: Coins },
+  clients: { label: "Clients", icon: Users },
+  fournisseurs: { label: "Fournisseurs", icon: Building2 },
   exercices: { label: "Exercices", icon: BookOpen },
   droits: { label: "Gestion des droits", icon: Users },
 };
@@ -101,6 +109,7 @@ const TAB_GROUPS: {
   { id: "suivi", label: "Suivi & Analyse", icon: BarChart3, tabs: ["ventes", "stock", "historique"] },
   { id: "logistique", label: "Logistique & Flux", icon: Truck, tabs: ["commandes", "approvisionnements", "depotage", "camions"] },
   { id: "config", label: "Configuration", icon: Settings2, tabs: ["stations", "perequation"] },
+  { id: "tiers", label: "Tiers", icon: Contact, tabs: ["clients", "fournisseurs"] },
   { id: "admin", label: "Administration", icon: ShieldCheck, tabs: ["exercices", "droits"] },
 ];
 
@@ -415,6 +424,24 @@ const Index = () => {
               <AccessDenied onGoBack={() => setActiveTab("ventes")} />
             )}
           </TabsContent>
+
+          <TabsContent value="clients" className="animate-fade-in">
+            {canAccessTab("clients") ? (
+              <ClientsModule />
+            ) : (
+              <AccessDenied onGoBack={() => setActiveTab("ventes")} />
+            )}
+          </TabsContent>
+
+          <TabsContent value="fournisseurs" className="animate-fade-in">
+            {canAccessTab("fournisseurs") ? (
+              <SuppliersModule />
+            ) : (
+              <AccessDenied onGoBack={() => setActiveTab("ventes")} />
+            )}
+          </TabsContent>
+
+
 
 
 
