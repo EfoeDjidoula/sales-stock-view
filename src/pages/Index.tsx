@@ -76,6 +76,36 @@ const TAB_PERMISSIONS: Record<string, AppRole[]> = {
   droits: ["admin"],
 };
 
+// Metadata (label + icon) for each tab
+const TAB_META: Record<string, { label: string; icon: typeof TrendingUp }> = {
+  ventes: { label: "Ventes", icon: TrendingUp },
+  stock: { label: "Stock", icon: Package },
+  historique: { label: "Historique", icon: History },
+  commandes: { label: "Commandes", icon: FileText },
+  approvisionnements: { label: "Approvisionnements", icon: Truck },
+  depotage: { label: "Dépotages", icon: Droplets },
+  camions: { label: "Camions", icon: Truck },
+  stations: { label: "Stations", icon: LayoutDashboard },
+  perequation: { label: "Péréquation", icon: Coins },
+  exercices: { label: "Exercices", icon: BookOpen },
+  droits: { label: "Gestion des droits", icon: Users },
+};
+
+// Grouped navigation structure
+const TAB_GROUPS: {
+  id: string;
+  label: string;
+  icon: typeof TrendingUp;
+  tabs: string[];
+}[] = [
+  { id: "suivi", label: "Suivi & Analyse", icon: BarChart3, tabs: ["ventes", "stock", "historique"] },
+  { id: "logistique", label: "Logistique & Flux", icon: Truck, tabs: ["commandes", "approvisionnements", "depotage", "camions"] },
+  { id: "config", label: "Configuration", icon: Settings2, tabs: ["stations", "perequation"] },
+  { id: "admin", label: "Administration", icon: ShieldCheck, tabs: ["exercices", "droits"] },
+];
+
+
+
 const Index = () => {
   const [selectedStation, setSelectedStation] = useState<DbStation | null>(null);
   const [period, setPeriod] = useState<Period>("day");
