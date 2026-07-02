@@ -71,6 +71,8 @@ const TAB_PERMISSIONS: Record<string, AppRole[]> = {
   stations: ["admin", "manager", "operator"],
   depotage: ["admin", "manager", "operator"],
   camions: ["admin", "manager", "operator"],
+  clients: ["admin", "manager", "operator"],
+  fournisseurs: ["admin", "manager", "operator"],
 
   exercices: ["admin"],
   droits: ["admin"],
