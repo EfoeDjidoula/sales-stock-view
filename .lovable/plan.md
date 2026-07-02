@@ -1,99 +1,68 @@
 ## Objectif
 
-Faire évoluer la saisie quotidienne des index pour qu'elle s'adapte automatiquement au paramétrage **pompes & cuves** de chaque station, et calculer le **déstockage par cuve** à partir du volume cumulé sortie des pompes qui lui sont liées.
+Réduire l'encombrement de la barre d'onglets du tableau de bord (11 onglets à plat, qui débordent sur `flex-wrap`) en regroupant les menus par thématique métier, tout en conservant strictement les permissions par rôle existantes.
 
-Aujourd'hui, `index_entries` impose 4 colonnes fixes (super1, super2, gasoil1, gasoil2). Nous passons à un modèle **dynamique par pompe**, tout en gardant `index_entries` pour la rétrocompatibilité (versements, bons, totaux agrégés).
+## Regroupement proposé
 
----
-
-## 1. Base de données (migration)
-
-Nouvelle table `pump_index_entries` (1 ligne par pompe et par jour) :
-
-- `entry_id` → FK logique vers `index_entries(id)` (cascade)
-- `pump_id`, `tank_id` (snapshot de la liaison au moment de la saisie)
-- `station_id`, `entry_date`, `user_id`
-- `product_type` (`super` | `gasoil`)
-- `index_depart`, `index_arrivee` (numeric, défauts 0)
-- `liters_sold` colonne générée = `GREATEST(index_arrivee - index_depart, 0)`
-- contrainte unique `(entry_id, pump_id)`
-- RLS : lecture admin/manager/propriétaire ; CRUD propriétaire ; check fiscal year
-
-Nouvelle vue `tank_destocking_daily` :
-
-- agrège `SUM(liters_sold)` par `(tank_id, entry_date)` à partir de `pump_index_entries`
-- expose `station_id`, `tank_id`, `product_type`, `entry_date`, `total_liters`
-
-`index_entries` est conservée :
-- les colonnes super1/super2/gasoil1/gasoil2 deviennent **optionnelles** (toujours là pour l'historique et les imports Excel)
-- les totaux `total_super_liters` / `total_gasoil_liters` seront recalculés côté code à partir de `pump_index_entries` quand des pompes existent, sinon fallback sur les colonnes legacy.
-
-Aucune modification destructive sur les colonnes existantes.
-
----
-
-## 2. Hooks
-
-- `usePumpIndexEntries(stationId, entryDate)` : récupère les lignes existantes pour pré-remplir.
-- `usePreviousPumpIndex(stationId, pumpIds, beforeDate)` : pour pré-remplir `index_depart` à partir du dernier `index_arrivee` connu de chaque pompe.
-- `useTankDestocking(stationId, range)` : lit `tank_destocking_daily` pour les modules Stock / Dashboard.
-- `useSavePumpIndexEntry` : upsert sur `(entry_id, pump_id)` + invalidations React Query.
-
-`useSaveIndexEntry` est étendu : après l'upsert de `index_entries`, il upsert également les lignes par pompe et calcule les totaux super/gasoil à partir des pompes.
-
----
-
-## 3. UI — page Saisie des Index (`src/pages/IndexEntry.tsx`)
-
-Refonte du bloc "produits" :
-
-- Lecture du paramétrage via `usePumps(stationId)` + `useTanks(stationId)`.
-- **Si la station a des pompes configurées** : affiche dynamiquement une **carte par pompe**, regroupées par **cuve liée** (ex. *Cuve Super A → Pompe S1, Pompe S2*). Chaque carte demande `index_depart` (auto-rempli depuis le dernier index connu) + `index_arrivee`. La jauge est saisie **par cuve** (1 champ par cuve, pas par pompe).
-- En tête de chaque groupe cuve : affichage du **volume cumulé sortie = Σ pompes liées**, comparé à la capacité de la cuve.
-- **Sinon (station sans paramétrage)** : on garde l'ancien formulaire 4 produits comme fallback (pour les stations pas encore migrées).
-
-Versements et bons : inchangés.
-
----
-
-## 4. Modules consommateurs
-
-- **StockModule** : utilise `useTankDestocking` pour calculer le stock restant par cuve (`capacity - cumul destockage + approvisionnements`), et garde le fallback sur `total_super_liters`/`total_gasoil_liters` si pas de pompes.
-- **Dashboard / SalesCard** : agrège super/gasoil depuis `pump_index_entries` quand dispo, sinon `index_entries` (transparent).
-- **Import / Export Excel** : aucune modification dans ce lot — on continue à mapper sur les 4 colonnes legacy. Migration progressive prévue ensuite.
-
----
-
-## 5. Contraintes & sécurité
-
-- RLS strictes alignées sur `index_entries` (propriétaire en écriture, admin/manager en lecture).
-- Trigger `check_fiscal_year_open` appliqué aussi à `pump_index_entries`.
-- Trigger de validation : la pompe doit appartenir à la même station que l'entrée, et la cuve liée doit toujours matcher (snapshot vérifié).
-- Aucune valeur négative (réutilisation du pattern `check_no_negative_values`).
-
----
-
-## 6. Hors scope (lots futurs)
-
-- Migration des `index_entries` historiques vers `pump_index_entries`.
-- Refonte de l'import/export Excel par pompe.
-- Édition `EditEntryDialog` côté pompes (le dialog actuel reste sur les 4 colonnes legacy pour l'instant).
-
----
-
-## Résumé technique
+Les 11 menus actuels sont réorganisés en **4 groupes logiques** :
 
 ```text
-stations ──< tanks ──< pumps
-                          │
-                          ▼
-              pump_index_entries (par jour, par pompe)
-                          │
-                          ▼
-              tank_destocking_daily (vue, par cuve)
-                          │
-                          ▼
-              StockModule / Dashboard
+📊 SUIVI & ANALYSE
+   ├─ Ventes            (admin, manager, operator)
+   ├─ Stock             (admin, manager, operator)
+   └─ Historique        (admin, manager, operator)
+
+🚚 LOGISTIQUE & FLUX
+   ├─ Commandes         (admin, manager)
+   ├─ Approvisionnements(admin, manager)
+   ├─ Dépotages         (admin, manager, operator)
+   └─ Camions           (admin, manager, operator)
+
+🏗️ CONFIGURATION
+   ├─ Stations & Cuves  (admin, manager, operator)
+   └─ Péréquation       (admin, manager, operator)
+
+⚙️ ADMINISTRATION
+   ├─ Exercices         (admin)
+   └─ Droits & Rôles    (admin)
 ```
 
-Le formulaire de saisie devient piloté par la configuration : ajouter/retirer une pompe ou changer sa cuve liée se reflète immédiatement dans l'UI de saisie et dans le calcul de déstockage.
+La logique de regroupement :
+- **Suivi & Analyse** = ce qu'on consulte au quotidien (données de vente/stock/historique).
+- **Logistique & Flux** = tout le cycle d'approvisionnement physique du carburant (commande → appro → dépotage → camions).
+- **Configuration** = paramétrage métier des actifs (cuves/pompes, zones de péréquation).
+- **Administration** = réservé aux admins (exercices comptables, gestion des utilisateurs).
+
+## Comportement UI
+
+- La `TabsList` actuelle est remplacée par une barre de **4 groupes**. Chaque groupe s'ouvre en menu déroulant (`DropdownMenu`) listant ses sous-menus.
+- Le libellé du groupe affiche l'onglet actif en surbrillance (ex. « Logistique & Flux · Dépotages ») pour ne pas perdre le repère de position.
+- Un groupe entièrement vide pour le rôle courant (ex. « Administration » pour un opérateur) est masqué — aucune régression de sécurité.
+- L'état `activeTab` et tout le contenu (`TabsContent`) restent identiques : seule la navigation change, pas les vues ni la logique métier.
+- Responsive : sur mobile la barre reste compacte (4 boutons au lieu de 11).
+
+## Détails techniques
+
+Fichier concerné : `src/pages/Index.tsx` uniquement.
+
+1. Ajouter une structure de configuration des groupes :
+   ```ts
+   const TAB_GROUPS = [
+     { id: "suivi", label: "Suivi & Analyse", icon: BarChart3, tabs: ["ventes","stock","historique"] },
+     { id: "logistique", label: "Logistique & Flux", icon: Truck, tabs: ["commandes","approvisionnements","depotage","camions"] },
+     { id: "config", label: "Configuration", icon: Settings2, tabs: ["stations","perequation"] },
+     { id: "admin", label: "Administration", icon: ShieldCheck, tabs: ["exercices","droits"] },
+   ];
+   ```
+   avec un mapping `TAB_META` (label + icône par onglet), réutilisant les libellés/icônes déjà présents dans les `TabsTrigger`.
+2. Conserver `TAB_PERMISSIONS` et `canAccessTab` inchangés.
+3. Remplacer le bloc `TabsList` par une rangée de `DropdownMenu` (composant shadcn déjà présent), un par groupe. Filtrer les onglets de chaque groupe via `canAccessTab`; masquer le groupe si la liste résultante est vide.
+4. Garder `<Tabs value={activeTab} onValueChange={setActiveTab}>` comme conteneur (les `TabsContent` ne bougent pas). Les items du menu appellent `setActiveTab(tab)`.
+5. Mettre en surbrillance le bouton du groupe contenant `activeTab`.
+
+Aucune modification de base de données, de hook ou de logique métier.
+
+## Hors scope
+
+- Pas de changement des permissions ni des vues.
+- Pas de passage à une sidebar (possible évolution future si souhaité).
