@@ -494,6 +494,48 @@ export type Database = {
         }
         Relationships: []
       }
+      price_structures: {
+        Row: {
+          country: string
+          created_at: string
+          effective_date: string
+          elements: Json
+          gasoil_price: number
+          id: string
+          is_active: boolean
+          label: string | null
+          super_price: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          country?: string
+          created_at?: string
+          effective_date: string
+          elements?: Json
+          gasoil_price?: number
+          id?: string
+          is_active?: boolean
+          label?: string | null
+          super_price?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          country?: string
+          created_at?: string
+          effective_date?: string
+          elements?: Json
+          gasoil_price?: number
+          id?: string
+          is_active?: boolean
+          label?: string | null
+          super_price?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
