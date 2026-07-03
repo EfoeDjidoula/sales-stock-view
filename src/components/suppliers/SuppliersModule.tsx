@@ -341,9 +341,12 @@ export const SuppliersModule = () => {
       <AlertDialog open={!!deleting} onOpenChange={(open) => !open && setDeleting(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Supprimer le fournisseur</AlertDialogTitle>
+            <AlertDialogTitle className="flex items-center gap-2 text-destructive">
+              <AlertTriangle className="w-5 h-5" />
+              Supprimer le fournisseur
+            </AlertDialogTitle>
             <AlertDialogDescription>
-              Êtes-vous sûr de vouloir supprimer le fournisseur <strong>{deleting?.name}</strong> ? Cette action est irréversible.
+              Êtes-vous sûr de vouloir supprimer définitivement le fournisseur <strong>{deleting?.name}</strong> ? Cette action est irréversible et les données associées ne pourront pas être récupérées.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
