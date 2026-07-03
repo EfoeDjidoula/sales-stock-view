@@ -111,7 +111,7 @@ const TAB_GROUPS: {
 }[] = [
   { id: "suivi", label: "Suivi & Analyse", icon: BarChart3, tabs: ["ventes", "stock", "historique"] },
   { id: "logistique", label: "Logistique & Flux", icon: Truck, tabs: ["commandes", "approvisionnements", "depotage", "camions"] },
-  { id: "config", label: "Configuration", icon: Settings2, tabs: ["stations", "perequation"] },
+  { id: "config", label: "Configuration", icon: Settings2, tabs: ["stations", "perequation", "structure_prix"] },
   { id: "tiers", label: "Tiers", icon: Contact, tabs: ["clients", "fournisseurs"] },
   { id: "admin", label: "Administration", icon: ShieldCheck, tabs: ["exercices", "droits"] },
 ];
