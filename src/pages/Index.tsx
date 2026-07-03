@@ -78,6 +78,7 @@ const TAB_PERMISSIONS: Record<string, AppRole[]> = {
   camions: ["admin", "manager", "operator"],
   clients: ["admin", "manager", "operator"],
   fournisseurs: ["admin", "manager", "operator"],
+  structure_prix: ["admin", "manager"],
 
   exercices: ["admin"],
   droits: ["admin"],
@@ -94,6 +95,7 @@ const TAB_META: Record<string, { label: string; icon: typeof TrendingUp }> = {
   camions: { label: "Camions", icon: Truck },
   stations: { label: "Stations", icon: LayoutDashboard },
   perequation: { label: "Péréquation", icon: Coins },
+  structure_prix: { label: "Structure de prix", icon: Fuel },
   clients: { label: "Clients", icon: Users },
   fournisseurs: { label: "Fournisseurs", icon: Building2 },
   exercices: { label: "Exercices", icon: BookOpen },
