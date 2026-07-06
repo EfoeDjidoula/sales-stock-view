@@ -64,6 +64,7 @@ const AppRoutes = () => {
           </ProtectedRoute>
         }
       />
+      <Route path="/.lovable/oauth/consent" element={<OAuthConsent />} />
       {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
       <Route path="*" element={<NotFound />} />
     </Routes>
