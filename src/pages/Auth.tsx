@@ -16,6 +16,12 @@ import { Fuel, LogIn, Loader2 } from "lucide-react";
 
 const Auth = () => {
   const navigate = useNavigate();
+  const [params] = useSearchParams();
+  const nextParam = params.get("next");
+  const redirectTo =
+    nextParam && nextParam.startsWith("/") && !nextParam.startsWith("//")
+      ? nextParam
+      : "/";
   const { signIn } = useAuth();
   const [isLoading, setIsLoading] = useState(false);
   const [loginEmail, setLoginEmail] = useState("");
