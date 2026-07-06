@@ -39,7 +39,7 @@ const Auth = () => {
       });
     } else {
       toast.success("Connexion réussie");
-      navigate("/");
+      navigate(redirectTo);
     }
     
     setIsLoading(false);
