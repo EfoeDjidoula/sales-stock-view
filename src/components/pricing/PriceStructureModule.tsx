@@ -345,6 +345,38 @@ export const PriceStructureModule = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Activate / deactivate confirmation */}
+      <AlertDialog open={!!toToggle} onOpenChange={(o) => !o && setToToggle(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <Power className="w-5 h-5 text-primary" />
+              {toToggle?.is_active ? "Désactiver la structure" : "Activer la structure"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {toToggle?.is_active
+                ? `Voulez-vous désactiver la structure du ${
+                    toToggle && formatDateFr(toToggle.effective_date)
+                  } ? Elle ne sera plus utilisée pour le calcul des prix.`
+                : `Voulez-vous activer la structure du ${
+                    toToggle && formatDateFr(toToggle.effective_date)
+                  } ? Une seule structure peut être active par période.`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (toToggle) toggleActive(toToggle.id, !toToggle.is_active);
+                setToToggle(null);
+              }}
+            >
+              Confirmer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
