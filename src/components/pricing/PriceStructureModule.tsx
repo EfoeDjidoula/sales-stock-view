@@ -307,6 +307,14 @@ export const PriceStructureModule = () => {
               </Table>
             </ScrollArea>
           )}
+          {detail && (
+            <div className="flex justify-end">
+              <Button variant="outline" className="gap-2" onClick={() => exportPriceStructurePdf(detail)}>
+                <FileDown className="w-4 h-4" />
+                Exporter en PDF
+              </Button>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
 
