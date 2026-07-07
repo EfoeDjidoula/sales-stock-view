@@ -46,7 +46,10 @@ import {
   AlertTriangle,
   Eye,
   CheckCircle2,
+  FileDown,
+  Power,
 } from "lucide-react";
+import { exportPriceStructurePdf } from "@/lib/priceStructurePdf";
 
 const formatFcfa = (n: number | null) =>
   n == null ? "-" : n.toLocaleString("fr-FR", { minimumFractionDigits: 0, maximumFractionDigits: 3 }) + " ";
@@ -71,6 +74,7 @@ export const PriceStructureModule = () => {
 
   const [detail, setDetail] = useState<PriceStructure | null>(null);
   const [toDelete, setToDelete] = useState<PriceStructure | null>(null);
+  const [toToggle, setToToggle] = useState<PriceStructure | null>(null);
 
   const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -171,7 +175,7 @@ export const PriceStructureModule = () => {
                     <TableCell className="text-right font-mono">{formatFcfa(s.super_price)}</TableCell>
                     <TableCell className="text-right font-mono">{formatFcfa(s.gasoil_price)}</TableCell>
                     <TableCell>
-                      <button onClick={() => toggleActive(s.id, !s.is_active)}>
+                      <button onClick={() => setToToggle(s)}>
                         <Badge variant={s.is_active ? "default" : "secondary"} className="cursor-pointer">
                           {s.is_active ? "Active" : "Inactive"}
                         </Badge>
@@ -181,6 +185,14 @@ export const PriceStructureModule = () => {
                       <div className="flex justify-end gap-1">
                         <Button variant="ghost" size="icon" onClick={() => setDetail(s)}>
                           <Eye className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          title="Exporter en PDF"
+                          onClick={() => exportPriceStructurePdf(s)}
+                        >
+                          <FileDown className="w-4 h-4" />
                         </Button>
                         <Button
                           variant="ghost"
@@ -295,6 +307,14 @@ export const PriceStructureModule = () => {
               </Table>
             </ScrollArea>
           )}
+          {detail && (
+            <div className="flex justify-end">
+              <Button variant="outline" className="gap-2" onClick={() => exportPriceStructurePdf(detail)}>
+                <FileDown className="w-4 h-4" />
+                Exporter en PDF
+              </Button>
+            </div>
+          )}
         </DialogContent>
       </Dialog>
 
@@ -321,6 +341,38 @@ export const PriceStructureModule = () => {
               }}
             >
               Supprimer
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Activate / deactivate confirmation */}
+      <AlertDialog open={!!toToggle} onOpenChange={(o) => !o && setToToggle(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle className="flex items-center gap-2">
+              <Power className="w-5 h-5 text-primary" />
+              {toToggle?.is_active ? "Désactiver la structure" : "Activer la structure"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {toToggle?.is_active
+                ? `Voulez-vous désactiver la structure du ${
+                    toToggle && formatDateFr(toToggle.effective_date)
+                  } ? Elle ne sera plus utilisée pour le calcul des prix.`
+                : `Voulez-vous activer la structure du ${
+                    toToggle && formatDateFr(toToggle.effective_date)
+                  } ? Une seule structure peut être active par période.`}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Annuler</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (toToggle) toggleActive(toToggle.id, !toToggle.is_active);
+                setToToggle(null);
+              }}
+            >
+              Confirmer
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
