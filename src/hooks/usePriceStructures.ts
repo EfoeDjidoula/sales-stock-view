@@ -194,12 +194,36 @@ export const usePriceStructures = () => {
 
   const toggleActive = async (id: string, is_active: boolean) => {
     try {
+      // Prevent activating a duplicate for the same period
+      if (is_active) {
+        const target = structures.find((s) => s.id === id);
+        const duplicate =
+          target &&
+          structures.find(
+            (s) =>
+              s.id !== id &&
+              s.is_active &&
+              s.country === target.country &&
+              s.effective_date === target.effective_date
+          );
+        if (duplicate) {
+          toast.error("Activation impossible", {
+            description: `Une structure est déjà active pour la période du ${new Date(
+              target!.effective_date + "T00:00:00"
+            ).toLocaleDateString("fr-FR")}.`,
+          });
+          return false;
+        }
+      }
       const { error } = await supabase.from("price_structures").update({ is_active }).eq("id", id);
       if (error) throw error;
+      toast.success(is_active ? "Structure activée" : "Structure désactivée");
       await fetchStructures();
+      return true;
     } catch (error: any) {
       toast.error(error.message || "Erreur lors de la mise à jour");
       console.error(error);
+      return false;
     }
   };
 
