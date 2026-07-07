@@ -74,6 +74,7 @@ export const PriceStructureModule = () => {
 
   const [detail, setDetail] = useState<PriceStructure | null>(null);
   const [toDelete, setToDelete] = useState<PriceStructure | null>(null);
+  const [toToggle, setToToggle] = useState<PriceStructure | null>(null);
 
   const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
