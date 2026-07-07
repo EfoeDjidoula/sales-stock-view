@@ -175,7 +175,7 @@ export const PriceStructureModule = () => {
                     <TableCell className="text-right font-mono">{formatFcfa(s.super_price)}</TableCell>
                     <TableCell className="text-right font-mono">{formatFcfa(s.gasoil_price)}</TableCell>
                     <TableCell>
-                      <button onClick={() => toggleActive(s.id, !s.is_active)}>
+                      <button onClick={() => setToToggle(s)}>
                         <Badge variant={s.is_active ? "default" : "secondary"} className="cursor-pointer">
                           {s.is_active ? "Active" : "Inactive"}
                         </Badge>
@@ -185,6 +185,14 @@ export const PriceStructureModule = () => {
                       <div className="flex justify-end gap-1">
                         <Button variant="ghost" size="icon" onClick={() => setDetail(s)}>
                           <Eye className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          title="Exporter en PDF"
+                          onClick={() => exportPriceStructurePdf(s)}
+                        >
+                          <FileDown className="w-4 h-4" />
                         </Button>
                         <Button
                           variant="ghost"
