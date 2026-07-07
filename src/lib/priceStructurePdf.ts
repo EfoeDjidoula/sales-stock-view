@@ -4,6 +4,10 @@ import type { PriceStructure } from "@/hooks/usePriceStructures";
 const primaryColor: [number, number, number] = [245, 158, 11];
 const textColor: [number, number, number] = [31, 41, 55];
 const mutedColor: [number, number, number] = [107, 114, 128];
+const headerBg: [number, number, number] = [31, 41, 55];
+const stripeBg: [number, number, number] = [249, 250, 251];
+const majorBg: [number, number, number] = [255, 237, 213]; // amber-100
+const totalBg: [number, number, number] = [254, 215, 170]; // amber-200
 
 const fmt = (n: number | null) =>
   n == null
@@ -16,6 +20,17 @@ const dateFr = (d: string) =>
     month: "long",
     year: "numeric",
   });
+
+// Keywords that identify "grandes lignes" (major/subtotal/total rows) to highlight
+const MAJOR_KEYWORDS = ["TOTAL", "SOUS-TOTAL", "SOUS TOTAL", "PRIX", "CESSION", "MARGE", "STRUCTURE"];
+const TOTAL_KEYWORDS = ["PRIX OFFICIEL", "PRIX DE VENTE", "TOTAL PRIX", "PRIX CESSION"];
+
+const rowStyle = (label: string): "total" | "major" | "normal" => {
+  const up = label.toUpperCase();
+  if (TOTAL_KEYWORDS.some((k) => up.includes(k))) return "total";
+  if (MAJOR_KEYWORDS.some((k) => up.includes(k))) return "major";
+  return "normal";
+};
 
 export const exportPriceStructurePdf = (s: PriceStructure) => {
   const doc = new jsPDF();
@@ -56,35 +71,65 @@ export const exportPriceStructurePdf = (s: PriceStructure) => {
   doc.text(`Prix Gasoil : ${fmt(s.gasoil_price)} FCFA`, pageWidth / 2 + 4, y + 12);
   y += 32;
 
-  // Table header
-  const col1 = 20;
-  const col2 = pageWidth - 90;
-  const col3 = pageWidth - 20;
-  doc.setFontSize(10);
-  doc.setFont("helvetica", "bold");
-  doc.setTextColor(...textColor);
-  doc.text("Élément", col1, y);
-  doc.text("Super", col2, y, { align: "right" });
-  doc.text("Gasoil", col3, y, { align: "right" });
-  y += 3;
-  doc.setDrawColor(200, 200, 200);
-  doc.line(20, y, pageWidth - 20, y);
-  y += 6;
+  // Table layout
+  const marginX = 20;
+  const tableW = pageWidth - marginX * 2;
+  const rowH = 9;
+  const colSuperX = pageWidth - 90;
+  const colGasoilX = pageWidth - marginX;
+  const labelX = marginX + 4;
 
-  doc.setFont("helvetica", "normal");
+  const drawTableHeader = () => {
+    doc.setFillColor(...headerBg);
+    doc.rect(marginX, y, tableW, rowH, "F");
+    doc.setTextColor(255, 255, 255);
+    doc.setFontSize(10);
+    doc.setFont("helvetica", "bold");
+    doc.text("Élément", labelX, y + 6);
+    doc.text("Super", colSuperX, y + 6, { align: "right" });
+    doc.text("Gasoil", colGasoilX - 4, y + 6, { align: "right" });
+    y += rowH;
+  };
+
+  drawTableHeader();
+
   doc.setFontSize(9);
-  for (const el of s.elements) {
+  s.elements.forEach((el, index) => {
     if (y > pageHeight - 20) {
       doc.addPage();
       y = 20;
+      drawTableHeader();
     }
+
+    const style = rowStyle(el.label);
+
+    // Row background
+    if (style === "total") {
+      doc.setFillColor(...totalBg);
+      doc.rect(marginX, y, tableW, rowH, "F");
+    } else if (style === "major") {
+      doc.setFillColor(...majorBg);
+      doc.rect(marginX, y, tableW, rowH, "F");
+    } else if (index % 2 === 0) {
+      doc.setFillColor(...stripeBg);
+      doc.rect(marginX, y, tableW, rowH, "F");
+    }
+
     doc.setTextColor(...textColor);
-    const label = doc.splitTextToSize(el.label, col2 - col1 - 25) as string[];
-    doc.text(label[0], col1, y);
-    doc.text(fmt(el.super), col2, y, { align: "right" });
-    doc.text(fmt(el.gasoil), col3, y, { align: "right" });
-    y += 6;
-  }
+    doc.setFont("helvetica", style === "normal" ? "normal" : "bold");
+    const label = doc.splitTextToSize(el.label, colSuperX - labelX - 25) as string[];
+    doc.text(label[0], labelX, y + 6);
+    doc.text(fmt(el.super), colSuperX, y + 6, { align: "right" });
+    doc.text(fmt(el.gasoil), colGasoilX - 4, y + 6, { align: "right" });
+
+    // Row separator
+    doc.setDrawColor(229, 231, 235);
+    doc.line(marginX, y + rowH, marginX + tableW, y + rowH);
+    y += rowH;
+  });
+
+  // Outer table border
+  doc.setDrawColor(...mutedColor);
 
   const safe = (s.label || `structure_${s.country}_${s.effective_date}`)
     .replace(/[^a-z0-9]+/gi, "_")
