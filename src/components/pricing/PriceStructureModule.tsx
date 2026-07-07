@@ -46,7 +46,10 @@ import {
   AlertTriangle,
   Eye,
   CheckCircle2,
+  FileDown,
+  Power,
 } from "lucide-react";
+import { exportPriceStructurePdf } from "@/lib/priceStructurePdf";
 
 const formatFcfa = (n: number | null) =>
   n == null ? "-" : n.toLocaleString("fr-FR", { minimumFractionDigits: 0, maximumFractionDigits: 3 }) + " ";
