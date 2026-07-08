@@ -98,6 +98,7 @@ const TAB_META: Record<string, { label: string; icon: typeof TrendingUp }> = {
   stations: { label: "Stations", icon: LayoutDashboard },
   perequation: { label: "Péréquation", icon: Coins },
   structure_prix: { label: "Structure de prix", icon: Fuel },
+  proforma: { label: "Proforma", icon: FileText },
   clients: { label: "Clients", icon: Users },
   fournisseurs: { label: "Fournisseurs", icon: Building2 },
   exercices: { label: "Exercices", icon: BookOpen },
