@@ -14,12 +14,16 @@ const fmt = (n: number | null) =>
     ? "-"
     : n.toLocaleString("fr-FR", { minimumFractionDigits: 0, maximumFractionDigits: 3 });
 
-const dateFr = (d: string) =>
-  new Date(d + "T00:00:00").toLocaleDateString("fr-FR", {
+const dateFr = (d: string) => {
+  // Date d'application = J+1 par rapport à la date effective enregistrée
+  const dt = new Date(d + "T00:00:00");
+  dt.setDate(dt.getDate() + 1);
+  return dt.toLocaleDateString("fr-FR", {
     day: "2-digit",
     month: "long",
     year: "numeric",
   });
+};
 
 // Keywords that identify "grandes lignes" (major/subtotal/total rows) to highlight
 const MAJOR_KEYWORDS = ["TOTAL", "SOUS-TOTAL", "SOUS TOTAL", "PRIX", "CESSION", "MARGE", "STRUCTURE"];
