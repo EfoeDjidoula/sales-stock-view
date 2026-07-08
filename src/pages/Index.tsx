@@ -475,6 +475,16 @@ const Index = () => {
               <AccessDenied onGoBack={() => setActiveTab("ventes")} />
             )}
           </TabsContent>
+
+          {/* Proforma Tab */}
+          <TabsContent value="proforma" className="animate-fade-in">
+            {canAccessTab("proforma") ? (
+              <ProformaModule />
+            ) : (
+              <AccessDenied onGoBack={() => setActiveTab("ventes")} />
+            )}
+          </TabsContent>
+
           {/* Exercices Tab */}
           <TabsContent value="exercices" className="animate-fade-in">
             {canAccessTab("exercices") ? (
