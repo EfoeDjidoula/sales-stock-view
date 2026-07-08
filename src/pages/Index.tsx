@@ -50,6 +50,7 @@ import {
 import { ClientsModule } from "@/components/clients/ClientsModule";
 import { SuppliersModule } from "@/components/suppliers/SuppliersModule";
 import { PriceStructureModule } from "@/components/pricing/PriceStructureModule";
+import { ProformaModule } from "@/components/proforma/ProformaModule";
 import { Link } from "react-router-dom";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import {
