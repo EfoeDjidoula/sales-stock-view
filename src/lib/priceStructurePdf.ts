@@ -14,12 +14,16 @@ const fmt = (n: number | null) =>
     ? "-"
     : n.toLocaleString("fr-FR", { minimumFractionDigits: 0, maximumFractionDigits: 3 });
 
-const dateFr = (d: string) =>
-  new Date(d + "T00:00:00").toLocaleDateString("fr-FR", {
+const dateFr = (d: string) => {
+  // Date d'application = J+1 par rapport à la date effective enregistrée
+  const dt = new Date(d + "T00:00:00");
+  dt.setDate(dt.getDate() + 1);
+  return dt.toLocaleDateString("fr-FR", {
     day: "2-digit",
     month: "long",
     year: "numeric",
   });
+};
 
 // Keywords that identify "grandes lignes" (major/subtotal/total rows) to highlight
 const MAJOR_KEYWORDS = ["TOTAL", "SOUS-TOTAL", "SOUS TOTAL", "PRIX", "CESSION", "MARGE", "STRUCTURE"];
@@ -71,36 +75,37 @@ export const exportPriceStructurePdf = (s: PriceStructure) => {
   doc.text(`Prix Gasoil : ${fmt(s.gasoil_price)} FCFA`, pageWidth / 2 + 4, y + 12);
   y += 32;
 
-  // Table layout
+  // Table layout — dynamic row height so everything fits on a single page
   const marginX = 20;
+  const bottomMargin = 14;
   const tableW = pageWidth - marginX * 2;
-  const rowH = 9;
   const colSuperX = pageWidth - 90;
   const colGasoilX = pageWidth - marginX;
   const labelX = marginX + 4;
+
+  // Number of rows = header + all elements
+  const totalRows = s.elements.length + 1;
+  const available = pageHeight - bottomMargin - y;
+  const rowH = Math.max(4, Math.min(9, available / totalRows));
+  const fontSize = Math.max(6, Math.min(9, rowH - 2));
+  const textOffset = rowH / 2 + fontSize * 0.35;
 
   const drawTableHeader = () => {
     doc.setFillColor(...headerBg);
     doc.rect(marginX, y, tableW, rowH, "F");
     doc.setTextColor(255, 255, 255);
-    doc.setFontSize(10);
+    doc.setFontSize(Math.min(10, fontSize + 1));
     doc.setFont("helvetica", "bold");
-    doc.text("Élément", labelX, y + 6);
-    doc.text("Super", colSuperX, y + 6, { align: "right" });
-    doc.text("Gasoil", colGasoilX - 4, y + 6, { align: "right" });
+    doc.text("Élément", labelX, y + textOffset);
+    doc.text("Super", colSuperX, y + textOffset, { align: "right" });
+    doc.text("Gasoil", colGasoilX - 4, y + textOffset, { align: "right" });
     y += rowH;
   };
 
   drawTableHeader();
 
-  doc.setFontSize(9);
+  doc.setFontSize(fontSize);
   s.elements.forEach((el, index) => {
-    if (y > pageHeight - 20) {
-      doc.addPage();
-      y = 20;
-      drawTableHeader();
-    }
-
     const style = rowStyle(el.label);
 
     // Row background
@@ -118,9 +123,9 @@ export const exportPriceStructurePdf = (s: PriceStructure) => {
     doc.setTextColor(...textColor);
     doc.setFont("helvetica", style === "normal" ? "normal" : "bold");
     const label = doc.splitTextToSize(el.label, colSuperX - labelX - 25) as string[];
-    doc.text(label[0], labelX, y + 6);
-    doc.text(fmt(el.super), colSuperX, y + 6, { align: "right" });
-    doc.text(fmt(el.gasoil), colGasoilX - 4, y + 6, { align: "right" });
+    doc.text(label[0], labelX, y + textOffset);
+    doc.text(fmt(el.super), colSuperX, y + textOffset, { align: "right" });
+    doc.text(fmt(el.gasoil), colGasoilX - 4, y + textOffset, { align: "right" });
 
     // Row separator
     doc.setDrawColor(229, 231, 235);
