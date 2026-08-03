@@ -59,6 +59,54 @@ export type Database = {
         }
         Relationships: []
       }
+      countries: {
+        Row: {
+          code: string
+          created_at: string
+          currency_code: string
+          currency_decimals: number
+          currency_symbol: string
+          date_format: string
+          fuel_products: Json
+          id: string
+          is_active: boolean
+          locale: string
+          name: string
+          updated_at: string
+          vat_rate: number
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          currency_code?: string
+          currency_decimals?: number
+          currency_symbol?: string
+          date_format?: string
+          fuel_products?: Json
+          id?: string
+          is_active?: boolean
+          locale?: string
+          name: string
+          updated_at?: string
+          vat_rate?: number
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          currency_code?: string
+          currency_decimals?: number
+          currency_symbol?: string
+          date_format?: string
+          fuel_products?: Json
+          id?: string
+          is_active?: boolean
+          locale?: string
+          name?: string
+          updated_at?: string
+          vat_rate?: number
+        }
+        Relationships: []
+      }
       depotages: {
         Row: {
           created_at: string
@@ -885,6 +933,196 @@ export type Database = {
           },
         ]
       }
+      tenant_branding: {
+        Row: {
+          accent_color: string
+          address: string | null
+          app_description: string | null
+          app_title: string | null
+          contact_email: string | null
+          contact_phone: string | null
+          created_at: string
+          display_name: string
+          favicon_url: string | null
+          footer_note: string | null
+          id: string
+          legal_name: string | null
+          logo_url: string | null
+          primary_color: string
+          tax_id: string | null
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          accent_color?: string
+          address?: string | null
+          app_description?: string | null
+          app_title?: string | null
+          contact_email?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          display_name: string
+          favicon_url?: string | null
+          footer_note?: string | null
+          id?: string
+          legal_name?: string | null
+          logo_url?: string | null
+          primary_color?: string
+          tax_id?: string | null
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          accent_color?: string
+          address?: string | null
+          app_description?: string | null
+          app_title?: string | null
+          contact_email?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          display_name?: string
+          favicon_url?: string | null
+          footer_note?: string | null
+          id?: string
+          legal_name?: string | null
+          logo_url?: string | null
+          primary_color?: string
+          tax_id?: string | null
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_branding_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: true
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tenant_countries: {
+        Row: {
+          country_id: string
+          created_at: string
+          id: string
+          is_active: boolean
+          is_default: boolean
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          country_id: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          is_default?: boolean
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          country_id?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          is_default?: boolean
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_countries_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "countries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tenant_countries_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tenant_modules: {
+        Row: {
+          allowed_roles: Database["public"]["Enums"]["app_role"][]
+          created_at: string
+          id: string
+          is_enabled: boolean
+          module_key: string
+          position: number
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          allowed_roles?: Database["public"]["Enums"]["app_role"][]
+          created_at?: string
+          id?: string
+          is_enabled?: boolean
+          module_key: string
+          position?: number
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          allowed_roles?: Database["public"]["Enums"]["app_role"][]
+          created_at?: string
+          id?: string
+          is_enabled?: boolean
+          module_key?: string
+          position?: number
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "tenant_modules_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      tenants: {
+        Row: {
+          created_at: string
+          id: string
+          legal_name: string | null
+          name: string
+          plan: string
+          slug: string
+          status: string
+          trial_ends_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          legal_name?: string | null
+          name: string
+          plan?: string
+          slug: string
+          status?: string
+          trial_ends_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          legal_name?: string | null
+          name?: string
+          plan?: string
+          slug?: string
+          status?: string
+          trial_ends_at?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       trucks: {
         Row: {
           compartment_count: number
@@ -923,6 +1161,45 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      user_country_access: {
+        Row: {
+          country_id: string
+          created_at: string
+          id: string
+          tenant_id: string
+          user_id: string
+        }
+        Insert: {
+          country_id: string
+          created_at?: string
+          id?: string
+          tenant_id: string
+          user_id: string
+        }
+        Update: {
+          country_id?: string
+          created_at?: string
+          id?: string
+          tenant_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_country_access_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "countries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "user_country_access_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       user_roles: {
         Row: {
