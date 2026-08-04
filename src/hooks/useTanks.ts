@@ -16,11 +16,13 @@ export interface Tank {
 export const useTanks = (stationId?: string) => {
   const [tanks, setTanks] = useState<Tank[]>([]);
   const [loading, setLoading] = useState(true);
+  const { tenantId } = useTenant();
 
   const fetchTanks = async () => {
+    if (!tenantId) return;
     setLoading(true);
     try {
-      let q = supabase.from("tanks").select("*").order("product_type").order("name");
+      let q = supabase.from("tanks").select("*").eq("tenant_id", tenantId).order("product_type").order("name");
       if (stationId) q = q.eq("station_id", stationId);
       const { data, error } = await q;
       if (error) throw error;
@@ -35,7 +37,7 @@ export const useTanks = (stationId?: string) => {
   useEffect(() => {
     fetchTanks();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [stationId]);
+  }, [stationId, tenantId]);
 
   return { tanks, loading, refetch: fetchTanks };
 };
