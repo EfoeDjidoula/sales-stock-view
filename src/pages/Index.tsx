@@ -509,7 +509,17 @@ const Index = () => {
               <AccessDenied onGoBack={() => setActiveTab("ventes")} />
             )}
           </TabsContent>
+
+          {/* Paramètres client (tenant) Tab */}
+          <TabsContent value="societe" className="animate-fade-in">
+            {canAccessTab("societe") ? (
+              <TenantSettingsModule />
+            ) : (
+              <AccessDenied onGoBack={() => setActiveTab("ventes")} />
+            )}
+          </TabsContent>
         </Tabs>
+
       </main>
 
       {/* Footer */}
