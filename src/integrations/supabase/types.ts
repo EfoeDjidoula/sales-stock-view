@@ -1454,6 +1454,10 @@ export type Database = {
       }
     }
     Functions: {
+      can_access_tenant: {
+        Args: { _tenant_id: string; _user_id: string }
+        Returns: boolean
+      }
       can_write_station: {
         Args: { _station_id: string; _user_id: string }
         Returns: boolean
@@ -1462,6 +1466,7 @@ export type Database = {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]
       }
+      get_user_tenant: { Args: { _user_id: string }; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
