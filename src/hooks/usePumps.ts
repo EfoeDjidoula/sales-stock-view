@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useTenant } from "@/hooks/useTenant";
 
 export interface Pump {
   id: string;
@@ -15,11 +16,13 @@ export interface Pump {
 export const usePumps = (stationId?: string) => {
   const [pumps, setPumps] = useState<Pump[]>([]);
   const [loading, setLoading] = useState(true);
+  const { tenantId } = useTenant();
 
   const fetchPumps = async () => {
+    if (!tenantId) return;
     setLoading(true);
     try {
-      let q = supabase.from("pumps").select("*").order("position").order("name");
+      let q = supabase.from("pumps").select("*").eq("tenant_id", tenantId).order("position").order("name");
       if (stationId) q = q.eq("station_id", stationId);
       const { data, error } = await q;
       if (error) throw error;
@@ -34,7 +37,7 @@ export const usePumps = (stationId?: string) => {
   useEffect(() => {
     fetchPumps();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [stationId]);
+  }, [stationId, tenantId]);
 
   return { pumps, loading, refetch: fetchPumps };
 };

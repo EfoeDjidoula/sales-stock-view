@@ -5,6 +5,7 @@ import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useTenant } from "@/hooks/useTenant";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface StockModuleProps {
@@ -13,6 +14,7 @@ interface StockModuleProps {
 
 export const StockModule = ({ stationId }: StockModuleProps) => {
   const { user } = useAuth();
+  const { tenantId } = useTenant();
   const queryClient = useQueryClient();
 
   // Mise à jour en temps réel : rafraîchit les jauges de stock et synchronise
@@ -38,12 +40,13 @@ export const StockModule = ({ stationId }: StockModuleProps) => {
 
   // Fetch latest entry per station for jauge data
   const { data: latestEntries, isLoading, isFetching, isError, error } = useQuery({
-    queryKey: ["stock-jauges", stationId],
+    queryKey: ["stock-jauges", stationId, tenantId],
     queryFn: async () => {
       // Get stations first
       const { data: stations } = await supabase
         .from("stations")
         .select("id, name, location")
+        .eq("tenant_id", tenantId!)
         .order("name");
 
       if (!stations) return [];
@@ -56,6 +59,7 @@ export const StockModule = ({ stationId }: StockModuleProps) => {
       let tanksQuery = supabase
         .from("tanks")
         .select("id, station_id, name, product_type, capacity_liters")
+        .eq("tenant_id", tenantId!)
         .order("product_type")
         .order("name");
       if (stationId) tanksQuery = tanksQuery.eq("station_id", stationId);
@@ -76,6 +80,7 @@ export const StockModule = ({ stationId }: StockModuleProps) => {
         const { data: entry } = await supabase
           .from("index_entries")
           .select("*")
+          .eq("tenant_id", tenantId!)
           .eq("station_id", station.id)
           .or("super1_jauge.gt.0,super2_jauge.gt.0,gasoil1_jauge.gt.0,gasoil2_jauge.gt.0")
           .order("entry_date", { ascending: false })
