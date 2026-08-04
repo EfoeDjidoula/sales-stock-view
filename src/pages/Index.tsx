@@ -3,6 +3,9 @@ import { formatCurrency } from "@/data/stationsData";
 import { useUserRoles, AppRole } from "@/hooks/useUserRoles";
 import { useDashboardData, Period } from "@/hooks/useDashboardData";
 import { ProfileMenu } from "@/components/ProfileMenu";
+import { TenantSelector } from "@/components/tenant/TenantSelector";
+import { TenantSettingsModule } from "@/components/tenant/TenantSettingsModule";
+import { useTenant } from "@/hooks/useTenant";
 import { SalesCard } from "@/components/dashboard/SalesCard";
 import { PeriodTabs } from "@/components/dashboard/PeriodTabs";
 import { SalesChart } from "@/components/dashboard/SalesChart";
@@ -84,6 +87,7 @@ const TAB_PERMISSIONS: Record<string, AppRole[]> = {
 
   exercices: ["admin"],
   droits: ["admin"],
+  societe: ["admin"],
 };
 
 // Metadata (label + icon) for each tab
@@ -103,6 +107,7 @@ const TAB_META: Record<string, { label: string; icon: typeof TrendingUp }> = {
   fournisseurs: { label: "Fournisseurs", icon: Building2 },
   exercices: { label: "Exercices", icon: BookOpen },
   droits: { label: "Gestion des droits", icon: Users },
+  societe: { label: "Paramètres client", icon: Building2 },
 };
 
 // Grouped navigation structure
@@ -116,7 +121,7 @@ const TAB_GROUPS: {
   { id: "logistique", label: "Logistique & Flux", icon: Truck, tabs: ["commandes", "approvisionnements", "depotage", "camions"] },
   { id: "config", label: "Configuration", icon: Settings2, tabs: ["stations", "perequation", "structure_prix", "proforma"] },
   { id: "tiers", label: "Tiers", icon: Contact, tabs: ["clients", "fournisseurs"] },
-  { id: "admin", label: "Administration", icon: ShieldCheck, tabs: ["exercices", "droits"] },
+  { id: "admin", label: "Administration", icon: ShieldCheck, tabs: ["exercices", "droits", "societe"] },
 ];
 
 
@@ -126,6 +131,7 @@ const Index = () => {
   const [period, setPeriod] = useState<Period>("day");
   const [isRefreshing, setIsRefreshing] = useState(false);
   const { currentUserRole, loading: roleLoading } = useUserRoles();
+  const { tenant } = useTenant();
   const queryClient = useQueryClient();
 
   const { totalSales, totalSuper, totalGasoil, salesByStation, chartData, chartRawEntries, stations, isLoading, isFetching } =
@@ -165,7 +171,7 @@ const Index = () => {
               </div>
               <div>
                 <h1 className="text-xl md:text-2xl font-display font-bold">
-                  YATT & CO ENERGY
+                  {tenant?.trade_name || tenant?.name || "YATT & CO ENERGY"}
                 </h1>
                 <p className="text-sm text-muted-foreground">
                   Tableau de bord - Gestion 2026
@@ -173,6 +179,7 @@ const Index = () => {
               </div>
             </div>
             <div className="flex flex-wrap items-center gap-3">
+              <TenantSelector />
               <ExcelImportDialog
                 trigger={
                   <Button variant="outline" className="gap-2">
