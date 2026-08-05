@@ -179,6 +179,18 @@ const Index = () => {
               </div>
             </div>
             <div className="flex flex-wrap items-center gap-3">
+              {isPlatformAdmin && (
+                <Button
+                  asChild
+                  variant="outline"
+                  className="gap-2 border-indigo-500/50 text-indigo-400 hover:text-indigo-300"
+                >
+                  <Link to="/lumatek">
+                    <ShieldAlert className="w-4 h-4" />
+                    LUMATEK SaaS
+                  </Link>
+                </Button>
+              )}
               <TenantSelector />
               <ExcelImportDialog
                 trigger={
