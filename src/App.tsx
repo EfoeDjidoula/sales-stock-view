@@ -10,6 +10,7 @@ import IndexEntry from "./pages/IndexEntry";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import OAuthConsent from "./pages/OAuthConsent";
+import LumatekAdmin from "./pages/LumatekAdmin";
 
 const queryClient = new QueryClient();
 
