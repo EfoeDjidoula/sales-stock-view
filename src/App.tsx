@@ -10,6 +10,7 @@ import IndexEntry from "./pages/IndexEntry";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 import OAuthConsent from "./pages/OAuthConsent";
+import LumatekAdmin from "./pages/LumatekAdmin";
 
 const queryClient = new QueryClient();
 
@@ -65,7 +66,16 @@ const AppRoutes = () => {
           </ProtectedRoute>
         }
       />
+      <Route
+        path="/lumatek"
+        element={
+          <ProtectedRoute>
+            <LumatekAdmin />
+          </ProtectedRoute>
+        }
+      />
       <Route path="/.lovable/oauth/consent" element={<OAuthConsent />} />
+
       {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
       <Route path="*" element={<NotFound />} />
     </Routes>

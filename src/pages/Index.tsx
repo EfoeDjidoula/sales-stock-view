@@ -6,6 +6,7 @@ import { ProfileMenu } from "@/components/ProfileMenu";
 import { TenantSelector } from "@/components/tenant/TenantSelector";
 import { TenantSettingsModule } from "@/components/tenant/TenantSettingsModule";
 import { useTenant } from "@/hooks/useTenant";
+import { usePlatformAdmin } from "@/hooks/usePlatformAdmin";
 import { SalesCard } from "@/components/dashboard/SalesCard";
 import { PeriodTabs } from "@/components/dashboard/PeriodTabs";
 import { SalesChart } from "@/components/dashboard/SalesChart";
@@ -46,6 +47,7 @@ import {
   BarChart3,
   Settings2,
   ShieldCheck,
+  ShieldAlert,
   ChevronDown,
   Building2,
   Contact,
@@ -131,6 +133,7 @@ const Index = () => {
   const [period, setPeriod] = useState<Period>("day");
   const [isRefreshing, setIsRefreshing] = useState(false);
   const { currentUserRole, loading: roleLoading } = useUserRoles();
+  const { isPlatformAdmin } = usePlatformAdmin();
   const { tenant } = useTenant();
   const queryClient = useQueryClient();
 
@@ -179,6 +182,18 @@ const Index = () => {
               </div>
             </div>
             <div className="flex flex-wrap items-center gap-3">
+              {isPlatformAdmin && (
+                <Button
+                  asChild
+                  variant="outline"
+                  className="gap-2 border-indigo-500/50 text-indigo-400 hover:text-indigo-300"
+                >
+                  <Link to="/lumatek">
+                    <ShieldAlert className="w-4 h-4" />
+                    LUMATEK SaaS
+                  </Link>
+                </Button>
+              )}
               <TenantSelector />
               <ExcelImportDialog
                 trigger={
