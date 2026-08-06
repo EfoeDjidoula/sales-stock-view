@@ -279,6 +279,14 @@ export const LumatekClients = () => {
         </DialogContent>
       </Dialog>
 
+      {/* Pays affectés au client */}
+      <LumatekClientCountries
+        tenantId={countriesId}
+        tenantName={tenants.find((t) => t.id === countriesId)?.trade_name}
+        open={!!countriesId}
+        onOpenChange={(o) => !o && setCountriesId(null)}
+      />
+
       {/* Confirmation de changement de statut */}
       <AlertDialog open={!!pending} onOpenChange={(o) => !o && setPending(null)}>
         <AlertDialogContent>
