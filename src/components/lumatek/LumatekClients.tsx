@@ -62,6 +62,8 @@ export const LumatekClients = () => {
   const [form, setForm] = useState<TenantInput>(emptyForm);
   const [viewId, setViewId] = useState<string | null>(null);
   const [pending, setPending] = useState<{ id: string; status: TenantStatus } | null>(null);
+  const [countriesId, setCountriesId] = useState<string | null>(null);
+
 
   const viewed = tenants.find((t) => t.id === viewId) || null;
 
