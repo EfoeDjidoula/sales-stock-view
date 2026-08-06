@@ -166,6 +166,10 @@ export const LumatekClients = () => {
                           <Button size="icon" variant="ghost" onClick={() => openEdit(t.id)} title="Modifier">
                             <Pencil className="h-4 w-4" />
                           </Button>
+                          <Button size="icon" variant="ghost" onClick={() => setCountriesId(t.id)} title="Pays">
+                            <Globe2 className="h-4 w-4 text-indigo-300" />
+                          </Button>
+
                           {t.status !== "active" ? (
                             <Button
                               size="icon"
