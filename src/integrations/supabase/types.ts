@@ -18,6 +18,7 @@ export type Database = {
         Row: {
           address: string | null
           contact_name: string | null
+          country_id: string | null
           created_at: string
           email: string | null
           id: string
@@ -33,6 +34,7 @@ export type Database = {
         Insert: {
           address?: string | null
           contact_name?: string | null
+          country_id?: string | null
           created_at?: string
           email?: string | null
           id?: string
@@ -48,6 +50,7 @@ export type Database = {
         Update: {
           address?: string | null
           contact_name?: string | null
+          country_id?: string | null
           created_at?: string
           email?: string | null
           id?: string
@@ -61,6 +64,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "clients_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "countries"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "clients_tenant_id_fkey"
             columns: ["tenant_id"]
@@ -78,11 +88,16 @@ export type Database = {
           currency_decimals: number
           currency_symbol: string
           date_format: string
+          default_currency: string
+          default_language: string
+          flag: string | null
           fuel_products: Json
           id: string
           is_active: boolean
+          iso_code: string
           locale: string
           name: string
+          timezone: string
           updated_at: string
           vat_rate: number
         }
@@ -93,11 +108,16 @@ export type Database = {
           currency_decimals?: number
           currency_symbol?: string
           date_format?: string
+          default_currency: string
+          default_language: string
+          flag?: string | null
           fuel_products?: Json
           id?: string
           is_active?: boolean
+          iso_code: string
           locale?: string
           name: string
+          timezone?: string
           updated_at?: string
           vat_rate?: number
         }
@@ -108,11 +128,16 @@ export type Database = {
           currency_decimals?: number
           currency_symbol?: string
           date_format?: string
+          default_currency?: string
+          default_language?: string
+          flag?: string | null
           fuel_products?: Json
           id?: string
           is_active?: boolean
+          iso_code?: string
           locale?: string
           name?: string
+          timezone?: string
           updated_at?: string
           vat_rate?: number
         }
@@ -120,6 +145,7 @@ export type Database = {
       }
       depotages: {
         Row: {
+          country_id: string | null
           created_at: string
           depotage_date: string
           depotage_ecart: number | null
@@ -146,6 +172,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          country_id?: string | null
           created_at?: string
           depotage_date?: string
           depotage_ecart?: number | null
@@ -172,6 +199,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          country_id?: string | null
           created_at?: string
           depotage_date?: string
           depotage_ecart?: number | null
@@ -199,6 +227,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "depotages_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "countries"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "depotages_station_id_fkey"
             columns: ["station_id"]
             isOneToOne: false
@@ -224,6 +259,7 @@ export type Database = {
       fiscal_years: {
         Row: {
           closed_at: string | null
+          country_id: string | null
           created_at: string
           created_by: string
           id: string
@@ -235,6 +271,7 @@ export type Database = {
         }
         Insert: {
           closed_at?: string | null
+          country_id?: string | null
           created_at?: string
           created_by: string
           id?: string
@@ -246,6 +283,7 @@ export type Database = {
         }
         Update: {
           closed_at?: string | null
+          country_id?: string | null
           created_at?: string
           created_by?: string
           id?: string
@@ -256,6 +294,13 @@ export type Database = {
           year?: number
         }
         Relationships: [
+          {
+            foreignKeyName: "fiscal_years_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "countries"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "fiscal_years_tenant_id_fkey"
             columns: ["tenant_id"]
@@ -271,6 +316,7 @@ export type Database = {
           bons_carburant_valeur: number
           bons_entreprise_nombre: number
           bons_entreprise_valeur: number
+          country_id: string | null
           created_at: string
           entry_date: string
           gasoil1_index_arrivee: number
@@ -306,6 +352,7 @@ export type Database = {
           bons_carburant_valeur?: number
           bons_entreprise_nombre?: number
           bons_entreprise_valeur?: number
+          country_id?: string | null
           created_at?: string
           entry_date: string
           gasoil1_index_arrivee?: number
@@ -341,6 +388,7 @@ export type Database = {
           bons_carburant_valeur?: number
           bons_entreprise_nombre?: number
           bons_entreprise_valeur?: number
+          country_id?: string | null
           created_at?: string
           entry_date?: string
           gasoil1_index_arrivee?: number
@@ -373,6 +421,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "index_entries_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "countries"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "index_entries_station_id_fkey"
             columns: ["station_id"]
             isOneToOne: false
@@ -392,6 +447,7 @@ export type Database = {
         Row: {
           amount_ht: number
           amount_ttc: number
+          country_id: string | null
           created_at: string
           id: string
           product_type: string
@@ -408,6 +464,7 @@ export type Database = {
         Insert: {
           amount_ht?: number
           amount_ttc?: number
+          country_id?: string | null
           created_at?: string
           id?: string
           product_type?: string
@@ -424,6 +481,7 @@ export type Database = {
         Update: {
           amount_ht?: number
           amount_ttc?: number
+          country_id?: string | null
           created_at?: string
           id?: string
           product_type?: string
@@ -438,6 +496,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "orders_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "countries"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "orders_station_id_fkey"
             columns: ["station_id"]
@@ -457,6 +522,7 @@ export type Database = {
       perequation_entries: {
         Row: {
           bl_number: string | null
+          country_id: string | null
           created_at: string
           delivery_date: string
           id: string
@@ -476,6 +542,7 @@ export type Database = {
         }
         Insert: {
           bl_number?: string | null
+          country_id?: string | null
           created_at?: string
           delivery_date?: string
           id?: string
@@ -495,6 +562,7 @@ export type Database = {
         }
         Update: {
           bl_number?: string | null
+          country_id?: string | null
           created_at?: string
           delivery_date?: string
           id?: string
@@ -513,6 +581,13 @@ export type Database = {
           zone_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "perequation_entries_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "countries"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "perequation_entries_supply_id_fkey"
             columns: ["supply_id"]
@@ -538,6 +613,7 @@ export type Database = {
       }
       perequation_rates: {
         Row: {
+          country_id: string | null
           created_at: string
           created_by: string
           effective_from: string
@@ -549,6 +625,7 @@ export type Database = {
           zone_id: string
         }
         Insert: {
+          country_id?: string | null
           created_at?: string
           created_by: string
           effective_from?: string
@@ -560,6 +637,7 @@ export type Database = {
           zone_id: string
         }
         Update: {
+          country_id?: string | null
           created_at?: string
           created_by?: string
           effective_from?: string
@@ -571,6 +649,13 @@ export type Database = {
           zone_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "perequation_rates_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "countries"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "perequation_rates_tenant_id_fkey"
             columns: ["tenant_id"]
@@ -589,6 +674,7 @@ export type Database = {
       }
       perequation_zones: {
         Row: {
+          country_id: string | null
           created_at: string
           created_by: string
           description: string | null
@@ -598,6 +684,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          country_id?: string | null
           created_at?: string
           created_by: string
           description?: string | null
@@ -607,6 +694,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          country_id?: string | null
           created_at?: string
           created_by?: string
           description?: string | null
@@ -616,6 +704,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "perequation_zones_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "countries"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "perequation_zones_tenant_id_fkey"
             columns: ["tenant_id"]
@@ -646,6 +741,7 @@ export type Database = {
       price_structures: {
         Row: {
           country: string
+          country_id: string | null
           created_at: string
           effective_date: string
           elements: Json
@@ -660,6 +756,7 @@ export type Database = {
         }
         Insert: {
           country?: string
+          country_id?: string | null
           created_at?: string
           effective_date: string
           elements?: Json
@@ -674,6 +771,7 @@ export type Database = {
         }
         Update: {
           country?: string
+          country_id?: string | null
           created_at?: string
           effective_date?: string
           elements?: Json
@@ -688,6 +786,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "price_structures_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "countries"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "price_structures_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
@@ -698,6 +803,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          country_id: string | null
           created_at: string
           full_name: string | null
           id: string
@@ -707,6 +813,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          country_id?: string | null
           created_at?: string
           full_name?: string | null
           id?: string
@@ -716,6 +823,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          country_id?: string | null
           created_at?: string
           full_name?: string | null
           id?: string
@@ -725,6 +833,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "profiles_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "countries"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "profiles_tenant_id_fkey"
             columns: ["tenant_id"]
@@ -736,6 +851,7 @@ export type Database = {
       }
       pump_index_entries: {
         Row: {
+          country_id: string | null
           created_at: string
           entry_date: string
           entry_id: string
@@ -752,6 +868,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          country_id?: string | null
           created_at?: string
           entry_date: string
           entry_id: string
@@ -768,6 +885,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          country_id?: string | null
           created_at?: string
           entry_date?: string
           entry_id?: string
@@ -784,6 +902,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "pump_index_entries_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "countries"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "pump_index_entries_entry_id_fkey"
             columns: ["entry_id"]
@@ -816,6 +941,7 @@ export type Database = {
       }
       pumps: {
         Row: {
+          country_id: string | null
           created_at: string
           id: string
           name: string
@@ -827,6 +953,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          country_id?: string | null
           created_at?: string
           id?: string
           name: string
@@ -838,6 +965,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          country_id?: string | null
           created_at?: string
           id?: string
           name?: string
@@ -849,6 +977,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "pumps_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "countries"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "pumps_station_id_fkey"
             columns: ["station_id"]
@@ -903,6 +1038,7 @@ export type Database = {
       }
       stations: {
         Row: {
+          country_id: string | null
           created_at: string
           id: string
           location: string
@@ -911,6 +1047,7 @@ export type Database = {
           zone_id: string | null
         }
         Insert: {
+          country_id?: string | null
           created_at?: string
           id?: string
           location: string
@@ -919,6 +1056,7 @@ export type Database = {
           zone_id?: string | null
         }
         Update: {
+          country_id?: string | null
           created_at?: string
           id?: string
           location?: string
@@ -927,6 +1065,13 @@ export type Database = {
           zone_id?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "stations_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "countries"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "stations_tenant_id_fkey"
             columns: ["tenant_id"]
@@ -947,6 +1092,7 @@ export type Database = {
         Row: {
           address: string | null
           contact_name: string | null
+          country_id: string | null
           created_at: string
           email: string | null
           id: string
@@ -963,6 +1109,7 @@ export type Database = {
         Insert: {
           address?: string | null
           contact_name?: string | null
+          country_id?: string | null
           created_at?: string
           email?: string | null
           id?: string
@@ -979,6 +1126,7 @@ export type Database = {
         Update: {
           address?: string | null
           contact_name?: string | null
+          country_id?: string | null
           created_at?: string
           email?: string | null
           id?: string
@@ -994,6 +1142,13 @@ export type Database = {
         }
         Relationships: [
           {
+            foreignKeyName: "suppliers_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "countries"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "suppliers_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
@@ -1004,6 +1159,7 @@ export type Database = {
       }
       supplies: {
         Row: {
+          country_id: string | null
           created_at: string
           id: string
           notes: string | null
@@ -1017,6 +1173,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          country_id?: string | null
           created_at?: string
           id?: string
           notes?: string | null
@@ -1030,6 +1187,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          country_id?: string | null
           created_at?: string
           id?: string
           notes?: string | null
@@ -1043,6 +1201,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "supplies_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "countries"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "supplies_order_id_fkey"
             columns: ["order_id"]
@@ -1069,6 +1234,7 @@ export type Database = {
       tanks: {
         Row: {
           capacity_liters: number
+          country_id: string | null
           created_at: string
           id: string
           name: string
@@ -1080,6 +1246,7 @@ export type Database = {
         }
         Insert: {
           capacity_liters?: number
+          country_id?: string | null
           created_at?: string
           id?: string
           name: string
@@ -1091,6 +1258,7 @@ export type Database = {
         }
         Update: {
           capacity_liters?: number
+          country_id?: string | null
           created_at?: string
           id?: string
           name?: string
@@ -1101,6 +1269,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "tanks_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "countries"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "tanks_station_id_fkey"
             columns: ["station_id"]
@@ -1187,30 +1362,45 @@ export type Database = {
       }
       tenant_countries: {
         Row: {
+          configuration: Json
           country_id: string
           created_at: string
+          currency: string | null
           id: string
           is_active: boolean
           is_default: boolean
+          language: string | null
+          status: string
           tenant_id: string
+          timezone: string | null
           updated_at: string
         }
         Insert: {
+          configuration?: Json
           country_id: string
           created_at?: string
+          currency?: string | null
           id?: string
           is_active?: boolean
           is_default?: boolean
+          language?: string | null
+          status?: string
           tenant_id: string
+          timezone?: string | null
           updated_at?: string
         }
         Update: {
+          configuration?: Json
           country_id?: string
           created_at?: string
+          currency?: string | null
           id?: string
           is_active?: boolean
           is_default?: boolean
+          language?: string | null
+          status?: string
           tenant_id?: string
+          timezone?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -1344,6 +1534,7 @@ export type Database = {
         Row: {
           compartment_count: number
           compartments: Json
+          country_id: string | null
           created_at: string
           driver_name: string
           id: string
@@ -1357,6 +1548,7 @@ export type Database = {
         Insert: {
           compartment_count?: number
           compartments?: Json
+          country_id?: string | null
           created_at?: string
           driver_name: string
           id?: string
@@ -1370,6 +1562,7 @@ export type Database = {
         Update: {
           compartment_count?: number
           compartments?: Json
+          country_id?: string | null
           created_at?: string
           driver_name?: string
           id?: string
@@ -1381,6 +1574,13 @@ export type Database = {
           user_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "trucks_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "countries"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "trucks_tenant_id_fkey"
             columns: ["tenant_id"]

@@ -32,7 +32,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useLumatekTenants, TenantStatus, TenantInput } from "@/hooks/useLumatekTenants";
-import { Plus, Pencil, Eye, PauseCircle, PlayCircle, Archive } from "lucide-react";
+import { LumatekClientCountries } from "./LumatekClientCountries";
+import { Plus, Pencil, Eye, PauseCircle, PlayCircle, Archive, Globe2 } from "lucide-react";
 
 const STATUS_META: Record<string, { label: string; className: string }> = {
   active: { label: "Actif", className: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30" },
@@ -61,6 +62,8 @@ export const LumatekClients = () => {
   const [form, setForm] = useState<TenantInput>(emptyForm);
   const [viewId, setViewId] = useState<string | null>(null);
   const [pending, setPending] = useState<{ id: string; status: TenantStatus } | null>(null);
+  const [countriesId, setCountriesId] = useState<string | null>(null);
+
 
   const viewed = tenants.find((t) => t.id === viewId) || null;
 
@@ -163,6 +166,10 @@ export const LumatekClients = () => {
                           <Button size="icon" variant="ghost" onClick={() => openEdit(t.id)} title="Modifier">
                             <Pencil className="h-4 w-4" />
                           </Button>
+                          <Button size="icon" variant="ghost" onClick={() => setCountriesId(t.id)} title="Pays">
+                            <Globe2 className="h-4 w-4 text-indigo-300" />
+                          </Button>
+
                           {t.status !== "active" ? (
                             <Button
                               size="icon"
@@ -271,6 +278,14 @@ export const LumatekClients = () => {
           )}
         </DialogContent>
       </Dialog>
+
+      {/* Pays affectés au client */}
+      <LumatekClientCountries
+        tenantId={countriesId}
+        tenantName={tenants.find((t) => t.id === countriesId)?.trade_name}
+        open={!!countriesId}
+        onOpenChange={(o) => !o && setCountriesId(null)}
+      />
 
       {/* Confirmation de changement de statut */}
       <AlertDialog open={!!pending} onOpenChange={(o) => !o && setPending(null)}>
