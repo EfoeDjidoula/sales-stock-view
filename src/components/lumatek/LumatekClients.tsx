@@ -32,7 +32,8 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { useLumatekTenants, TenantStatus, TenantInput } from "@/hooks/useLumatekTenants";
-import { Plus, Pencil, Eye, PauseCircle, PlayCircle, Archive } from "lucide-react";
+import { LumatekClientCountries } from "./LumatekClientCountries";
+import { Plus, Pencil, Eye, PauseCircle, PlayCircle, Archive, Globe2 } from "lucide-react";
 
 const STATUS_META: Record<string, { label: string; className: string }> = {
   active: { label: "Actif", className: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30" },
