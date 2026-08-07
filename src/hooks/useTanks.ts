@@ -40,7 +40,7 @@ export const useTanks = (stationId?: string) => {
   useEffect(() => {
     fetchTanks();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [stationId, tenantId]);
+  }, [stationId, tenantId, countryId]);
 
   return { tanks, loading, refetch: fetchTanks };
 };
