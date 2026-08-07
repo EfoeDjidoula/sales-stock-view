@@ -5,6 +5,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { TenantProvider } from "@/hooks/useTenant";
+import { CountryProvider, useCountry } from "@/hooks/useCountry";
+import { WorkspaceSelector } from "@/components/tenant/WorkspaceSelector";
 import Index from "./pages/Index";
 import IndexEntry from "./pages/IndexEntry";
 import Auth from "./pages/Auth";
@@ -17,8 +19,9 @@ const queryClient = new QueryClient();
 // Protected route wrapper
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
+  const { isLoading: countryLoading, needsSelection } = useCountry();
 
-  if (loading) {
+  if (loading || countryLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
@@ -30,8 +33,13 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
     return <Navigate to="/auth" replace />;
   }
 
+  if (needsSelection) {
+    return <WorkspaceSelector />;
+  }
+
   return <>{children}</>;
 };
+
 
 const AppRoutes = () => {
   const { user, loading } = useAuth();
@@ -87,11 +95,13 @@ const App = () => (
     <TooltipProvider>
       <AuthProvider>
         <TenantProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <AppRoutes />
-          </BrowserRouter>
+          <CountryProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
+              <AppRoutes />
+            </BrowserRouter>
+          </CountryProvider>
         </TenantProvider>
       </AuthProvider>
     </TooltipProvider>

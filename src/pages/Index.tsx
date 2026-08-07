@@ -4,6 +4,7 @@ import { useUserRoles, AppRole } from "@/hooks/useUserRoles";
 import { useDashboardData, Period } from "@/hooks/useDashboardData";
 import { ProfileMenu } from "@/components/ProfileMenu";
 import { TenantSelector } from "@/components/tenant/TenantSelector";
+import { CountrySwitcher } from "@/components/tenant/CountrySwitcher";
 import { TenantSettingsModule } from "@/components/tenant/TenantSettingsModule";
 import { useTenant } from "@/hooks/useTenant";
 import { usePlatformAdmin } from "@/hooks/usePlatformAdmin";
@@ -169,8 +170,17 @@ const Index = () => {
         <div className="container mx-auto px-4 py-4">
           <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
             <div className="flex items-center gap-3">
-              <div className="p-2.5 rounded-xl bg-primary/10 glow-primary">
-                <Fuel className="w-7 h-7 text-primary" />
+              <div className="p-2.5 rounded-xl bg-primary/10 glow-primary overflow-hidden">
+                {tenant?.logo_url ? (
+                  <img
+                    src={tenant.logo_url}
+                    alt={`Logo ${tenant.trade_name || tenant.name}`}
+                    className="w-7 h-7 object-contain"
+                    loading="lazy"
+                  />
+                ) : (
+                  <Fuel className="w-7 h-7 text-primary" />
+                )}
               </div>
               <div>
                 <h1 className="text-xl md:text-2xl font-display font-bold">
@@ -180,7 +190,12 @@ const Index = () => {
                   Tableau de bord - Gestion 2026
                 </p>
               </div>
+              <div className="hidden md:block h-8 w-px bg-border mx-1" />
+              <div className="hidden md:block">
+                <CountrySwitcher />
+              </div>
             </div>
+
             <div className="flex flex-wrap items-center gap-3">
               {isPlatformAdmin && (
                 <Button
@@ -194,6 +209,9 @@ const Index = () => {
                   </Link>
                 </Button>
               )}
+              <div className="md:hidden">
+                <CountrySwitcher />
+              </div>
               <TenantSelector />
               <ExcelImportDialog
                 trigger={

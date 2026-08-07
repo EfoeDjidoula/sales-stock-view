@@ -5,6 +5,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { startOfDay, subDays, startOfWeek, startOfMonth, format } from "date-fns";
 import { FUEL_PRICES } from "@/config/prices";
 import { useTenant } from "@/hooks/useTenant";
+import { useCountry } from "@/hooks/useCountry";
 
 export interface DashboardStation {
   id: string;
@@ -45,6 +46,7 @@ const getPeriodRange = (period: Period) => {
 export const useDashboardData = (period: Period, stationId?: string | null) => {
   const { user } = useAuth();
   const { tenantId } = useTenant();
+  const { countryId } = useCountry();
   const queryClient = useQueryClient();
   const range = getPeriodRange(period);
 
@@ -70,13 +72,15 @@ export const useDashboardData = (period: Period, stationId?: string | null) => {
 
 
   const stationsQuery = useQuery({
-    queryKey: ["db-stations", tenantId],
+    queryKey: ["db-stations", tenantId, countryId],
     queryFn: async () => {
-      const { data, error } = await supabase
+      let q = supabase
         .from("stations")
         .select("id, name, location")
         .eq("tenant_id", tenantId!)
         .order("name");
+      if (countryId) q = q.eq("country_id", countryId);
+      const { data, error } = await q;
       if (error) throw error;
       return data as DashboardStation[];
     },
@@ -84,7 +88,7 @@ export const useDashboardData = (period: Period, stationId?: string | null) => {
   });
 
   const entriesQuery = useQuery({
-    queryKey: ["dashboard-entries", range.start, range.end, stationId, tenantId],
+    queryKey: ["dashboard-entries", range.start, range.end, stationId, tenantId, countryId],
     queryFn: async () => {
       let query = supabase
         .from("index_entries")
@@ -93,6 +97,10 @@ export const useDashboardData = (period: Period, stationId?: string | null) => {
         .gte("entry_date", range.start)
         .lte("entry_date", range.end)
         .order("entry_date", { ascending: true });
+
+      if (countryId) {
+        query = query.eq("country_id", countryId);
+      }
 
       if (stationId) {
         query = query.eq("station_id", stationId);
@@ -107,7 +115,7 @@ export const useDashboardData = (period: Period, stationId?: string | null) => {
 
   // Fetch latest jauge (stock) per station from the most recent complete entry
   const latestJaugeQuery = useQuery({
-    queryKey: ["latest-jauge", stationId, tenantId],
+    queryKey: ["latest-jauge", stationId, tenantId, countryId],
     queryFn: async () => {
       // Get the latest entry per station where at least one index_arrivee > 0
       let query = supabase
@@ -117,6 +125,10 @@ export const useDashboardData = (period: Period, stationId?: string | null) => {
         .or("super1_index_arrivee.gt.0,super2_index_arrivee.gt.0,gasoil1_index_arrivee.gt.0,gasoil2_index_arrivee.gt.0")
         .order("entry_date", { ascending: false })
         .limit(50);
+
+      if (countryId) {
+        query = query.eq("country_id", countryId);
+      }
 
       if (stationId) {
         query = query.eq("station_id", stationId);
@@ -143,7 +155,7 @@ export const useDashboardData = (period: Period, stationId?: string | null) => {
 
   // Also fetch recent 30 days for chart regardless of period filter
   const chartQuery = useQuery({
-    queryKey: ["dashboard-chart", stationId, tenantId],
+    queryKey: ["dashboard-chart", stationId, tenantId, countryId],
     queryFn: async () => {
       const today = format(new Date(), "yyyy-MM-dd");
       const thirtyDaysAgo = format(subDays(new Date(), 30), "yyyy-MM-dd");
@@ -154,6 +166,10 @@ export const useDashboardData = (period: Period, stationId?: string | null) => {
         .gte("entry_date", thirtyDaysAgo)
         .lte("entry_date", today)
         .order("entry_date", { ascending: true });
+
+      if (countryId) {
+        query = query.eq("country_id", countryId);
+      }
 
       if (stationId) {
         query = query.eq("station_id", stationId);

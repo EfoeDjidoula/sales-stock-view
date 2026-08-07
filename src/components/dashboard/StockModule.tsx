@@ -6,6 +6,7 @@ import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useTenant } from "@/hooks/useTenant";
+import { useCountry } from "@/hooks/useCountry";
 import { Skeleton } from "@/components/ui/skeleton";
 
 interface StockModuleProps {
@@ -15,6 +16,7 @@ interface StockModuleProps {
 export const StockModule = ({ stationId }: StockModuleProps) => {
   const { user } = useAuth();
   const { tenantId } = useTenant();
+  const { countryId } = useCountry();
   const queryClient = useQueryClient();
 
   // Mise à jour en temps réel : rafraîchit les jauges de stock et synchronise
@@ -40,14 +42,16 @@ export const StockModule = ({ stationId }: StockModuleProps) => {
 
   // Fetch latest entry per station for jauge data
   const { data: latestEntries, isLoading, isFetching, isError, error } = useQuery({
-    queryKey: ["stock-jauges", stationId, tenantId],
+    queryKey: ["stock-jauges", stationId, tenantId, countryId],
     queryFn: async () => {
       // Get stations first
-      const { data: stations } = await supabase
+      let stationsQuery = supabase
         .from("stations")
         .select("id, name, location")
         .eq("tenant_id", tenantId!)
         .order("name");
+      if (countryId) stationsQuery = stationsQuery.eq("country_id", countryId);
+      const { data: stations } = await stationsQuery;
 
       if (!stations) return [];
 
@@ -62,6 +66,7 @@ export const StockModule = ({ stationId }: StockModuleProps) => {
         .eq("tenant_id", tenantId!)
         .order("product_type")
         .order("name");
+      if (countryId) tanksQuery = tanksQuery.eq("country_id", countryId);
       if (stationId) tanksQuery = tanksQuery.eq("station_id", stationId);
       const { data: tanksData } = await tanksQuery;
       const allTanks = (tanksData || []) as Array<{

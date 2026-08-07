@@ -1,0 +1,138 @@
+import { createContext, useContext, useEffect, useMemo, useState, ReactNode } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { useTenant } from "@/hooks/useTenant";
+
+export interface WorkspaceCountry {
+  id: string;
+  name: string;
+  iso_code: string;
+  flag: string | null;
+  default_currency: string;
+  default_language: string;
+  timezone: string;
+  is_default: boolean;
+}
+
+const storageKey = (tenantId: string) => `lumatek.selectedCountryId.${tenantId}`;
+
+interface CountryContextType {
+  countryId: string | null;
+  country: WorkspaceCountry | null;
+  countries: WorkspaceCountry[];
+  isLoading: boolean;
+  /** L'utilisateur doit choisir son espace de travail (plusieurs pays autorisés). */
+  needsSelection: boolean;
+  setCountryId: (id: string) => void;
+}
+
+const CountryContext = createContext<CountryContextType | undefined>(undefined);
+
+export const CountryProvider = ({ children }: { children: ReactNode }) => {
+  const { user } = useAuth();
+  const { tenantId, isLoading: tenantLoading } = useTenant();
+  const queryClient = useQueryClient();
+  const [selected, setSelected] = useState<string | null>(null);
+
+  // Pays autorisés = pays affectés au client, restreints aux droits explicites de l'utilisateur
+  const query = useQuery({
+    queryKey: ["workspace-countries", tenantId, user?.id],
+    enabled: !!user?.id && !!tenantId,
+    queryFn: async () => {
+      const [{ data: tc, error: e1 }, { data: access, error: e2 }] = await Promise.all([
+        supabase
+          .from("tenant_countries")
+          .select("country_id, is_default, is_active, status, countries(id, name, iso_code, flag, default_currency, default_language, timezone)")
+          .eq("tenant_id", tenantId!)
+          .eq("is_active", true),
+        supabase
+          .from("user_country_access")
+          .select("country_id")
+          .eq("tenant_id", tenantId!)
+          .eq("user_id", user!.id),
+      ]);
+      if (e1) throw e1;
+      if (e2) throw e2;
+
+      const allowedIds = new Set((access || []).map((a) => a.country_id as string));
+
+      const list = (tc || [])
+        .filter((row) => allowedIds.size === 0 || allowedIds.has(row.country_id as string))
+        .map((row) => {
+          const c = row.countries as unknown as Omit<WorkspaceCountry, "is_default">;
+          return c ? ({ ...c, is_default: Boolean(row.is_default) } as WorkspaceCountry) : null;
+        })
+        .filter(Boolean) as WorkspaceCountry[];
+
+      return list.sort((a, b) => a.name.localeCompare(b.name));
+    },
+  });
+
+  const countries = useMemo(() => query.data ?? [], [query.data]);
+
+  // Restaure la sélection stockée dès que le client change
+  useEffect(() => {
+    if (!tenantId) {
+      setSelected(null);
+      return;
+    }
+    const stored = window.localStorage.getItem(storageKey(tenantId));
+    setSelected(stored);
+  }, [tenantId]);
+
+  // Un seul pays autorisé => sélection automatique (accès direct au dashboard)
+  useEffect(() => {
+    if (!tenantId || countries.length === 0) return;
+    if (selected && countries.some((c) => c.id === selected)) return;
+    if (countries.length === 1) {
+      setSelected(countries[0].id);
+      window.localStorage.setItem(storageKey(tenantId), countries[0].id);
+    } else if (selected) {
+      // Sélection stockée devenue non autorisée
+      setSelected(null);
+      window.localStorage.removeItem(storageKey(tenantId));
+    }
+  }, [countries, selected, tenantId]);
+
+  const countryId = useMemo(
+    () => (selected && countries.some((c) => c.id === selected) ? selected : null),
+    [selected, countries]
+  );
+
+  const country = useMemo(
+    () => countries.find((c) => c.id === countryId) ?? null,
+    [countries, countryId]
+  );
+
+  const setCountryId = (id: string) => {
+    if (!tenantId) return;
+    if (!countries.some((c) => c.id === id)) return; // pays non affecté : interdit
+    window.localStorage.setItem(storageKey(tenantId), id);
+    setSelected(id);
+  };
+
+  // Changement de pays : purge complète des données affichées
+  useEffect(() => {
+    if (!countryId) return;
+    queryClient.removeQueries({ predicate: (q) => q.queryKey[0] !== "workspace-countries" });
+    queryClient.invalidateQueries();
+  }, [countryId, queryClient]);
+
+  const value: CountryContextType = {
+    countryId,
+    country,
+    countries,
+    isLoading: tenantLoading || query.isLoading,
+    needsSelection: !query.isLoading && countries.length > 1 && !countryId,
+    setCountryId,
+  };
+
+  return <CountryContext.Provider value={value}>{children}</CountryContext.Provider>;
+};
+
+export const useCountry = () => {
+  const ctx = useContext(CountryContext);
+  if (!ctx) throw new Error("useCountry must be used within a CountryProvider");
+  return ctx;
+};
