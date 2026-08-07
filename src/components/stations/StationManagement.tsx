@@ -47,6 +47,8 @@ interface StationManagementProps {
 
 export const StationManagement = ({ isAdmin }: StationManagementProps) => {
   const { stations, loading, refetch } = useStations();
+  const { tenantId } = useTenant();
+  const { countryId } = useCountry();
   const [period, setPeriod] = useState<Period>("day");
   const { salesByStation } = useDashboardData(period);
   const { assignments, assignUser, unassignUser, getAssignedUsers } = useStationAssignments();
