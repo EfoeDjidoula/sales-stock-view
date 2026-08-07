@@ -6,6 +6,8 @@ import { useUserRoles } from "@/hooks/useUserRoles";
 import { PeriodTabs } from "@/components/dashboard/PeriodTabs";
 import { StationAssignmentDialog } from "@/components/stations/StationAssignmentDialog";
 import { supabase } from "@/integrations/supabase/client";
+import { useTenant } from "@/hooks/useTenant";
+import { useCountry } from "@/hooks/useCountry";
 import { toast } from "sonner";
 import { Plus, Pencil, Trash2, MapPin, Fuel, Loader2, TrendingUp, Droplets, Search, ArrowUpDown, Users, Settings2, List } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
@@ -106,7 +108,12 @@ export const StationManagement = ({ isAdmin }: StationManagementProps) => {
       } else {
         const { error } = await supabase
           .from("stations")
-          .insert({ name, location });
+          .insert({
+            name,
+            location,
+            ...(tenantId ? { tenant_id: tenantId } : {}),
+            ...(countryId ? { country_id: countryId } : {}),
+          });
         if (error) throw error;
         toast.success("Station ajoutée avec succès");
       }
