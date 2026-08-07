@@ -4,6 +4,7 @@ import { useUserRoles, AppRole } from "@/hooks/useUserRoles";
 import { useDashboardData, Period } from "@/hooks/useDashboardData";
 import { ProfileMenu } from "@/components/ProfileMenu";
 import { TenantSelector } from "@/components/tenant/TenantSelector";
+import { CountrySwitcher } from "@/components/tenant/CountrySwitcher";
 import { TenantSettingsModule } from "@/components/tenant/TenantSettingsModule";
 import { useTenant } from "@/hooks/useTenant";
 import { usePlatformAdmin } from "@/hooks/usePlatformAdmin";
