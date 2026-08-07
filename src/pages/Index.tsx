@@ -209,6 +209,9 @@ const Index = () => {
                   </Link>
                 </Button>
               )}
+              <div className="md:hidden">
+                <CountrySwitcher />
+              </div>
               <TenantSelector />
               <ExcelImportDialog
                 trigger={
