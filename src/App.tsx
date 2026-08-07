@@ -5,6 +5,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { TenantProvider } from "@/hooks/useTenant";
+import { CountryProvider, useCountry } from "@/hooks/useCountry";
+import { WorkspaceSelector } from "@/components/tenant/WorkspaceSelector";
 import Index from "./pages/Index";
 import IndexEntry from "./pages/IndexEntry";
 import Auth from "./pages/Auth";
