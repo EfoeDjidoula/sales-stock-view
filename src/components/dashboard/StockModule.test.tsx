@@ -11,6 +11,10 @@ vi.mock("@/hooks/useTenant", () => ({
   useTenant: () => ({ tenantId: "t1", tenant: null, tenants: [], homeTenantId: "t1", isLoading: false, canSwitchTenant: false, setTenantId: () => {}, refetchTenants: () => {} }),
 }));
 
+vi.mock("@/hooks/useCountry", () => ({
+  useCountry: () => ({ countryId: "c1", country: null, countries: [], isLoading: false, needsSelection: false, setCountryId: () => {} }),
+}));
+
 vi.mock("@tanstack/react-query", async () => {
   const actual = await vi.importActual<typeof import("@tanstack/react-query")>("@tanstack/react-query");
   return {
