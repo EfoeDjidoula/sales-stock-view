@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useState, ReactNode } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 
@@ -40,9 +41,18 @@ const TenantContext = createContext<TenantContextType | undefined>(undefined);
 export const TenantProvider = ({ children }: { children: ReactNode }) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const [override, setOverride] = useState<string | null>(() =>
-    typeof window !== "undefined" ? window.localStorage.getItem(STORAGE_KEY) : null
+  const [searchParams, setSearchParams] = useSearchParams();
+  const urlTenant = searchParams.get("tenant");
+  const [override, setOverride] = useState<string | null>(
+    () =>
+      urlTenant ??
+      (typeof window !== "undefined" ? window.localStorage.getItem(STORAGE_KEY) : null)
   );
+
+  // Un lien partagé (?tenant=) prend le pas sur la sélection locale
+  useEffect(() => {
+    if (urlTenant && urlTenant !== override) setOverride(urlTenant);
+  }, [urlTenant]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Tenant rattaché au profil de l'utilisateur connecté
   const profileQuery = useQuery({
@@ -87,6 +97,15 @@ export const TenantProvider = ({ children }: { children: ReactNode }) => {
     setOverride(id);
     window.localStorage.setItem(STORAGE_KEY, id);
   };
+
+  // Synchronise l'URL avec le tenant actif (refresh / partage de lien)
+  useEffect(() => {
+    if (!tenantId) return;
+    if (searchParams.get("tenant") === tenantId) return;
+    const next = new URLSearchParams(searchParams);
+    next.set("tenant", tenantId);
+    setSearchParams(next, { replace: true });
+  }, [tenantId, searchParams, setSearchParams]);
 
   // Toute bascule de tenant recharge l'ensemble des données affichées
   useEffect(() => {

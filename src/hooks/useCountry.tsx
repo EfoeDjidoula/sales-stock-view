@@ -1,5 +1,6 @@
 import { createContext, useContext, useEffect, useMemo, useState, ReactNode } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useTenant } from "@/hooks/useTenant";
@@ -33,7 +34,9 @@ export const CountryProvider = ({ children }: { children: ReactNode }) => {
   const { user } = useAuth();
   const { tenantId, isLoading: tenantLoading } = useTenant();
   const queryClient = useQueryClient();
-  const [selected, setSelected] = useState<string | null>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const urlCountry = searchParams.get("country");
+  const [selected, setSelected] = useState<string | null>(urlCountry);
 
   // Pays autorisés = pays affectés au client, restreints aux droits explicites de l'utilisateur
   const query = useQuery({
@@ -71,15 +74,20 @@ export const CountryProvider = ({ children }: { children: ReactNode }) => {
 
   const countries = useMemo(() => query.data ?? [], [query.data]);
 
-  // Restaure la sélection stockée dès que le client change
+  // Restaure la sélection : priorité au lien partagé (?country=), sinon dernière session
   useEffect(() => {
     if (!tenantId) {
-      setSelected(null);
+      setSelected(urlCountry);
       return;
     }
     const stored = window.localStorage.getItem(storageKey(tenantId));
-    setSelected(stored);
-  }, [tenantId]);
+    setSelected(urlCountry ?? stored);
+  }, [tenantId]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Un lien partagé change le pays actif
+  useEffect(() => {
+    if (urlCountry && urlCountry !== selected) setSelected(urlCountry);
+  }, [urlCountry]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Un seul pays autorisé => sélection automatique (accès direct au dashboard)
   useEffect(() => {
@@ -89,7 +97,7 @@ export const CountryProvider = ({ children }: { children: ReactNode }) => {
       setSelected(countries[0].id);
       window.localStorage.setItem(storageKey(tenantId), countries[0].id);
     } else if (selected) {
-      // Sélection stockée devenue non autorisée
+      // Sélection stockée/URL devenue non autorisée
       setSelected(null);
       window.localStorage.removeItem(storageKey(tenantId));
     }
@@ -111,6 +119,22 @@ export const CountryProvider = ({ children }: { children: ReactNode }) => {
     window.localStorage.setItem(storageKey(tenantId), id);
     setSelected(id);
   };
+
+  // Synchronise l'URL avec le pays actif (refresh / partage de lien)
+  useEffect(() => {
+    if (query.isLoading) return;
+    const current = searchParams.get("country");
+    if (countryId) {
+      if (current === countryId) return;
+      const next = new URLSearchParams(searchParams);
+      next.set("country", countryId);
+      setSearchParams(next, { replace: true });
+    } else if (current) {
+      const next = new URLSearchParams(searchParams);
+      next.delete("country");
+      setSearchParams(next, { replace: true });
+    }
+  }, [countryId, query.isLoading, searchParams, setSearchParams]);
 
   // Changement de pays : purge complète des données affichées
   useEffect(() => {
