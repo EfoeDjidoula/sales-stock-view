@@ -34,7 +34,9 @@ export const CountryProvider = ({ children }: { children: ReactNode }) => {
   const { user } = useAuth();
   const { tenantId, isLoading: tenantLoading } = useTenant();
   const queryClient = useQueryClient();
-  const [selected, setSelected] = useState<string | null>(null);
+  const [searchParams, setSearchParams] = useSearchParams();
+  const urlCountry = searchParams.get("country");
+  const [selected, setSelected] = useState<string | null>(urlCountry);
 
   // Pays autorisés = pays affectés au client, restreints aux droits explicites de l'utilisateur
   const query = useQuery({
