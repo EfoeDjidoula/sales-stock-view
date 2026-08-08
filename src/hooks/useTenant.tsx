@@ -98,6 +98,15 @@ export const TenantProvider = ({ children }: { children: ReactNode }) => {
     window.localStorage.setItem(STORAGE_KEY, id);
   };
 
+  // Synchronise l'URL avec le tenant actif (refresh / partage de lien)
+  useEffect(() => {
+    if (!tenantId) return;
+    if (searchParams.get("tenant") === tenantId) return;
+    const next = new URLSearchParams(searchParams);
+    next.set("tenant", tenantId);
+    setSearchParams(next, { replace: true });
+  }, [tenantId, searchParams, setSearchParams]);
+
   // Toute bascule de tenant recharge l'ensemble des données affichées
   useEffect(() => {
     if (!tenantId) return;
