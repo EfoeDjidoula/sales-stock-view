@@ -41,9 +41,18 @@ const TenantContext = createContext<TenantContextType | undefined>(undefined);
 export const TenantProvider = ({ children }: { children: ReactNode }) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const [override, setOverride] = useState<string | null>(() =>
-    typeof window !== "undefined" ? window.localStorage.getItem(STORAGE_KEY) : null
+  const [searchParams, setSearchParams] = useSearchParams();
+  const urlTenant = searchParams.get("tenant");
+  const [override, setOverride] = useState<string | null>(
+    () =>
+      urlTenant ??
+      (typeof window !== "undefined" ? window.localStorage.getItem(STORAGE_KEY) : null)
   );
+
+  // Un lien partagé (?tenant=) prend le pas sur la sélection locale
+  useEffect(() => {
+    if (urlTenant && urlTenant !== override) setOverride(urlTenant);
+  }, [urlTenant]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Tenant rattaché au profil de l'utilisateur connecté
   const profileQuery = useQuery({
