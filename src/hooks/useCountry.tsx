@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useState, ReactNode } from "react";
+import { createContext, useContext, useEffect, useMemo, useRef, useState, ReactNode } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -136,21 +136,31 @@ export const CountryProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [countryId, query.isLoading, searchParams, setSearchParams]);
 
-  // Changement de pays : purge complète des données affichées
+  // Changement de pays : purge des données affichées (jamais les caches de contexte)
+  const previousCountryRef = useRef<string | null>(null);
   useEffect(() => {
     if (!countryId) return;
-    queryClient.removeQueries({ predicate: (q) => q.queryKey[0] !== "workspace-countries" });
-    queryClient.invalidateQueries();
+    const previous = previousCountryRef.current;
+    previousCountryRef.current = countryId;
+    if (!previous || previous === countryId) return; // 1re sélection : rien à purger
+    const contextKeys = new Set(["workspace-countries", "tenants", "profile-tenant"]);
+    queryClient.removeQueries({
+      predicate: (q) => !contextKeys.has(q.queryKey[0] as string),
+    });
+    queryClient.invalidateQueries({
+      predicate: (q) => !contextKeys.has(q.queryKey[0] as string),
+    });
   }, [countryId, queryClient]);
 
   const value: CountryContextType = {
     countryId,
     country,
     countries,
-    isLoading: tenantLoading || query.isLoading,
-    needsSelection: !query.isLoading && countries.length > 1 && !countryId,
+    isLoading: tenantLoading || (!!tenantId && query.isLoading),
+    needsSelection: !!tenantId && !query.isLoading && countries.length > 1 && !countryId,
     setCountryId,
   };
+
 
   return <CountryContext.Provider value={value}>{children}</CountryContext.Provider>;
 };
