@@ -1,0 +1,3 @@
+CREATE POLICY "Platform admins can insert countries" ON public.countries FOR INSERT TO authenticated WITH CHECK (public.is_platform_admin(auth.uid()));
+CREATE POLICY "Platform admins can update countries" ON public.countries FOR UPDATE TO authenticated USING (public.is_platform_admin(auth.uid())) WITH CHECK (public.is_platform_admin(auth.uid()));
+CREATE POLICY "Platform admins can delete countries" ON public.countries FOR DELETE TO authenticated USING (public.is_platform_admin(auth.uid()));
