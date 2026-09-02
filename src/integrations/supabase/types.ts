@@ -1676,6 +1676,10 @@ export type Database = {
         Args: { _tenant_id: string; _user_id: string }
         Returns: boolean
       }
+      can_access_tenant_country: {
+        Args: { _country_id: string; _tenant_id: string; _user_id: string }
+        Returns: boolean
+      }
       can_write_station: {
         Args: { _station_id: string; _user_id: string }
         Returns: boolean
@@ -1693,6 +1697,10 @@ export type Database = {
         Returns: boolean
       }
       is_platform_admin: { Args: { _user_id: string }; Returns: boolean }
+      shares_tenant_with: {
+        Args: { _other_user_id: string; _user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       app_role: "admin" | "manager" | "operator"
