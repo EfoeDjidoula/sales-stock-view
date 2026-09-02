@@ -10,7 +10,7 @@ export type Database = {
   // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
-    PostgrestVersion: "14.1"
+    PostgrestVersion: "14.5"
   }
   public: {
     Tables: {
@@ -27,7 +27,7 @@ export type Database = {
           notes: string | null
           phone: string | null
           tax_id: string | null
-          tenant_id: string
+          tenant_id: string | null
           updated_at: string
           user_id: string
         }
@@ -43,7 +43,7 @@ export type Database = {
           notes?: string | null
           phone?: string | null
           tax_id?: string | null
-          tenant_id?: string
+          tenant_id?: string | null
           updated_at?: string
           user_id: string
         }
@@ -59,7 +59,7 @@ export type Database = {
           notes?: string | null
           phone?: string | null
           tax_id?: string | null
-          tenant_id?: string
+          tenant_id?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -163,7 +163,7 @@ export type Database = {
           stock_theoretical: number | null
           tank_capacity_liters: number
           tank_id: string | null
-          tenant_id: string
+          tenant_id: string | null
           tolerance_rate: number
           truck_id: string | null
           truck_nominal_capacity: number
@@ -190,7 +190,7 @@ export type Database = {
           stock_theoretical?: number | null
           tank_capacity_liters?: number
           tank_id?: string | null
-          tenant_id?: string
+          tenant_id?: string | null
           tolerance_rate?: number
           truck_id?: string | null
           truck_nominal_capacity?: number
@@ -217,7 +217,7 @@ export type Database = {
           stock_theoretical?: number | null
           tank_capacity_liters?: number
           tank_id?: string | null
-          tenant_id?: string
+          tenant_id?: string | null
           tolerance_rate?: number
           truck_id?: string | null
           truck_nominal_capacity?: number
@@ -265,7 +265,7 @@ export type Database = {
           id: string
           opened_at: string
           status: string
-          tenant_id: string
+          tenant_id: string | null
           updated_at: string
           year: number
         }
@@ -277,7 +277,7 @@ export type Database = {
           id?: string
           opened_at?: string
           status?: string
-          tenant_id?: string
+          tenant_id?: string | null
           updated_at?: string
           year: number
         }
@@ -289,7 +289,7 @@ export type Database = {
           id?: string
           opened_at?: string
           status?: string
-          tenant_id?: string
+          tenant_id?: string | null
           updated_at?: string
           year?: number
         }
@@ -333,7 +333,7 @@ export type Database = {
           super2_index_arrivee: number
           super2_index_depart: number
           super2_jauge: number
-          tenant_id: string
+          tenant_id: string | null
           total_bons: number | null
           total_gasoil_liters: number | null
           total_super_liters: number | null
@@ -369,7 +369,7 @@ export type Database = {
           super2_index_arrivee?: number
           super2_index_depart?: number
           super2_jauge?: number
-          tenant_id?: string
+          tenant_id?: string | null
           total_bons?: number | null
           total_gasoil_liters?: number | null
           total_super_liters?: number | null
@@ -405,7 +405,7 @@ export type Database = {
           super2_index_arrivee?: number
           super2_index_depart?: number
           super2_jauge?: number
-          tenant_id?: string
+          tenant_id?: string | null
           total_bons?: number | null
           total_gasoil_liters?: number | null
           total_super_liters?: number | null
@@ -455,7 +455,7 @@ export type Database = {
           station_id: string
           status: string
           supplier: string
-          tenant_id: string
+          tenant_id: string | null
           total_quantity: number
           unit_price: number
           updated_at: string
@@ -472,7 +472,7 @@ export type Database = {
           station_id: string
           status?: string
           supplier: string
-          tenant_id?: string
+          tenant_id?: string | null
           total_quantity?: number
           unit_price?: number
           updated_at?: string
@@ -489,7 +489,7 @@ export type Database = {
           station_id?: string
           status?: string
           supplier?: string
-          tenant_id?: string
+          tenant_id?: string | null
           total_quantity?: number
           unit_price?: number
           updated_at?: string
@@ -534,7 +534,7 @@ export type Database = {
           station_id: string
           status: string
           supply_id: string | null
-          tenant_id: string
+          tenant_id: string | null
           total_amount: number
           updated_at: string
           user_id: string
@@ -554,7 +554,7 @@ export type Database = {
           station_id: string
           status?: string
           supply_id?: string | null
-          tenant_id?: string
+          tenant_id?: string | null
           total_amount?: number
           updated_at?: string
           user_id: string
@@ -574,7 +574,7 @@ export type Database = {
           station_id?: string
           status?: string
           supply_id?: string | null
-          tenant_id?: string
+          tenant_id?: string | null
           total_amount?: number
           updated_at?: string
           user_id?: string
@@ -620,7 +620,7 @@ export type Database = {
           id: string
           product_type: string
           rate_per_liter: number
-          tenant_id: string
+          tenant_id: string | null
           updated_at: string
           zone_id: string
         }
@@ -632,7 +632,7 @@ export type Database = {
           id?: string
           product_type: string
           rate_per_liter?: number
-          tenant_id?: string
+          tenant_id?: string | null
           updated_at?: string
           zone_id: string
         }
@@ -644,7 +644,7 @@ export type Database = {
           id?: string
           product_type?: string
           rate_per_liter?: number
-          tenant_id?: string
+          tenant_id?: string | null
           updated_at?: string
           zone_id?: string
         }
@@ -680,7 +680,7 @@ export type Database = {
           description: string | null
           id: string
           name: string
-          tenant_id: string
+          tenant_id: string | null
           updated_at: string
         }
         Insert: {
@@ -690,7 +690,7 @@ export type Database = {
           description?: string | null
           id?: string
           name: string
-          tenant_id?: string
+          tenant_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -700,7 +700,7 @@ export type Database = {
           description?: string | null
           id?: string
           name?: string
-          tenant_id?: string
+          tenant_id?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -750,7 +750,7 @@ export type Database = {
           is_active: boolean
           label: string | null
           super_price: number
-          tenant_id: string
+          tenant_id: string | null
           updated_at: string
           user_id: string
         }
@@ -765,7 +765,7 @@ export type Database = {
           is_active?: boolean
           label?: string | null
           super_price?: number
-          tenant_id?: string
+          tenant_id?: string | null
           updated_at?: string
           user_id: string
         }
@@ -780,7 +780,7 @@ export type Database = {
           is_active?: boolean
           label?: string | null
           super_price?: number
-          tenant_id?: string
+          tenant_id?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -863,7 +863,7 @@ export type Database = {
           pump_id: string
           station_id: string
           tank_id: string | null
-          tenant_id: string
+          tenant_id: string | null
           updated_at: string
           user_id: string
         }
@@ -880,7 +880,7 @@ export type Database = {
           pump_id: string
           station_id: string
           tank_id?: string | null
-          tenant_id?: string
+          tenant_id?: string | null
           updated_at?: string
           user_id: string
         }
@@ -897,7 +897,7 @@ export type Database = {
           pump_id?: string
           station_id?: string
           tank_id?: string | null
-          tenant_id?: string
+          tenant_id?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -949,7 +949,7 @@ export type Database = {
           product_type: string
           station_id: string
           tank_id: string | null
-          tenant_id: string
+          tenant_id: string | null
           updated_at: string
         }
         Insert: {
@@ -961,7 +961,7 @@ export type Database = {
           product_type: string
           station_id: string
           tank_id?: string | null
-          tenant_id?: string
+          tenant_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -973,7 +973,7 @@ export type Database = {
           product_type?: string
           station_id?: string
           tank_id?: string | null
-          tenant_id?: string
+          tenant_id?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -1043,7 +1043,7 @@ export type Database = {
           id: string
           location: string
           name: string
-          tenant_id: string
+          tenant_id: string | null
           zone_id: string | null
         }
         Insert: {
@@ -1052,7 +1052,7 @@ export type Database = {
           id?: string
           location: string
           name: string
-          tenant_id?: string
+          tenant_id?: string | null
           zone_id?: string | null
         }
         Update: {
@@ -1061,7 +1061,7 @@ export type Database = {
           id?: string
           location?: string
           name?: string
-          tenant_id?: string
+          tenant_id?: string | null
           zone_id?: string | null
         }
         Relationships: [
@@ -1102,7 +1102,7 @@ export type Database = {
           phone: string | null
           product_type: string | null
           tax_id: string | null
-          tenant_id: string
+          tenant_id: string | null
           updated_at: string
           user_id: string
         }
@@ -1119,7 +1119,7 @@ export type Database = {
           phone?: string | null
           product_type?: string | null
           tax_id?: string | null
-          tenant_id?: string
+          tenant_id?: string | null
           updated_at?: string
           user_id: string
         }
@@ -1136,7 +1136,7 @@ export type Database = {
           phone?: string | null
           product_type?: string | null
           tax_id?: string | null
-          tenant_id?: string
+          tenant_id?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -1168,7 +1168,7 @@ export type Database = {
           quantity_received: number
           reception_date: string
           station_id: string
-          tenant_id: string
+          tenant_id: string | null
           updated_at: string
           user_id: string
         }
@@ -1182,7 +1182,7 @@ export type Database = {
           quantity_received?: number
           reception_date?: string
           station_id: string
-          tenant_id?: string
+          tenant_id?: string | null
           updated_at?: string
           user_id: string
         }
@@ -1196,7 +1196,7 @@ export type Database = {
           quantity_received?: number
           reception_date?: string
           station_id?: string
-          tenant_id?: string
+          tenant_id?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -1241,7 +1241,7 @@ export type Database = {
           notes: string | null
           product_type: string
           station_id: string
-          tenant_id: string
+          tenant_id: string | null
           updated_at: string
         }
         Insert: {
@@ -1253,7 +1253,7 @@ export type Database = {
           notes?: string | null
           product_type: string
           station_id: string
-          tenant_id?: string
+          tenant_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -1265,7 +1265,7 @@ export type Database = {
           notes?: string | null
           product_type?: string
           station_id?: string
-          tenant_id?: string
+          tenant_id?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -1541,7 +1541,7 @@ export type Database = {
           nominal_capacity: number
           notes: string | null
           registration: string
-          tenant_id: string
+          tenant_id: string | null
           updated_at: string
           user_id: string
         }
@@ -1555,7 +1555,7 @@ export type Database = {
           nominal_capacity?: number
           notes?: string | null
           registration: string
-          tenant_id?: string
+          tenant_id?: string | null
           updated_at?: string
           user_id: string
         }
@@ -1569,7 +1569,7 @@ export type Database = {
           nominal_capacity?: number
           notes?: string | null
           registration?: string
-          tenant_id?: string
+          tenant_id?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -1676,6 +1676,10 @@ export type Database = {
         Args: { _tenant_id: string; _user_id: string }
         Returns: boolean
       }
+      can_access_tenant_country: {
+        Args: { _country_id: string; _tenant_id: string; _user_id: string }
+        Returns: boolean
+      }
       can_write_station: {
         Args: { _station_id: string; _user_id: string }
         Returns: boolean
@@ -1693,6 +1697,10 @@ export type Database = {
         Returns: boolean
       }
       is_platform_admin: { Args: { _user_id: string }; Returns: boolean }
+      shares_tenant_with: {
+        Args: { _other_user_id: string; _user_id: string }
+        Returns: boolean
+      }
     }
     Enums: {
       app_role: "admin" | "manager" | "operator"
@@ -1711,12 +1719,12 @@ export type Tables<
   DefaultSchemaTableNameOrOptions extends
     | keyof (DefaultSchema["Tables"] & DefaultSchema["Views"])
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof (DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"] &
         DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Views"])
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1740,11 +1748,11 @@ export type TablesInsert<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1765,11 +1773,11 @@ export type TablesUpdate<
   DefaultSchemaTableNameOrOptions extends
     | keyof DefaultSchema["Tables"]
     | { schema: keyof DatabaseWithoutInternals },
-  TableName extends DefaultSchemaTableNameOrOptions extends {
+  TableName extends (DefaultSchemaTableNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaTableNameOrOptions["schema"]]["Tables"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaTableNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1790,11 +1798,11 @@ export type Enums<
   DefaultSchemaEnumNameOrOptions extends
     | keyof DefaultSchema["Enums"]
     | { schema: keyof DatabaseWithoutInternals },
-  EnumName extends DefaultSchemaEnumNameOrOptions extends {
+  EnumName extends (DefaultSchemaEnumNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[DefaultSchemaEnumNameOrOptions["schema"]]["Enums"]
-    : never = never,
+    : never) = never,
 > = DefaultSchemaEnumNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
@@ -1807,11 +1815,11 @@ export type CompositeTypes<
   PublicCompositeTypeNameOrOptions extends
     | keyof DefaultSchema["CompositeTypes"]
     | { schema: keyof DatabaseWithoutInternals },
-  CompositeTypeName extends PublicCompositeTypeNameOrOptions extends {
+  CompositeTypeName extends (PublicCompositeTypeNameOrOptions extends {
     schema: keyof DatabaseWithoutInternals
   }
     ? keyof DatabaseWithoutInternals[PublicCompositeTypeNameOrOptions["schema"]]["CompositeTypes"]
-    : never = never,
+    : never) = never,
 > = PublicCompositeTypeNameOrOptions extends {
   schema: keyof DatabaseWithoutInternals
 }
