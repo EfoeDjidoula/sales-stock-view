@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/hooks/use-toast";
+import { useScope } from "@/hooks/useScope";
 
 export interface FiscalYear {
   id: string;
@@ -16,6 +17,7 @@ export interface FiscalYear {
 
 export function useFiscalYears() {
   const { user } = useAuth();
+  const { scopeQuery, scopeRow, tenantId, countryId } = useScope();
   const queryClient = useQueryClient();
 
   const { data: fiscalYears = [], isLoading } = useQuery({

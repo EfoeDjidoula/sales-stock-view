@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { useScope } from "@/hooks/useScope";
 
 export type ProductType = "super" | "gasoil";
 export type PerequationStatus = "pending" | "received";
@@ -39,6 +40,7 @@ export interface PerequationEntry {
 }
 
 export const usePerequation = () => {
+  const { scopeQuery, scopeRow, tenantId, countryId } = useScope();
   const [zones, setZones] = useState<Zone[]>([]);
   const [rates, setRates] = useState<Rate[]>([]);
   const [entries, setEntries] = useState<PerequationEntry[]>([]);
