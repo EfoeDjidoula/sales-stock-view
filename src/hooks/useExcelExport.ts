@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useScope } from "@/hooks/useScope";
 import { toast } from "sonner";
 import ExcelJS from "exceljs";
 
@@ -21,6 +22,7 @@ const HEADERS_ROW_2 = [
 
 export const useExcelExport = () => {
   const { user } = useAuth();
+  const { scopeQuery } = useScope();
   const [isExporting, setIsExporting] = useState(false);
 
   const exportToExcel = async (month?: number, year?: number) => {
@@ -32,17 +34,16 @@ export const useExcelExport = () => {
     setIsExporting(true);
 
     try {
-      const { data: stations, error: stationsError } = await supabase
-        .from("stations")
-        .select("id, name")
-        .order("name");
+      const { data: stations, error: stationsError } = await scopeQuery(
+        supabase.from("stations").select("id, name")
+      ).order("name");
 
       if (stationsError) throw stationsError;
 
       // Configured tanks per station (real names + capacities)
-      const { data: tanksData, error: tanksError } = await supabase
-        .from("tanks")
-        .select("id, station_id, name, product_type, capacity_liters")
+      const { data: tanksData, error: tanksError } = await scopeQuery(
+        supabase.from("tanks").select("id, station_id, name, product_type, capacity_liters")
+      )
         .order("product_type")
         .order("name");
 
@@ -64,9 +65,9 @@ export const useExcelExport = () => {
         ? `${targetYear + 1}-01-01`
         : `${targetYear}-${String(targetMonth + 1).padStart(2, "0")}-01`;
 
-      const { data: entries, error: entriesError } = await supabase
-        .from("index_entries")
-        .select("*")
+      const { data: entries, error: entriesError } = await scopeQuery(
+        supabase.from("index_entries").select("*")
+      )
         .gte("entry_date", startDate)
         .lt("entry_date", endDate)
         .order("entry_date");

@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "@/hooks/use-toast";
+import { useScope } from "@/hooks/useScope";
 
 export interface FiscalYear {
   id: string;
@@ -16,15 +17,15 @@ export interface FiscalYear {
 
 export function useFiscalYears() {
   const { user } = useAuth();
+  const { scopeQuery, scopeRow, tenantId, countryId } = useScope();
   const queryClient = useQueryClient();
 
   const { data: fiscalYears = [], isLoading } = useQuery({
-    queryKey: ["fiscal-years"],
+    queryKey: ["fiscal-years", tenantId, countryId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("fiscal_years" as any)
-        .select("*")
-        .order("year", { ascending: false });
+      const { data, error } = await scopeQuery(
+        supabase.from("fiscal_years" as any).select("*") as any
+      ).order("year", { ascending: false });
       if (error) throw error;
       return (data as any[]) as FiscalYear[];
     },
@@ -35,7 +36,7 @@ export function useFiscalYears() {
     mutationFn: async (year: number) => {
       const { error } = await supabase
         .from("fiscal_years" as any)
-        .insert({ year, status: "open", created_by: user!.id } as any);
+        .insert(scopeRow({ year, status: "open", created_by: user!.id }) as any);
       if (error) throw error;
     },
     onSuccess: () => {

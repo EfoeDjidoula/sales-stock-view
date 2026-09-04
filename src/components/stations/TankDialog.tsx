@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useScope } from "@/hooks/useScope";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import {
@@ -32,6 +33,7 @@ interface TankDialogProps {
 }
 
 export const TankDialog = ({ open, onOpenChange, stationId, tank, onSaved }: TankDialogProps) => {
+  const { scopeRow } = useScope();
   const [name, setName] = useState("");
   const [productType, setProductType] = useState<"super" | "gasoil">("super");
   const [capacity, setCapacity] = useState<string>("");
@@ -65,7 +67,7 @@ export const TankDialog = ({ open, onOpenChange, stationId, tank, onSaved }: Tan
       } else {
         const { error } = await supabase
           .from("tanks")
-          .insert({ station_id: stationId, name: trimmedName, product_type: productType, capacity_liters: cap, notes: notes || null });
+          .insert(scopeRow({ station_id: stationId, name: trimmedName, product_type: productType, capacity_liters: cap, notes: notes || null }) as any);
         if (error) throw error;
         toast.success("Cuve ajoutée");
       }

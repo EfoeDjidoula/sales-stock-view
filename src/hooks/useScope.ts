@@ -15,11 +15,12 @@ export const useScope = () => {
 
   /** Ajoute les filtres tenant_id / country_id à une requête Supabase. */
   const scopeQuery = useCallback(
-    <Q extends { eq: (column: string, value: string) => Q }>(query: Q): Q => {
-      let q = query;
+    <Q,>(query: Q): Q => {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      let q = query as any;
       if (tenantId) q = q.eq("tenant_id", tenantId);
       if (countryId) q = q.eq("country_id", countryId);
-      return q;
+      return q as Q;
     },
     [tenantId, countryId]
   );

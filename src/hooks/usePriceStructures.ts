@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import { useScope } from "@/hooks/useScope";
+
 import ExcelJS from "exceljs";
 
 export interface PriceElement {
@@ -141,16 +143,16 @@ export const parsePriceStructureFile = async (file: File): Promise<ParsedPriceSt
 
 export const usePriceStructures = () => {
   const { user } = useAuth();
+  const { scopeQuery, scopeRow, tenantId, countryId } = useScope();
   const [structures, setStructures] = useState<PriceStructure[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchStructures = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from("price_structures")
-        .select("*")
-        .order("effective_date", { ascending: false });
+      const { data, error } = await scopeQuery(
+        supabase.from("price_structures").select("*")
+      ).order("effective_date", { ascending: false });
       if (error) throw error;
       setStructures((data || []) as unknown as PriceStructure[]);
     } catch (error: any) {
@@ -167,7 +169,7 @@ export const usePriceStructures = () => {
       const { data, error } = await supabase
         .from("price_structures")
         .upsert(
-          {
+          scopeRow({
             user_id: user.id,
             country: "BJ",
             effective_date: parsed.effective_date,
@@ -176,7 +178,7 @@ export const usePriceStructures = () => {
             gasoil_price: parsed.gasoil_price,
             elements: parsed.elements as unknown as any,
             is_active: true,
-          },
+          }) as any,
           { onConflict: "country,effective_date" }
         )
         .select()
@@ -242,7 +244,7 @@ export const usePriceStructures = () => {
   useEffect(() => {
     fetchStructures();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
+  }, [user, tenantId, countryId]);
 
   return { structures, loading, importStructure, toggleActive, deleteStructure, refetch: fetchStructures };
 };

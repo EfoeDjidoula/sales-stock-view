@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useScope } from "@/hooks/useScope";
 import { toast } from "sonner";
 import ExcelJS from "exceljs";
 
@@ -212,6 +213,7 @@ const parseWorksheetData = (worksheet: ExcelJS.Worksheet, stationName: string): 
 
 export const useExcelImport = () => {
   const { user } = useAuth();
+  const { scopeQuery, scopeRow } = useScope();
   const queryClient = useQueryClient();
   const [isProcessing, setIsProcessing] = useState(false);
   const [progress, setProgress] = useState({ current: 0, total: 0 });
@@ -269,9 +271,9 @@ export const useExcelImport = () => {
 
       const result: ImportResult = { success: 0, failed: 0, errors: [] };
 
-      const { data: stations, error: stationsError } = await supabase
-        .from("stations")
-        .select("id, name");
+      const { data: stations, error: stationsError } = await scopeQuery(
+        supabase.from("stations").select("id, name")
+      );
 
       if (stationsError) throw new Error(`Erreur de récupération des stations: ${stationsError.message}`);
 
@@ -331,7 +333,7 @@ export const useExcelImport = () => {
 
         const { error } = await supabase
           .from("index_entries")
-          .upsert(dbEntry, {
+          .upsert(scopeRow(dbEntry) as any, {
             onConflict: "user_id,station_id,entry_date",
           });
 

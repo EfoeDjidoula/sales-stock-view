@@ -128,6 +128,26 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
+    // Rattache le nouvel utilisateur à la société (et au pays) de l'administrateur appelant
+    const { data: callerProfile } = await supabaseAdmin
+      .from("profiles")
+      .select("tenant_id, country_id")
+      .eq("user_id", caller.id)
+      .maybeSingle();
+
+    if (userData.user && callerProfile?.tenant_id) {
+      const { error: profileScopeError } = await supabaseAdmin
+        .from("profiles")
+        .update({
+          tenant_id: callerProfile.tenant_id,
+          country_id: callerProfile.country_id ?? null,
+        })
+        .eq("user_id", userData.user.id);
+      if (profileScopeError) {
+        console.error("Error scoping new user profile:", profileScopeError);
+      }
+    }
+
     if (userData.user) {
       // Assign role to the new user
       const { error: roleInsertError } = await supabaseAdmin

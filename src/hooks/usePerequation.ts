@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { useScope } from "@/hooks/useScope";
 
 export type ProductType = "super" | "gasoil";
 export type PerequationStatus = "pending" | "received";
@@ -39,6 +40,7 @@ export interface PerequationEntry {
 }
 
 export const usePerequation = () => {
+  const { scopeQuery, scopeRow, tenantId, countryId } = useScope();
   const [zones, setZones] = useState<Zone[]>([]);
   const [rates, setRates] = useState<Rate[]>([]);
   const [entries, setEntries] = useState<PerequationEntry[]>([]);
@@ -47,9 +49,9 @@ export const usePerequation = () => {
   const fetchAll = async () => {
     setLoading(true);
     const [z, r, e] = await Promise.all([
-      supabase.from("perequation_zones").select("*").order("name"),
-      supabase.from("perequation_rates").select("*").order("effective_from", { ascending: false }),
-      supabase.from("perequation_entries").select("*").order("delivery_date", { ascending: false }),
+      scopeQuery(supabase.from("perequation_zones").select("*")).order("name"),
+      scopeQuery(supabase.from("perequation_rates").select("*")).order("effective_from", { ascending: false }),
+      scopeQuery(supabase.from("perequation_entries").select("*")).order("delivery_date", { ascending: false }),
     ]);
     if (z.error) toast({ variant: "destructive", title: "Erreur", description: z.error.message });
     else setZones((z.data || []) as Zone[]);
@@ -62,12 +64,13 @@ export const usePerequation = () => {
 
   useEffect(() => {
     fetchAll();
-  }, []);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tenantId, countryId]);
 
   const createZone = async (name: string, description: string) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
-    const { error } = await supabase.from("perequation_zones").insert({ name, description, created_by: user.id });
+    const { error } = await supabase.from("perequation_zones").insert(scopeRow({ name, description, created_by: user.id }) as any);
     if (error) return toast({ variant: "destructive", title: "Erreur", description: error.message });
     toast({ title: "Zone créée" });
     fetchAll();
@@ -83,7 +86,7 @@ export const usePerequation = () => {
   const createRate = async (zone_id: string, product_type: ProductType, rate_per_liter: number, effective_from: string) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
-    const { error } = await supabase.from("perequation_rates").insert({ zone_id, product_type, rate_per_liter, effective_from, created_by: user.id });
+    const { error } = await supabase.from("perequation_rates").insert(scopeRow({ zone_id, product_type, rate_per_liter, effective_from, created_by: user.id }) as any);
     if (error) return toast({ variant: "destructive", title: "Erreur", description: error.message });
     toast({ title: "Taux enregistré" });
     fetchAll();
@@ -100,7 +103,7 @@ export const usePerequation = () => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
     const total_amount = entry.total_amount ?? entry.quantity_liters * entry.rate_per_liter;
-    const { error } = await supabase.from("perequation_entries").insert({ ...entry, total_amount, user_id: user.id });
+    const { error } = await supabase.from("perequation_entries").insert(scopeRow({ ...entry, total_amount, user_id: user.id }) as any);
     if (error) return toast({ variant: "destructive", title: "Erreur", description: error.message });
     toast({ title: "Entrée enregistrée" });
     fetchAll();

@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import { useScope } from "@/hooks/useScope";
 
 export interface PumpEntryInput {
   pumpId: string;
@@ -71,13 +72,15 @@ export interface IndexEntry {
 
 export const useIndexEntries = (stationId?: string, startDate?: string, endDate?: string) => {
   const { user } = useAuth();
+  const { scopeQuery, tenantId, countryId } = useScope();
 
   return useQuery({
-    queryKey: ["indexEntries", stationId, startDate, endDate],
+    queryKey: ["indexEntries", stationId, startDate, endDate, tenantId, countryId],
     queryFn: async () => {
-      let query = supabase
-        .from("index_entries")
-        .select(`
+      let query = scopeQuery(
+        supabase
+          .from("index_entries")
+          .select(`
           *,
           stations (
             id,
@@ -85,7 +88,7 @@ export const useIndexEntries = (stationId?: string, startDate?: string, endDate?
             location
           )
         `)
-        .order("entry_date", { ascending: false });
+      ).order("entry_date", { ascending: false });
 
       if (stationId) {
         query = query.eq("station_id", stationId);
@@ -110,14 +113,14 @@ export const useIndexEntries = (stationId?: string, startDate?: string, endDate?
 
 export const useStations = () => {
   const { user } = useAuth();
+  const { scopeQuery, tenantId, countryId } = useScope();
 
   return useQuery({
-    queryKey: ["stations"],
+    queryKey: ["stations", tenantId, countryId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("stations")
-        .select("*")
-        .order("name");
+      const { data, error } = await scopeQuery(
+        supabase.from("stations").select("*")
+      ).order("name");
 
       if (error) throw error;
       return data;
@@ -129,6 +132,7 @@ export const useStations = () => {
 export const useSaveIndexEntry = () => {
   const queryClient = useQueryClient();
   const { user } = useAuth();
+  const { scopeRow } = useScope();
 
   return useMutation({
     mutationFn: async (data: IndexEntryData) => {
@@ -164,7 +168,7 @@ export const useSaveIndexEntry = () => {
 
       const { data: result, error } = await supabase
         .from("index_entries")
-        .upsert(entry, {
+        .upsert(scopeRow(entry) as any, {
           onConflict: "user_id,station_id,entry_date",
         })
         .select()
@@ -181,7 +185,7 @@ export const useSaveIndexEntry = () => {
           .eq("entry_id", result.id);
         if (delErr) throw delErr;
 
-        const rows = data.pumpEntries.map((p) => ({
+        const rows = data.pumpEntries.map((p) => scopeRow({
           entry_id: result.id,
           pump_id: p.pumpId,
           tank_id: p.tankId,
@@ -191,7 +195,7 @@ export const useSaveIndexEntry = () => {
           product_type: p.productType,
           index_depart: p.indexDepart,
           index_arrivee: p.indexArrivee,
-        }));
+        }) as any);
         const { error: insErr } = await supabase.from("pump_index_entries").insert(rows);
         if (insErr) throw insErr;
       }

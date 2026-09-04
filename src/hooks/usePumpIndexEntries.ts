@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
+import { useScope } from "@/hooks/useScope";
 
 export interface PumpIndexEntry {
   id: string;
@@ -19,13 +20,14 @@ export interface PumpIndexEntry {
 /** Existing pump entries for a station/date (to pre-fill when editing the same day). */
 export const usePumpIndexEntries = (stationId?: string, entryDate?: string) => {
   const { user } = useAuth();
+  const { scopeQuery, tenantId, countryId } = useScope();
   return useQuery({
-    queryKey: ["pump-index-entries", stationId, entryDate],
+    queryKey: ["pump-index-entries", stationId, entryDate, tenantId, countryId],
     queryFn: async () => {
       if (!stationId || !entryDate) return [] as PumpIndexEntry[];
-      const { data, error } = await supabase
-        .from("pump_index_entries")
-        .select("*")
+      const { data, error } = await scopeQuery(
+        supabase.from("pump_index_entries").select("*")
+      )
         .eq("station_id", stationId)
         .eq("entry_date", entryDate);
       if (error) throw error;
@@ -42,14 +44,15 @@ export const usePreviousPumpIndex = (
   beforeDate?: string,
 ) => {
   const { user } = useAuth();
+  const { scopeQuery, tenantId, countryId } = useScope();
   return useQuery({
-    queryKey: ["previous-pump-index", stationId, beforeDate, (pumpIds || []).join(",")],
+    queryKey: ["previous-pump-index", stationId, beforeDate, (pumpIds || []).join(","), tenantId, countryId],
     queryFn: async () => {
       const map: Record<string, number> = {};
       if (!stationId || !beforeDate || !pumpIds?.length) return map;
-      const { data, error } = await supabase
-        .from("pump_index_entries")
-        .select("pump_id, index_arrivee, entry_date")
+      const { data, error } = await scopeQuery(
+        supabase.from("pump_index_entries").select("pump_id, index_arrivee, entry_date")
+      )
         .eq("station_id", stationId)
         .in("pump_id", pumpIds)
         .lt("entry_date", beforeDate)

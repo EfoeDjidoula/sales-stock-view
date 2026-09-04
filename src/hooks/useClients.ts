@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import { useScope } from "@/hooks/useScope";
+
 
 export interface Client {
   id: string;
@@ -31,16 +33,16 @@ export interface ClientInsert {
 
 export const useClients = () => {
   const { user } = useAuth();
+  const { scopeQuery, scopeRow, tenantId, countryId } = useScope();
   const [clients, setClients] = useState<Client[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchClients = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from("clients")
-        .select("*")
-        .order("name", { ascending: true });
+      const { data, error } = await scopeQuery(
+        supabase.from("clients").select("*")
+      ).order("name", { ascending: true });
       if (error) throw error;
       setClients((data || []) as Client[]);
     } catch (error: any) {
@@ -56,7 +58,7 @@ export const useClients = () => {
     try {
       const { data, error } = await supabase
         .from("clients")
-        .insert({ ...client, user_id: user.id })
+        .insert(scopeRow({ ...client, user_id: user.id }) as any)
         .select()
         .single();
       if (error) throw error;
@@ -99,7 +101,7 @@ export const useClients = () => {
   useEffect(() => {
     fetchClients();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
+  }, [user, tenantId, countryId]);
 
   return { clients, loading, createClient, updateClient, deleteClient, refetch: fetchClients };
 };
