@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { useScope } from "@/hooks/useScope";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 import {
@@ -35,6 +36,7 @@ interface PumpDialogProps {
 const NONE = "__none__";
 
 export const PumpDialog = ({ open, onOpenChange, stationId, pump, tanks, onSaved }: PumpDialogProps) => {
+  const { scopeRow } = useScope();
   const [name, setName] = useState("");
   const [productType, setProductType] = useState<"super" | "gasoil">("super");
   const [tankId, setTankId] = useState<string>(NONE);
@@ -81,7 +83,7 @@ export const PumpDialog = ({ open, onOpenChange, stationId, pump, tanks, onSaved
         if (error) throw error;
         toast.success("Pompe modifiée");
       } else {
-        const { error } = await supabase.from("pumps").insert(payload);
+        const { error } = await supabase.from("pumps").insert(scopeRow(payload) as any);
         if (error) throw error;
         toast.success("Pompe ajoutée");
       }
