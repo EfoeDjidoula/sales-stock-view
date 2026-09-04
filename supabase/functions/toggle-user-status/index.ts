@@ -62,6 +62,24 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
+    // Isolation : un administrateur ne peut agir que sur les comptes de sa propre société
+    const [{ data: callerProfile }, { data: targetProfile }] = await Promise.all([
+      supabaseAdmin.from("profiles").select("tenant_id").eq("user_id", caller.id).maybeSingle(),
+      supabaseAdmin.from("profiles").select("tenant_id").eq("user_id", user_id).maybeSingle(),
+    ]);
+    const { data: platformAdmin } = await supabaseAdmin
+      .from("platform_admins")
+      .select("id")
+      .eq("user_id", caller.id)
+      .maybeSingle();
+
+    if (!platformAdmin && callerProfile?.tenant_id !== targetProfile?.tenant_id) {
+      return new Response(
+        JSON.stringify({ error: "Utilisateur hors de votre périmètre" }),
+        { status: 403, headers: { "Content-Type": "application/json", ...corsHeaders } }
+      );
+    }
+
     // Prevent admin from deactivating themselves
     if (user_id === caller.id && !is_active) {
       return new Response(
