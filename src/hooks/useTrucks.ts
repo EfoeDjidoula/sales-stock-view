@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import { useScope } from "@/hooks/useScope";
+
 
 export interface Truck {
   id: string;
@@ -27,16 +29,16 @@ export interface TruckInsert {
 
 export const useTrucks = () => {
   const { user } = useAuth();
+  const { scopeQuery, scopeRow, tenantId, countryId } = useScope();
   const [trucks, setTrucks] = useState<Truck[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchTrucks = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from("trucks")
-        .select("*")
-        .order("registration", { ascending: true });
+      const { data, error } = await scopeQuery(
+        supabase.from("trucks").select("*")
+      ).order("registration", { ascending: true });
       if (error) throw error;
       setTrucks(
         (data || []).map((t: any) => ({
@@ -57,7 +59,7 @@ export const useTrucks = () => {
     try {
       const { data, error } = await supabase
         .from("trucks")
-        .insert({ ...truck, compartments: truck.compartments as any, user_id: user.id })
+        .insert(scopeRow({ ...truck, compartments: truck.compartments as any, user_id: user.id }) as any)
         .select()
         .single();
       if (error) throw error;
@@ -103,7 +105,7 @@ export const useTrucks = () => {
   useEffect(() => {
     fetchTrucks();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
+  }, [user, tenantId, countryId]);
 
   return { trucks, loading, createTruck, updateTruck, deleteTruck, refetch: fetchTrucks };
 };

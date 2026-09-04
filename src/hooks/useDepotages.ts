@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import { useScope } from "@/hooks/useScope";
+
 
 export type ProductType = "super" | "gasoil";
 
@@ -57,6 +59,7 @@ export interface DepotageInsert {
 
 export const useDepotages = () => {
   const { user } = useAuth();
+  const { scopeQuery, scopeRow, tenantId, countryId } = useScope();
   const [depotages, setDepotages] = useState<Depotage[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -64,11 +67,13 @@ export const useDepotages = () => {
     if (!user) return;
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from("depotages")
-        .select(
-          `*, station:stations(name, location), tank:tanks(name, capacity_liters)`
-        )
+      const { data, error } = await scopeQuery(
+        supabase
+          .from("depotages")
+          .select(
+            `*, station:stations(name, location), tank:tanks(name, capacity_liters)`
+          )
+      )
         .order("depotage_date", { ascending: false })
         .order("created_at", { ascending: false });
 
@@ -87,7 +92,7 @@ export const useDepotages = () => {
     try {
       const { data, error } = await supabase
         .from("depotages")
-        .insert({ ...depotage, user_id: user.id })
+        .insert(scopeRow({ ...depotage, user_id: user.id }) as any)
         .select()
         .single();
 
@@ -117,7 +122,7 @@ export const useDepotages = () => {
   useEffect(() => {
     fetchDepotages();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
+  }, [user, tenantId, countryId]);
 
   return {
     depotages,

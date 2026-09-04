@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import { useScope } from "@/hooks/useScope";
+
 
 export interface Supplier {
   id: string;
@@ -33,16 +35,16 @@ export interface SupplierInsert {
 
 export const useSuppliers = () => {
   const { user } = useAuth();
+  const { scopeQuery, scopeRow, tenantId, countryId } = useScope();
   const [suppliers, setSuppliers] = useState<Supplier[]>([]);
   const [loading, setLoading] = useState(true);
 
   const fetchSuppliers = async () => {
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from("suppliers")
-        .select("*")
-        .order("name", { ascending: true });
+      const { data, error } = await scopeQuery(
+        supabase.from("suppliers").select("*")
+      ).order("name", { ascending: true });
       if (error) throw error;
       setSuppliers((data || []) as Supplier[]);
     } catch (error: any) {
@@ -58,7 +60,7 @@ export const useSuppliers = () => {
     try {
       const { data, error } = await supabase
         .from("suppliers")
-        .insert({ ...supplier, user_id: user.id })
+        .insert(scopeRow({ ...supplier, user_id: user.id }) as any)
         .select()
         .single();
       if (error) throw error;
@@ -101,7 +103,7 @@ export const useSuppliers = () => {
   useEffect(() => {
     fetchSuppliers();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [user]);
+  }, [user, tenantId, countryId]);
 
   return { suppliers, loading, createSupplier, updateSupplier, deleteSupplier, refetch: fetchSuppliers };
 };

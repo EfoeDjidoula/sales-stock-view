@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import { useScope } from "@/hooks/useScope";
+
 
 export type ProductType = "super" | "gasoil";
 
@@ -42,6 +44,7 @@ export interface SupplyInsert {
 
 export const useSupplies = () => {
   const { user } = useAuth();
+  const { scopeQuery, scopeRow, tenantId, countryId } = useScope();
   const [supplies, setSupplies] = useState<Supply[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -50,13 +53,15 @@ export const useSupplies = () => {
 
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from("supplies")
-        .select(`
+      const { data, error } = await scopeQuery(
+        supabase
+          .from("supplies")
+          .select(`
           *,
           order:orders(proforma_number, supplier, product_type, unit_price, total_quantity, amount_ht, amount_ttc),
           station:stations(name, location)
         `)
+      )
         .eq("user_id", user.id)
         .order("created_at", { ascending: false });
 
@@ -76,10 +81,10 @@ export const useSupplies = () => {
     try {
       const { data, error } = await supabase
         .from("supplies")
-        .insert({
+        .insert(scopeRow({
           ...supply,
           user_id: user.id,
-        })
+        }) as any)
         .select()
         .single();
 
@@ -125,7 +130,7 @@ export const useSupplies = () => {
 
   useEffect(() => {
     fetchSupplies();
-  }, [user]);
+  }, [user, tenantId, countryId]);
 
   return {
     supplies,

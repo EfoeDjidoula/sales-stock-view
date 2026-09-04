@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
+import { useScope } from "@/hooks/useScope";
+
 
 export type ProductType = "super" | "gasoil";
 export type OrderStatus = "pending" | "validated" | "delivered";
@@ -39,6 +41,7 @@ export interface OrderInsert {
 
 export const useOrders = () => {
   const { user } = useAuth();
+  const { scopeQuery, scopeRow, tenantId, countryId } = useScope();
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -47,12 +50,14 @@ export const useOrders = () => {
 
     setLoading(true);
     try {
-      const { data, error } = await supabase
-        .from("orders")
-        .select(`
+      const { data, error } = await scopeQuery(
+        supabase
+          .from("orders")
+          .select(`
           *,
           station:stations(name, location)
         `)
+      )
         .eq("user_id", user.id)
         .order("created_at", { ascending: false });
 
@@ -72,10 +77,10 @@ export const useOrders = () => {
     try {
       const { data, error } = await supabase
         .from("orders")
-        .insert({
+        .insert(scopeRow({
           ...order,
           user_id: user.id,
-        })
+        }) as any)
         .select()
         .single();
 
@@ -143,7 +148,7 @@ export const useOrders = () => {
 
   useEffect(() => {
     fetchOrders();
-  }, [user]);
+  }, [user, tenantId, countryId]);
 
   return {
     orders,
