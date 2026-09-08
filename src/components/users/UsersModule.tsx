@@ -272,6 +272,13 @@ export const UsersModule = () => {
         </Button>
       </div>
 
+      <Tabs defaultValue="users" className="w-full">
+        <TabsList>
+          <TabsTrigger value="users">Utilisateurs</TabsTrigger>
+          <TabsTrigger value="roles">Rôles & permissions</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="users" className="mt-6 space-y-6">
       {/* Role Legend */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {(Object.keys(roleConfig) as AppRole[]).map((role) => (
