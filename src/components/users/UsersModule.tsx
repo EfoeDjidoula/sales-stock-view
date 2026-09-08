@@ -38,6 +38,10 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { RolesPermissionsMatrix } from "@/components/users/RolesPermissionsMatrix";
+import { UserAccessDialog } from "@/components/users/UserAccessDialog";
+import { useRbac } from "@/hooks/useRbac";
 import { Loader2, Shield, ShieldCheck, User, UserCog, Crown, AlertTriangle, UserPlus, KeyRound, Power, PowerOff } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -81,6 +85,8 @@ export const UsersModule = () => {
   const [userToToggle, setUserToToggle] = useState<{ id: string; name: string; isActive: boolean } | null>(null);
   const [userToResetPassword, setUserToResetPassword] = useState<{ id: string; name: string; email: string } | null>(null);
   const [resetEmail, setResetEmail] = useState("");
+  const [accessUser, setAccessUser] = useState<{ id: string; full_name: string | null; is_active: boolean } | null>(null);
+  const { roles, getUserRoleId } = useRbac();
 
   const handleAssignRole = async () => {
     if (!selectedUser) return;
@@ -353,6 +359,9 @@ export const UsersModule = () => {
                         ) : (
                           <span className="text-muted-foreground text-sm">Non attribué</span>
                         )}
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {roles.find((r) => r.id === getUserRoleId(u.id))?.name ?? "Aucun rôle détaillé"}
+                        </p>
                       </TableCell>
                       <TableCell>
                         {format(new Date(u.created_at), "dd MMM yyyy", { locale: fr })}
@@ -369,6 +378,15 @@ export const UsersModule = () => {
                             }}
                           >
                             {u.role ? "Modifier" : "Attribuer"}
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() =>
+                              setAccessUser({ id: u.id, full_name: u.full_name, is_active: u.is_active })
+                            }
+                          >
+                            Accès
                           </Button>
                           {u.id !== user?.id && (
                             <>
