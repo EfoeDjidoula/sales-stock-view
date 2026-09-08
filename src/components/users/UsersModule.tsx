@@ -38,6 +38,10 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { RolesPermissionsMatrix } from "@/components/users/RolesPermissionsMatrix";
+import { UserAccessDialog } from "@/components/users/UserAccessDialog";
+import { useRbac } from "@/hooks/useRbac";
 import { Loader2, Shield, ShieldCheck, User, UserCog, Crown, AlertTriangle, UserPlus, KeyRound, Power, PowerOff } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -81,6 +85,8 @@ export const UsersModule = () => {
   const [userToToggle, setUserToToggle] = useState<{ id: string; name: string; isActive: boolean } | null>(null);
   const [userToResetPassword, setUserToResetPassword] = useState<{ id: string; name: string; email: string } | null>(null);
   const [resetEmail, setResetEmail] = useState("");
+  const [accessUser, setAccessUser] = useState<{ id: string; full_name: string | null; is_active: boolean } | null>(null);
+  const { roles, getUserRoleId } = useRbac();
 
   const handleAssignRole = async () => {
     if (!selectedUser) return;
@@ -272,6 +278,13 @@ export const UsersModule = () => {
         </Button>
       </div>
 
+      <Tabs defaultValue="users" className="w-full">
+        <TabsList>
+          <TabsTrigger value="users">Utilisateurs</TabsTrigger>
+          <TabsTrigger value="roles">Rôles & permissions</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="users" className="mt-6 space-y-6">
       {/* Role Legend */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {(Object.keys(roleConfig) as AppRole[]).map((role) => (
@@ -346,6 +359,9 @@ export const UsersModule = () => {
                         ) : (
                           <span className="text-muted-foreground text-sm">Non attribué</span>
                         )}
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {roles.find((r) => r.id === getUserRoleId(u.id))?.name ?? "Aucun rôle détaillé"}
+                        </p>
                       </TableCell>
                       <TableCell>
                         {format(new Date(u.created_at), "dd MMM yyyy", { locale: fr })}
@@ -362,6 +378,15 @@ export const UsersModule = () => {
                             }}
                           >
                             {u.role ? "Modifier" : "Attribuer"}
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() =>
+                              setAccessUser({ id: u.id, full_name: u.full_name, is_active: u.is_active })
+                            }
+                          >
+                            Accès
                           </Button>
                           {u.id !== user?.id && (
                             <>
@@ -407,6 +432,20 @@ export const UsersModule = () => {
           )}
         </CardContent>
       </Card>
+        </TabsContent>
+
+        <TabsContent value="roles" className="mt-6">
+          <RolesPermissionsMatrix />
+        </TabsContent>
+      </Tabs>
+
+      <UserAccessDialog
+        open={!!accessUser}
+        onOpenChange={(open) => !open && setAccessUser(null)}
+        targetUser={accessUser}
+        onToggleActive={(userId, active) => toggleUserActive(userId, active)}
+      />
+
 
       {/* Assign Role Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
