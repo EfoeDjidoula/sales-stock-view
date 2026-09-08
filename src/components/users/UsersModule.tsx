@@ -407,6 +407,20 @@ export const UsersModule = () => {
           )}
         </CardContent>
       </Card>
+        </TabsContent>
+
+        <TabsContent value="roles" className="mt-6">
+          <RolesPermissionsMatrix />
+        </TabsContent>
+      </Tabs>
+
+      <UserAccessDialog
+        open={!!accessUser}
+        onOpenChange={(open) => !open && setAccessUser(null)}
+        targetUser={accessUser}
+        onToggleActive={(userId, active) => toggleUserActive(userId, active)}
+      />
+
 
       {/* Assign Role Dialog */}
       <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
