@@ -143,6 +143,58 @@ export type Database = {
         }
         Relationships: []
       }
+      country_modules: {
+        Row: {
+          country_id: string
+          created_at: string
+          id: string
+          is_enabled: boolean
+          module_key: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          country_id: string
+          created_at?: string
+          id?: string
+          is_enabled?: boolean
+          module_key: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          country_id?: string
+          created_at?: string
+          id?: string
+          is_enabled?: boolean
+          module_key?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "country_modules_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "countries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "country_modules_module_key_fkey"
+            columns: ["module_key"]
+            isOneToOne: false
+            referencedRelation: "modules"
+            referencedColumns: ["key"]
+          },
+          {
+            foreignKeyName: "country_modules_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       depotages: {
         Row: {
           country_id: string | null
@@ -442,6 +494,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      modules: {
+        Row: {
+          category: string
+          created_at: string
+          description: string | null
+          id: string
+          is_core: boolean
+          key: string
+          label: string
+          position: number
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_core?: boolean
+          key: string
+          label: string
+          position?: number
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_core?: boolean
+          key?: string
+          label?: string
+          position?: number
+          updated_at?: string
+        }
+        Relationships: []
       }
       orders: {
         Row: {
@@ -1850,6 +1938,10 @@ export type Database = {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
         }
+        Returns: boolean
+      }
+      is_module_enabled: {
+        Args: { _country_id: string; _module_key: string; _tenant_id: string }
         Returns: boolean
       }
       is_platform_admin: { Args: { _user_id: string }; Returns: boolean }
