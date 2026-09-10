@@ -33,7 +33,8 @@ import {
 } from "@/components/ui/table";
 import { useLumatekTenants, TenantStatus, TenantInput } from "@/hooks/useLumatekTenants";
 import { LumatekClientCountries } from "./LumatekClientCountries";
-import { Plus, Pencil, Eye, PauseCircle, PlayCircle, Archive, Globe2 } from "lucide-react";
+import { LumatekClientModules } from "./LumatekClientModules";
+import { Plus, Pencil, Eye, PauseCircle, PlayCircle, Archive, Globe2, Blocks } from "lucide-react";
 
 const STATUS_META: Record<string, { label: string; className: string }> = {
   active: { label: "Actif", className: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30" },
@@ -63,6 +64,7 @@ export const LumatekClients = () => {
   const [viewId, setViewId] = useState<string | null>(null);
   const [pending, setPending] = useState<{ id: string; status: TenantStatus } | null>(null);
   const [countriesId, setCountriesId] = useState<string | null>(null);
+  const [modulesId, setModulesId] = useState<string | null>(null);
 
 
   const viewed = tenants.find((t) => t.id === viewId) || null;
@@ -169,6 +171,10 @@ export const LumatekClients = () => {
                           <Button size="icon" variant="ghost" onClick={() => setCountriesId(t.id)} title="Pays">
                             <Globe2 className="h-4 w-4 text-indigo-300" />
                           </Button>
+                          <Button size="icon" variant="ghost" onClick={() => setModulesId(t.id)} title="Modules">
+                            <Blocks className="h-4 w-4 text-indigo-300" />
+                          </Button>
+
 
                           {t.status !== "active" ? (
                             <Button
@@ -285,6 +291,14 @@ export const LumatekClients = () => {
         tenantName={tenants.find((t) => t.id === countriesId)?.trade_name}
         open={!!countriesId}
         onOpenChange={(o) => !o && setCountriesId(null)}
+      />
+
+      {/* Modules activés pour le client */}
+      <LumatekClientModules
+        tenantId={modulesId}
+        tenantName={tenants.find((t) => t.id === modulesId)?.trade_name}
+        open={!!modulesId}
+        onOpenChange={(o) => !o && setModulesId(null)}
       />
 
       {/* Confirmation de changement de statut */}
