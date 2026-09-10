@@ -454,12 +454,20 @@ const Index = () => {
 
           {/* Stock Tab */}
           <TabsContent value="stock" className="animate-fade-in">
-            <StockModule stationId={selectedStation?.id} />
+            {canAccessTab("stock") ? (
+              <StockModule stationId={selectedStation?.id} />
+            ) : (
+              <AccessDenied onGoBack={() => setActiveTab(allowedTabs[0] ?? "ventes")} />
+            )}
           </TabsContent>
 
           {/* Historique Tab */}
           <TabsContent value="historique" className="animate-fade-in">
-            <HistoryModule />
+            {canAccessTab("historique") ? (
+              <HistoryModule />
+            ) : (
+              <AccessDenied onGoBack={() => setActiveTab(allowedTabs[0] ?? "ventes")} />
+            )}
           </TabsContent>
 
           {/* Commandes Tab */}
@@ -531,7 +539,11 @@ const Index = () => {
 
           {/* Stations Tab */}
           <TabsContent value="stations" className="animate-fade-in">
-            <StationManagement isAdmin={currentUserRole === "admin"} />
+            {canAccessTab("stations") ? (
+              <StationManagement isAdmin={currentUserRole === "admin"} />
+            ) : (
+              <AccessDenied onGoBack={() => setActiveTab(allowedTabs[0] ?? "ventes")} />
+            )}
           </TabsContent>
 
           {/* Structure de prix Tab */}
