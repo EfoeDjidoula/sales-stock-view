@@ -130,6 +130,9 @@ const defaultValues: IndexEntryForm = {
   bonsEntreprise: { nombre: "", valeurUnitaire: "" },
 };
 
+import { useModules } from "@/hooks/useModules";
+import { AccessDenied } from "@/components/AccessDenied";
+
 const IndexEntry = () => {
   const { isModuleEnabled, isLoading: modulesLoading } = useModules();
   const { data: dbStations } = useStations();
