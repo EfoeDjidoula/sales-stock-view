@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -11,30 +11,40 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useModuleCatalog, MODULE_CATEGORY_LABELS } from "@/hooks/useModules";
 
 export const LumatekModules = () => {
+  const { data: catalog = [], isLoading: loadingCatalog } = useModuleCatalog();
+
   const { data, isLoading } = useQuery({
     queryKey: ["lumatek-modules"],
     queryFn: async () => {
-      const [modulesRes, tenantsRes] = await Promise.all([
-        supabase.from("tenant_modules").select("*").order("position"),
+      const [tenantsRes, tmRes, cmRes] = await Promise.all([
         supabase.from("tenants").select("id, trade_name"),
+        supabase.from("tenant_modules").select("tenant_id, module_key, is_enabled"),
+        supabase.from("country_modules").select("module_key, is_enabled"),
       ]);
-      const tenants = tenantsRes.data || [];
-      return (modulesRes.data || []).map((m) => ({
-        ...m,
-        tenantName: tenants.find((t) => t.id === m.tenant_id)?.trade_name || "—",
-      }));
+      return {
+        tenants: tenantsRes.data || [],
+        tenantModules: tmRes.data || [],
+        countryModules: cmRes.data || [],
+      };
     },
   });
+
+  const loading = isLoading || loadingCatalog;
+  const tenantCount = data?.tenants.length ?? 0;
 
   return (
     <Card className="border-indigo-500/20">
       <CardHeader>
-        <CardTitle className="text-base">Modules activés par client</CardTitle>
+        <CardTitle className="text-base">Catalogue des modules</CardTitle>
+        <CardDescription>
+          Activation par client depuis Clients → bouton Modules, avec surcharge possible par pays.
+        </CardDescription>
       </CardHeader>
       <CardContent>
-        {isLoading ? (
+        {loading ? (
           <div className="space-y-2">
             <Skeleton className="h-10 w-full" />
             <Skeleton className="h-10 w-full" />
@@ -44,37 +54,45 @@ export const LumatekModules = () => {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Client</TableHead>
                   <TableHead>Module</TableHead>
-                  <TableHead>Rôles autorisés</TableHead>
-                  <TableHead>Statut</TableHead>
+                  <TableHead>Catégorie</TableHead>
+                  <TableHead>Clients actifs</TableHead>
+                  <TableHead>Surcharges pays</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {(data || []).map((m) => (
-                  <TableRow key={m.id}>
-                    <TableCell>{m.tenantName}</TableCell>
-                    <TableCell className="font-mono text-xs">{m.module_key}</TableCell>
-                    <TableCell className="text-xs text-muted-foreground">
-                      {(m.allowed_roles || []).join(", ")}
-                    </TableCell>
-                    <TableCell>
-                      <Badge
-                        variant="outline"
-                        className={m.is_enabled ? "border-emerald-500/30 text-emerald-400" : ""}
-                      >
-                        {m.is_enabled ? "Activé" : "Désactivé"}
-                      </Badge>
-                    </TableCell>
-                  </TableRow>
-                ))}
-                {(data || []).length === 0 && (
-                  <TableRow>
-                    <TableCell colSpan={4} className="text-center text-sm text-muted-foreground">
-                      Aucun module configuré.
-                    </TableCell>
-                  </TableRow>
-                )}
+                {catalog.map((m) => {
+                  const rows = (data?.tenantModules || []).filter((t) => t.module_key === m.key);
+                  const disabled = rows.filter((r) => !r.is_enabled).length;
+                  const active = tenantCount - disabled;
+                  const overrides = (data?.countryModules || []).filter(
+                    (c) => c.module_key === m.key
+                  ).length;
+                  return (
+                    <TableRow key={m.key}>
+                      <TableCell>
+                        <div className="font-medium">{m.label}</div>
+                        <div className="text-xs text-muted-foreground">{m.description}</div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline">
+                          {MODULE_CATEGORY_LABELS[m.category] ?? m.category}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge
+                          variant="outline"
+                          className={active > 0 ? "border-emerald-500/30 text-emerald-400" : ""}
+                        >
+                          {active} / {tenantCount}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {overrides > 0 ? `${overrides} pays` : "—"}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
               </TableBody>
             </Table>
           </div>
