@@ -1659,21 +1659,28 @@ export type Database = {
       tenants: {
         Row: {
           address: string | null
+          app_description: string | null
+          app_title: string | null
           code: string
           created_at: string
           default_currency: string
           default_language: string
           email: string | null
+          favicon_url: string | null
+          footer_note: string | null
           id: string
           legal_name: string | null
           logo_url: string | null
           name: string
           phone: string | null
           plan: string
+          powered_by_label: string
           primary_color: string
           secondary_color: string
+          show_powered_by: boolean
           slug: string
           status: string
+          tax_id: string | null
           trade_name: string
           trial_ends_at: string | null
           updated_at: string
@@ -1681,21 +1688,28 @@ export type Database = {
         }
         Insert: {
           address?: string | null
+          app_description?: string | null
+          app_title?: string | null
           code: string
           created_at?: string
           default_currency?: string
           default_language?: string
           email?: string | null
+          favicon_url?: string | null
+          footer_note?: string | null
           id?: string
           legal_name?: string | null
           logo_url?: string | null
           name: string
           phone?: string | null
           plan?: string
+          powered_by_label?: string
           primary_color?: string
           secondary_color?: string
+          show_powered_by?: boolean
           slug: string
           status?: string
+          tax_id?: string | null
           trade_name: string
           trial_ends_at?: string | null
           updated_at?: string
@@ -1703,21 +1717,28 @@ export type Database = {
         }
         Update: {
           address?: string | null
+          app_description?: string | null
+          app_title?: string | null
           code?: string
           created_at?: string
           default_currency?: string
           default_language?: string
           email?: string | null
+          favicon_url?: string | null
+          footer_note?: string | null
           id?: string
           legal_name?: string | null
           logo_url?: string | null
           name?: string
           phone?: string | null
           plan?: string
+          powered_by_label?: string
           primary_color?: string
           secondary_color?: string
+          show_powered_by?: boolean
           slug?: string
           status?: string
+          tax_id?: string | null
           trade_name?: string
           trial_ends_at?: string | null
           updated_at?: string
