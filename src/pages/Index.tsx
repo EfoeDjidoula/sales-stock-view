@@ -8,6 +8,7 @@ import { CountrySwitcher } from "@/components/tenant/CountrySwitcher";
 import { TenantSettingsModule } from "@/components/tenant/TenantSettingsModule";
 import { useTenant } from "@/hooks/useTenant";
 import { usePlatformAdmin } from "@/hooks/usePlatformAdmin";
+import { useModules } from "@/hooks/useModules";
 import { SalesCard } from "@/components/dashboard/SalesCard";
 import { PeriodTabs } from "@/components/dashboard/PeriodTabs";
 import { SalesChart } from "@/components/dashboard/SalesChart";
@@ -113,6 +114,23 @@ const TAB_META: Record<string, { label: string; icon: typeof TrendingUp }> = {
   societe: { label: "Paramètres client", icon: Building2 },
 };
 
+// Module (feature flag) requis pour chaque onglet
+const TAB_MODULE: Record<string, string> = {
+  ventes: "ventes",
+  stock: "stocks",
+  historique: "index",
+  commandes: "commandes",
+  approvisionnements: "livraisons",
+  depotage: "depots",
+  camions: "livraisons",
+  stations: "stations",
+  perequation: "perequation",
+  structure_prix: "facturation",
+  proforma: "commandes",
+  clients: "clients_b2b",
+  fournisseurs: "achats",
+};
+
 // Grouped navigation structure
 const TAB_GROUPS: {
   id: string;
@@ -136,6 +154,7 @@ const Index = () => {
   const { currentUserRole, loading: roleLoading } = useUserRoles();
   const { isPlatformAdmin } = usePlatformAdmin();
   const { tenant } = useTenant();
+  const { isModuleEnabled, enabledMap, isLoading: modulesLoading } = useModules();
   const queryClient = useQueryClient();
 
   const { totalSales, totalSuper, totalGasoil, salesByStation, chartData, chartRawEntries, stations, isLoading, isFetching } =
@@ -143,25 +162,33 @@ const Index = () => {
 
   // Get allowed tabs for current user
   const allowedTabs = useMemo(() => {
-    if (!currentUserRole) return ["ventes", "stock", "stations"];
-    return Object.entries(TAB_PERMISSIONS)
-      .filter(([_, roles]) => roles.includes(currentUserRole))
-      .map(([tab]) => tab);
-  }, [currentUserRole]);
+    const base = !currentUserRole
+      ? ["ventes", "stock", "stations"]
+      : Object.entries(TAB_PERMISSIONS)
+          .filter(([_, roles]) => roles.includes(currentUserRole))
+          .map(([tab]) => tab);
+    return base.filter((tab) => {
+      const moduleKey = TAB_MODULE[tab];
+      return !moduleKey || isModuleEnabled(moduleKey);
+    });
+  }, [currentUserRole, enabledMap]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const [activeTab, setActiveTab] = useState("ventes");
 
   const canAccessTab = (tab: string) => allowedTabs.includes(tab);
 
+  // Un onglet devenu inaccessible (droits ou module désactivé) renvoie vers une section autorisée
   useEffect(() => {
-    if (!canAccessTab(activeTab)) {
-      toast({
-        variant: "destructive",
-        title: "Accès non autorisé",
-        description: "Vous n'avez pas les permissions nécessaires pour accéder à cette section.",
-      });
-    }
-  }, [activeTab, allowedTabs]);
+    if (modulesLoading) return;
+    if (canAccessTab(activeTab)) return;
+    toast({
+      variant: "destructive",
+      title: "Section indisponible",
+      description:
+        "Cette section n'est pas activée pour votre société / pays ou vous n'y avez pas accès.",
+    });
+    if (allowedTabs.length > 0) setActiveTab(allowedTabs[0]);
+  }, [activeTab, allowedTabs, modulesLoading]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <div className="min-h-screen bg-background">
@@ -427,12 +454,20 @@ const Index = () => {
 
           {/* Stock Tab */}
           <TabsContent value="stock" className="animate-fade-in">
-            <StockModule stationId={selectedStation?.id} />
+            {canAccessTab("stock") ? (
+              <StockModule stationId={selectedStation?.id} />
+            ) : (
+              <AccessDenied onGoBack={() => setActiveTab(allowedTabs[0] ?? "ventes")} />
+            )}
           </TabsContent>
 
           {/* Historique Tab */}
           <TabsContent value="historique" className="animate-fade-in">
-            <HistoryModule />
+            {canAccessTab("historique") ? (
+              <HistoryModule />
+            ) : (
+              <AccessDenied onGoBack={() => setActiveTab(allowedTabs[0] ?? "ventes")} />
+            )}
           </TabsContent>
 
           {/* Commandes Tab */}
@@ -504,7 +539,11 @@ const Index = () => {
 
           {/* Stations Tab */}
           <TabsContent value="stations" className="animate-fade-in">
-            <StationManagement isAdmin={currentUserRole === "admin"} />
+            {canAccessTab("stations") ? (
+              <StationManagement isAdmin={currentUserRole === "admin"} />
+            ) : (
+              <AccessDenied onGoBack={() => setActiveTab(allowedTabs[0] ?? "ventes")} />
+            )}
           </TabsContent>
 
           {/* Structure de prix Tab */}

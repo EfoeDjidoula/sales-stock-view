@@ -130,7 +130,11 @@ const defaultValues: IndexEntryForm = {
   bonsEntreprise: { nombre: "", valeurUnitaire: "" },
 };
 
+import { useModules } from "@/hooks/useModules";
+import { AccessDenied } from "@/components/AccessDenied";
+
 const IndexEntry = () => {
+  const { isModuleEnabled, isLoading: modulesLoading } = useModules();
   const { data: dbStations } = useStations();
   const { fiscalYears } = useFiscalYears();
   const { user } = useAuth();
@@ -582,6 +586,15 @@ const IndexEntry = () => {
       </Card>
     );
   };
+
+  // Module "Index" désactivé pour cette société / ce pays : accès direct par URL bloqué
+  if (!modulesLoading && !isModuleEnabled("index")) {
+    return (
+      <div className="min-h-screen bg-background p-8">
+        <AccessDenied />
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
