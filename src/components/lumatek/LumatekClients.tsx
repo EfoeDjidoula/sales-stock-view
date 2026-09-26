@@ -34,7 +34,8 @@ import {
 import { useLumatekTenants, TenantStatus, TenantInput } from "@/hooks/useLumatekTenants";
 import { LumatekClientCountries } from "./LumatekClientCountries";
 import { LumatekClientModules } from "./LumatekClientModules";
-import { Plus, Pencil, Eye, PauseCircle, PlayCircle, Archive, Globe2, Blocks } from "lucide-react";
+import { BrandingForm } from "@/components/tenant/BrandingForm";
+import { Plus, Pencil, Eye, PauseCircle, PlayCircle, Archive, Globe2, Blocks, Palette } from "lucide-react";
 
 const STATUS_META: Record<string, { label: string; className: string }> = {
   active: { label: "Actif", className: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30" },
@@ -65,6 +66,7 @@ export const LumatekClients = () => {
   const [pending, setPending] = useState<{ id: string; status: TenantStatus } | null>(null);
   const [countriesId, setCountriesId] = useState<string | null>(null);
   const [modulesId, setModulesId] = useState<string | null>(null);
+  const [brandingId, setBrandingId] = useState<string | null>(null);
 
 
   const viewed = tenants.find((t) => t.id === viewId) || null;
@@ -173,6 +175,9 @@ export const LumatekClients = () => {
                           </Button>
                           <Button size="icon" variant="ghost" onClick={() => setModulesId(t.id)} title="Modules">
                             <Blocks className="h-4 w-4 text-indigo-300" />
+                          </Button>
+                          <Button size="icon" variant="ghost" onClick={() => setBrandingId(t.id)} title="Identité visuelle">
+                            <Palette className="h-4 w-4 text-indigo-300" />
                           </Button>
 
 
@@ -300,6 +305,21 @@ export const LumatekClients = () => {
         open={!!modulesId}
         onOpenChange={(o) => !o && setModulesId(null)}
       />
+
+      {/* Identité visuelle (white label) du client */}
+      <Dialog open={!!brandingId} onOpenChange={(o) => !o && setBrandingId(null)}>
+        <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>
+              Identité visuelle — {tenants.find((t) => t.id === brandingId)?.trade_name}
+            </DialogTitle>
+            <DialogDescription>
+              Personnalisation appliquée uniquement à ce client.
+            </DialogDescription>
+          </DialogHeader>
+          {brandingId && <BrandingForm tenantId={brandingId} />}
+        </DialogContent>
+      </Dialog>
 
       {/* Confirmation de changement de statut */}
       <AlertDialog open={!!pending} onOpenChange={(o) => !o && setPending(null)}>
