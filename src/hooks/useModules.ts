@@ -74,6 +74,26 @@ export const useModules = () => {
       const map: Record<string, boolean> = {};
       for (const row of tenantRes.data || []) map[row.module_key] = row.is_enabled;
       for (const row of countryRes.data || []) map[row.module_key] = row.is_enabled;
+
+      // Restriction par le plan de licence courant (modules cœur toujours autorisés)
+      const { data: lic } = await supabase
+        .from("licenses")
+        .select("plan_id, status")
+        .eq("tenant_id", tenantId!)
+        .not("status", "in", "(terminated,draft)")
+        .order("created_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      if (lic) {
+        const [{ data: planMods }, { data: allMods }] = await Promise.all([
+          supabase.from("license_modules").select("module_key").eq("plan_id", lic.plan_id),
+          supabase.from("modules").select("key, is_core"),
+        ]);
+        const allowed = new Set((planMods || []).map((m) => m.module_key));
+        for (const m of allMods || []) {
+          if (!m.is_core && !allowed.has(m.key)) map[m.key] = false;
+        }
+      }
       return map;
     },
   });
