@@ -97,8 +97,7 @@ export const useLicenses = () => {
   const invalidate = () => {
     qc.invalidateQueries({ queryKey: ["license-plans"] });
     qc.invalidateQueries({ queryKey: ["licenses"] });
-    qc.invalidateQueries({ queryKey: ["modules"] });
-    qc.invalidateQueries({ queryKey: ["tenant-modules"] });
+    qc.invalidateQueries({ queryKey: ["module-flags"] });
   };
 
   const savePlan = useMutation({
