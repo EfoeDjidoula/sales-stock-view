@@ -108,7 +108,7 @@ export const LumatekContracts = () => {
             <TableHeader>
               <TableRow>
                 <TableHead>N° contrat</TableHead><TableHead>Client</TableHead><TableHead>Type</TableHead>
-                <TableHead>Période</TableHead><TableHead>Montant</TableHead><TableHead>SLA</TableHead>
+                <TableHead>Période</TableHead><TableHead>Montant</TableHead><TableHead>Reste à payer</TableHead><TableHead>SLA</TableHead>
                 <TableHead>Responsable</TableHead><TableHead>Statut</TableHead><TableHead className="text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
@@ -125,6 +125,14 @@ export const LumatekContracts = () => {
                     <TableCell>{c.contract_type}<div className="text-xs text-muted-foreground">{c.support_level}</div></TableCell>
                     <TableCell className="text-xs">{c.start_date} → {c.end_date}</TableCell>
                     <TableCell className="text-xs">{Number(c.amount).toLocaleString("fr-FR")}<div className="text-muted-foreground">{FREQ[c.billing_frequency] || c.billing_frequency}</div></TableCell>
+                    <TableCell className="text-xs">
+                      {remainingFor(c.id, c.amount) === 0 ? (
+                        <Badge variant="outline" className="bg-emerald-500/15 text-emerald-400 border-emerald-500/30">Soldé</Badge>
+                      ) : (
+                        <span className="font-semibold text-amber-400">{remainingFor(c.id, c.amount).toLocaleString("fr-FR")}</span>
+                      )}
+                      <div className="text-muted-foreground">Payé : {paidFor(c.id).toLocaleString("fr-FR")}</div>
+                    </TableCell>
                     <TableCell className="text-xs">{c.sla || "—"}</TableCell>
                     <TableCell className="text-xs">{c.lumatek_manager || "—"}</TableCell>
                     <TableCell><Badge variant="outline" className={CONTRACT_STATUS_META[st].className}>{CONTRACT_STATUS_META[st].label}</Badge></TableCell>
