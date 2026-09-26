@@ -12,6 +12,7 @@ import { LumatekClients } from "@/components/lumatek/LumatekClients";
 import { LumatekUsers } from "@/components/lumatek/LumatekUsers";
 import { LumatekCountries } from "@/components/lumatek/LumatekCountries";
 import { LumatekModules } from "@/components/lumatek/LumatekModules";
+import { LumatekLicenses } from "@/components/lumatek/LumatekLicenses";
 import { LumatekPlaceholder } from "@/components/lumatek/LumatekPlaceholder";
 import {
   LayoutDashboard,
@@ -76,12 +77,7 @@ const LumatekAdmin = () => {
       case "modules":
         return <LumatekModules />;
       case "licences":
-        return (
-          <LumatekPlaceholder
-            title="Licences"
-            description="Gestion des licences par client, quotas et dates d'expiration."
-          />
-        );
+        return <LumatekLicenses />;
       case "contrats":
         return (
           <LumatekPlaceholder

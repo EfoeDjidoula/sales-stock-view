@@ -8,6 +8,13 @@
       "when": 1790460174126,
       "tag": "0000_replace_tautology_select_policies",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1790462625925,
+      "tag": "0001_licenses",
+      "breakpoints": true
     }
   ]
 }
