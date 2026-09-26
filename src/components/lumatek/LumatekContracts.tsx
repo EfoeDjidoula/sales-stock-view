@@ -233,6 +233,75 @@ export const LumatekContracts = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      <Dialog open={!!payFor} onOpenChange={(o) => !o && setPayFor(null)}>
+        <DialogContent className="max-w-xl max-h-[85vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Paiements — {payFor?.contract_number}</DialogTitle>
+            <DialogDescription>
+              {payFor && `${tenantName(payFor.tenant_id)} · Montant du contrat : ${Number(payFor.amount).toLocaleString("fr-FR")}`}
+            </DialogDescription>
+          </DialogHeader>
+          {payFor && (
+            <div className="space-y-4">
+              <div className="grid grid-cols-3 gap-3 rounded-lg border border-border/60 p-3 text-sm">
+                <div><div className="text-xs text-muted-foreground">Montant</div><div className="font-semibold">{Number(payFor.amount).toLocaleString("fr-FR")}</div></div>
+                <div><div className="text-xs text-muted-foreground">Payé</div><div className="font-semibold text-emerald-400">{paidFor(payFor.id).toLocaleString("fr-FR")}</div></div>
+                <div><div className="text-xs text-muted-foreground">Facture restante</div><div className="font-semibold text-amber-400">{remainingFor(payFor.id, payFor.amount).toLocaleString("fr-FR")}</div></div>
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-2">
+                <div className="space-y-1.5">
+                  <Label>Mois de paiement *</Label>
+                  <Select value={String(pay.month)} onValueChange={(v) => setPay({ ...pay, month: Number(v) })}>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>{MONTHS_FR.map((m, i) => <SelectItem key={i + 1} value={String(i + 1)}>{m}</SelectItem>)}</SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Année *</Label>
+                  <Input type="number" min={2000} max={2100} value={pay.year}
+                    onChange={(e) => setPay({ ...pay, year: Math.min(2100, Math.max(2000, Number(e.target.value) || 2000)) })} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Montant payé *</Label>
+                  <Input type="number" min={0} value={pay.amount || ""}
+                    onChange={(e) => setPay({ ...pay, amount: Math.max(0, Number(e.target.value) || 0) })} />
+                </div>
+                <div className="space-y-1.5">
+                  <Label>Date du paiement</Label>
+                  <Input type="date" value={pay.date} onChange={(e) => setPay({ ...pay, date: e.target.value })} />
+                </div>
+                <div className="space-y-1.5 sm:col-span-2">
+                  <Label>Notes</Label>
+                  <Textarea value={pay.notes} onChange={(e) => setPay({ ...pay, notes: e.target.value })} placeholder="Référence, mode de paiement…" />
+                </div>
+              </div>
+              {pay.amount <= 0 && <p className="text-xs text-destructive">Le montant doit être supérieur à zéro.</p>}
+              <Button className="w-full gap-2" onClick={submitPay} disabled={add.isPending || pay.amount <= 0}>
+                <Banknote className="h-4 w-4" /> Enregistrer le paiement
+              </Button>
+
+              <div className="space-y-1">
+                <Label className="text-xs text-muted-foreground">Paiements enregistrés</Label>
+                {forContract(payFor.id).length === 0 && <p className="text-sm text-muted-foreground">Aucun paiement pour ce contrat.</p>}
+                {forContract(payFor.id).map((p) => (
+                  <div key={p.id} className="flex items-center justify-between border-b border-border/50 py-1.5 text-sm">
+                    <span>{MONTHS_FR[p.payment_month - 1]} {p.payment_year}<span className="ml-2 text-xs text-muted-foreground">{p.payment_date}</span></span>
+                    <span className="flex items-center gap-2">
+                      <span className="font-semibold">{Number(p.amount).toLocaleString("fr-FR")}</span>
+                      <Button size="icon" variant="ghost" title="Supprimer" onClick={() => remove.mutate(p.id)}><Trash2 className="h-3.5 w-3.5 text-destructive" /></Button>
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPayFor(null)}>Fermer</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
