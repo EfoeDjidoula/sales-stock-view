@@ -65,6 +65,8 @@ import { SuppliersModule } from "@/components/suppliers/SuppliersModule";
 import { PriceStructureModule } from "@/components/pricing/PriceStructureModule";
 import { ProformaModule } from "@/components/proforma/ProformaModule";
 import { StationAnalysisModule } from "@/components/analysis/StationAnalysisModule";
+import { SupportTickets } from "@/components/support/SupportTickets";
+import { LifeBuoy } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import {
@@ -96,6 +98,7 @@ const TAB_PERMISSIONS: Record<string, AppRole[]> = {
   structure_prix: ["admin", "manager"],
   proforma: ["admin", "manager", "operator"],
   analyse_ia: ["admin", "manager"],
+  support: ["admin", "manager", "operator"],
 
   exercices: ["admin"],
   droits: ["admin"],
@@ -116,6 +119,7 @@ const TAB_META: Record<string, { label: string; icon: typeof TrendingUp }> = {
   structure_prix: { label: "Structure de prix", icon: Fuel },
   proforma: { label: "Proforma", icon: FileText },
   analyse_ia: { label: "Analyse IA", icon: BarChart3 },
+  support: { label: "Mes tickets", icon: LifeBuoy },
   clients: { label: "Clients", icon: Users },
   fournisseurs: { label: "Fournisseurs", icon: Building2 },
   exercices: { label: "Exercices", icon: BookOpen },
@@ -152,6 +156,7 @@ const TAB_GROUPS: {
   { id: "logistique", label: "Logistique & Flux", icon: Truck, tabs: ["commandes", "approvisionnements", "depotage", "camions"] },
   { id: "config", label: "Configuration", icon: Settings2, tabs: ["stations", "perequation", "structure_prix", "proforma"] },
   { id: "tiers", label: "Tiers", icon: Contact, tabs: ["clients", "fournisseurs"] },
+  { id: "support", label: "Support", icon: LifeBuoy, tabs: ["support"] },
   { id: "admin", label: "Administration", icon: ShieldCheck, tabs: ["exercices", "droits", "societe"] },
 ];
 
@@ -569,6 +574,10 @@ const Index = () => {
             ) : (
               <AccessDenied onGoBack={() => setActiveTab("ventes")} />
             )}
+          </TabsContent>
+
+          <TabsContent value="support" className="animate-fade-in">
+            <SupportTickets mode="client" />
           </TabsContent>
 
           {/* Analyse IA Tab */}

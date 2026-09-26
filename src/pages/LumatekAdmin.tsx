@@ -15,6 +15,7 @@ import { LumatekModules } from "@/components/lumatek/LumatekModules";
 import { LumatekContracts } from "@/components/lumatek/LumatekContracts";
 import { LumatekLicenses } from "@/components/lumatek/LumatekLicenses";
 import { LumatekInvoices } from "@/components/lumatek/LumatekInvoices";
+import { SupportTickets } from "@/components/support/SupportTickets";
 import { LumatekPlaceholder } from "@/components/lumatek/LumatekPlaceholder";
 import {
   LayoutDashboard,
@@ -41,7 +42,7 @@ const MENU = [
   { id: "licences", label: "Licences", icon: KeyRound },
   { id: "contrats", label: "Contrats & Maintenance", icon: FileSignature },
   { id: "factures", label: "Factures clients", icon: Receipt },
-  { id: "support", label: "Support", icon: LifeBuoy },
+  { id: "support", label: "Support · Tickets clients", icon: LifeBuoy },
   { id: "journal", label: "Journal système", icon: ScrollText },
   { id: "parametres", label: "Paramètres", icon: Settings },
 ] as const;
@@ -87,12 +88,7 @@ const LumatekAdmin = () => {
       case "factures":
         return <LumatekInvoices />;
       case "support":
-        return (
-          <LumatekPlaceholder
-            title="Support"
-            description="Tickets, échanges avec les clients et suivi des incidents."
-          />
-        );
+        return <SupportTickets mode="lumatek" />;
       case "journal":
         return (
           <LumatekPlaceholder
