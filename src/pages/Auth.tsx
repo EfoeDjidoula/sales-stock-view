@@ -123,7 +123,7 @@ const Auth = () => {
 
         {/* Footer */}
         <p className="text-center text-xs text-muted-foreground">
-          © 2026 YATT & CO ENERGY BENIN SA
+          Powered by LUMATEK TECHNOLOGY
         </p>
       </div>
     </div>
