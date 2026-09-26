@@ -52,7 +52,6 @@ export const BrandingForm = ({ tenantId }: { tenantId: string }) => {
 
   useEffect(() => () => { if (preview) URL.revokeObjectURL(preview.url); }, [preview]);
 
-  const companyName = data?.legal_name || data?.trade_name || data?.name || "Société";
 
   const openPreview = async () => {
     setPreviewing(true);
@@ -94,6 +93,8 @@ export const BrandingForm = ({ tenantId }: { tenantId: string }) => {
     },
     enabled: !!tenantId,
   });
+
+  const companyName = data?.legal_name || data?.trade_name || data?.name || "Société";
 
   useEffect(() => {
     if (!data) return;
