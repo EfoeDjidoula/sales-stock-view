@@ -79,12 +79,7 @@ const LumatekAdmin = () => {
       case "licences":
         return <LumatekLicenses />;
       case "contrats":
-        return (
-          <LumatekPlaceholder
-            title="Contrats & Maintenance"
-            description="Contrats commerciaux, niveaux de service et interventions de maintenance."
-          />
-        );
+        return <LumatekContracts />;
       case "support":
         return (
           <LumatekPlaceholder
