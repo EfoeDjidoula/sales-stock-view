@@ -80,6 +80,69 @@ export type Database = {
           },
         ]
       }
+      contract_invoices: {
+        Row: {
+          amount: number
+          amount_paid: number
+          contract_id: string
+          created_at: string
+          id: string
+          invoice_date: string
+          invoice_month: number
+          invoice_number: string
+          invoice_year: number
+          notes: string | null
+          payment_date: string | null
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          amount_paid?: number
+          contract_id: string
+          created_at?: string
+          id?: string
+          invoice_date?: string
+          invoice_month: number
+          invoice_number?: string
+          invoice_year: number
+          notes?: string | null
+          payment_date?: string | null
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          amount_paid?: number
+          contract_id?: string
+          created_at?: string
+          id?: string
+          invoice_date?: string
+          invoice_month?: number
+          invoice_number?: string
+          invoice_year?: number
+          notes?: string | null
+          payment_date?: string | null
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "contract_invoices_contract_id_fkey"
+            columns: ["contract_id"]
+            isOneToOne: false
+            referencedRelation: "maintenance_contracts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "contract_invoices_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contract_payments: {
         Row: {
           amount: number

@@ -36,6 +36,13 @@
       "when": 1790465309476,
       "tag": "0004_create_contract_payments",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1790465691611,
+      "tag": "0005_contract_documents_and_invoices",
+      "breakpoints": true
     }
   ]
 }
