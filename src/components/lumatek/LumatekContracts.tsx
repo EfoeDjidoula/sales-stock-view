@@ -9,11 +9,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Pencil, RefreshCw, PauseCircle, PlayCircle, History, BellRing, ExternalLink } from "lucide-react";
+import { Plus, Pencil, RefreshCw, PauseCircle, PlayCircle, History, BellRing, ExternalLink, Banknote, Trash2 } from "lucide-react";
 import {
   useMaintenanceContracts, CONTRACT_STATUSES, contractEffectiveStatus, contractAlert, daysLeft,
   MaintenanceContract, ContractStatus,
 } from "@/hooks/useMaintenanceContracts";
+import { useContractPayments, MONTHS_FR } from "@/hooks/useContractPayments";
 import { useLumatekTenants } from "@/hooks/useLumatekTenants";
 
 export const CONTRACT_STATUS_META: Record<ContractStatus, { label: string; className: string }> = {
@@ -31,10 +32,28 @@ const inOneYear = () => { const d = new Date(); d.setFullYear(d.getFullYear() + 
 
 export const LumatekContracts = () => {
   const { contracts, isLoading, save, renew, setStatus } = useMaintenanceContracts();
+  const { forContract, paidFor, remainingFor, add, remove } = useContractPayments();
   const { tenants } = useLumatekTenants();
   const [edit, setEdit] = useState<Partial<MaintenanceContract> | null>(null);
   const [historyOf, setHistoryOf] = useState<string | null>(null);
+  const [payFor, setPayFor] = useState<MaintenanceContract | null>(null);
+  const [pay, setPay] = useState({ month: new Date().getMonth() + 1, year: new Date().getFullYear(), amount: 0, date: today(), notes: "" });
   const tenantName = (id: string) => tenants.find((t) => t.id === id)?.trade_name || "—";
+
+  const openPay = (c: MaintenanceContract) => {
+    setPayFor(c);
+    setPay({ month: new Date().getMonth() + 1, year: new Date().getFullYear(), amount: remainingFor(c.id, c.amount), date: today(), notes: "" });
+  };
+
+  const submitPay = async () => {
+    if (!payFor || pay.amount <= 0) return;
+    await add.mutateAsync({
+      contract_id: payFor.id, tenant_id: payFor.tenant_id,
+      payment_month: pay.month, payment_year: pay.year,
+      amount: pay.amount, payment_date: pay.date, notes: pay.notes.trim() || null,
+    });
+    setPay({ ...pay, amount: 0, notes: "" });
+  };
 
   const alerts = contracts
     .map((c) => ({ c, a: contractAlert(c) }))
