@@ -582,6 +582,7 @@ export type Database = {
           automatic_renewal: boolean
           created_at: string
           expiration_date: string
+          expiry_policy: string
           grace_period_days: number
           id: string
           license_number: string
@@ -600,6 +601,7 @@ export type Database = {
           automatic_renewal?: boolean
           created_at?: string
           expiration_date: string
+          expiry_policy?: string
           grace_period_days?: number
           id?: string
           license_number: string
@@ -618,6 +620,7 @@ export type Database = {
           automatic_renewal?: boolean
           created_at?: string
           expiration_date?: string
+          expiry_policy?: string
           grace_period_days?: number
           id?: string
           license_number?: string
@@ -2138,6 +2141,8 @@ export type Database = {
           status: string
         }[]
       }
+      tenant_license_state: { Args: { _tenant_id: string }; Returns: Json }
+      tenant_write_allowed: { Args: { _tenant_id: string }; Returns: boolean }
     }
     Enums: {
       app_role: "admin" | "manager" | "operator"

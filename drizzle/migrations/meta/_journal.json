@@ -15,6 +15,13 @@
       "when": 1790462625925,
       "tag": "0001_licenses",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1790463823802,
+      "tag": "0002_license_control_engine",
+      "breakpoints": true
     }
   ]
 }

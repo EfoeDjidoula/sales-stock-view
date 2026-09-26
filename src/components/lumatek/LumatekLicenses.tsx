@@ -19,7 +19,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { useLicenses, LICENSE_STATUSES, effectiveStatus, License, LicensePlan, LicenseStatus } from "@/hooks/useLicenses";
 import { useLumatekTenants } from "@/hooks/useLumatekTenants";
 import { useModuleCatalog } from "@/hooks/useModules";
-import { Plus, Pencil, Trash2 } from "lucide-react";
+import { Plus, Pencil, Trash2, CalendarPlus, RefreshCw, PauseCircle, PlayCircle } from "lucide-react";
 
 const STATUS_META: Record<LicenseStatus, { label: string; className: string }> = {
   draft: { label: "Brouillon", className: "bg-muted text-muted-foreground border-border" },
@@ -36,7 +36,7 @@ const today = () => new Date().toISOString().slice(0, 10);
 const inOneYear = () => { const d = new Date(); d.setFullYear(d.getFullYear() + 1); return d.toISOString().slice(0, 10); };
 
 export const LumatekLicenses = () => {
-  const { plans, licenses, usage, isLoading, savePlan, deletePlan, saveLicense } = useLicenses();
+  const { plans, licenses, usage, isLoading, savePlan, deletePlan, saveLicense, licenseAction } = useLicenses();
   const { tenants } = useLumatekTenants();
   const { data: catalog = [] } = useModuleCatalog();
 
@@ -126,7 +126,16 @@ export const LumatekLicenses = () => {
                       <TableCell>{usageCell(usage.countries[l.tenant_id] || 0, l.max_countries ?? p?.max_countries ?? null)}</TableCell>
                       <TableCell>{usageCell(usage.stations[l.tenant_id] || 0, l.max_stations ?? p?.max_stations ?? null)}</TableCell>
                       <TableCell className="text-right">
-                        <Button size="icon" variant="ghost" title="Modifier" onClick={() => setLic(l)}><Pencil className="h-4 w-4" /></Button>
+                        <div className="flex justify-end gap-1">
+                          <Button size="icon" variant="ghost" title="Prolonger de 30 jours" onClick={() => licenseAction.mutate({ license: l, action: "extend", days: 30 })}><CalendarPlus className="h-4 w-4" /></Button>
+                          <Button size="icon" variant="ghost" title="Renouveler (même durée)" onClick={() => licenseAction.mutate({ license: l, action: "renew" })}><RefreshCw className="h-4 w-4" /></Button>
+                          {l.status === "suspended" ? (
+                            <Button size="icon" variant="ghost" title="Réactiver" onClick={() => licenseAction.mutate({ license: l, action: "reactivate" })}><PlayCircle className="h-4 w-4 text-emerald-500" /></Button>
+                          ) : (
+                            <Button size="icon" variant="ghost" title="Suspendre" onClick={() => licenseAction.mutate({ license: l, action: "suspend" })}><PauseCircle className="h-4 w-4 text-destructive" /></Button>
+                          )}
+                          <Button size="icon" variant="ghost" title="Modifier" onClick={() => setLic(l)}><Pencil className="h-4 w-4" /></Button>
+                        </div>
                       </TableCell>
                     </TableRow>
                   );
@@ -229,6 +238,16 @@ export const LumatekLicenses = () => {
               {numField("Utilisateurs max", lic.max_users, (v) => setLic({ ...lic, max_users: v }), `Plan : ${lim(planOf(lic.plan_id || "")?.max_users ?? null)}`)}
               {numField("Pays max", lic.max_countries, (v) => setLic({ ...lic, max_countries: v }), `Plan : ${lim(planOf(lic.plan_id || "")?.max_countries ?? null)}`)}
               {numField("Stations max", lic.max_stations, (v) => setLic({ ...lic, max_stations: v }), `Plan : ${lim(planOf(lic.plan_id || "")?.max_stations ?? null)}`)}
+              <div className="space-y-1.5">
+                <Label>Après la période de grâce</Label>
+                <Select value={lic.expiry_policy ?? "read_only"} onValueChange={(v) => setLic({ ...lic, expiry_policy: v as License["expiry_policy"] })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="read_only">Lecture seule (tout consultable)</SelectItem>
+                    <SelectItem value="limited">Accès limité (ventes, stock, historique)</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
               <div className="flex items-center gap-2 pt-6">
                 <Switch checked={!!lic.automatic_renewal} onCheckedChange={(c) => setLic({ ...lic, automatic_renewal: c })} />
                 <Label>Renouvellement automatique</Label>

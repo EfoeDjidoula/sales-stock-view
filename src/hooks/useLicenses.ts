@@ -33,6 +33,7 @@ export interface License {
   max_countries: number | null;
   max_stations: number | null;
   automatic_renewal: boolean;
+  expiry_policy: "read_only" | "limited";
   notes: string | null;
 }
 
@@ -161,6 +162,7 @@ export const useLicenses = () => {
         max_countries: input.max_countries ?? null,
         max_stations: input.max_stations ?? null,
         automatic_renewal: input.automatic_renewal ?? false,
+        expiry_policy: input.expiry_policy ?? "read_only",
         notes: input.notes || null,
       };
       const { error } = id
@@ -175,6 +177,34 @@ export const useLicenses = () => {
     onError: (e) => toast.error(errMsg(e)),
   });
 
+  /** Actions Super Admin : prolonger, renouveler, suspendre, réactiver (aucune donnée supprimée). */
+  const licenseAction = useMutation({
+    mutationFn: async ({ license: l, action, days = 30 }: { license: License; action: "extend" | "renew" | "suspend" | "reactivate"; days?: number }) => {
+      const addDays = (d: string, n: number) => {
+        const x = new Date(d); x.setUTCDate(x.getUTCDate() + n); return x.toISOString().slice(0, 10);
+      };
+      let patch: Partial<License> = {};
+      if (action === "extend") patch = { expiration_date: addDays(l.expiration_date, days), status: l.status === "suspended" ? "suspended" : "active" };
+      if (action === "renew") {
+        const duration = Math.max(1, Math.round((new Date(l.expiration_date).getTime() - new Date(l.start_date).getTime()) / 86400000));
+        const today = new Date().toISOString().slice(0, 10);
+        const start = l.expiration_date >= today ? addDays(l.expiration_date, 1) : today;
+        patch = { start_date: start, expiration_date: addDays(start, duration), status: "active", activation_date: l.activation_date || today };
+      }
+      if (action === "suspend") patch = { status: "suspended" };
+      if (action === "reactivate") patch = { status: "active", activation_date: l.activation_date || new Date().toISOString().slice(0, 10) };
+      const { error } = await supabase.from("licenses").update(patch).eq("id", l.id);
+      if (error) throw error;
+      return action;
+    },
+    onSuccess: (a) => {
+      invalidate();
+      qc.invalidateQueries({ queryKey: ["license-state"] });
+      toast.success({ extend: "Licence prolongée", renew: "Licence renouvelée", suspend: "Licence suspendue", reactivate: "Licence réactivée" }[a]);
+    },
+    onError: (e) => toast.error(errMsg(e)),
+  });
+
   return {
     plans: plansQuery.data || [],
     licenses: licensesQuery.data || [],
@@ -183,5 +213,6 @@ export const useLicenses = () => {
     savePlan,
     deletePlan,
     saveLicense,
+    licenseAction,
   };
 };

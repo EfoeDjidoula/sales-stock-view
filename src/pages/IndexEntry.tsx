@@ -131,6 +131,8 @@ const defaultValues: IndexEntryForm = {
 };
 
 import { useModules } from "@/hooks/useModules";
+import { useLicenseState } from "@/hooks/useLicenseState";
+import { LicenseBanner, LicenseBlockedScreen } from "@/components/license/LicenseBanner";
 import { useBranding } from "@/hooks/useBranding";
 import { AccessDenied } from "@/components/AccessDenied";
 
@@ -140,6 +142,7 @@ const IndexEntry = () => {
   const { data: dbStations } = useStations();
   const { fiscalYears } = useFiscalYears();
   const { user } = useAuth();
+  const license = useLicenseState();
   const [selectedStation, setSelectedStation] = useState<{ id: string; name: string; location: string } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submissionSummary, setSubmissionSummary] = useState<{
@@ -598,6 +601,8 @@ const IndexEntry = () => {
     );
   }
 
+  if (license.isBlocked) return <LicenseBlockedScreen />;
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -638,6 +643,7 @@ const IndexEntry = () => {
 
       {/* Main Content */}
       <main className="container mx-auto px-4 py-6">
+        <LicenseBanner />
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
             {/* Date Selection */}
