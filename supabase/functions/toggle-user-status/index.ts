@@ -73,7 +73,12 @@ const handler = async (req: Request): Promise<Response> => {
       .eq("user_id", caller.id)
       .maybeSingle();
 
-    if (!platformAdmin && callerProfile?.tenant_id !== targetProfile?.tenant_id) {
+    if (
+      !platformAdmin &&
+      (!callerProfile?.tenant_id ||
+        !targetProfile?.tenant_id ||
+        callerProfile.tenant_id !== targetProfile.tenant_id)
+    ) {
       return new Response(
         JSON.stringify({ error: "Utilisateur hors de votre périmètre" }),
         { status: 403, headers: { "Content-Type": "application/json", ...corsHeaders } }
