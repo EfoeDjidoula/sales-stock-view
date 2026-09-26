@@ -10,6 +10,11 @@ import { useTenant } from "@/hooks/useTenant";
 import { useBranding } from "@/hooks/useBranding";
 import { usePlatformAdmin } from "@/hooks/usePlatformAdmin";
 import { useModules } from "@/hooks/useModules";
+import { useLicenseState } from "@/hooks/useLicenseState";
+import { LicenseBanner, LicenseBlockedScreen } from "@/components/license/LicenseBanner";
+
+/** Onglets encore visibles en mode « accès limité » après expiration. */
+const LIMITED_TABS = ["ventes", "stock", "historique"];
 import { SalesCard } from "@/components/dashboard/SalesCard";
 import { PeriodTabs } from "@/components/dashboard/PeriodTabs";
 import { SalesChart } from "@/components/dashboard/SalesChart";
@@ -161,6 +166,7 @@ const Index = () => {
   const { tenant } = useTenant();
   const brand = useBranding();
   const { isModuleEnabled, enabledMap, isLoading: modulesLoading } = useModules();
+  const license = useLicenseState();
   const queryClient = useQueryClient();
 
   const { totalSales, totalSuper, totalGasoil, salesByStation, chartData, chartRawEntries, stations, isLoading, isFetching } =
@@ -174,10 +180,11 @@ const Index = () => {
           .filter(([_, roles]) => roles.includes(currentUserRole))
           .map(([tab]) => tab);
     return base.filter((tab) => {
+      if (license.isLimited && !LIMITED_TABS.includes(tab)) return false;
       const moduleKey = TAB_MODULE[tab];
       return !moduleKey || isModuleEnabled(moduleKey);
     });
-  }, [currentUserRole, enabledMap]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [currentUserRole, enabledMap, license.isLimited]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const [activeTab, setActiveTab] = useState("ventes");
 
@@ -195,6 +202,8 @@ const Index = () => {
     });
     if (allowedTabs.length > 0) setActiveTab(allowedTabs[0]);
   }, [activeTab, allowedTabs, modulesLoading]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  if (license.isBlocked) return <LicenseBlockedScreen />;
 
   return (
     <div className="min-h-screen bg-background">
@@ -313,6 +322,7 @@ const Index = () => {
 
       {/* Main Content */}
       <main className="container mx-auto px-4 py-6">
+        <LicenseBanner />
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div className="flex flex-wrap gap-2 bg-secondary rounded-lg p-1">
