@@ -1,4 +1,6 @@
-import { useState } from "react";
+import { useRef, useState } from "react";
+import { toast } from "sonner";
+import { uploadContractDocument, openContractDocument } from "@/lib/contractDocuments";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -9,7 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, Pencil, RefreshCw, PauseCircle, PlayCircle, History, BellRing, ExternalLink, Banknote, Trash2 } from "lucide-react";
+import { Plus, Pencil, RefreshCw, PauseCircle, PlayCircle, History, BellRing, ExternalLink, Banknote, Trash2, Upload, FileText } from "lucide-react";
 import {
   useMaintenanceContracts, CONTRACT_STATUSES, contractEffectiveStatus, contractAlert, daysLeft,
   MaintenanceContract, ContractStatus,
@@ -37,6 +39,8 @@ export const LumatekContracts = () => {
   const [edit, setEdit] = useState<Partial<MaintenanceContract> | null>(null);
   const [historyOf, setHistoryOf] = useState<string | null>(null);
   const [payFor, setPayFor] = useState<MaintenanceContract | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const fileRef = useRef<HTMLInputElement>(null);
   const [pay, setPay] = useState({ month: new Date().getMonth() + 1, year: new Date().getFullYear(), amount: 0, date: today(), notes: "" });
   const tenantName = (id: string) => tenants.find((t) => t.id === id)?.trade_name || "—";
 
@@ -119,7 +123,7 @@ export const LumatekContracts = () => {
                   <TableRow key={c.id}>
                     <TableCell className="font-mono text-xs">
                       {c.contract_number}
-                      {c.document_url && <a href={c.document_url} target="_blank" rel="noreferrer" className="ml-1 inline-flex"><ExternalLink className="h-3 w-3" /></a>}
+                      {c.document_url && <button type="button" title="Ouvrir le document" onClick={() => openContractDocument(c.document_url!)} className="ml-1 inline-flex"><ExternalLink className="h-3 w-3" /></button>}
                     </TableCell>
                     <TableCell>{tenantName(c.tenant_id)}</TableCell>
                     <TableCell>{c.contract_type}<div className="text-xs text-muted-foreground">{c.support_level}</div></TableCell>
@@ -202,7 +206,31 @@ export const LumatekContracts = () => {
               {txt("sla", "SLA (ex : intervention sous 4 h)")}
               {txt("lumatek_manager", "Responsable LUMATEK")}
               {txt("client_contact", "Contact client")}
-              {txt("document_url", "Lien du document", "url")}
+              <div className="space-y-1.5 sm:col-span-2">
+                <Label>Document du contrat</Label>
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button type="button" variant="outline" size="sm" disabled={!edit.tenant_id || uploading} onClick={() => fileRef.current?.click()}>
+                    <Upload className="h-4 w-4 mr-1" />{uploading ? "Téléversement…" : edit.document_url ? "Remplacer le fichier" : "Téléverser le document"}
+                  </Button>
+                  {edit.document_url && (
+                    <>
+                      <Button type="button" variant="ghost" size="sm" onClick={() => openContractDocument(edit.document_url!)}><FileText className="h-4 w-4 mr-1" />Voir</Button>
+                      <Button type="button" variant="ghost" size="sm" onClick={() => setEdit({ ...edit, document_url: null })}><Trash2 className="h-4 w-4" /></Button>
+                    </>
+                  )}
+                  {!edit.tenant_id && <span className="text-xs text-muted-foreground">Choisissez d'abord le client.</span>}
+                </div>
+                <input ref={fileRef} type="file" hidden accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+                  onChange={async (e) => {
+                    const f = e.target.files?.[0]; e.target.value = "";
+                    if (!f || !edit.tenant_id) return;
+                    if (f.size > 20 * 1024 * 1024) { toast.error("Fichier trop volumineux (20 Mo max)"); return; }
+                    setUploading(true);
+                    try { const p = await uploadContractDocument(edit.tenant_id, f); setEdit((cur) => cur && { ...cur, document_url: p }); toast.success("Document téléversé — pensez à enregistrer"); }
+                    catch (err) { toast.error((err as Error).message); }
+                    finally { setUploading(false); }
+                  }} />
+              </div>
               <div className="space-y-1.5 sm:col-span-2"><Label>Notes</Label><Textarea value={edit.notes ?? ""} onChange={(e) => setEdit({ ...edit, notes: e.target.value })} /></div>
             </div>
           )}
