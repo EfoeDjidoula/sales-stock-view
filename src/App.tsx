@@ -97,11 +97,13 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <TenantProvider>
-            <CountryProvider>
-              <Toaster />
-              <Sonner />
-              <AppRoutes />
-            </CountryProvider>
+            <BrandingProvider>
+              <CountryProvider>
+                <Toaster />
+                <Sonner />
+                <AppRoutes />
+              </CountryProvider>
+            </BrandingProvider>
           </TenantProvider>
         </AuthProvider>
       </BrowserRouter>
