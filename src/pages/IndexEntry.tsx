@@ -1618,7 +1618,13 @@ const IndexEntry = () => {
       {/* Footer */}
       <footer className="border-t border-border mt-8 py-6">
         <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
-          <p>© 2026 YATT & CO ENERGY BENIN SA - Système de Gestion des Stations</p>
+          <p>
+            © {new Date().getFullYear()} {brand.legalName}
+            {brand.footerNote ? ` · ${brand.footerNote}` : ""}
+          </p>
+          {brand.poweredBy && (
+            <p className="mt-1 text-xs opacity-70">{brand.poweredBy}</p>
+          )}
         </div>
       </footer>
     </div>

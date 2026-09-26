@@ -7,6 +7,7 @@ import { TenantSelector } from "@/components/tenant/TenantSelector";
 import { CountrySwitcher } from "@/components/tenant/CountrySwitcher";
 import { TenantSettingsModule } from "@/components/tenant/TenantSettingsModule";
 import { useTenant } from "@/hooks/useTenant";
+import { useBranding } from "@/hooks/useBranding";
 import { usePlatformAdmin } from "@/hooks/usePlatformAdmin";
 import { useModules } from "@/hooks/useModules";
 import { SalesCard } from "@/components/dashboard/SalesCard";
@@ -154,6 +155,7 @@ const Index = () => {
   const { currentUserRole, loading: roleLoading } = useUserRoles();
   const { isPlatformAdmin } = usePlatformAdmin();
   const { tenant } = useTenant();
+  const brand = useBranding();
   const { isModuleEnabled, enabledMap, isLoading: modulesLoading } = useModules();
   const queryClient = useQueryClient();
 
@@ -211,7 +213,7 @@ const Index = () => {
               </div>
               <div>
                 <h1 className="text-xl md:text-2xl font-display font-bold">
-                  {tenant?.trade_name || tenant?.name || "YATT & CO ENERGY"}
+                  {brand.companyName}
                 </h1>
                 <p className="text-sm text-muted-foreground">
                   Tableau de bord - Gestion 2026
@@ -597,7 +599,13 @@ const Index = () => {
       {/* Footer */}
       <footer className="border-t border-border mt-8 py-6">
         <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
-          <p>© 2026 YATT & CO ENERGY BENIN SA - Système de Gestion des Stations</p>
+          <p>
+            © {new Date().getFullYear()} {brand.legalName}
+            {brand.footerNote ? ` · ${brand.footerNote}` : ""}
+          </p>
+          {brand.poweredBy && (
+            <p className="mt-1 text-xs opacity-70">{brand.poweredBy}</p>
+          )}
         </div>
       </footer>
     </div>
