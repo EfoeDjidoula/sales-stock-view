@@ -131,9 +131,11 @@ const defaultValues: IndexEntryForm = {
 };
 
 import { useModules } from "@/hooks/useModules";
+import { useBranding } from "@/hooks/useBranding";
 import { AccessDenied } from "@/components/AccessDenied";
 
 const IndexEntry = () => {
+  const brand = useBranding();
   const { isModuleEnabled, isLoading: modulesLoading } = useModules();
   const { data: dbStations } = useStations();
   const { fiscalYears } = useFiscalYears();
