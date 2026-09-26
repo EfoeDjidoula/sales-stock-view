@@ -22,6 +22,13 @@
       "when": 1790463823802,
       "tag": "0002_license_control_engine",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1790464718686,
+      "tag": "0003_maintenance_contracts",
+      "breakpoints": true
     }
   ]
 }

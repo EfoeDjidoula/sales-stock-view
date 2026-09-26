@@ -36,6 +36,9 @@ import { LumatekClientCountries } from "./LumatekClientCountries";
 import { LumatekClientModules } from "./LumatekClientModules";
 import { BrandingForm } from "@/components/tenant/BrandingForm";
 import { Plus, Pencil, Eye, PauseCircle, PlayCircle, Archive, Globe2, Blocks, Palette } from "lucide-react";
+import { useLicenses } from "@/hooks/useLicenses";
+import { useMaintenanceContracts, contractEffectiveStatus } from "@/hooks/useMaintenanceContracts";
+import { CONTRACT_STATUS_META } from "./LumatekContracts";
 
 const STATUS_META: Record<string, { label: string; className: string }> = {
   active: { label: "Actif", className: "bg-emerald-500/15 text-emerald-400 border-emerald-500/30" },
@@ -59,6 +62,8 @@ const emptyForm: TenantInput = {
 
 export const LumatekClients = () => {
   const { tenants, isLoading, createTenant, updateTenant, setStatus } = useLumatekTenants();
+  const { licenses, plans } = useLicenses();
+  const { currentFor } = useMaintenanceContracts();
   const [formOpen, setFormOpen] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [form, setForm] = useState<TenantInput>(emptyForm);
@@ -279,6 +284,20 @@ export const LumatekClients = () => {
                 ["Site web", viewed.website || "—"],
                 ["Devise", viewed.default_currency],
                 ["Langue", viewed.default_language],
+                ...(() => {
+                  const lic = licenses.find((l) => l.tenant_id === viewed.id && l.status !== "terminated");
+                  const plan = plans.find((p) => p.id === lic?.plan_id);
+                  const mc = currentFor(viewed.id);
+                  const st = mc ? CONTRACT_STATUS_META[contractEffectiveStatus(mc)] : null;
+                  return [
+                    ["Licence", lic ? `${lic.license_number} · ${plan?.name ?? ""} (exp. ${lic.expiration_date})` : "Aucune"],
+                    ["Contrat de maintenance", mc ? `${mc.contract_number} · ${mc.contract_type}` : "Aucun"],
+                    ["Date d'expiration", mc?.end_date ?? "—"],
+                    ["SLA", mc?.sla || "—"],
+                    ["Responsable LUMATEK", mc?.lumatek_manager || "—"],
+                    ["État du contrat", st ? <Badge key="st" variant="outline" className={st.className}>{st.label}</Badge> : "—"],
+                  ] as [string, React.ReactNode][];
+                })(),
               ].map(([label, value]) => (
                 <div key={label as string} className="flex justify-between gap-4 border-b border-border/50 py-1">
                   <span className="text-muted-foreground">{label}</span>

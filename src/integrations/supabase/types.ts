@@ -651,6 +651,87 @@ export type Database = {
           },
         ]
       }
+      maintenance_contracts: {
+        Row: {
+          amount: number
+          billing_frequency: string
+          client_contact: string | null
+          contract_number: string
+          contract_type: string
+          created_at: string
+          document_url: string | null
+          end_date: string
+          id: string
+          lumatek_manager: string | null
+          notes: string | null
+          previous_contract_id: string | null
+          signature_date: string | null
+          sla: string | null
+          start_date: string
+          status: string
+          support_level: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          billing_frequency?: string
+          client_contact?: string | null
+          contract_number?: string
+          contract_type?: string
+          created_at?: string
+          document_url?: string | null
+          end_date: string
+          id?: string
+          lumatek_manager?: string | null
+          notes?: string | null
+          previous_contract_id?: string | null
+          signature_date?: string | null
+          sla?: string | null
+          start_date: string
+          status?: string
+          support_level?: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          billing_frequency?: string
+          client_contact?: string | null
+          contract_number?: string
+          contract_type?: string
+          created_at?: string
+          document_url?: string | null
+          end_date?: string
+          id?: string
+          lumatek_manager?: string | null
+          notes?: string | null
+          previous_contract_id?: string | null
+          signature_date?: string | null
+          sla?: string | null
+          start_date?: string
+          status?: string
+          support_level?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maintenance_contracts_previous_contract_id_fkey"
+            columns: ["previous_contract_id"]
+            isOneToOne: false
+            referencedRelation: "maintenance_contracts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_contracts_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       modules: {
         Row: {
           category: string

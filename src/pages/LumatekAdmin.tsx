@@ -12,6 +12,7 @@ import { LumatekClients } from "@/components/lumatek/LumatekClients";
 import { LumatekUsers } from "@/components/lumatek/LumatekUsers";
 import { LumatekCountries } from "@/components/lumatek/LumatekCountries";
 import { LumatekModules } from "@/components/lumatek/LumatekModules";
+import { LumatekContracts } from "@/components/lumatek/LumatekContracts";
 import { LumatekLicenses } from "@/components/lumatek/LumatekLicenses";
 import { LumatekPlaceholder } from "@/components/lumatek/LumatekPlaceholder";
 import {
@@ -79,12 +80,7 @@ const LumatekAdmin = () => {
       case "licences":
         return <LumatekLicenses />;
       case "contrats":
-        return (
-          <LumatekPlaceholder
-            title="Contrats & Maintenance"
-            description="Contrats commerciaux, niveaux de service et interventions de maintenance."
-          />
-        );
+        return <LumatekContracts />;
       case "support":
         return (
           <LumatekPlaceholder
