@@ -29,6 +29,13 @@
       "when": 1790464718686,
       "tag": "0003_maintenance_contracts",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1790465309476,
+      "tag": "0004_create_contract_payments",
+      "breakpoints": true
     }
   ]
 }
