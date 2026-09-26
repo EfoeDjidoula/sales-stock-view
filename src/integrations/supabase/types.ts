@@ -1780,6 +1780,217 @@ export type Database = {
           },
         ]
       }
+      support_notifications: {
+        Row: {
+          audience: string
+          created_at: string
+          event: string
+          id: string
+          payload: Json
+          sent_at: string | null
+          status: string
+          tenant_id: string
+          ticket_id: string
+        }
+        Insert: {
+          audience: string
+          created_at?: string
+          event: string
+          id?: string
+          payload?: Json
+          sent_at?: string | null
+          status?: string
+          tenant_id: string
+          ticket_id: string
+        }
+        Update: {
+          audience?: string
+          created_at?: string
+          event?: string
+          id?: string
+          payload?: Json
+          sent_at?: string | null
+          status?: string
+          tenant_id?: string
+          ticket_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_notifications_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "support_notifications_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "support_tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      support_ticket_events: {
+        Row: {
+          attachments: Json
+          author_id: string | null
+          author_name: string | null
+          created_at: string
+          event_type: string
+          from_status: string | null
+          id: string
+          is_lumatek: boolean
+          message: string | null
+          tenant_id: string
+          ticket_id: string
+          to_status: string | null
+        }
+        Insert: {
+          attachments?: Json
+          author_id?: string | null
+          author_name?: string | null
+          created_at?: string
+          event_type: string
+          from_status?: string | null
+          id?: string
+          is_lumatek?: boolean
+          message?: string | null
+          tenant_id: string
+          ticket_id: string
+          to_status?: string | null
+        }
+        Update: {
+          attachments?: Json
+          author_id?: string | null
+          author_name?: string | null
+          created_at?: string
+          event_type?: string
+          from_status?: string | null
+          id?: string
+          is_lumatek?: boolean
+          message?: string | null
+          tenant_id?: string
+          ticket_id?: string
+          to_status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_ticket_events_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "support_ticket_events_ticket_id_fkey"
+            columns: ["ticket_id"]
+            isOneToOne: false
+            referencedRelation: "support_tickets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      support_tickets: {
+        Row: {
+          assigned_to: string | null
+          assigned_to_name: string | null
+          attachments: Json
+          category: string
+          closed_at: string | null
+          country_id: string | null
+          created_at: string
+          created_by: string
+          created_by_name: string | null
+          description: string
+          first_response_at: string | null
+          id: string
+          module_key: string | null
+          priority: string
+          resolved_at: string | null
+          sla_due_at: string | null
+          sla_hours: number
+          station_id: string | null
+          status: string
+          subject: string
+          tenant_id: string
+          ticket_number: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_to?: string | null
+          assigned_to_name?: string | null
+          attachments?: Json
+          category: string
+          closed_at?: string | null
+          country_id?: string | null
+          created_at?: string
+          created_by?: string
+          created_by_name?: string | null
+          description?: string
+          first_response_at?: string | null
+          id?: string
+          module_key?: string | null
+          priority?: string
+          resolved_at?: string | null
+          sla_due_at?: string | null
+          sla_hours?: number
+          station_id?: string | null
+          status?: string
+          subject: string
+          tenant_id: string
+          ticket_number?: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_to?: string | null
+          assigned_to_name?: string | null
+          attachments?: Json
+          category?: string
+          closed_at?: string | null
+          country_id?: string | null
+          created_at?: string
+          created_by?: string
+          created_by_name?: string | null
+          description?: string
+          first_response_at?: string | null
+          id?: string
+          module_key?: string | null
+          priority?: string
+          resolved_at?: string | null
+          sla_due_at?: string | null
+          sla_hours?: number
+          station_id?: string | null
+          status?: string
+          subject?: string
+          tenant_id?: string
+          ticket_number?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "support_tickets_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "countries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "support_tickets_station_id_fkey"
+            columns: ["station_id"]
+            isOneToOne: false
+            referencedRelation: "stations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "support_tickets_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tanks: {
         Row: {
           capacity_liters: number

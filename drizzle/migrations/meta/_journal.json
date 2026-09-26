@@ -43,6 +43,13 @@
       "when": 1790465691611,
       "tag": "0005_contract_documents_and_invoices",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1790466050797,
+      "tag": "0006_support_tickets",
+      "breakpoints": true
     }
   ]
 }
