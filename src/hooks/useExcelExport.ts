@@ -1,3 +1,4 @@
+import { getActiveBrand } from "@/lib/branding";
 import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -210,7 +211,7 @@ export const useExcelExport = () => {
         }));
       }
 
-      const fileName = `SUIVI_DES_INDEX_DES_STATIONS_YATT_CO_ENERGY_BENIN_${targetYear}_${targetMonth}.xlsx`;
+      const fileName = `SUIVI_DES_INDEX_${getActiveBrand().companyName.replace(/[^A-Za-z0-9]+/g, "_").toUpperCase()}_${targetYear}_${targetMonth}.xlsx`;
 
       // Generate buffer and trigger download
       const buffer = await workbook.xlsx.writeBuffer();
