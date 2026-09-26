@@ -495,6 +495,159 @@ export type Database = {
           },
         ]
       }
+      license_modules: {
+        Row: {
+          created_at: string
+          id: string
+          module_key: string
+          plan_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          module_key: string
+          plan_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          module_key?: string
+          plan_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "license_modules_module_key_fkey"
+            columns: ["module_key"]
+            isOneToOne: false
+            referencedRelation: "modules"
+            referencedColumns: ["key"]
+          },
+          {
+            foreignKeyName: "license_modules_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "license_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      license_plans: {
+        Row: {
+          code: string
+          created_at: string
+          description: string | null
+          id: string
+          is_active: boolean
+          is_system: boolean
+          max_countries: number | null
+          max_stations: number | null
+          max_users: number | null
+          name: string
+          position: number
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          is_system?: boolean
+          max_countries?: number | null
+          max_stations?: number | null
+          max_users?: number | null
+          name: string
+          position?: number
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_active?: boolean
+          is_system?: boolean
+          max_countries?: number | null
+          max_stations?: number | null
+          max_users?: number | null
+          name?: string
+          position?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      licenses: {
+        Row: {
+          activation_date: string | null
+          automatic_renewal: boolean
+          created_at: string
+          expiration_date: string
+          grace_period_days: number
+          id: string
+          license_number: string
+          max_countries: number | null
+          max_stations: number | null
+          max_users: number | null
+          notes: string | null
+          plan_id: string
+          start_date: string
+          status: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          activation_date?: string | null
+          automatic_renewal?: boolean
+          created_at?: string
+          expiration_date: string
+          grace_period_days?: number
+          id?: string
+          license_number: string
+          max_countries?: number | null
+          max_stations?: number | null
+          max_users?: number | null
+          notes?: string | null
+          plan_id: string
+          start_date?: string
+          status?: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          activation_date?: string | null
+          automatic_renewal?: boolean
+          created_at?: string
+          expiration_date?: string
+          grace_period_days?: number
+          id?: string
+          license_number?: string
+          max_countries?: number | null
+          max_stations?: number | null
+          max_users?: number | null
+          notes?: string | null
+          plan_id?: string
+          start_date?: string
+          status?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "licenses_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "license_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "licenses_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       modules: {
         Row: {
           category: string
@@ -1966,9 +2119,24 @@ export type Database = {
         Returns: boolean
       }
       is_platform_admin: { Args: { _user_id: string }; Returns: boolean }
+      license_effective_status: {
+        Args: { _expiration: string; _grace: number; _status: string }
+        Returns: string
+      }
       shares_tenant_with: {
         Args: { _other_user_id: string; _user_id: string }
         Returns: boolean
+      }
+      tenant_license_limits: {
+        Args: { _tenant_id: string }
+        Returns: {
+          license_id: string
+          max_countries: number
+          max_stations: number
+          max_users: number
+          plan_id: string
+          status: string
+        }[]
       }
     }
     Enums: {
