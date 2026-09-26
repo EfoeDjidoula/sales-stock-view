@@ -14,6 +14,7 @@ import { LumatekCountries } from "@/components/lumatek/LumatekCountries";
 import { LumatekModules } from "@/components/lumatek/LumatekModules";
 import { LumatekContracts } from "@/components/lumatek/LumatekContracts";
 import { LumatekLicenses } from "@/components/lumatek/LumatekLicenses";
+import { LumatekInvoices } from "@/components/lumatek/LumatekInvoices";
 import { LumatekPlaceholder } from "@/components/lumatek/LumatekPlaceholder";
 import {
   LayoutDashboard,
@@ -23,6 +24,7 @@ import {
   Blocks,
   KeyRound,
   FileSignature,
+  Receipt,
   LifeBuoy,
   ScrollText,
   Settings,
@@ -38,6 +40,7 @@ const MENU = [
   { id: "modules", label: "Modules", icon: Blocks },
   { id: "licences", label: "Licences", icon: KeyRound },
   { id: "contrats", label: "Contrats & Maintenance", icon: FileSignature },
+  { id: "factures", label: "Factures clients", icon: Receipt },
   { id: "support", label: "Support", icon: LifeBuoy },
   { id: "journal", label: "Journal système", icon: ScrollText },
   { id: "parametres", label: "Paramètres", icon: Settings },
@@ -81,6 +84,8 @@ const LumatekAdmin = () => {
         return <LumatekLicenses />;
       case "contrats":
         return <LumatekContracts />;
+      case "factures":
+        return <LumatekInvoices />;
       case "support":
         return (
           <LumatekPlaceholder
