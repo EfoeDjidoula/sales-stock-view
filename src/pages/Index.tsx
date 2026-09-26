@@ -59,6 +59,7 @@ import { ClientsModule } from "@/components/clients/ClientsModule";
 import { SuppliersModule } from "@/components/suppliers/SuppliersModule";
 import { PriceStructureModule } from "@/components/pricing/PriceStructureModule";
 import { ProformaModule } from "@/components/proforma/ProformaModule";
+import { StationAnalysisModule } from "@/components/analysis/StationAnalysisModule";
 import { Link } from "react-router-dom";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
 import {
@@ -89,6 +90,7 @@ const TAB_PERMISSIONS: Record<string, AppRole[]> = {
   fournisseurs: ["admin", "manager", "operator"],
   structure_prix: ["admin", "manager"],
   proforma: ["admin", "manager", "operator"],
+  analyse_ia: ["admin", "manager"],
 
   exercices: ["admin"],
   droits: ["admin"],
@@ -108,6 +110,7 @@ const TAB_META: Record<string, { label: string; icon: typeof TrendingUp }> = {
   perequation: { label: "Péréquation", icon: Coins },
   structure_prix: { label: "Structure de prix", icon: Fuel },
   proforma: { label: "Proforma", icon: FileText },
+  analyse_ia: { label: "Analyse IA", icon: BarChart3 },
   clients: { label: "Clients", icon: Users },
   fournisseurs: { label: "Fournisseurs", icon: Building2 },
   exercices: { label: "Exercices", icon: BookOpen },
@@ -128,6 +131,7 @@ const TAB_MODULE: Record<string, string> = {
   perequation: "perequation",
   structure_prix: "facturation",
   proforma: "commandes",
+  analyse_ia: "ia",
   clients: "clients_b2b",
   fournisseurs: "achats",
 };
@@ -139,7 +143,7 @@ const TAB_GROUPS: {
   icon: typeof TrendingUp;
   tabs: string[];
 }[] = [
-  { id: "suivi", label: "Suivi & Analyse", icon: BarChart3, tabs: ["ventes", "stock", "historique"] },
+  { id: "suivi", label: "Suivi & Analyse", icon: BarChart3, tabs: ["ventes", "stock", "historique", "analyse_ia"] },
   { id: "logistique", label: "Logistique & Flux", icon: Truck, tabs: ["commandes", "approvisionnements", "depotage", "camions"] },
   { id: "config", label: "Configuration", icon: Settings2, tabs: ["stations", "perequation", "structure_prix", "proforma"] },
   { id: "tiers", label: "Tiers", icon: Contact, tabs: ["clients", "fournisseurs"] },
@@ -552,6 +556,15 @@ const Index = () => {
           <TabsContent value="structure_prix" className="animate-fade-in">
             {canAccessTab("structure_prix") ? (
               <PriceStructureModule />
+            ) : (
+              <AccessDenied onGoBack={() => setActiveTab("ventes")} />
+            )}
+          </TabsContent>
+
+          {/* Analyse IA Tab */}
+          <TabsContent value="analyse_ia" className="animate-fade-in">
+            {canAccessTab("analyse_ia") ? (
+              <StationAnalysisModule />
             ) : (
               <AccessDenied onGoBack={() => setActiveTab("ventes")} />
             )}

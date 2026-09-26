@@ -28,7 +28,7 @@ const pos = (n: number) => (n > 0 ? n : 0);
 const sevVariant = (s: string) => (s === "haute" ? "destructive" : s === "moyenne" ? "default" : "secondary");
 
 export const StationAnalysisModule = () => {
-  const { stations } = useStations() as { stations?: { id: string; name: string }[] };
+  const { stations } = useStations();
   const today = format(new Date(), "yyyy-MM-dd");
   const [stationId, setStationId] = useState("");
   const [start, setStart] = useState(format(subDays(new Date(), 14), "yyyy-MM-dd"));
