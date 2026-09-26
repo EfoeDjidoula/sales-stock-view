@@ -11,10 +11,10 @@ const projectRef =
 
 export default defineMcp({
   name: "yatt-energy-mcp",
-  title: "YATT & CO ENERGY MCP",
+  title: "Stations MCP",
   version: "0.1.0",
   instructions:
-    "Tools for the YATT & CO ENERGY station management app (Benin). " +
+    "Tools for the fuel station management platform. " +
     "Read stations, clients, suppliers, and fuel price structures for the signed-in user.",
   auth: auth.oauth.issuer({
     issuer: `https://${projectRef}.supabase.co/auth/v1`,

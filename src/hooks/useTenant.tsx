@@ -21,6 +21,13 @@ export interface Tenant {
   default_currency: string;
   default_language: string;
   status: string;
+  favicon_url?: string | null;
+  app_title?: string | null;
+  app_description?: string | null;
+  tax_id?: string | null;
+  footer_note?: string | null;
+  show_powered_by?: boolean;
+  powered_by_label?: string | null;
 }
 
 const STORAGE_KEY = "lumatek.selectedTenantId";

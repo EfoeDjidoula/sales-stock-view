@@ -54,9 +54,11 @@ const Auth = () => {
             <Fuel className="w-12 h-12 text-primary" />
           </div>
           <div className="text-center">
-            <h1 className="text-2xl font-display font-bold">YATT & CO ENERGY</h1>
+            <h1 className="text-2xl font-display font-bold">
+              Gestion des stations-service
+            </h1>
             <p className="text-sm text-muted-foreground">
-              Système de Gestion des Stations - Bénin
+              Connectez-vous pour accéder à votre espace
             </p>
           </div>
         </div>
@@ -121,7 +123,7 @@ const Auth = () => {
 
         {/* Footer */}
         <p className="text-center text-xs text-muted-foreground">
-          © 2026 YATT & CO ENERGY BENIN SA
+          Powered by LUMATEK TECHNOLOGY
         </p>
       </div>
     </div>

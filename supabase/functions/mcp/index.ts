@@ -123,9 +123,9 @@ var list_price_structures_default = defineTool4({
 var projectRef = "zpnnwiddxjotndguhqsc";
 var mcp_default = defineMcp({
   name: "yatt-energy-mcp",
-  title: "YATT & CO ENERGY MCP",
+  title: "Stations MCP",
   version: "0.1.0",
-  instructions: "Tools for the YATT & CO ENERGY station management app (Benin). Read stations, clients, suppliers, and fuel price structures for the signed-in user.",
+  instructions: "Tools for the fuel station management platform. Read stations, clients, suppliers, and fuel price structures for the signed-in user.",
   auth: auth.oauth.issuer({
     issuer: `https://${projectRef}.supabase.co/auth/v1`,
     acceptedAudiences: "authenticated"

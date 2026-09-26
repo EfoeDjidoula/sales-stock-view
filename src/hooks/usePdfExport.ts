@@ -1,3 +1,4 @@
+import { getActiveBrand, hslToRgb, documentFooter } from "@/lib/branding";
 import { jsPDF } from "jspdf";
 import { formatNumber } from "@/data/stationsData";
 
@@ -35,7 +36,8 @@ export const usePdfExport = () => {
     const pageWidth = doc.internal.pageSize.getWidth();
     
     // Colors
-    const primaryColor: [number, number, number] = [245, 158, 11]; // Amber
+    const brand = getActiveBrand();
+    const primaryColor: [number, number, number] = hslToRgb(brand.primaryColor);
     const textColor: [number, number, number] = [31, 41, 55];
     const mutedColor: [number, number, number] = [107, 114, 128];
     const superColor: [number, number, number] = [34, 197, 94];
@@ -52,7 +54,7 @@ export const usePdfExport = () => {
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(20);
     doc.setFont("helvetica", "bold");
-    doc.text("YATT & CO ENERGY BENIN SA", pageWidth / 2, 18, { align: "center" });
+    doc.text(brand.legalName, pageWidth / 2, 18, { align: "center" });
     
     doc.setFontSize(12);
     doc.setFont("helvetica", "normal");
@@ -287,7 +289,7 @@ export const usePdfExport = () => {
       y,
       { align: "center" }
     );
-    doc.text("© 2026 YATT & CO ENERGY BENIN SA", pageWidth / 2, y + 5, { align: "center" });
+    doc.text(documentFooter(brand), pageWidth / 2, y + 5, { align: "center" });
 
     // Save
     const fileName = `Recap_${data.stationName.replace(/\s+/g, "_")}_${data.date}.pdf`;

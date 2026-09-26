@@ -1,7 +1,7 @@
 import { jsPDF } from "jspdf";
 import type { PriceStructure } from "@/hooks/usePriceStructures";
+import { getActiveBrand, hslToRgb, currencyLabel } from "@/lib/branding";
 
-const primaryColor: [number, number, number] = [245, 158, 11];
 const textColor: [number, number, number] = [31, 41, 55];
 const mutedColor: [number, number, number] = [107, 114, 128];
 const headerBg: [number, number, number] = [31, 41, 55];
@@ -37,6 +37,9 @@ const rowStyle = (label: string): "total" | "major" | "normal" => {
 };
 
 export const exportPriceStructurePdf = (s: PriceStructure) => {
+  const brand = getActiveBrand();
+  const primaryColor: [number, number, number] = hslToRgb(brand.primaryColor);
+  const cur = currencyLabel(brand);
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
   const pageHeight = doc.internal.pageSize.getHeight();
@@ -47,7 +50,10 @@ export const exportPriceStructurePdf = (s: PriceStructure) => {
   doc.setTextColor(255, 255, 255);
   doc.setFontSize(18);
   doc.setFont("helvetica", "bold");
-  doc.text("Structure de prix", pageWidth / 2, 16, { align: "center" });
+  doc.text("Structure de prix", pageWidth / 2, 10, { align: "center" });
+  doc.setFontSize(10);
+  doc.text(brand.legalName, pageWidth / 2, 18, { align: "center" });
+  doc.setFontSize(18);
   doc.setFontSize(11);
   doc.setFont("helvetica", "normal");
   doc.text(s.label || `Structure ${s.country}`, pageWidth / 2, 26, { align: "center" });
@@ -71,8 +77,8 @@ export const exportPriceStructurePdf = (s: PriceStructure) => {
   doc.setTextColor(...textColor);
   doc.setFontSize(11);
   doc.setFont("helvetica", "bold");
-  doc.text(`Prix Super : ${fmt(s.super_price)} FCFA`, 28, y + 12);
-  doc.text(`Prix Gasoil : ${fmt(s.gasoil_price)} FCFA`, pageWidth / 2 + 4, y + 12);
+  doc.text(`Prix Super : ${fmt(s.super_price)} ${cur}`, 28, y + 12);
+  doc.text(`Prix Gasoil : ${fmt(s.gasoil_price)} ${cur}`, pageWidth / 2 + 4, y + 12);
   y += 32;
 
   // Table layout — dynamic row height so everything fits on a single page

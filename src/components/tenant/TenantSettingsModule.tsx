@@ -16,6 +16,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Save, Building2 } from "lucide-react";
+import { BrandingForm } from "@/components/tenant/BrandingForm";
 import { toast } from "sonner";
 
 const CURRENCIES = ["XOF", "XAF", "EUR", "USD", "GHS", "NGN"];
@@ -245,6 +246,8 @@ export const TenantSettingsModule = () => {
           </div>
         </CardContent>
       </Card>
+
+      <BrandingForm tenantId={tenantId} />
     </div>
   );
 };

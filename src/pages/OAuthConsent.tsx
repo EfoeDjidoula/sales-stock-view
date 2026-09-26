@@ -83,7 +83,9 @@ const OAuthConsent = () => {
             <Fuel className="w-12 h-12 text-primary" />
           </div>
           <div className="text-center">
-            <h1 className="text-2xl font-display font-bold">YATT & CO ENERGY</h1>
+            <h1 className="text-2xl font-display font-bold">
+              Gestion des stations-service
+            </h1>
             <p className="text-sm text-muted-foreground">Autorisation d'accès</p>
           </div>
         </div>

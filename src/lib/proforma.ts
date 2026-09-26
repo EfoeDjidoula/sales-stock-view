@@ -1,4 +1,5 @@
 import { jsPDF } from "jspdf";
+import { getActiveBrand, hslToRgb, currencyLabel } from "@/lib/branding";
 import type { PriceStructure, PriceElement } from "@/hooks/usePriceStructures";
 
 export type ProductKey = "super" | "gasoil";
@@ -95,7 +96,6 @@ export const computeTotals = (lines: ProformaLine[]): ProformaTotals =>
 
 // ---------- PDF ----------
 
-const primaryColor: [number, number, number] = [245, 158, 11];
 const textColor: [number, number, number] = [31, 41, 55];
 const mutedColor: [number, number, number] = [107, 114, 128];
 const headerBg: [number, number, number] = [31, 41, 55];
@@ -121,8 +121,12 @@ export interface ProformaMeta {
 export const exportProformaPdf = (
   lines: ProformaLine[],
   meta: ProformaMeta,
-  company = "YATT & CO ENERGY BENIN SA"
+  companyOverride?: string
 ) => {
+  const brand = getActiveBrand();
+  const company = companyOverride || brand.legalName;
+  const primaryColor: [number, number, number] = hslToRgb(brand.primaryColor);
+  const cur = currencyLabel(brand);
   const doc = new jsPDF();
   const pageWidth = doc.internal.pageSize.getWidth();
 
@@ -254,7 +258,7 @@ export const exportProformaPdf = (
     }
     doc.setTextColor(...textColor);
     doc.text(label, boxX + 2, y + 1);
-    doc.text(`${fmt(value)} FCFA`, boxX + boxW - 2, y + 1, { align: "right" });
+    doc.text(`${fmt(value)} ${cur}`, boxX + boxW - 2, y + 1, { align: "right" });
     y += 9;
   });
 
