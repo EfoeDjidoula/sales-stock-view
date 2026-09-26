@@ -1,3 +1,4 @@
+import { getActiveBrand, hslToRgb, documentFooter } from "@/lib/branding";
 import { jsPDF } from "jspdf";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -41,7 +42,8 @@ export const useOrdersPdfExport = () => {
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
     
-    const primaryColor: [number, number, number] = [245, 158, 11];
+    const brand = getActiveBrand();
+    const primaryColor: [number, number, number] = hslToRgb(brand.primaryColor);
     const textColor: [number, number, number] = [31, 41, 55];
     const mutedColor: [number, number, number] = [107, 114, 128];
     const superColor: [number, number, number] = [245, 158, 11];
@@ -56,7 +58,7 @@ export const useOrdersPdfExport = () => {
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(20);
     doc.setFont("helvetica", "bold");
-    doc.text("YATT & CO ENERGY BENIN SA", pageWidth / 2, 18, { align: "center" });
+    doc.text(brand.legalName, pageWidth / 2, 18, { align: "center" });
     
     doc.setFontSize(12);
     doc.setFont("helvetica", "normal");
@@ -148,7 +150,7 @@ export const useOrdersPdfExport = () => {
     y += 10;
     doc.setFontSize(8);
     doc.setTextColor(...mutedColor);
-    doc.text("© 2026 YATT & CO ENERGY BENIN SA", pageWidth / 2, y, { align: "center" });
+    doc.text(documentFooter(brand), pageWidth / 2, y, { align: "center" });
 
     doc.save(`Commandes_${format(new Date(), "yyyy-MM-dd")}.pdf`);
   };
@@ -157,7 +159,8 @@ export const useOrdersPdfExport = () => {
     const doc = new jsPDF();
     const pageWidth = doc.internal.pageSize.getWidth();
     
-    const primaryColor: [number, number, number] = [245, 158, 11];
+    const brand = getActiveBrand();
+    const primaryColor: [number, number, number] = hslToRgb(brand.primaryColor);
     const textColor: [number, number, number] = [31, 41, 55];
     const mutedColor: [number, number, number] = [107, 114, 128];
     const superColor: [number, number, number] = [245, 158, 11];
@@ -172,7 +175,7 @@ export const useOrdersPdfExport = () => {
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(20);
     doc.setFont("helvetica", "bold");
-    doc.text("YATT & CO ENERGY BENIN SA", pageWidth / 2, 18, { align: "center" });
+    doc.text(brand.legalName, pageWidth / 2, 18, { align: "center" });
     
     doc.setFontSize(12);
     doc.setFont("helvetica", "normal");
@@ -273,7 +276,7 @@ export const useOrdersPdfExport = () => {
     y += 10;
     doc.setFontSize(8);
     doc.setTextColor(...mutedColor);
-    doc.text("© 2026 YATT & CO ENERGY BENIN SA", pageWidth / 2, y, { align: "center" });
+    doc.text(documentFooter(brand), pageWidth / 2, y, { align: "center" });
 
     doc.save(`Approvisionnements_${format(new Date(), "yyyy-MM-dd")}.pdf`);
   };
