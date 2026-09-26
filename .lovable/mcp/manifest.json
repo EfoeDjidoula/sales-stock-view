@@ -13,7 +13,7 @@
     "server": {
       "name": "yatt-energy-mcp",
       "version": "0.1.0",
-      "title": "YATT & CO ENERGY MCP"
+      "title": "Stations MCP"
     },
     "tools": [
       {
