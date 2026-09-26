@@ -144,6 +144,7 @@ export const LumatekContracts = () => {
                         ) : (
                           <Button size="icon" variant="ghost" title="Suspendre" disabled={c.status === "terminated"} onClick={() => setStatus.mutate({ id: c.id, status: "suspended" })}><PauseCircle className="h-4 w-4 text-destructive" /></Button>
                         )}
+                        <Button size="icon" variant="ghost" title="Paiements" onClick={() => openPay(c)}><Banknote className="h-4 w-4 text-emerald-500" /></Button>
                         <Button size="icon" variant="ghost" title="Historique du client" onClick={() => setHistoryOf(c.tenant_id)}><History className="h-4 w-4" /></Button>
                         <Button size="icon" variant="ghost" title="Modifier" onClick={() => setEdit(c)}><Pencil className="h-4 w-4" /></Button>
                       </div>
@@ -152,7 +153,7 @@ export const LumatekContracts = () => {
                 );
               })}
               {contracts.length === 0 && (
-                <TableRow><TableCell colSpan={9} className="text-center text-sm text-muted-foreground">Aucun contrat.</TableCell></TableRow>
+                <TableRow><TableCell colSpan={10} className="text-center text-sm text-muted-foreground">Aucun contrat.</TableCell></TableRow>
               )}
             </TableBody>
           </Table>
