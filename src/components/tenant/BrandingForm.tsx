@@ -8,7 +8,10 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Palette, Save } from "lucide-react";
+import { Palette, Save, FileSearch, Download, Loader2 } from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { buildBrandingPreviewPdf } from "@/lib/brandingPreviewPdf";
+import type { jsPDF } from "jspdf";
 import { toast } from "sonner";
 
 interface BrandingState {
@@ -44,6 +47,36 @@ export const BrandingForm = ({ tenantId }: { tenantId: string }) => {
   const { isPlatformAdmin } = usePlatformAdmin();
   const [form, setForm] = useState<BrandingState>(EMPTY);
   const [saving, setSaving] = useState(false);
+  const [preview, setPreview] = useState<{ url: string; doc: jsPDF; logoWarning: boolean } | null>(null);
+  const [previewing, setPreviewing] = useState(false);
+
+  useEffect(() => () => { if (preview) URL.revokeObjectURL(preview.url); }, [preview]);
+
+
+  const openPreview = async () => {
+    setPreviewing(true);
+    try {
+      const { doc, logoWarning } = await buildBrandingPreviewPdf({
+        companyName,
+        logoUrl: form.logo_url.trim() || null,
+        primaryColor: form.primary_color,
+        secondaryColor: form.secondary_color,
+        address: data?.address ?? null,
+        phone: data?.phone ?? null,
+        email: data?.email ?? null,
+        website: data?.website ?? null,
+        taxId: data?.tax_id ?? null,
+        footerNote: form.footer_note.trim() || null,
+        poweredBy: form.show_powered_by ? form.powered_by_label.trim() || null : null,
+      });
+      const url = URL.createObjectURL(doc.output("blob"));
+      setPreview({ url, doc, logoWarning });
+    } catch {
+      toast.error("Impossible de générer l'aperçu");
+    } finally {
+      setPreviewing(false);
+    }
+  };
 
   const { data, isLoading } = useQuery({
     queryKey: ["tenant-branding", tenantId],
@@ -51,7 +84,7 @@ export const BrandingForm = ({ tenantId }: { tenantId: string }) => {
       const { data, error } = await supabase
         .from("tenants")
         .select(
-          "logo_url, favicon_url, primary_color, secondary_color, app_title, app_description, footer_note, show_powered_by, powered_by_label"
+          "name, legal_name, trade_name, address, phone, email, website, tax_id, logo_url, favicon_url, primary_color, secondary_color, app_title, app_description, footer_note, show_powered_by, powered_by_label"
         )
         .eq("id", tenantId)
         .maybeSingle();
@@ -60,6 +93,8 @@ export const BrandingForm = ({ tenantId }: { tenantId: string }) => {
     },
     enabled: !!tenantId,
   });
+
+  const companyName = data?.legal_name || data?.trade_name || data?.name || "Société";
 
   useEffect(() => {
     if (!data) return;
@@ -202,13 +237,38 @@ export const BrandingForm = ({ tenantId }: { tenantId: string }) => {
           )}
         </div>
 
-        <div className="md:col-span-2 flex justify-end">
+        <div className="md:col-span-2 flex flex-wrap justify-end gap-2">
+          <Button variant="outline" onClick={openPreview} disabled={previewing} className="gap-2">
+            {previewing ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileSearch className="w-4 h-4" />}
+            Aperçu du rapport PDF
+          </Button>
           <Button onClick={handleSave} disabled={saving} className="gap-2">
             <Save className="w-4 h-4" />
             {saving ? "Enregistrement..." : "Enregistrer"}
           </Button>
         </div>
       </CardContent>
+      <Dialog open={!!preview} onOpenChange={(o) => !o && setPreview(null)}>
+        <DialogContent className="max-w-4xl">
+          <DialogHeader>
+            <DialogTitle>Aperçu du rapport PDF</DialogTitle>
+            <DialogDescription>
+              Vérifiez le logo, les couleurs et les coordonnées de {companyName} avant de télécharger.
+              Les modifications non enregistrées sont incluses.
+            </DialogDescription>
+          </DialogHeader>
+          {preview?.logoWarning && (
+            <p role="alert" className="text-sm text-destructive">Le logo n'a pas pu être chargé depuis l'adresse indiquée.</p>
+          )}
+          {preview && <iframe title="Aperçu PDF" src={preview.url} className="w-full h-[65vh] rounded-md border border-border bg-muted" />}
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setPreview(null)}>Fermer</Button>
+            <Button className="gap-2" onClick={() => preview?.doc.save(`Apercu_identite_${companyName.replace(/\s+/g, "_")}.pdf`)}>
+              <Download className="w-4 h-4" /> Télécharger
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   );
 };
