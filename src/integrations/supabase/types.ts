@@ -14,6 +14,60 @@ export type Database = {
   }
   public: {
     Tables: {
+      audit_logs: {
+        Row: {
+          action: string
+          country_id: string | null
+          created_at: string
+          entity_id: string | null
+          entity_type: string | null
+          id: string
+          ip_address: string | null
+          module: string
+          new_value: Json | null
+          old_value: Json | null
+          session_id: string | null
+          tenant_id: string | null
+          user_agent: string | null
+          user_id: string | null
+          user_name: string | null
+        }
+        Insert: {
+          action: string
+          country_id?: string | null
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          ip_address?: string | null
+          module: string
+          new_value?: Json | null
+          old_value?: Json | null
+          session_id?: string | null
+          tenant_id?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+          user_name?: string | null
+        }
+        Update: {
+          action?: string
+          country_id?: string | null
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          ip_address?: string | null
+          module?: string
+          new_value?: Json | null
+          old_value?: Json | null
+          session_id?: string | null
+          tenant_id?: string | null
+          user_agent?: string | null
+          user_id?: string | null
+          user_name?: string | null
+        }
+        Relationships: []
+      }
       clients: {
         Row: {
           address: string | null
@@ -2492,6 +2546,7 @@ export type Database = {
       }
     }
     Functions: {
+      audit_request_meta: { Args: never; Returns: Record<string, unknown> }
       can_access_tenant: {
         Args: { _tenant_id: string; _user_id: string }
         Returns: boolean
@@ -2534,6 +2589,18 @@ export type Database = {
       license_effective_status: {
         Args: { _expiration: string; _grace: number; _status: string }
         Returns: string
+      }
+      log_audit_event: {
+        Args: {
+          _action: string
+          _country_id?: string
+          _details?: Json
+          _device?: string
+          _entity_id?: string
+          _entity_type?: string
+          _module: string
+        }
+        Returns: undefined
       }
       shares_tenant_with: {
         Args: { _other_user_id: string; _user_id: string }

@@ -1,4 +1,5 @@
 import { createContext, useContext, useEffect, useMemo, useRef, useState, ReactNode } from "react";
+import { logAudit } from "@/lib/audit";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useSearchParams } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
@@ -116,6 +117,14 @@ export const CountryProvider = ({ children }: { children: ReactNode }) => {
   const setCountryId = (id: string) => {
     if (!tenantId) return;
     if (!countries.some((c) => c.id === id)) return; // pays non affecté : interdit
+    if (id !== countryId) {
+      void logAudit("country_switch", "pays", {
+        entityType: "countries",
+        entityId: id,
+        countryId: id,
+        details: { from: countryId, to: id },
+      });
+    }
     window.localStorage.setItem(storageKey(tenantId), id);
     setSelected(id);
   };

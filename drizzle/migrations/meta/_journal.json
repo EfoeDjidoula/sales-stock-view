@@ -50,6 +50,13 @@
       "when": 1790466050797,
       "tag": "0006_support_tickets",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1790468511328,
+      "tag": "0007_audit_logs",
+      "breakpoints": true
     }
   ]
 }

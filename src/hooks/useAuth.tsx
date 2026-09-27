@@ -1,6 +1,7 @@
 import { useState, useEffect, createContext, useContext, ReactNode } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { User, Session } from "@supabase/supabase-js";
+import { logAudit } from "@/lib/audit";
 
 interface AuthContextType {
   user: User | null;
@@ -40,11 +41,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       email,
       password,
     });
+    if (!error) void logAudit("login", "authentification");
     return { error: error ? new Error(error.message) : null };
   };
 
   const signOut = async () => {
     try {
+      await logAudit("logout", "authentification");
       await supabase.auth.signOut();
     } catch (error) {
       // Even if signOut fails (e.g. session already expired), clear local state
