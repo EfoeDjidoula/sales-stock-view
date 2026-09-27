@@ -12,6 +12,7 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { PendingTab, LedgerTab, VarianceTab, SummaryTab, TransfersTab, ThresholdsTab } from "./StockAnalysisTabs";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const db = supabase as any;
@@ -404,12 +405,24 @@ export const StockEngineModule = () => {
       <Tabs value={tab} onValueChange={setTab}>
         <TabsList className="bg-secondary flex-wrap h-auto">
           <TabsTrigger value="niveaux">Niveaux & alertes</TabsTrigger>
+          <TabsTrigger value="synthese">Synthèse par produit</TabsTrigger>
+          <TabsTrigger value="fiche">Fiche de stock</TabsTrigger>
           <TabsTrigger value="registre">Registre des mouvements</TabsTrigger>
+          <TabsTrigger value="validations">Validations en attente</TabsTrigger>
+          <TabsTrigger value="ecarts">Écarts d'inventaire</TabsTrigger>
+          <TabsTrigger value="transferts">Suivi des transferts</TabsTrigger>
+          <TabsTrigger value="seuils">Seuils d'alerte</TabsTrigger>
           {canWrite && <TabsTrigger value="mouvement">Nouveau mouvement</TabsTrigger>}
           {canWrite && <TabsTrigger value="transfert">Transfert</TabsTrigger>}
         </TabsList>
         <TabsContent value="niveaux" className="mt-4"><LevelsTab refs={refs} reload={reload} /></TabsContent>
+        <TabsContent value="synthese" className="mt-4"><SummaryTab refs={refs} reload={reload} /></TabsContent>
+        <TabsContent value="fiche" className="mt-4"><LedgerTab refs={refs} reload={reload} /></TabsContent>
         <TabsContent value="registre" className="mt-4"><RegisterTab refs={refs} reload={reload} onChanged={bump} /></TabsContent>
+        <TabsContent value="validations" className="mt-4"><PendingTab refs={refs} reload={reload} onChanged={bump} canValidate={isPlatformAdmin || can("stock", "validate")} /></TabsContent>
+        <TabsContent value="ecarts" className="mt-4"><VarianceTab refs={refs} reload={reload} /></TabsContent>
+        <TabsContent value="transferts" className="mt-4"><TransfersTab refs={refs} reload={reload} /></TabsContent>
+        <TabsContent value="seuils" className="mt-4"><ThresholdsTab refs={refs} onChanged={bump} canEdit={isPlatformAdmin || can("tanks", "edit") || can("stations", "edit")} /></TabsContent>
         {canWrite && <TabsContent value="mouvement" className="mt-4"><MovementForm refs={refs} onDone={() => { bump(); setTab("registre"); }} /></TabsContent>}
         {canWrite && <TabsContent value="transfert" className="mt-4"><TransferForm refs={refs} onDone={() => { bump(); setTab("registre"); }} /></TabsContent>}
       </Tabs>
