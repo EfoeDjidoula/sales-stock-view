@@ -16,6 +16,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { StationConfigModule } from "@/components/stations/StationConfigModule";
+import { ReferentialsModule } from "@/components/stations/ReferentialsModule";
+import { usePermissions } from "@/hooks/usePermissions";
 import { formatCurrency } from "@/data/stationsData";
 import {
   Dialog,
@@ -46,6 +48,7 @@ interface StationManagementProps {
 }
 
 export const StationManagement = ({ isAdmin }: StationManagementProps) => {
+  const { can } = usePermissions();
   const { stations, loading, refetch } = useStations();
   const { tenantId } = useTenant();
   const { countryId } = useCountry();
@@ -168,6 +171,9 @@ export const StationManagement = ({ isAdmin }: StationManagementProps) => {
           </TabsTrigger>
           <TabsTrigger value="config" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
             <Settings2 className="w-4 h-4" /> Cuves & Pompes
+          </TabsTrigger>
+          <TabsTrigger value="referentiels" className="gap-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
+            <Droplets className="w-4 h-4" /> Référentiels
           </TabsTrigger>
         </TabsList>
 
@@ -343,6 +349,10 @@ export const StationManagement = ({ isAdmin }: StationManagementProps) => {
 
         <TabsContent value="config" className="mt-0">
           <StationConfigModule isAdmin={isAdmin} />
+        </TabsContent>
+
+        <TabsContent value="referentiels" className="mt-0">
+          <ReferentialsModule canEdit={can("stations", "edit") || can("stations", "create")} />
         </TabsContent>
       </Tabs>
 

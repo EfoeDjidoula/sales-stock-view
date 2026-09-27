@@ -71,6 +71,13 @@
       "when": 1790469721214,
       "tag": "0009_rbac_backend_enforcement",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1790471442231,
+      "tag": "0010_petroleum_referentials",
+      "breakpoints": true
     }
   ]
 }
