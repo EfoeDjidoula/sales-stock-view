@@ -41,11 +41,11 @@ Deno.serve(async (req) => {
     let sent = 0
     for (const n of pending) {
       const p = (n.payload ?? {}) as Record<string, any>
-      if (!email || (n.event === 'status_changed' && p.to === 'closed' && false)) {
+      if (!email) {
         await admin.from('support_notifications').update({ status: 'skipped' }).eq('id', n.id)
         continue
       }
-      const isComment = n.event !== 'status_changed' && !p.to
+      const isComment = n.event !== 'status_changed'
       try {
         const r = await sendTemplateEmail('ticket-update', email, {
           templateData: {
