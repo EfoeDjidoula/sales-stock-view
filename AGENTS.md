@@ -1,2 +1,3 @@
 - Droits d'écriture métier : politiques RLS RESTRICTIVE « RBAC write » via can_write_module(uid, module) ; pourquoi : les permissions RBAC doivent être appliquées côté serveur, pas seulement dans l'interface.
 - Référentiels pétroliers : petroleum_products / depots / nozzles scoupés tenant+country, product_id additif à côté de product_type texte ; pourquoi : migrer sans casser les écrans qui lisent encore super/gasoil.
+- Stock : registre immuable stock_movements (trigger stock_movement_before) + vue stock_levels (security_invoker) ; pourquoi : aucune modification silencieuse, toute correction = mouvement tracé et validé.
