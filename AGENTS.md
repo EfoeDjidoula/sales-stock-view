@@ -1,0 +1,1 @@
+- Droits d'écriture métier : politiques RLS RESTRICTIVE « RBAC write » via can_write_module(uid, module) ; pourquoi : les permissions RBAC doivent être appliquées côté serveur, pas seulement dans l'interface.
