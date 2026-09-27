@@ -57,6 +57,13 @@
       "when": 1790468511328,
       "tag": "0007_audit_logs",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1790469588834,
+      "tag": "0008_audit_hardening",
+      "breakpoints": true
     }
   ]
 }
