@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useScope } from "@/hooks/useScope";
+import { useCountry } from "@/hooks/useCountry";
 import { usePlatformAdmin } from "@/hooks/usePlatformAdmin";
 import { toast } from "sonner";
 import { Plus, Pencil, History, Loader2, Search } from "lucide-react";
@@ -43,8 +44,8 @@ interface RefConfig {
   onBeforeSave?: (form: Row) => Row;
 }
 
-const useRows = (table: string, scope: RefConfig["scope"], reloadKey: number) => {
-  const { scopeQuery, tenantId } = useScope();
+const useRows = (table: string, scope: RefConfig["scope"], reloadKey: number, countryFilter: string) => {
+  const { tenantId, countryId } = useScope();
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   useEffect(() => {
@@ -53,7 +54,11 @@ const useRows = (table: string, scope: RefConfig["scope"], reloadKey: number) =>
     (async () => {
       setLoading(true);
       let q = db.from(table).select("*");
-      if (scope === "tenant_country") q = scopeQuery(q);
+      if (scope === "tenant_country") {
+        q = q.eq("tenant_id", tenantId);
+        const c = countryFilter === "active" ? countryId : countryFilter;
+        if (c && c !== "all") q = q.eq("country_id", c);
+      }
       if (table === "stations" || table === "depots") q = q.order("name");
       else q = q.order("created_at");
       const { data, error } = await q;
@@ -64,7 +69,7 @@ const useRows = (table: string, scope: RefConfig["scope"], reloadKey: number) =>
       }
     })();
     return () => { cancelled = true; };
-  }, [table, scope, scopeQuery, tenantId, reloadKey]);
+  }, [table, scope, tenantId, countryId, reloadKey, countryFilter]);
   return { rows, loading };
 };
 
@@ -98,11 +103,12 @@ const HistoryDialog = ({ row, table, onClose }: { row: Row | null; table: string
   );
 };
 
-const RefTable = ({ cfg, canEdit }: { cfg: RefConfig; canEdit: boolean }) => {
+const RefTable = ({ cfg, canEdit, countryFilter, countryName }: { cfg: RefConfig; canEdit: boolean; countryFilter: string; countryName: (id: string) => string }) => {
   const { scopeRow, tenantId } = useScope();
   const { isPlatformAdmin } = usePlatformAdmin();
   const [reload, setReload] = useState(0);
-  const { rows, loading } = useRows(cfg.table, cfg.scope, reload);
+  const { rows, loading } = useRows(cfg.table, cfg.scope, reload, countryFilter);
+  const showCountry = cfg.scope === "tenant_country" && countryFilter === "all";
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("all");
   const [extra, setExtra] = useState("all");
@@ -196,6 +202,7 @@ const RefTable = ({ cfg, canEdit }: { cfg: RefConfig; canEdit: boolean }) => {
           <table className="w-full text-sm">
             <thead className="bg-secondary/50 text-muted-foreground">
               <tr>
+                {showCountry && <th className="text-left p-2 font-medium">Pays</th>}
                 {cfg.fields.filter((f) => f.list !== false).map((f) => <th key={f.key} className="text-left p-2 font-medium">{f.label}</th>)}
                 {cfg.statuses.length > 0 && <th className="text-left p-2 font-medium">Statut</th>}
                 <th className="p-2 w-20" />
@@ -204,6 +211,7 @@ const RefTable = ({ cfg, canEdit }: { cfg: RefConfig; canEdit: boolean }) => {
             <tbody>
               {filtered.map((r) => (
                 <tr key={r.id} className="border-t border-border">
+                  {showCountry && <td className="p-2">{countryName(r.country_id)}</td>}
                   {cfg.fields.filter((f) => f.list !== false).map((f) => (
                     <td key={f.key} className="p-2">
                       {f.type === "color" ? <span className="inline-block w-4 h-4 rounded-full border border-border" style={{ background: r[f.key] }} /> : display(f, r)}
@@ -276,7 +284,8 @@ const RefTable = ({ cfg, canEdit }: { cfg: RefConfig; canEdit: boolean }) => {
 
 /** Charge les listes de référence utilisées par les menus déroulants. */
 const useLookups = (reloadKey: number) => {
-  const { scopeQuery, tenantId } = useScope();
+  const { tenantId } = useScope();
+  const scopeQuery = (q: any) => q.eq("tenant_id", tenantId); // eslint-disable-line @typescript-eslint/no-explicit-any
   const [data, setData] = useState<Record<string, Row[]>>({});
   useEffect(() => {
     if (!tenantId) return;
@@ -295,12 +304,15 @@ const useLookups = (reloadKey: number) => {
         tanks: tanks.data || [], pumps: pumps.data || [], units: units.data || [], types: types.data || [],
       });
     })();
-  }, [scopeQuery, tenantId, reloadKey]);
+  }, [tenantId, reloadKey]); // eslint-disable-line react-hooks/exhaustive-deps
   return data;
 };
 
 export const ReferentialsModule = ({ canEdit }: { canEdit: boolean }) => {
   const [tab, setTab] = useState("produits");
+  const { countries } = useCountry();
+  const [countryFilter, setCountryFilter] = useState("active");
+  const countryName = (id: string) => countries.find((c) => c.id === id)?.name ?? "—";
   const L = useLookups(tab.length); // recharge au changement d'onglet
   const opt = (rows: Row[] = []) => rows.map((r) => ({ value: r.id, label: r.code ? `${r.name} (${r.code})` : r.name }));
   const types = (cat: string) => opt((L.types || []).filter((t) => t.category === cat));
@@ -402,23 +414,92 @@ export const ReferentialsModule = ({ canEdit }: { canEdit: boolean }) => {
 
   const labels: Record<string, string> = {
     produits: "Produits", depots: "Dépôts", stations: "Stations", cuves: "Cuves", pompes: "Pompes",
-    pistolets: "Pistolets", unites: "Unités", types: "Types d'équipements",
+    pistolets: "Pistolets", capacites: "Capacités", unites: "Unités", types: "Types d'équipements",
   };
+  const order = ["produits", "depots", "stations", "cuves", "pompes", "pistolets", "capacites", "unites", "types"];
 
   return (
     <div className="space-y-4">
-      <div>
-        <h2 className="text-lg font-display font-semibold">Référentiels pétroliers</h2>
-        <p className="text-sm text-muted-foreground">Produits, dépôts, équipements et statuts du pays actif.</p>
+      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+        <div>
+          <h2 className="text-lg font-display font-semibold">Référentiels pétroliers</h2>
+          <p className="text-sm text-muted-foreground">Produits, dépôts, équipements, capacités et statuts.</p>
+        </div>
+        {countries.length > 1 && (
+          <Select value={countryFilter} onValueChange={setCountryFilter}>
+            <SelectTrigger className="w-56" aria-label="Filtre pays"><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="active">Pays actif</SelectItem>
+              <SelectItem value="all">Tous mes pays</SelectItem>
+              {countries.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
+            </SelectContent>
+          </Select>
+        )}
       </div>
       <Tabs value={tab} onValueChange={setTab}>
         <TabsList className="bg-secondary flex-wrap h-auto">
-          {Object.keys(configs).map((k) => <TabsTrigger key={k} value={k}>{labels[k]}</TabsTrigger>)}
+          {order.map((k) => <TabsTrigger key={k} value={k}>{labels[k]}</TabsTrigger>)}
         </TabsList>
         {Object.entries(configs).map(([k, cfg]) => (
-          <TabsContent key={k} value={k} className="mt-4"><RefTable cfg={cfg} canEdit={canEdit} /></TabsContent>
+          <TabsContent key={k} value={k} className="mt-4">
+            <RefTable cfg={cfg} canEdit={canEdit} countryFilter={countryFilter} countryName={countryName} />
+          </TabsContent>
         ))}
+        <TabsContent value="capacites" className="mt-4">
+          <CapacityView countryFilter={countryFilter} countryName={countryName} />
+        </TabsContent>
       </Tabs>
+    </div>
+  );
+};
+
+/** Capacités installées par station et par produit (somme des cuves actives). */
+const CapacityView = ({ countryFilter, countryName }: { countryFilter: string; countryName: (id: string) => string }) => {
+  const { tenantId, countryId } = useScope();
+  const [rows, setRows] = useState<Row[]>([]);
+  const [search, setSearch] = useState("");
+  useEffect(() => {
+    if (!tenantId) return;
+    let q = db.from("tanks").select("capacity_liters,status,country_id,stations(name),petroleum_products(name)").eq("tenant_id", tenantId);
+    const c = countryFilter === "active" ? countryId : countryFilter;
+    if (c && c !== "all") q = q.eq("country_id", c);
+    q.then(({ data }: { data: Row[] | null }) => {
+      const map = new Map<string, Row>();
+      for (const t of data || []) {
+        const key = `${t.country_id}|${t.stations?.name}|${t.petroleum_products?.name}`;
+        const cur = map.get(key) || { country_id: t.country_id, station: t.stations?.name ?? "—", product: t.petroleum_products?.name ?? "—", total: 0, active: 0, count: 0 };
+        cur.total += Number(t.capacity_liters) || 0;
+        if (t.status === "active") cur.active += Number(t.capacity_liters) || 0;
+        cur.count += 1;
+        map.set(key, cur);
+      }
+      setRows([...map.values()].sort((a, b) => a.station.localeCompare(b.station)));
+    });
+  }, [tenantId, countryId, countryFilter]);
+  const s = search.toLowerCase();
+  const list = rows.filter((r) => !s || `${r.station} ${r.product}`.toLowerCase().includes(s));
+  return (
+    <div className="space-y-3">
+      <div className="relative">
+        <Search className="w-4 h-4 absolute left-2.5 top-2.5 text-muted-foreground" />
+        <Input className="pl-8" placeholder="Rechercher une station ou un produit…" value={search} onChange={(e) => setSearch(e.target.value)} />
+      </div>
+      <div className="rounded-xl border border-border bg-card overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead className="bg-secondary/50 text-muted-foreground">
+            <tr>{["Pays", "Station", "Produit", "Cuves", "Capacité totale (L)", "Capacité active (L)"].map((h) => <th key={h} className="text-left p-2 font-medium">{h}</th>)}</tr>
+          </thead>
+          <tbody>
+            {list.map((r, i) => (
+              <tr key={i} className="border-t border-border">
+                <td className="p-2">{countryName(r.country_id)}</td><td className="p-2">{r.station}</td><td className="p-2">{r.product}</td>
+                <td className="p-2">{r.count}</td><td className="p-2">{r.total.toLocaleString("fr-FR")}</td><td className="p-2">{r.active.toLocaleString("fr-FR")}</td>
+              </tr>
+            ))}
+            {list.length === 0 && <tr><td colSpan={6} className="p-6 text-center text-muted-foreground">Aucune cuve</td></tr>}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 };
