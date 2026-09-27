@@ -116,6 +116,14 @@ export const CountryProvider = ({ children }: { children: ReactNode }) => {
   const setCountryId = (id: string) => {
     if (!tenantId) return;
     if (!countries.some((c) => c.id === id)) return; // pays non affecté : interdit
+    if (id !== countryId) {
+      void logAudit("country_switch", "pays", {
+        entityType: "countries",
+        entityId: id,
+        countryId: id,
+        details: { from: countryId, to: id },
+      });
+    }
     window.localStorage.setItem(storageKey(tenantId), id);
     setSelected(id);
   };
