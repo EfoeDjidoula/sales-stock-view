@@ -61,7 +61,7 @@ export const SupportTickets = ({ mode }: { mode: "client" | "lumatek" }) => {
   const [form, setForm] = useState({ category: "assistance" as TicketCategory, priority: "normal" as TicketPriority, subject: "", description: "", module_key: "", station_id: "" });
   const [files, setFiles] = useState<File[]>([]);
   const [busy, setBusy] = useState(false);
-  const [viewId, setViewId] = useState<string | null>(null);
+  const [viewId, setViewId] = useState<string | null>(() => new URLSearchParams(window.location.search).get("ticket"));
   const viewed = tickets.find((t) => t.id === viewId) || null;
 
   const moduleLabel = (k?: string | null) => modules.find((m) => m.key === k)?.label || k || "—";
