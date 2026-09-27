@@ -1,68 +1,32 @@
-## Objectif
+# Référentiels pétroliers multi-pays
 
-Réduire l'encombrement de la barre d'onglets du tableau de bord (11 onglets à plat, qui débordent sur `flex-wrap`) en regroupant les menus par thématique métier, tout en conservant strictement les permissions par rôle existantes.
+## Constat (existant)
+- Déjà présents et à réutiliser : `stations`, `tanks` (cuves, capacité), `pumps` (pompes liées à une cuve), écran « Configuration des cuves & pompes ».
+- Le produit est aujourd'hui un simple texte `super` / `gasoil` partout (cuves, pompes, index, commandes, dépotages…).
+- Absents : produits, dépôts, pistolets, unités de mesure, types d'équipements, statuts actif/inactif/maintenance.
 
-## Regroupement proposé
+## Ce qui sera ajouté (sans rien supprimer)
+1. **Produits pétroliers** par société + pays : code, nom, couleur, unité, statut. Création automatique de « Super » et « Gasoil » pour chaque couple société/pays existant.
+2. **Unités de mesure** (Litre, m³, kg, tonne…) : catalogue commun + unités propres à une société.
+3. **Types d'équipements** (cuve enterrée/aérienne, pompe simple/double/multi-produits, pistolet…).
+4. **Dépôts** par pays : nom, localisation, capacité, statut.
+5. **Pistolets** : station, pompe, cuve, produit, numéro, statut.
+6. **Statuts** actif / inactif / maintenance ajoutés aux stations, cuves et pompes (valeur par défaut « actif »).
+7. **Liens produits** : colonne `product_id` ajoutée aux cuves, pompes et pistolets, remplie depuis `super`/`gasoil`. L'ancien texte reste en place pour ne rien casser.
+8. **Migration des pompes** : chaque pompe existante reçoit un pistolet par défaut, relié à sa cuve et à son produit.
+9. **Contrôle** : un pistolet doit utiliser le même produit que sa cuve et appartenir à la même station que sa pompe.
 
-Les 11 menus actuels sont réorganisés en **4 groupes logiques** :
+## Écrans (menu Configuration, réutilisant l'écran actuel)
+- Onglets : Produits · Dépôts · Stations · Cuves & pompes & pistolets · Unités · Types d'équipements.
+- Chaque liste : recherche, filtres (statut, produit, station), badge de statut.
+- Historique minimal : panneau « Historique » par élément, lu depuis le journal d'audit existant.
 
-```text
-📊 SUIVI & ANALYSE
-   ├─ Ventes            (admin, manager, operator)
-   ├─ Stock             (admin, manager, operator)
-   └─ Historique        (admin, manager, operator)
-
-🚚 LOGISTIQUE & FLUX
-   ├─ Commandes         (admin, manager)
-   ├─ Approvisionnements(admin, manager)
-   ├─ Dépotages         (admin, manager, operator)
-   └─ Camions           (admin, manager, operator)
-
-🏗️ CONFIGURATION
-   ├─ Stations & Cuves  (admin, manager, operator)
-   └─ Péréquation       (admin, manager, operator)
-
-⚙️ ADMINISTRATION
-   ├─ Exercices         (admin)
-   └─ Droits & Rôles    (admin)
-```
-
-La logique de regroupement :
-- **Suivi & Analyse** = ce qu'on consulte au quotidien (données de vente/stock/historique).
-- **Logistique & Flux** = tout le cycle d'approvisionnement physique du carburant (commande → appro → dépotage → camions).
-- **Configuration** = paramétrage métier des actifs (cuves/pompes, zones de péréquation).
-- **Administration** = réservé aux admins (exercices comptables, gestion des utilisateurs).
-
-## Comportement UI
-
-- La `TabsList` actuelle est remplacée par une barre de **4 groupes**. Chaque groupe s'ouvre en menu déroulant (`DropdownMenu`) listant ses sous-menus.
-- Le libellé du groupe affiche l'onglet actif en surbrillance (ex. « Logistique & Flux · Dépotages ») pour ne pas perdre le repère de position.
-- Un groupe entièrement vide pour le rôle courant (ex. « Administration » pour un opérateur) est masqué — aucune régression de sécurité.
-- L'état `activeTab` et tout le contenu (`TabsContent`) restent identiques : seule la navigation change, pas les vues ni la logique métier.
-- Responsive : sur mobile la barre reste compacte (4 boutons au lieu de 11).
+## Fin de mission
+- Test des pages existantes (Dashboard, Stock, Saisie index, Historique, Dépotages, Commandes, Configuration) et liste des anomalies **avant** toute correction.
 
 ## Détails techniques
-
-Fichier concerné : `src/pages/Index.tsx` uniquement.
-
-1. Ajouter une structure de configuration des groupes :
-   ```ts
-   const TAB_GROUPS = [
-     { id: "suivi", label: "Suivi & Analyse", icon: BarChart3, tabs: ["ventes","stock","historique"] },
-     { id: "logistique", label: "Logistique & Flux", icon: Truck, tabs: ["commandes","approvisionnements","depotage","camions"] },
-     { id: "config", label: "Configuration", icon: Settings2, tabs: ["stations","perequation"] },
-     { id: "admin", label: "Administration", icon: ShieldCheck, tabs: ["exercices","droits"] },
-   ];
-   ```
-   avec un mapping `TAB_META` (label + icône par onglet), réutilisant les libellés/icônes déjà présents dans les `TabsTrigger`.
-2. Conserver `TAB_PERMISSIONS` et `canAccessTab` inchangés.
-3. Remplacer le bloc `TabsList` par une rangée de `DropdownMenu` (composant shadcn déjà présent), un par groupe. Filtrer les onglets de chaque groupe via `canAccessTab`; masquer le groupe si la liste résultante est vide.
-4. Garder `<Tabs value={activeTab} onValueChange={setActiveTab}>` comme conteneur (les `TabsContent` ne bougent pas). Les items du menu appellent `setActiveTab(tab)`.
-5. Mettre en surbrillance le bouton du groupe contenant `activeTab`.
-
-Aucune modification de base de données, de hook ou de logique métier.
-
-## Hors scope
-
-- Pas de changement des permissions ni des vues.
-- Pas de passage à une sidebar (possible évolution future si souhaité).
+- Nouvelles tables : `petroleum_products`, `units_of_measure`, `equipment_types`, `depots`, `nozzles` ; toutes avec `tenant_id` + `country_id` (sauf catalogue global), GRANT, RLS `can_access_tenant_country`, RESTRICTIVE `tenant_write_allowed`, `can_write_module` (module `stations`/`cuves`), triggers `set_tenant_country_context`, `zz_audit`, `update_updated_at`.
+- Colonnes additives nullables : `status` (défaut 'active', CHECK active|inactive|maintenance), `product_id`, `equipment_type_id`, `unit_id` sur stations/tanks/pumps ; `depot_id` optionnel sur stations.
+- Backfill `product_id` par correspondance (tenant, country, code). Trigger de cohérence pistolet ↔ cuve ↔ produit.
+- Hooks `useProducts`, `useDepots`, `useNozzles`, `useUnits`, `useEquipmentTypes` via `useScope`.
+- La saisie d'index reste par pompe dans cette étape (passage par pistolet proposé ensuite).
