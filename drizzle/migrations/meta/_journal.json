@@ -64,6 +64,13 @@
       "when": 1790469588834,
       "tag": "0008_audit_hardening",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1790469721214,
+      "tag": "0009_rbac_backend_enforcement",
+      "breakpoints": true
     }
   ]
 }
