@@ -200,7 +200,7 @@ export const VarianceTab = ({ refs, reload }: { refs: Refs; reload: number }) =>
   const [to, setTo] = useState(today());
   const filter = useCallback((q: any) => q.eq("movement_type", "inventory").neq("status", "rejected").gte("movement_date", from).lte("movement_date", `${to}T23:59:59`), [from, to]); // eslint-disable-line @typescript-eslint/no-explicit-any
   const { rows, loading } = useMovements(reload, filter);
-  const list = rows.map((r) => {
+  const list: Row[] = rows.map((r): Row => {
     const th = Number(r.theoretical_at_count ?? 0); const ph = Number(r.physical_level ?? 0);
     const v = ph - th; const pct = th ? (v / th) * 100 : 0;
     return { ...r, th, ph, v, pct };
