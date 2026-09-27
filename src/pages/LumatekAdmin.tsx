@@ -16,6 +16,7 @@ import { LumatekContracts } from "@/components/lumatek/LumatekContracts";
 import { LumatekLicenses } from "@/components/lumatek/LumatekLicenses";
 import { LumatekInvoices } from "@/components/lumatek/LumatekInvoices";
 import { SupportTickets } from "@/components/support/SupportTickets";
+import { LumatekAuditLog } from "@/components/lumatek/LumatekAuditLog";
 import { LumatekPlaceholder } from "@/components/lumatek/LumatekPlaceholder";
 import {
   LayoutDashboard,
@@ -90,12 +91,7 @@ const LumatekAdmin = () => {
       case "support":
         return <SupportTickets mode="lumatek" />;
       case "journal":
-        return (
-          <LumatekPlaceholder
-            title="Journal système"
-            description="Traçabilité des actions sensibles réalisées sur la plateforme."
-          />
-        );
+        return <LumatekAuditLog />;
       case "parametres":
         return (
           <LumatekPlaceholder
