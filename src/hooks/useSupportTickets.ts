@@ -91,6 +91,7 @@ export const useSupportTickets = (tenantId?: string | null) => {
     mutationFn: async ({ id, ...patch }: Partial<SupportTicket> & { id: string }) => {
       const { error } = await supabase.from("support_tickets").update(patch as never).eq("id", id);
       if (error) throw error;
+      notifyTicket(id);
     },
     onSuccess: () => { inv(); toast.success("Ticket mis à jour"); },
     onError: (e) => toast.error(errMsg(e)),
@@ -103,6 +104,7 @@ export const useSupportTickets = (tenantId?: string | null) => {
         attachments: e.attachments, is_lumatek: e.isLumatek, author_id: u.user?.id, author_name: e.authorName ?? null,
       } as never);
       if (error) throw error;
+      notifyTicket(e.ticket.id);
     },
     onSuccess: () => { inv(); toast.success("Message envoyé"); },
     onError: (e) => toast.error(errMsg(e)),
@@ -135,3 +137,8 @@ export const useLumatekAgents = (enabled: boolean) =>
       return ids.map((id) => ({ id, name: profs?.find((p) => p.user_id === id)?.full_name || "Agent LUMATEK" }));
     },
   });
+
+/** Envoie au client les emails en attente pour ce ticket (non bloquant). */
+export const notifyTicket = (ticketId: string) => {
+  supabase.functions.invoke("notify-ticket", { body: { ticket_id: ticketId } }).catch(() => undefined);
+};

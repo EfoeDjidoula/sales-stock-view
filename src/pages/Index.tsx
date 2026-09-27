@@ -191,7 +191,7 @@ const Index = () => {
     });
   }, [currentUserRole, enabledMap, license.isLimited]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const [activeTab, setActiveTab] = useState("ventes");
+  const [activeTab, setActiveTab] = useState(() => new URLSearchParams(window.location.search).get("tab") === "support" ? "support" : "ventes");
 
   const canAccessTab = (tab: string) => allowedTabs.includes(tab);
 
