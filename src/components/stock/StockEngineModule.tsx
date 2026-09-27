@@ -101,7 +101,7 @@ const LevelsTab = ({ refs, reload }: { refs: Record<string, Row[]>; reload: numb
     });
   }, [scopeQuery, tenantId, reload]);
   const name = (list: Row[], id: string) => list.find((r) => r.id === id)?.name ?? "—";
-  const list = useMemo(() => rows.map((r) => ({
+  const list = useMemo((): Row[] => rows.map((r): Row => ({
     ...r,
     locName: r.location_type === "station" ? name(refs.stations, r.station_id) : name(refs.depots, r.depot_id),
     tankName: r.tank_id ? name(refs.tanks, r.tank_id) : "—",
