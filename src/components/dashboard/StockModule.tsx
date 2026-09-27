@@ -30,7 +30,7 @@ export const StockModule = ({ stationId }: StockModuleProps) => {
       queryClient.invalidateQueries({ queryKey: ["dashboard-entries"] });
     };
     const channel = supabase
-      .channel("stock-realtime")
+      .channel(`stock-realtime-${Math.random().toString(36).slice(2)}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "index_entries" }, invalidate)
       .on("postgres_changes", { event: "*", schema: "public", table: "pump_index_entries" }, invalidate)
       .subscribe();
