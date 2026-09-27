@@ -366,6 +366,74 @@ export type Database = {
           },
         ]
       }
+      depot_product_thresholds: {
+        Row: {
+          capacity_liters: number
+          country_id: string | null
+          created_at: string
+          critical_threshold: number | null
+          depot_id: string
+          id: string
+          min_threshold: number | null
+          product_id: string
+          tenant_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          capacity_liters?: number
+          country_id?: string | null
+          created_at?: string
+          critical_threshold?: number | null
+          depot_id: string
+          id?: string
+          min_threshold?: number | null
+          product_id: string
+          tenant_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          capacity_liters?: number
+          country_id?: string | null
+          created_at?: string
+          critical_threshold?: number | null
+          depot_id?: string
+          id?: string
+          min_threshold?: number | null
+          product_id?: string
+          tenant_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "depot_product_thresholds_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "countries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "depot_product_thresholds_depot_id_fkey"
+            columns: ["depot_id"]
+            isOneToOne: false
+            referencedRelation: "depots"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "depot_product_thresholds_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "petroleum_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "depot_product_thresholds_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       depotages: {
         Row: {
           country_id: string | null
@@ -2012,6 +2080,127 @@ export type Database = {
           },
         ]
       }
+      stock_movements: {
+        Row: {
+          country_id: string | null
+          created_at: string
+          depot_id: string | null
+          id: string
+          location_type: string
+          movement_date: string
+          movement_type: string
+          physical_level: number | null
+          product_id: string
+          quantity: number
+          reason: string | null
+          reference: string | null
+          requested_by: string | null
+          requested_by_name: string | null
+          station_id: string | null
+          status: string
+          tank_id: string | null
+          tenant_id: string | null
+          theoretical_at_count: number | null
+          transfer_id: string | null
+          validated_at: string | null
+          validated_by: string | null
+          validation_note: string | null
+        }
+        Insert: {
+          country_id?: string | null
+          created_at?: string
+          depot_id?: string | null
+          id?: string
+          location_type: string
+          movement_date?: string
+          movement_type: string
+          physical_level?: number | null
+          product_id: string
+          quantity: number
+          reason?: string | null
+          reference?: string | null
+          requested_by?: string | null
+          requested_by_name?: string | null
+          station_id?: string | null
+          status?: string
+          tank_id?: string | null
+          tenant_id?: string | null
+          theoretical_at_count?: number | null
+          transfer_id?: string | null
+          validated_at?: string | null
+          validated_by?: string | null
+          validation_note?: string | null
+        }
+        Update: {
+          country_id?: string | null
+          created_at?: string
+          depot_id?: string | null
+          id?: string
+          location_type?: string
+          movement_date?: string
+          movement_type?: string
+          physical_level?: number | null
+          product_id?: string
+          quantity?: number
+          reason?: string | null
+          reference?: string | null
+          requested_by?: string | null
+          requested_by_name?: string | null
+          station_id?: string | null
+          status?: string
+          tank_id?: string | null
+          tenant_id?: string | null
+          theoretical_at_count?: number | null
+          transfer_id?: string | null
+          validated_at?: string | null
+          validated_by?: string | null
+          validation_note?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_movements_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "countries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_movements_depot_id_fkey"
+            columns: ["depot_id"]
+            isOneToOne: false
+            referencedRelation: "depots"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_movements_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "petroleum_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_movements_station_id_fkey"
+            columns: ["station_id"]
+            isOneToOne: false
+            referencedRelation: "stations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_movements_tank_id_fkey"
+            columns: ["tank_id"]
+            isOneToOne: false
+            referencedRelation: "tanks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_movements_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       suppliers: {
         Row: {
           address: string | null
@@ -2371,8 +2560,10 @@ export type Database = {
           capacity_liters: number
           country_id: string | null
           created_at: string
+          critical_threshold: number | null
           equipment_type_id: string | null
           id: string
+          min_threshold: number | null
           name: string
           notes: string | null
           product_id: string | null
@@ -2387,8 +2578,10 @@ export type Database = {
           capacity_liters?: number
           country_id?: string | null
           created_at?: string
+          critical_threshold?: number | null
           equipment_type_id?: string | null
           id?: string
+          min_threshold?: number | null
           name: string
           notes?: string | null
           product_id?: string | null
@@ -2403,8 +2596,10 @@ export type Database = {
           capacity_liters?: number
           country_id?: string | null
           created_at?: string
+          critical_threshold?: number | null
           equipment_type_id?: string | null
           id?: string
+          min_threshold?: number | null
           name?: string
           notes?: string | null
           product_id?: string | null
@@ -2924,6 +3119,73 @@ export type Database = {
       }
     }
     Views: {
+      stock_levels: {
+        Row: {
+          alert_level: string | null
+          capacity: number | null
+          counted_at: string | null
+          country_id: string | null
+          critical_threshold: number | null
+          depot_id: string | null
+          entries: number | null
+          exits: number | null
+          initial_qty: number | null
+          location_type: string | null
+          min_threshold: number | null
+          physical: number | null
+          product_id: string | null
+          sales: number | null
+          station_id: string | null
+          tank_id: string | null
+          tenant_id: string | null
+          theoretical: number | null
+          variance: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_movements_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "countries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_movements_depot_id_fkey"
+            columns: ["depot_id"]
+            isOneToOne: false
+            referencedRelation: "depots"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_movements_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "petroleum_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_movements_station_id_fkey"
+            columns: ["station_id"]
+            isOneToOne: false
+            referencedRelation: "stations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_movements_tank_id_fkey"
+            columns: ["tank_id"]
+            isOneToOne: false
+            referencedRelation: "tanks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_movements_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       tank_destocking_daily: {
         Row: {
           entry_date: string | null
@@ -2960,6 +3222,21 @@ export type Database = {
       can_write_station: {
         Args: { _station_id: string; _user_id: string }
         Returns: boolean
+      }
+      create_stock_transfer: {
+        Args: {
+          _from_id: string
+          _from_tank: string
+          _from_type: string
+          _product_id: string
+          _quantity: number
+          _reason: string
+          _reference?: string
+          _to_id: string
+          _to_tank: string
+          _to_type: string
+        }
+        Returns: string
       }
       get_user_permissions: {
         Args: { _user_id: string }
@@ -3007,6 +3284,15 @@ export type Database = {
       shares_tenant_with: {
         Args: { _other_user_id: string; _user_id: string }
         Returns: boolean
+      }
+      stock_theoretical: {
+        Args: {
+          _location_id: string
+          _location_type: string
+          _product_id: string
+          _tank_id: string
+        }
+        Returns: number
       }
       tenant_license_limits: {
         Args: { _tenant_id: string }

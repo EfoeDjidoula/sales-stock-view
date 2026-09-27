@@ -78,6 +78,13 @@
       "when": 1790471442231,
       "tag": "0010_petroleum_referentials",
       "breakpoints": true
+    },
+    {
+      "idx": 11,
+      "version": "7",
+      "when": 1790472991757,
+      "tag": "0011_stock_engine",
+      "breakpoints": true
     }
   ]
 }
