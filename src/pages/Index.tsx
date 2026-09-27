@@ -11,6 +11,7 @@ import { useBranding } from "@/hooks/useBranding";
 import { usePlatformAdmin } from "@/hooks/usePlatformAdmin";
 import { useModules } from "@/hooks/useModules";
 import { useLicenseState } from "@/hooks/useLicenseState";
+import { usePermissions } from "@/hooks/usePermissions";
 import { LicenseBanner, LicenseBlockedScreen } from "@/components/license/LicenseBanner";
 
 /** Onglets encore visibles en mode « accès limité » après expiration. */
@@ -168,6 +169,9 @@ const Index = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const { currentUserRole, loading: roleLoading } = useUserRoles();
   const { isPlatformAdmin } = usePlatformAdmin();
+  const { can } = usePermissions();
+  const canEnterIndex = can("index_entries", "create");
+  const canExport = can("index_entries", "export") || can("reports", "export");
   const { tenant } = useTenant();
   const brand = useBranding();
   const { isModuleEnabled, enabledMap, isLoading: modulesLoading } = useModules();
@@ -260,28 +264,34 @@ const Index = () => {
                 <CountrySwitcher />
               </div>
               <TenantSelector />
-              <ExcelImportDialog
-                trigger={
-                  <Button variant="outline" className="gap-2">
-                    <Upload className="w-4 h-4" />
-                    Importer
+              {canEnterIndex && (
+                <ExcelImportDialog
+                  trigger={
+                    <Button variant="outline" className="gap-2">
+                      <Upload className="w-4 h-4" />
+                      Importer
+                    </Button>
+                  }
+                />
+              )}
+              {canExport && (
+                <ExcelExportDialog
+                  trigger={
+                    <Button variant="outline" className="gap-2">
+                      <Download className="w-4 h-4" />
+                      Exporter
+                    </Button>
+                  }
+                />
+              )}
+              {canEnterIndex && (
+                <Link to="/saisie">
+                  <Button className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2">
+                    <PenLine className="w-4 h-4" />
+                    Saisie Index
                   </Button>
-                }
-              />
-              <ExcelExportDialog
-                trigger={
-                  <Button variant="outline" className="gap-2">
-                    <Download className="w-4 h-4" />
-                    Exporter
-                  </Button>
-                }
-              />
-              <Link to="/saisie">
-                <Button className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2">
-                  <PenLine className="w-4 h-4" />
-                  Saisie Index
-                </Button>
-              </Link>
+                </Link>
+              )}
               <Button
                 variant="outline"
                 className="gap-2"

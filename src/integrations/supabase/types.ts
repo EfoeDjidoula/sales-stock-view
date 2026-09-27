@@ -2555,6 +2555,10 @@ export type Database = {
         Args: { _country_id: string; _tenant_id: string; _user_id: string }
         Returns: boolean
       }
+      can_write_module: {
+        Args: { _module: string; _user_id: string }
+        Returns: boolean
+      }
       can_write_station: {
         Args: { _station_id: string; _user_id: string }
         Returns: boolean

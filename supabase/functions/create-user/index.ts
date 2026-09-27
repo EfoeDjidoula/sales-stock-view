@@ -157,6 +157,19 @@ const handler = async (req: Request): Promise<Response> => {
       if (roleInsertError) {
         console.error("Error assigning role:", roleInsertError);
       }
+
+      // Rôle RBAC équivalent (les droits réels reposent sur les permissions)
+      const rbacCode = { admin: "client_admin", manager: "ops_manager", operator: "operator" }[role];
+      if (callerProfile?.tenant_id) {
+        const { data: rbacRole } = await supabaseAdmin
+          .from("roles").select("id").eq("code", rbacCode).is("tenant_id", null).maybeSingle();
+        if (rbacRole) {
+          const { error: rbacError } = await supabaseAdmin.from("user_role_assignments").insert({
+            user_id: userData.user.id, tenant_id: callerProfile.tenant_id, role_id: rbacRole.id,
+          });
+          if (rbacError) console.error("Error assigning RBAC role:", rbacError);
+        }
+      }
     }
 
     return new Response(
