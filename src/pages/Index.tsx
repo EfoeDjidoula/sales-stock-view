@@ -128,6 +128,28 @@ const TAB_META: Record<string, { label: string; icon: typeof TrendingUp }> = {
   societe: { label: "Paramètres client", icon: Building2 },
 };
 
+// Permission RBAC (au moins une) requise pour chaque onglet ; null = toujours visible
+const TAB_RBAC: Record<string, string[] | null> = {
+  ventes: ["dashboard.view", "index_entries.view"],
+  stock: ["stock.view", "dashboard.view"],
+  historique: ["index_entries.view"],
+  commandes: ["orders.view"],
+  approvisionnements: ["supplies.view"],
+  depotage: ["depotages.view"],
+  camions: ["trucks.view"],
+  stations: ["stations.view"],
+  perequation: ["perequation.view"],
+  structure_prix: ["price_structures.view"],
+  proforma: ["proforma.view"],
+  analyse_ia: ["reports.view"],
+  support: null,
+  clients: ["clients.view"],
+  fournisseurs: ["suppliers.view"],
+  exercices: ["fiscal_years.view"],
+  droits: ["users.view", "users.administer"],
+  societe: ["settings.administer", "settings.edit"],
+};
+
 // Module (feature flag) requis pour chaque onglet
 const TAB_MODULE: Record<string, string> = {
   ventes: "ventes",
@@ -169,7 +191,7 @@ const Index = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const { currentUserRole, loading: roleLoading } = useUserRoles();
   const { isPlatformAdmin } = usePlatformAdmin();
-  const { can } = usePermissions();
+  const { can, permissions } = usePermissions();
   const canEnterIndex = can("index_entries", "create");
   const canExport = can("index_entries", "export") || can("reports", "export");
   const { tenant } = useTenant();
@@ -182,8 +204,19 @@ const Index = () => {
     useDashboardData(period, selectedStation?.id);
 
   // Get allowed tabs for current user
+  // Onglets affichés selon les permissions RBAC réelles (Super Admin : tout).
+  // Repli sur l'ancien rôle uniquement si l'utilisateur n'a aucune permission RBAC.
   const allowedTabs = useMemo(() => {
-    const base = !currentUserRole
+    const hasRbac = permissions.size > 0;
+    const base = isPlatformAdmin
+      ? Object.keys(TAB_PERMISSIONS)
+      : hasRbac
+      ? Object.keys(TAB_PERMISSIONS).filter((tab) => {
+          const perm = TAB_RBAC[tab];
+          if (perm === null) return true;
+          return (perm ?? []).some((p) => permissions.has(p));
+        })
+      : !currentUserRole
       ? ["ventes", "stock", "stations"]
       : Object.entries(TAB_PERMISSIONS)
           .filter(([_, roles]) => roles.includes(currentUserRole))
@@ -193,7 +226,7 @@ const Index = () => {
       const moduleKey = TAB_MODULE[tab];
       return !moduleKey || isModuleEnabled(moduleKey);
     });
-  }, [currentUserRole, enabledMap, license.isLimited]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [currentUserRole, enabledMap, license.isLimited, permissions, isPlatformAdmin]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const [activeTab, setActiveTab] = useState(() => new URLSearchParams(window.location.search).get("tab") === "support" ? "support" : "ventes");
 
