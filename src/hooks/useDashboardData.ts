@@ -60,7 +60,8 @@ export const useDashboardData = (period: Period, stationId?: string | null) => {
       queryClient.invalidateQueries({ queryKey: ["latest-jauge"] });
     };
     const channel = supabase
-      .channel("dashboard-realtime")
+      // Nom unique par instance : plusieurs écrans utilisent ce hook en même temps
+      .channel(`dashboard-realtime-${Math.random().toString(36).slice(2)}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "index_entries" }, invalidate)
       .on("postgres_changes", { event: "*", schema: "public", table: "pump_index_entries" }, invalidate)
       .subscribe();
