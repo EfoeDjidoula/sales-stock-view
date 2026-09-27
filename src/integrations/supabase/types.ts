@@ -479,6 +479,117 @@ export type Database = {
           },
         ]
       }
+      depots: {
+        Row: {
+          capacity_liters: number
+          code: string | null
+          country_id: string | null
+          created_at: string
+          equipment_type_id: string | null
+          id: string
+          location: string | null
+          name: string
+          notes: string | null
+          status: string
+          tenant_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          capacity_liters?: number
+          code?: string | null
+          country_id?: string | null
+          created_at?: string
+          equipment_type_id?: string | null
+          id?: string
+          location?: string | null
+          name: string
+          notes?: string | null
+          status?: string
+          tenant_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          capacity_liters?: number
+          code?: string | null
+          country_id?: string | null
+          created_at?: string
+          equipment_type_id?: string | null
+          id?: string
+          location?: string | null
+          name?: string
+          notes?: string | null
+          status?: string
+          tenant_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "depots_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "countries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "depots_equipment_type_id_fkey"
+            columns: ["equipment_type_id"]
+            isOneToOne: false
+            referencedRelation: "equipment_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "depots_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      equipment_types: {
+        Row: {
+          category: string
+          code: string
+          created_at: string
+          description: string | null
+          id: string
+          name: string
+          status: string
+          tenant_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          code: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          name: string
+          status?: string
+          tenant_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          code?: string
+          created_at?: string
+          description?: string | null
+          id?: string
+          name?: string
+          status?: string
+          tenant_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "equipment_types_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       fiscal_years: {
         Row: {
           closed_at: string | null
@@ -939,6 +1050,107 @@ export type Database = {
         }
         Relationships: []
       }
+      nozzles: {
+        Row: {
+          country_id: string | null
+          created_at: string
+          equipment_type_id: string | null
+          id: string
+          name: string
+          notes: string | null
+          number: number
+          product_id: string | null
+          pump_id: string
+          station_id: string
+          status: string
+          tank_id: string | null
+          tenant_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          country_id?: string | null
+          created_at?: string
+          equipment_type_id?: string | null
+          id?: string
+          name: string
+          notes?: string | null
+          number?: number
+          product_id?: string | null
+          pump_id: string
+          station_id: string
+          status?: string
+          tank_id?: string | null
+          tenant_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          country_id?: string | null
+          created_at?: string
+          equipment_type_id?: string | null
+          id?: string
+          name?: string
+          notes?: string | null
+          number?: number
+          product_id?: string | null
+          pump_id?: string
+          station_id?: string
+          status?: string
+          tank_id?: string | null
+          tenant_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "nozzles_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "countries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nozzles_equipment_type_id_fkey"
+            columns: ["equipment_type_id"]
+            isOneToOne: false
+            referencedRelation: "equipment_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nozzles_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "petroleum_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nozzles_pump_id_fkey"
+            columns: ["pump_id"]
+            isOneToOne: false
+            referencedRelation: "pumps"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nozzles_station_id_fkey"
+            columns: ["station_id"]
+            isOneToOne: false
+            referencedRelation: "stations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nozzles_tank_id_fkey"
+            columns: ["tank_id"]
+            isOneToOne: false
+            referencedRelation: "tanks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "nozzles_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       orders: {
         Row: {
           amount_ht: number
@@ -1243,6 +1455,76 @@ export type Database = {
         }
         Relationships: []
       }
+      petroleum_products: {
+        Row: {
+          category: string
+          code: string
+          color: string
+          country_id: string | null
+          created_at: string
+          density: number | null
+          id: string
+          name: string
+          position: number
+          status: string
+          tenant_id: string | null
+          unit_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          code: string
+          color?: string
+          country_id?: string | null
+          created_at?: string
+          density?: number | null
+          id?: string
+          name: string
+          position?: number
+          status?: string
+          tenant_id?: string | null
+          unit_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          code?: string
+          color?: string
+          country_id?: string | null
+          created_at?: string
+          density?: number | null
+          id?: string
+          name?: string
+          position?: number
+          status?: string
+          tenant_id?: string | null
+          unit_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "petroleum_products_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "countries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "petroleum_products_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "petroleum_products_unit_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "units_of_measure"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       platform_admins: {
         Row: {
           created_at: string
@@ -1466,11 +1748,14 @@ export type Database = {
         Row: {
           country_id: string | null
           created_at: string
+          equipment_type_id: string | null
           id: string
           name: string
           position: number
+          product_id: string | null
           product_type: string
           station_id: string
+          status: string
           tank_id: string | null
           tenant_id: string | null
           updated_at: string
@@ -1478,11 +1763,14 @@ export type Database = {
         Insert: {
           country_id?: string | null
           created_at?: string
+          equipment_type_id?: string | null
           id?: string
           name: string
           position?: number
+          product_id?: string | null
           product_type: string
           station_id: string
+          status?: string
           tank_id?: string | null
           tenant_id?: string | null
           updated_at?: string
@@ -1490,11 +1778,14 @@ export type Database = {
         Update: {
           country_id?: string | null
           created_at?: string
+          equipment_type_id?: string | null
           id?: string
           name?: string
           position?: number
+          product_id?: string | null
           product_type?: string
           station_id?: string
+          status?: string
           tank_id?: string | null
           tenant_id?: string | null
           updated_at?: string
@@ -1505,6 +1796,20 @@ export type Database = {
             columns: ["country_id"]
             isOneToOne: false
             referencedRelation: "countries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pumps_equipment_type_id_fkey"
+            columns: ["equipment_type_id"]
+            isOneToOne: false
+            referencedRelation: "equipment_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pumps_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "petroleum_products"
             referencedColumns: ["id"]
           },
           {
@@ -1643,28 +1948,37 @@ export type Database = {
         Row: {
           country_id: string | null
           created_at: string
+          depot_id: string | null
           id: string
           location: string
           name: string
+          status: string
           tenant_id: string | null
+          updated_at: string
           zone_id: string | null
         }
         Insert: {
           country_id?: string | null
           created_at?: string
+          depot_id?: string | null
           id?: string
           location: string
           name: string
+          status?: string
           tenant_id?: string | null
+          updated_at?: string
           zone_id?: string | null
         }
         Update: {
           country_id?: string | null
           created_at?: string
+          depot_id?: string | null
           id?: string
           location?: string
           name?: string
+          status?: string
           tenant_id?: string | null
+          updated_at?: string
           zone_id?: string | null
         }
         Relationships: [
@@ -1673,6 +1987,13 @@ export type Database = {
             columns: ["country_id"]
             isOneToOne: false
             referencedRelation: "countries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stations_depot_id_fkey"
+            columns: ["depot_id"]
+            isOneToOne: false
+            referencedRelation: "depots"
             referencedColumns: ["id"]
           },
           {
@@ -2050,36 +2371,48 @@ export type Database = {
           capacity_liters: number
           country_id: string | null
           created_at: string
+          equipment_type_id: string | null
           id: string
           name: string
           notes: string | null
+          product_id: string | null
           product_type: string
           station_id: string
+          status: string
           tenant_id: string | null
+          unit_id: string | null
           updated_at: string
         }
         Insert: {
           capacity_liters?: number
           country_id?: string | null
           created_at?: string
+          equipment_type_id?: string | null
           id?: string
           name: string
           notes?: string | null
+          product_id?: string | null
           product_type: string
           station_id: string
+          status?: string
           tenant_id?: string | null
+          unit_id?: string | null
           updated_at?: string
         }
         Update: {
           capacity_liters?: number
           country_id?: string | null
           created_at?: string
+          equipment_type_id?: string | null
           id?: string
           name?: string
           notes?: string | null
+          product_id?: string | null
           product_type?: string
           station_id?: string
+          status?: string
           tenant_id?: string | null
+          unit_id?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -2088,6 +2421,20 @@ export type Database = {
             columns: ["country_id"]
             isOneToOne: false
             referencedRelation: "countries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tanks_equipment_type_id_fkey"
+            columns: ["equipment_type_id"]
+            isOneToOne: false
+            referencedRelation: "equipment_types"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tanks_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "petroleum_products"
             referencedColumns: ["id"]
           },
           {
@@ -2102,6 +2449,13 @@ export type Database = {
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "tanks_unit_id_fkey"
+            columns: ["unit_id"]
+            isOneToOne: false
+            referencedRelation: "units_of_measure"
             referencedColumns: ["id"]
           },
         ]
@@ -2418,6 +2772,50 @@ export type Database = {
           },
           {
             foreignKeyName: "trucks_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      units_of_measure: {
+        Row: {
+          code: string
+          created_at: string
+          factor_to_base: number
+          id: string
+          kind: string
+          name: string
+          status: string
+          tenant_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          factor_to_base?: number
+          id?: string
+          kind?: string
+          name: string
+          status?: string
+          tenant_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          factor_to_base?: number
+          id?: string
+          kind?: string
+          name?: string
+          status?: string
+          tenant_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "units_of_measure_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
