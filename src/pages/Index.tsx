@@ -32,6 +32,7 @@ import { StockEngineModule } from "@/components/stock/StockEngineModule";
 import { SupplyWorkflowModule } from "@/components/supply/SupplyWorkflowModule";
 import { SalesClosureModule } from "@/components/sales/SalesClosureModule";
 import { ReconciliationModule } from "@/components/reconciliation/ReconciliationModule";
+import { FraudCenterModule } from "@/components/fraud/FraudCenterModule";
 import { StationManagement } from "@/components/stations/StationManagement";
 import { FiscalYearModule } from "@/components/fiscal/FiscalYearModule";
 import { HistoryModule } from "@/components/history/HistoryModule";
@@ -95,6 +96,7 @@ const TAB_PERMISSIONS: Record<string, AppRole[]> = {
   moteur_stock: ["admin", "manager", "operator"],
   ventes_cloture: ["admin", "manager", "operator"],
   reconciliation: ["admin", "manager"],
+  anti_fraude: ["admin", "manager"],
   historique: ["admin", "manager", "operator"],
   commandes: ["admin", "manager"],
   chaine_appro: ["admin", "manager", "operator"],
@@ -122,6 +124,7 @@ const TAB_META: Record<string, { label: string; icon: typeof TrendingUp }> = {
   moteur_stock: { label: "Mouvements de stock", icon: Package },
   ventes_cloture: { label: "Ventes & clôture", icon: BarChart3 },
   reconciliation: { label: "Réconciliation", icon: BarChart3 },
+  anti_fraude: { label: "Anti-fraude & risques", icon: BarChart3 },
   historique: { label: "Historique", icon: History },
   commandes: { label: "Commandes", icon: FileText },
   chaine_appro: { label: "Appro. & réception", icon: Truck },
@@ -148,6 +151,7 @@ const TAB_RBAC: Record<string, string[] | null> = {
   moteur_stock: ["stock.view"],
   ventes_cloture: ["sales.view"],
   reconciliation: ["reconciliation.view"],
+  anti_fraude: ["fraud.view"],
   historique: ["index_entries.view"],
   commandes: ["orders.view"],
   chaine_appro: ["supplies.view"],
@@ -173,6 +177,7 @@ const TAB_MODULE: Record<string, string> = {
   moteur_stock: "stocks",
   ventes_cloture: "ventes",
   reconciliation: "ventes",
+  anti_fraude: "anti_fraude",
   historique: "index",
   commandes: "commandes",
   chaine_appro: "livraisons",
@@ -194,7 +199,7 @@ const TAB_GROUPS: {
   icon: typeof TrendingUp;
   tabs: string[];
 }[] = [
-  { id: "suivi", label: "Suivi & Analyse", icon: BarChart3, tabs: ["command", "ventes", "ventes_cloture", "reconciliation", "stock", "moteur_stock", "historique", "analyse_ia"] },
+  { id: "suivi", label: "Suivi & Analyse", icon: BarChart3, tabs: ["command", "ventes", "ventes_cloture", "reconciliation", "anti_fraude", "stock", "moteur_stock", "historique", "analyse_ia"] },
   { id: "logistique", label: "Logistique & Flux", icon: Truck, tabs: ["commandes", "chaine_appro", "depotage", "camions"] },
   { id: "config", label: "Configuration", icon: Settings2, tabs: ["stations", "perequation", "structure_prix", "proforma"] },
   { id: "tiers", label: "Tiers", icon: Contact, tabs: ["clients", "fournisseurs"] },
@@ -538,6 +543,9 @@ const Index = () => {
             )}
           </TabsContent>
 
+          <TabsContent value="anti_fraude" className="animate-fade-in">
+            {canAccessTab("anti_fraude") ? <FraudCenterModule /> : <AccessDenied onGoBack={() => setActiveTab(allowedTabs[0] ?? "ventes")} />}
+          </TabsContent>
           <TabsContent value="reconciliation" className="animate-fade-in">
             {canAccessTab("reconciliation") ? <ReconciliationModule /> : <AccessDenied onGoBack={() => setActiveTab(allowedTabs[0] ?? "ventes")} />}
           </TabsContent>
