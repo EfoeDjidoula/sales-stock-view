@@ -1048,6 +1048,206 @@ export type Database = {
           },
         ]
       }
+      fraud_alert_events: {
+        Row: {
+          action: string
+          alert_id: string
+          author_id: string | null
+          author_name: string | null
+          comment: string | null
+          country_id: string
+          created_at: string
+          from_workflow: string | null
+          id: string
+          tenant_id: string
+          to_workflow: string | null
+        }
+        Insert: {
+          action: string
+          alert_id: string
+          author_id?: string | null
+          author_name?: string | null
+          comment?: string | null
+          country_id: string
+          created_at?: string
+          from_workflow?: string | null
+          id?: string
+          tenant_id: string
+          to_workflow?: string | null
+        }
+        Update: {
+          action?: string
+          alert_id?: string
+          author_id?: string | null
+          author_name?: string | null
+          comment?: string | null
+          country_id?: string
+          created_at?: string
+          from_workflow?: string | null
+          id?: string
+          tenant_id?: string
+          to_workflow?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fraud_alert_events_alert_id_fkey"
+            columns: ["alert_id"]
+            isOneToOne: false
+            referencedRelation: "fraud_alerts"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fraud_alert_events_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "countries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fraud_alert_events_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fraud_alerts: {
+        Row: {
+          alert_date: string
+          country_id: string
+          created_at: string
+          evidence: Json
+          explanation: string
+          fingerprint: string
+          id: string
+          last_comment: string | null
+          priority: number
+          rule_code: string
+          severity: string
+          station_id: string | null
+          tenant_id: string
+          title: string
+          updated_at: string
+          workflow: string
+        }
+        Insert: {
+          alert_date: string
+          country_id: string
+          created_at?: string
+          evidence?: Json
+          explanation: string
+          fingerprint: string
+          id?: string
+          last_comment?: string | null
+          priority?: number
+          rule_code: string
+          severity: string
+          station_id?: string | null
+          tenant_id: string
+          title: string
+          updated_at?: string
+          workflow?: string
+        }
+        Update: {
+          alert_date?: string
+          country_id?: string
+          created_at?: string
+          evidence?: Json
+          explanation?: string
+          fingerprint?: string
+          id?: string
+          last_comment?: string | null
+          priority?: number
+          rule_code?: string
+          severity?: string
+          station_id?: string | null
+          tenant_id?: string
+          title?: string
+          updated_at?: string
+          workflow?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fraud_alerts_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "countries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fraud_alerts_station_id_fkey"
+            columns: ["station_id"]
+            isOneToOne: false
+            referencedRelation: "stations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fraud_alerts_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fraud_rules: {
+        Row: {
+          country_id: string
+          created_at: string
+          id: string
+          is_enabled: boolean
+          params: Json
+          rule_code: string
+          severity: string
+          tenant_id: string
+          threshold: number
+          updated_at: string
+          window_days: number
+        }
+        Insert: {
+          country_id: string
+          created_at?: string
+          id?: string
+          is_enabled?: boolean
+          params?: Json
+          rule_code: string
+          severity?: string
+          tenant_id: string
+          threshold?: number
+          updated_at?: string
+          window_days?: number
+        }
+        Update: {
+          country_id?: string
+          created_at?: string
+          id?: string
+          is_enabled?: boolean
+          params?: Json
+          rule_code?: string
+          severity?: string
+          tenant_id?: string
+          threshold?: number
+          updated_at?: string
+          window_days?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fraud_rules_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "countries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fraud_rules_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       index_entries: {
         Row: {
           bons_carburant_nombre: number
@@ -4112,6 +4312,23 @@ export type Database = {
         }
         Returns: string
       }
+      fraud_alert_action: {
+        Args: { _action: string; _comment: string; _id: string }
+        Returns: string
+      }
+      fraud_rule_defaults: {
+        Args: never
+        Returns: {
+          description: string
+          is_enabled: boolean
+          label: string
+          rule_code: string
+          severity: string
+          threshold: number
+          unit: string
+          window_days: number
+        }[]
+      }
       get_user_permissions: {
         Args: { _user_id: string }
         Returns: {
@@ -4170,6 +4387,10 @@ export type Database = {
       reconciliation_action: {
         Args: { _action: string; _comment: string; _id: string }
         Returns: string
+      }
+      run_fraud_scan: {
+        Args: { _country: string; _from: string; _tenant: string; _to: string }
+        Returns: number
       }
       seed_payment_methods: {
         Args: { _country: string; _tenant: string }

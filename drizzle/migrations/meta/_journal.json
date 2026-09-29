@@ -127,6 +127,13 @@
       "when": 1790696129974,
       "tag": "0017_reconciliation_utc_movement_date",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1790697180792,
+      "tag": "0018_fraud_anomaly_center",
+      "breakpoints": true
     }
   ]
 }
