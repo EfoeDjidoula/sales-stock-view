@@ -11,7 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import {
-  AlertTriangle, Banknote, ChevronRight, Droplets, Fuel, LifeBuoy, MapPin, Package, Truck, TrendingDown, TrendingUp, Activity,
+  AlertTriangle, Banknote, ChevronRight, Droplets, Fuel, LifeBuoy, MapPin, Package, Truck, TrendingDown, TrendingUp, Activity, Scale,
 } from "lucide-react";
 
 type Health = "green" | "orange" | "red";
@@ -61,7 +61,7 @@ export function CommandCenter() {
     queryFn: async () => {
       const sb = supabase as any;
       const base = (t: string, cols: string) => sb.from(t).select(cols).eq("tenant_id", tenantId).in("country_id", scope);
-      const [st, zn, pr, tk, pu, lv, cl, cs, ie, sp, ti] = await Promise.all([
+      const [st, zn, pr, tk, pu, lv, cl, cs, ie, sp, ti, rc] = await Promise.all([
         base("stations", "id,name,location,country_id,zone_id,status"),
         base("perequation_zones", "id,name"),
         base("petroleum_products", "id,name,code,color"),
@@ -73,13 +73,14 @@ export function CommandCenter() {
         base("index_entries", "station_id,entry_date,total_super_liters,total_gasoil_liters").gte("entry_date", r.start).lte("entry_date", r.end),
         base("supply_requests", "id,reference,station_id,status,qty_requested").in("status", OPEN_SUPPLY),
         base("support_tickets", "id,ticket_number,subject,priority,status,station_id").not("status", "in", "(resolved,closed)"),
+        base("reconciliations", "station_id,recon_date,result,workflow,value_variance").gte("recon_date", r.start).lte("recon_date", r.end),
       ]);
-      const err = [st, zn, pr, tk, pu, lv, cl, cs, ie, sp, ti].find((x) => x.error);
+      const err = [st, zn, pr, tk, pu, lv, cl, cs, ie, sp].find((x) => x.error);
       if (err) throw err.error;
       return {
         stations: st.data as any[], zones: zn.data as any[], products: pr.data as any[], tanks: tk.data as any[], pumps: pu.data as any[],
         levels: lv.data as any[], closures: cl.data as any[], closureSales: cs.data as any[], entries: ie.data as any[],
-        supplies: sp.data as any[], tickets: ti.data as any[],
+        supplies: sp.data as any[], tickets: ti.data as any[], recons: (rc.error ? [] : rc.data) as any[],
       };
     },
   });
@@ -129,6 +130,7 @@ export function CommandCenter() {
     const tickets = d.tickets.filter((t) => !t.station_id || ids.has(t.station_id));
     const supplies = d.supplies.filter((s) => ids.has(s.station_id));
 
+    const recons = (d.recons ?? []).filter((x) => ids.has(x.station_id) && x.workflow !== "validated");
     const rows = stations.map((s) => {
       const lv = levels.filter((l) => l.station_id === s.id);
       const tk = tickets.filter((t) => t.station_id === s.id);
@@ -138,6 +140,9 @@ export function CommandCenter() {
       let h: Health = "green";
       if (lv.some((l) => l.alert_level === "rupture" || l.alert_level === "critique")) { h = "red"; reasons.push("Stock critique/rupture"); }
       if (tk.some((t) => t.priority === "critical")) { h = "red"; reasons.push("Incident critique"); }
+      const rs = recons.filter((x) => x.station_id === s.id);
+      if (rs.some((x) => x.result === "critique")) { h = "red"; reasons.push("Réconciliation critique"); }
+      if (h !== "red" && rs.some((x) => x.result === "anomalie" || x.result === "surveiller")) { h = "orange"; reasons.push("Écart de réconciliation"); }
       if (h !== "red") {
         if (lv.some((l) => l.alert_level === "faible")) { h = "orange"; reasons.push("Stock faible"); }
         if (varOut) { h = "orange"; reasons.push("Écart de stock"); }
@@ -151,7 +156,7 @@ export function CommandCenter() {
     const sum = (k: "amt" | "vol" | "amtToday" | "stock" | "variance") => rows.reduce((a, x) => a + (x[k] as number), 0);
     const ranked = [...rows].sort((a, b) => b.amt - a.amt);
     return {
-      rows, ranked, levels, tickets, supplies,
+      rows, ranked, levels, tickets, supplies, recons,
       kpi: {
         caToday: sum("amtToday"), caPeriod: sum("amt"), volume: sum("vol"), stock: sum("stock"), variance: sum("variance"),
         stations: rows.length, red: rows.filter((x) => x.health === "red").length, orange: rows.filter((x) => x.health === "orange").length,
@@ -230,6 +235,7 @@ export function CommandCenter() {
             <Kpi icon={Droplets} label="Écarts de stock (abs.)" value={`${fmt(view.kpi.variance)} L`} />
             <Kpi icon={Truck} label="Appro. en cours" value={fmt(view.supplies.length)} />
             <Kpi icon={Activity} label="Alertes stock" value={fmt(view.kpi.alerts)} tone={view.kpi.alerts ? "orange" : undefined} />
+            <Kpi icon={Scale} label="Anomalies réconciliation" value={`${view.recons.filter((x: any) => x.result === "critique").length} / ${view.recons.filter((x: any) => x.result === "anomalie").length}`} tone={view.recons.some((x: any) => x.result === "critique") ? "red" : view.recons.some((x: any) => x.result === "anomalie") ? "orange" : undefined} />
             <Kpi icon={LifeBuoy} label="Incidents ouverts" value={fmt(view.tickets.length)} tone={view.tickets.some((t) => t.priority === "critical") ? "red" : undefined} />
           </div>
 
