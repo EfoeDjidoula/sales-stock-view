@@ -17,7 +17,6 @@ import {
 type Health = "green" | "orange" | "red";
 type PeriodKey = "day" | "7d" | "30d" | "month";
 const OPEN_SUPPLY = ["submitted", "approved", "ordered", "loaded", "in_transit", "delivered"];
-const OPEN_TICKET = ["new", "assigned", "in_progress", "waiting_customer"];
 const VAR_TOL = 0.005;
 
 const fmt = (n: number) => Math.round(n).toLocaleString("fr-FR");
@@ -73,7 +72,7 @@ export function CommandCenter() {
         base("closure_sales", "closure_id,product_id,tank_id,volume,amount"),
         base("index_entries", "station_id,entry_date,total_super_liters,total_gasoil_liters").gte("entry_date", r.start).lte("entry_date", r.end),
         base("supply_requests", "id,reference,station_id,status,qty_requested").in("status", OPEN_SUPPLY),
-        base("support_tickets", "id,ticket_number,subject,priority,status,station_id").in("status", OPEN_TICKET),
+        base("support_tickets", "id,ticket_number,subject,priority,status,station_id").not("status", "in", "(resolved,closed)"),
       ]);
       const err = [st, zn, pr, tk, pu, lv, cl, cs, ie, sp, ti].find((x) => x.error);
       if (err) throw err.error;
