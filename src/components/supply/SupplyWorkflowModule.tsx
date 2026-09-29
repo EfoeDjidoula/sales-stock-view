@@ -5,7 +5,10 @@ import { useScope } from "@/hooks/useScope";
 import { usePermissions } from "@/hooks/usePermissions";
 import { usePlatformAdmin } from "@/hooks/usePlatformAdmin";
 import { toast } from "sonner";
-import { Loader2, Plus, Eye, Check, X, Ban } from "lucide-react";
+import { Loader2, Plus, Eye, Check, X, Ban, FileDown } from "lucide-react";
+import { jsPDF } from "jspdf";
+import { fr } from "date-fns/locale";
+import { getActiveBrand, hslToRgb, documentFooter } from "@/lib/branding";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -108,6 +111,48 @@ export const SupplyWorkflowModule = () => {
 
   const stationTanks = tanks.filter((t) => t.station_id === form.station_id && (!form.product_id || t.product_id === form.product_id));
 
+  const exportPdf = () => {
+    const doc = new jsPDF({ orientation: "landscape" });
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const brand = getActiveBrand();
+    const primary = hslToRgb(brand.primaryColor) as [number, number, number];
+    const text: [number, number, number] = [31, 41, 55];
+    const muted: [number, number, number] = [107, 114, 128];
+
+    doc.setFillColor(...primary);
+    doc.rect(0, 0, pageWidth, 26, "F");
+    doc.setTextColor(255, 255, 255);
+    doc.setFont("helvetica", "bold"); doc.setFontSize(15);
+    doc.text(brand.legalName, pageWidth / 2, 11, { align: "center" });
+    doc.setFont("helvetica", "normal"); doc.setFontSize(11);
+    doc.text("Approvisionnements & réceptions", pageWidth / 2, 19, { align: "center" });
+
+    doc.setTextColor(...muted); doc.setFontSize(9);
+    const filterLabel = statusFilter === "open" ? "En cours" : statusFilter === "all" ? "Tous" : SUPPLY_STATUS[statusFilter]?.label;
+    doc.text(`Généré le ${format(new Date(), "dd MMMM yyyy à HH:mm", { locale: fr })} — Filtre : ${filterLabel} — ${filtered.length} dossier(s)`, 14, 34);
+
+    const cols = [14, 44, 74, 104, 134, 162, 190, 218, 246, 268];
+    let y = 42;
+    doc.setFillColor(249, 250, 251); doc.rect(14, y - 4, pageWidth - 28, 8, "F");
+    doc.setFont("helvetica", "bold"); doc.setFontSize(7.5); doc.setTextColor(...muted);
+    ["Réf.", "Station", "Produit", "Demandé", "Chargé", "Livré", "Réceptionné", "Écart livr.", "BL", "Statut"].forEach((h, i) => doc.text(h, cols[i], y + 1));
+    y += 8;
+
+    doc.setFont("helvetica", "normal");
+    filtered.forEach((r, i) => {
+      if (y > 190) { doc.addPage(); y = 20; }
+      if (i % 2 === 0) { doc.setFillColor(249, 250, 251); doc.rect(14, y - 4, pageWidth - 28, 8, "F"); }
+      doc.setFontSize(7.5); doc.setTextColor(...text);
+      const vals = [r.reference, name(stations, r.station_id), name(products, r.product_id), fmt(r.qty_requested), fmt(r.qty_loaded), fmt(r.qty_delivered), fmt(r.qty_received), fmt(r.delivery_variance), r.bl_number ?? "—", SUPPLY_STATUS[r.status]?.label ?? r.status];
+      vals.forEach((v, j) => doc.text(String(v).substring(0, 26), cols[j], y + 1));
+      y += 8;
+    });
+
+    doc.setFontSize(8); doc.setTextColor(...muted);
+    doc.text(documentFooter(brand), pageWidth / 2, doc.internal.pageSize.getHeight() - 8, { align: "center" });
+    doc.save(`Approvisionnements_${format(new Date(), "yyyy-MM-dd")}.pdf`);
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -115,7 +160,10 @@ export const SupplyWorkflowModule = () => {
           <h2 className="text-xl font-display font-semibold">Approvisionnement & réception</h2>
           <p className="text-sm text-muted-foreground">Besoin → Demande → Validation → Commande → Chargement → Transport → Livraison → Réception → Mise en stock</p>
         </div>
-        {canWrite && <Button className="gap-2" onClick={() => setCreating(true)}><Plus className="w-4 h-4" />Nouveau besoin</Button>}
+        <div className="flex gap-2">
+          <Button variant="outline" className="gap-2" onClick={exportPdf} disabled={filtered.length === 0}><FileDown className="w-4 h-4" />Export PDF</Button>
+          {canWrite && <Button className="gap-2" onClick={() => setCreating(true)}><Plus className="w-4 h-4" />Nouveau besoin</Button>}
+        </div>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-2">
