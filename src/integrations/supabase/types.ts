@@ -2734,6 +2734,253 @@ export type Database = {
           },
         ]
       }
+      supply_request_events: {
+        Row: {
+          action: string
+          author_id: string | null
+          author_name: string | null
+          country_id: string
+          created_at: string
+          data: Json | null
+          from_status: string | null
+          id: string
+          reason: string | null
+          request_id: string
+          tenant_id: string
+          to_status: string | null
+        }
+        Insert: {
+          action: string
+          author_id?: string | null
+          author_name?: string | null
+          country_id: string
+          created_at?: string
+          data?: Json | null
+          from_status?: string | null
+          id?: string
+          reason?: string | null
+          request_id: string
+          tenant_id: string
+          to_status?: string | null
+        }
+        Update: {
+          action?: string
+          author_id?: string | null
+          author_name?: string | null
+          country_id?: string
+          created_at?: string
+          data?: Json | null
+          from_status?: string | null
+          id?: string
+          reason?: string | null
+          request_id?: string
+          tenant_id?: string
+          to_status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "supply_request_events_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "countries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supply_request_events_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "supply_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supply_request_events_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      supply_requests: {
+        Row: {
+          bl_number: string | null
+          country_id: string
+          created_at: string
+          created_by: string | null
+          delivered_at: string | null
+          delivery_variance: number | null
+          departed_at: string | null
+          depot_id: string | null
+          driver_name: string | null
+          gauge_after: number | null
+          gauge_before: number | null
+          id: string
+          last_reason: string | null
+          loaded_at: string | null
+          need_reason: string | null
+          needed_date: string | null
+          observations: string | null
+          order_number: string | null
+          product_id: string
+          qty_approved: number | null
+          qty_delivered: number | null
+          qty_loaded: number | null
+          qty_received: number | null
+          qty_requested: number
+          received_at: string | null
+          reference: string | null
+          seals: string | null
+          seals_intact: boolean | null
+          station_id: string
+          status: string
+          stock_movement_id: string | null
+          supplier_id: string | null
+          tank_id: string | null
+          tenant_id: string
+          transport_variance: number | null
+          truck_id: string | null
+          updated_at: string
+          vehicle_registration: string | null
+        }
+        Insert: {
+          bl_number?: string | null
+          country_id: string
+          created_at?: string
+          created_by?: string | null
+          delivered_at?: string | null
+          delivery_variance?: number | null
+          departed_at?: string | null
+          depot_id?: string | null
+          driver_name?: string | null
+          gauge_after?: number | null
+          gauge_before?: number | null
+          id?: string
+          last_reason?: string | null
+          loaded_at?: string | null
+          need_reason?: string | null
+          needed_date?: string | null
+          observations?: string | null
+          order_number?: string | null
+          product_id: string
+          qty_approved?: number | null
+          qty_delivered?: number | null
+          qty_loaded?: number | null
+          qty_received?: number | null
+          qty_requested: number
+          received_at?: string | null
+          reference?: string | null
+          seals?: string | null
+          seals_intact?: boolean | null
+          station_id: string
+          status?: string
+          stock_movement_id?: string | null
+          supplier_id?: string | null
+          tank_id?: string | null
+          tenant_id: string
+          transport_variance?: number | null
+          truck_id?: string | null
+          updated_at?: string
+          vehicle_registration?: string | null
+        }
+        Update: {
+          bl_number?: string | null
+          country_id?: string
+          created_at?: string
+          created_by?: string | null
+          delivered_at?: string | null
+          delivery_variance?: number | null
+          departed_at?: string | null
+          depot_id?: string | null
+          driver_name?: string | null
+          gauge_after?: number | null
+          gauge_before?: number | null
+          id?: string
+          last_reason?: string | null
+          loaded_at?: string | null
+          need_reason?: string | null
+          needed_date?: string | null
+          observations?: string | null
+          order_number?: string | null
+          product_id?: string
+          qty_approved?: number | null
+          qty_delivered?: number | null
+          qty_loaded?: number | null
+          qty_received?: number | null
+          qty_requested?: number
+          received_at?: string | null
+          reference?: string | null
+          seals?: string | null
+          seals_intact?: boolean | null
+          station_id?: string
+          status?: string
+          stock_movement_id?: string | null
+          supplier_id?: string | null
+          tank_id?: string | null
+          tenant_id?: string
+          transport_variance?: number | null
+          truck_id?: string | null
+          updated_at?: string
+          vehicle_registration?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "supply_requests_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "countries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supply_requests_depot_id_fkey"
+            columns: ["depot_id"]
+            isOneToOne: false
+            referencedRelation: "depots"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supply_requests_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "petroleum_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supply_requests_station_id_fkey"
+            columns: ["station_id"]
+            isOneToOne: false
+            referencedRelation: "stations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supply_requests_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supply_requests_tank_id_fkey"
+            columns: ["tank_id"]
+            isOneToOne: false
+            referencedRelation: "tanks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supply_requests_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supply_requests_truck_id_fkey"
+            columns: ["truck_id"]
+            isOneToOne: false
+            referencedRelation: "trucks"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       support_notifications: {
         Row: {
           audience: string
@@ -3692,6 +3939,10 @@ export type Database = {
           _tank_id: string
         }
         Returns: number
+      }
+      supply_transition: {
+        Args: { _action: string; _data?: Json; _id: string; _reason?: string }
+        Returns: string
       }
       tenant_license_limits: {
         Args: { _tenant_id: string }
