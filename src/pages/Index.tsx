@@ -29,6 +29,7 @@ import { DepotageModule } from "@/components/depotage/DepotageModule";
 import { TrucksModule } from "@/components/trucks/TrucksModule";
 import { UsersModule } from "@/components/users/UsersModule";
 import { StockEngineModule } from "@/components/stock/StockEngineModule";
+import { SalesClosureModule } from "@/components/sales/SalesClosureModule";
 import { StationManagement } from "@/components/stations/StationManagement";
 import { FiscalYearModule } from "@/components/fiscal/FiscalYearModule";
 import { HistoryModule } from "@/components/history/HistoryModule";
@@ -89,6 +90,7 @@ const TAB_PERMISSIONS: Record<string, AppRole[]> = {
   ventes: ["admin", "manager", "operator"],
   stock: ["admin", "manager", "operator"],
   moteur_stock: ["admin", "manager", "operator"],
+  ventes_cloture: ["admin", "manager", "operator"],
   historique: ["admin", "manager", "operator"],
   commandes: ["admin", "manager"],
   approvisionnements: ["admin", "manager"],
@@ -113,6 +115,7 @@ const TAB_META: Record<string, { label: string; icon: typeof TrendingUp }> = {
   ventes: { label: "Ventes", icon: TrendingUp },
   stock: { label: "Stock", icon: Package },
   moteur_stock: { label: "Mouvements de stock", icon: Package },
+  ventes_cloture: { label: "Ventes & clôture", icon: BarChart3 },
   historique: { label: "Historique", icon: History },
   commandes: { label: "Commandes", icon: FileText },
   approvisionnements: { label: "Approvisionnements", icon: Truck },
@@ -136,6 +139,7 @@ const TAB_RBAC: Record<string, string[] | null> = {
   ventes: ["dashboard.view", "index_entries.view"],
   stock: ["stock.view", "dashboard.view"],
   moteur_stock: ["stock.view"],
+  ventes_cloture: ["sales.view"],
   historique: ["index_entries.view"],
   commandes: ["orders.view"],
   approvisionnements: ["supplies.view"],
@@ -159,6 +163,7 @@ const TAB_MODULE: Record<string, string> = {
   ventes: "ventes",
   stock: "stocks",
   moteur_stock: "stocks",
+  ventes_cloture: "ventes",
   historique: "index",
   commandes: "commandes",
   approvisionnements: "livraisons",
@@ -180,7 +185,7 @@ const TAB_GROUPS: {
   icon: typeof TrendingUp;
   tabs: string[];
 }[] = [
-  { id: "suivi", label: "Suivi & Analyse", icon: BarChart3, tabs: ["ventes", "stock", "moteur_stock", "historique", "analyse_ia"] },
+  { id: "suivi", label: "Suivi & Analyse", icon: BarChart3, tabs: ["ventes", "ventes_cloture", "stock", "moteur_stock", "historique", "analyse_ia"] },
   { id: "logistique", label: "Logistique & Flux", icon: Truck, tabs: ["commandes", "approvisionnements", "depotage", "camions"] },
   { id: "config", label: "Configuration", icon: Settings2, tabs: ["stations", "perequation", "structure_prix", "proforma"] },
   { id: "tiers", label: "Tiers", icon: Contact, tabs: ["clients", "fournisseurs"] },
@@ -521,6 +526,9 @@ const Index = () => {
             )}
           </TabsContent>
 
+          <TabsContent value="ventes_cloture" className="animate-fade-in">
+            {canAccessTab("ventes_cloture") ? <SalesClosureModule /> : <AccessDenied onGoBack={() => setActiveTab(allowedTabs[0] ?? "ventes")} />}
+          </TabsContent>
           <TabsContent value="moteur_stock" className="animate-fade-in">
             {canAccessTab("moteur_stock") ? <StockEngineModule /> : <AccessDenied onGoBack={() => setActiveTab(allowedTabs[0] ?? "ventes")} />}
           </TabsContent>
