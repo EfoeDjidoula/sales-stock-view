@@ -134,6 +134,242 @@ export type Database = {
           },
         ]
       }
+      closure_events: {
+        Row: {
+          action: string
+          author_id: string | null
+          author_name: string | null
+          closure_id: string
+          country_id: string
+          created_at: string
+          from_status: string | null
+          id: string
+          reason: string | null
+          tenant_id: string
+          to_status: string | null
+        }
+        Insert: {
+          action: string
+          author_id?: string | null
+          author_name?: string | null
+          closure_id: string
+          country_id: string
+          created_at?: string
+          from_status?: string | null
+          id?: string
+          reason?: string | null
+          tenant_id: string
+          to_status?: string | null
+        }
+        Update: {
+          action?: string
+          author_id?: string | null
+          author_name?: string | null
+          closure_id?: string
+          country_id?: string
+          created_at?: string
+          from_status?: string | null
+          id?: string
+          reason?: string | null
+          tenant_id?: string
+          to_status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "closure_events_closure_id_fkey"
+            columns: ["closure_id"]
+            isOneToOne: false
+            referencedRelation: "daily_closures"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "closure_events_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "countries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "closure_events_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      closure_payments: {
+        Row: {
+          amount: number
+          closure_id: string
+          country_id: string
+          created_at: string
+          id: string
+          payment_method_id: string
+          reference: string | null
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          amount?: number
+          closure_id: string
+          country_id: string
+          created_at?: string
+          id?: string
+          payment_method_id: string
+          reference?: string | null
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          closure_id?: string
+          country_id?: string
+          created_at?: string
+          id?: string
+          payment_method_id?: string
+          reference?: string | null
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "closure_payments_closure_id_fkey"
+            columns: ["closure_id"]
+            isOneToOne: false
+            referencedRelation: "daily_closures"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "closure_payments_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "countries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "closure_payments_payment_method_id_fkey"
+            columns: ["payment_method_id"]
+            isOneToOne: false
+            referencedRelation: "payment_methods"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "closure_payments_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      closure_sales: {
+        Row: {
+          amount: number
+          closure_id: string
+          country_id: string
+          created_at: string
+          id: string
+          index_end: number | null
+          index_start: number | null
+          nozzle_id: string | null
+          product_id: string | null
+          pump_id: string | null
+          tank_id: string | null
+          tenant_id: string
+          unit_price: number
+          updated_at: string
+          volume: number
+          volume_mode: string
+        }
+        Insert: {
+          amount?: number
+          closure_id: string
+          country_id: string
+          created_at?: string
+          id?: string
+          index_end?: number | null
+          index_start?: number | null
+          nozzle_id?: string | null
+          product_id?: string | null
+          pump_id?: string | null
+          tank_id?: string | null
+          tenant_id: string
+          unit_price?: number
+          updated_at?: string
+          volume?: number
+          volume_mode?: string
+        }
+        Update: {
+          amount?: number
+          closure_id?: string
+          country_id?: string
+          created_at?: string
+          id?: string
+          index_end?: number | null
+          index_start?: number | null
+          nozzle_id?: string | null
+          product_id?: string | null
+          pump_id?: string | null
+          tank_id?: string | null
+          tenant_id?: string
+          unit_price?: number
+          updated_at?: string
+          volume?: number
+          volume_mode?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "closure_sales_closure_id_fkey"
+            columns: ["closure_id"]
+            isOneToOne: false
+            referencedRelation: "daily_closures"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "closure_sales_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "countries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "closure_sales_nozzle_id_fkey"
+            columns: ["nozzle_id"]
+            isOneToOne: false
+            referencedRelation: "nozzles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "closure_sales_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "petroleum_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "closure_sales_pump_id_fkey"
+            columns: ["pump_id"]
+            isOneToOne: false
+            referencedRelation: "pumps"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "closure_sales_tank_id_fkey"
+            columns: ["tank_id"]
+            isOneToOne: false
+            referencedRelation: "tanks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "closure_sales_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       contract_invoices: {
         Row: {
           amount: number
@@ -359,6 +595,106 @@ export type Database = {
           },
           {
             foreignKeyName: "country_modules_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      daily_closures: {
+        Row: {
+          cash_variance: number
+          closure_date: string
+          country_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          last_reason: string | null
+          notes: string | null
+          rejected_at: string | null
+          rejected_by: string | null
+          reopened_at: string | null
+          reopened_by: string | null
+          station_id: string
+          status: string
+          submitted_at: string | null
+          submitted_by: string | null
+          tenant_id: string
+          total_amount: number
+          total_collected: number
+          total_volume: number
+          updated_at: string
+          validated_at: string | null
+          validated_by: string | null
+        }
+        Insert: {
+          cash_variance?: number
+          closure_date: string
+          country_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          last_reason?: string | null
+          notes?: string | null
+          rejected_at?: string | null
+          rejected_by?: string | null
+          reopened_at?: string | null
+          reopened_by?: string | null
+          station_id: string
+          status?: string
+          submitted_at?: string | null
+          submitted_by?: string | null
+          tenant_id: string
+          total_amount?: number
+          total_collected?: number
+          total_volume?: number
+          updated_at?: string
+          validated_at?: string | null
+          validated_by?: string | null
+        }
+        Update: {
+          cash_variance?: number
+          closure_date?: string
+          country_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          last_reason?: string | null
+          notes?: string | null
+          rejected_at?: string | null
+          rejected_by?: string | null
+          reopened_at?: string | null
+          reopened_by?: string | null
+          station_id?: string
+          status?: string
+          submitted_at?: string | null
+          submitted_by?: string | null
+          tenant_id?: string
+          total_amount?: number
+          total_collected?: number
+          total_volume?: number
+          updated_at?: string
+          validated_at?: string | null
+          validated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "daily_closures_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "countries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "daily_closures_station_id_fkey"
+            columns: ["station_id"]
+            isOneToOne: false
+            referencedRelation: "stations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "daily_closures_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
@@ -1288,6 +1624,60 @@ export type Database = {
           },
           {
             foreignKeyName: "orders_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payment_methods: {
+        Row: {
+          code: string
+          country_id: string
+          created_at: string
+          id: string
+          is_active: boolean
+          kind: string
+          label: string
+          position: number
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          country_id: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          kind?: string
+          label: string
+          position?: number
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          country_id?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          kind?: string
+          label?: string
+          position?: number
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payment_methods_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "countries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payment_methods_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
@@ -3223,6 +3613,11 @@ export type Database = {
         Args: { _station_id: string; _user_id: string }
         Returns: boolean
       }
+      closure_recompute: { Args: { _id: string }; Returns: undefined }
+      closure_transition: {
+        Args: { _action: string; _id: string; _reason?: string }
+        Returns: string
+      }
       create_stock_transfer: {
         Args: {
           _from_id: string
@@ -3279,6 +3674,10 @@ export type Database = {
           _entity_type?: string
           _module: string
         }
+        Returns: undefined
+      }
+      seed_payment_methods: {
+        Args: { _country: string; _tenant: string }
         Returns: undefined
       }
       shares_tenant_with: {

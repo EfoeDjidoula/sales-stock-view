@@ -99,6 +99,13 @@
       "when": 1790473177771,
       "tag": "0013_stock_levels_variance_at_count",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "7",
+      "when": 1790688170082,
+      "tag": "0014_sales_daily_closures",
+      "breakpoints": true
     }
   ]
 }
