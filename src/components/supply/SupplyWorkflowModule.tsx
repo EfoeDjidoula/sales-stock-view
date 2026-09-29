@@ -160,7 +160,10 @@ export const SupplyWorkflowModule = () => {
           <h2 className="text-xl font-display font-semibold">Approvisionnement & réception</h2>
           <p className="text-sm text-muted-foreground">Besoin → Demande → Validation → Commande → Chargement → Transport → Livraison → Réception → Mise en stock</p>
         </div>
-        {canWrite && <Button className="gap-2" onClick={() => setCreating(true)}><Plus className="w-4 h-4" />Nouveau besoin</Button>}
+        <div className="flex gap-2">
+          <Button variant="outline" className="gap-2" onClick={exportPdf} disabled={filtered.length === 0}><FileDown className="w-4 h-4" />Export PDF</Button>
+          {canWrite && <Button className="gap-2" onClick={() => setCreating(true)}><Plus className="w-4 h-4" />Nouveau besoin</Button>}
+        </div>
       </div>
 
       <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-8 gap-2">
