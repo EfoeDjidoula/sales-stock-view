@@ -2,3 +2,4 @@
 - Référentiels pétroliers : petroleum_products / depots / nozzles scoupés tenant+country, product_id additif à côté de product_type texte ; pourquoi : migrer sans casser les écrans qui lisent encore super/gasoil.
 - Stock : registre immuable stock_movements (trigger stock_movement_before) + vue stock_levels (security_invoker) ; pourquoi : aucune modification silencieuse, toute correction = mouvement tracé et validé.
 - Clôture journalière : daily_closures + closure_sales/payments verrouillées hors brouillon, transitions uniquement via closure_transition (crée les stock_movements sale / adjustment_in à la validation / réouverture) ; pourquoi : pas de modification silencieuse d'une clôture validée ni du stock.
+- Approvisionnement : supply_requests + supply_request_events immuable, étapes uniquement via supply_transition (réception validée = stock_movements entry) ; pourquoi : chaîne tracée, aucune mise en stock sans jauges validées.
