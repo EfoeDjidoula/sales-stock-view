@@ -2293,6 +2293,238 @@ export type Database = {
           },
         ]
       }
+      reconciliation_events: {
+        Row: {
+          action: string
+          author_id: string | null
+          author_name: string | null
+          comment: string | null
+          country_id: string
+          created_at: string
+          data: Json | null
+          from_workflow: string | null
+          id: string
+          reconciliation_id: string
+          result: string | null
+          tenant_id: string
+          to_workflow: string | null
+        }
+        Insert: {
+          action: string
+          author_id?: string | null
+          author_name?: string | null
+          comment?: string | null
+          country_id: string
+          created_at?: string
+          data?: Json | null
+          from_workflow?: string | null
+          id?: string
+          reconciliation_id: string
+          result?: string | null
+          tenant_id: string
+          to_workflow?: string | null
+        }
+        Update: {
+          action?: string
+          author_id?: string | null
+          author_name?: string | null
+          comment?: string | null
+          country_id?: string
+          created_at?: string
+          data?: Json | null
+          from_workflow?: string | null
+          id?: string
+          reconciliation_id?: string
+          result?: string | null
+          tenant_id?: string
+          to_workflow?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reconciliation_events_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "countries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reconciliation_events_reconciliation_id_fkey"
+            columns: ["reconciliation_id"]
+            isOneToOne: false
+            referencedRelation: "reconciliations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reconciliation_events_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reconciliation_tolerances: {
+        Row: {
+          amt_anomaly: number
+          amt_critical: number
+          amt_watch: number
+          country_id: string
+          created_at: string
+          id: string
+          product_id: string | null
+          tenant_id: string
+          updated_at: string
+          vol_anomaly_pct: number
+          vol_critical_pct: number
+          vol_watch_pct: number
+        }
+        Insert: {
+          amt_anomaly?: number
+          amt_critical?: number
+          amt_watch?: number
+          country_id: string
+          created_at?: string
+          id?: string
+          product_id?: string | null
+          tenant_id: string
+          updated_at?: string
+          vol_anomaly_pct?: number
+          vol_critical_pct?: number
+          vol_watch_pct?: number
+        }
+        Update: {
+          amt_anomaly?: number
+          amt_critical?: number
+          amt_watch?: number
+          country_id?: string
+          created_at?: string
+          id?: string
+          product_id?: string | null
+          tenant_id?: string
+          updated_at?: string
+          vol_anomaly_pct?: number
+          vol_critical_pct?: number
+          vol_watch_pct?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reconciliation_tolerances_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "countries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reconciliation_tolerances_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "petroleum_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reconciliation_tolerances_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reconciliations: {
+        Row: {
+          closure_id: string | null
+          collected_amount: number
+          computed_at: string
+          computed_by: string | null
+          country_id: string
+          created_at: string
+          details: Json
+          id: string
+          last_comment: string | null
+          recon_date: string
+          result: string
+          sales_amount: number
+          sales_volume: number
+          station_id: string
+          tenant_id: string
+          updated_at: string
+          value_variance: number
+          volume_variance: number
+          workflow: string
+        }
+        Insert: {
+          closure_id?: string | null
+          collected_amount?: number
+          computed_at?: string
+          computed_by?: string | null
+          country_id: string
+          created_at?: string
+          details?: Json
+          id?: string
+          last_comment?: string | null
+          recon_date: string
+          result?: string
+          sales_amount?: number
+          sales_volume?: number
+          station_id: string
+          tenant_id: string
+          updated_at?: string
+          value_variance?: number
+          volume_variance?: number
+          workflow?: string
+        }
+        Update: {
+          closure_id?: string | null
+          collected_amount?: number
+          computed_at?: string
+          computed_by?: string | null
+          country_id?: string
+          created_at?: string
+          details?: Json
+          id?: string
+          last_comment?: string | null
+          recon_date?: string
+          result?: string
+          sales_amount?: number
+          sales_volume?: number
+          station_id?: string
+          tenant_id?: string
+          updated_at?: string
+          value_variance?: number
+          volume_variance?: number
+          workflow?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reconciliations_closure_id_fkey"
+            columns: ["closure_id"]
+            isOneToOne: false
+            referencedRelation: "daily_closures"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reconciliations_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "countries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reconciliations_station_id_fkey"
+            columns: ["station_id"]
+            isOneToOne: false
+            referencedRelation: "stations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reconciliations_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       role_permissions: {
         Row: {
           created_at: string
@@ -3922,6 +4154,22 @@ export type Database = {
           _module: string
         }
         Returns: undefined
+      }
+      recon_classify: {
+        Args: {
+          _amt: number
+          _pct: number
+          _t: Database["public"]["Tables"]["reconciliation_tolerances"]["Row"]
+        }
+        Returns: string
+      }
+      reconcile_station_day: {
+        Args: { _date: string; _station: string }
+        Returns: string
+      }
+      reconciliation_action: {
+        Args: { _action: string; _comment: string; _id: string }
+        Returns: string
       }
       seed_payment_methods: {
         Args: { _country: string; _tenant: string }
