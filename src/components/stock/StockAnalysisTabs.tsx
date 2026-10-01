@@ -330,7 +330,7 @@ export const TransfersTab = ({ refs, reload }: { refs: Refs; reload: number }) =
 
 /* ---------- 6. Seuils d'alerte ---------- */
 export const ThresholdsTab = ({ refs, onChanged, canEdit }: { refs: Refs; onChanged: () => void; canEdit: boolean }) => {
-  const { t } = useLanguage();
+  const { t: translate } = useLanguage();
   const { scopeQuery, tenantId } = useScope();
   const [tanks, setTanks] = useState<Row[]>([]);
   const [edits, setEdits] = useState<Record<string, Row>>({});
@@ -366,12 +366,12 @@ export const ThresholdsTab = ({ refs, onChanged, canEdit }: { refs: Refs; onChan
               <td className="p-2">{fmt(t.capacity_liters)}</td>
               <td className="p-2"><Input type="number" min={0} disabled={!canEdit} className="w-32" placeholder={`défaut ${fmt(Number(t.capacity_liters) * 0.25)}`} value={e.min ?? t.min_threshold ?? ""} onChange={(ev) => setEdits((s) => ({ ...s, [t.id]: { ...e, min: ev.target.value } }))} /></td>
               <td className="p-2"><Input type="number" min={0} disabled={!canEdit} className="w-32" placeholder={`défaut ${fmt(Number(t.capacity_liters) * 0.1)}`} value={e.crit ?? t.critical_threshold ?? ""} onChange={(ev) => setEdits((s) => ({ ...s, [t.id]: { ...e, crit: ev.target.value } }))} /></td>
-              <td className="p-2">{canEdit && edits[t.id] && <Button size="sm" variant="outline" className="gap-1" onClick={() => save(t)}><Save className="w-3.5 h-3.5" />{t("Enregistrer")}</Button>}</td>
+              <td className="p-2">{canEdit && edits[t.id] && <Button size="sm" variant="outline" className="gap-1" onClick={() => save(t)}><Save className="w-3.5 h-3.5" />{translate("Enregistrer")}</Button>}</td>
             </tr>
           );
         })}
       </Table>
-      <p className="text-xs text-muted-foreground">{t("Laissez vide pour utiliser les valeurs par défaut (25 % et 10 % de la capacité). Chaque modification est inscrite dans le journal système.")}</p>
+      <p className="text-xs text-muted-foreground">{translate("Laissez vide pour utiliser les valeurs par défaut (25 % et 10 % de la capacité). Chaque modification est inscrite dans le journal système.")}</p>
     </div>
   );
 };

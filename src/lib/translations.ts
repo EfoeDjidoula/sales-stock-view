@@ -197,13 +197,13 @@ export const translations: Record<string, string> = {
   "Rechercher emplacement, motif, référence, utilisateur…": "Search location, reason, reference, user…",
   "Stock théorique = Stock initial + Entrées − Sorties (ventes incluses). Seuils par défaut : 25 % et 10 % de la capacité.": "Theoretical stock = opening stock + entries − exits (including sales). Default thresholds: 25% and 10% of capacity.",
   "Registre immuable : aucun mouvement ne peut être modifié ni supprimé. Une erreur se corrige par un ajustement motivé.": "Immutable ledger: no movement can be edited or deleted. Correct errors with a justified adjustment.",
-  "Au": "To",
-  "Valider": "Approve",
-  "Rejeter": "Reject",
+  
+  
+  
   "Validation non autorisée": "Approval not permitted",
   "Dépôt": "Depot",
   "Choisir…": "Select…",
-  "Cuve": "Tank",
+  
   "Toutes": "All",
   "Tous": "All",
   "Choisissez un emplacement pour afficher sa fiche de stock.": "Select a location to view its stock ledger.",
@@ -214,7 +214,7 @@ export const translations: Record<string, string> = {
   "Tolérance indicative de ±": "Indicative tolerance of ±",
   "% choisie par défaut. Un écart se corrige par un ajustement motivé et validé.": "% selected by default. Correct a variance with a justified and approved adjustment.",
   "Autonomie = stock total ÷ ventes moyennes par jour sur la période. Les mouvements de la période sont ceux déjà validés.": "Coverage = total stock ÷ average daily sales over the period. Only approved movements are included.",
-  "Enregistrer": "Save",
+  
   "Laissez vide pour utiliser les valeurs par défaut (25 % et 10 % de la capacité). Chaque modification est inscrite dans le journal système.": "Leave blank to use defaults (25% and 10% of capacity). Every change is recorded in the system log.",
   "Approvisionnement & réception": "Supply & receiving",
   "Besoin → Demande → Validation → Commande → Chargement → Transport → Livraison → Réception → Mise en stock": "Need → Request → Approval → Order → Loading → Transport → Delivery → Receipt → Stock entry",
@@ -227,7 +227,7 @@ export const translations: Record<string, string> = {
   "Livré": "Delivered",
   "Réceptionné": "Received",
   "Écart livr.": "Delivery variance",
-  "Ouvrir": "Open",
+  
   "Nouveau besoin d'approvisionnement": "New supply request",
   "Station destination": "Destination station",
   "Choisir": "Select",
@@ -256,8 +256,8 @@ export const translations: Record<string, string> = {
   "Observations (ajoutées à l'étape)": "Notes (added to this step)",
   "Annuler le dossier": "Cancel request",
   "Aucune étape": "No steps yet",
-  "Motif (obligatoire)": "Reason (required)",
-  "Confirmer": "Confirm",
+  
+  
   "Résultats": "Results",
   "Seuils de tolérance": "Tolerance thresholds",
   "Lancer la réconciliation": "Run reconciliation",
@@ -280,7 +280,7 @@ export const translations: Record<string, string> = {
   "Index journal": "Daily readings",
   "Écart %": "Variance %",
   "Écart F": "Variance F",
-  "Encaissements": "Receipts",
+  
   "Ventes :": "Sales:",
   "Encaissé :": "Collected:",
   "Espèces :": "Cash:",
@@ -289,11 +289,11 @@ export const translations: Record<string, string> = {
   "Traitement du contrôleur": "Controller review",
   "Commentaire, analyse, justification…": "Comment, analysis, justification…",
   "Commenter": "Comment",
-  "Passer en analyse": "Start review",
-  "Demander justification": "Request justification",
+  
+  
   "Escalader": "Escalate",
   "Fournir la justification": "Provide justification",
-  "Rouvrir": "Reopen",
+  
   "Recalculer": "Recalculate",
   "Un commentaire est obligatoire pour chaque action (sauf « Passer en analyse »).": "A comment is required for each action (except “Start review”).",
   "Seuils pour la société et le pays actifs. Un seuil produit remplace le seuil par défaut. Écart en % du volume vendu, écart de valeur en FCFA.": "Thresholds for the active company and country. Product thresholds override defaults. Volume variance is a percentage of sales; value variance is in FCFA.",
@@ -333,8 +333,8 @@ export const translations: Record<string, string> = {
   "Aucune licence.": "No licenses.",
   "Plans de licence": "License plans",
   "Nouveau plan": "New plan",
-  "Inactif": "Inactive",
-  "Supprimer": "Delete",
+  
+  
   "Les limites vides reprennent celles du plan. Elles sont contrôlées par le serveur.": "Blank limits use the plan defaults. Limits are enforced by the server.",
   "Client *": "Customer *",
   "Généré automatiquement": "Generated automatically",
@@ -396,7 +396,7 @@ export const translations: Record<string, string> = {
   "À dépoter": "Expected",
   "Dépotée": "Unloaded",
   "Stock préc.": "Previous stock",
-  "Théorique": "Theoretical",
+  
   "Jauge après": "Post-unloading dip",
   "Écart dépot.": "Unloading variance",
   "Horaires": "Times",

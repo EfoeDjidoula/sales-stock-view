@@ -26,7 +26,7 @@ const SBadge = ({ s }: { s: TicketStatus }) => <Badge variant="outline" classNam
 const PBadge = ({ p }: { p: TicketPriority }) => <Badge variant="outline" className={TICKET_PRIORITIES[p].cls}>{TICKET_PRIORITIES[p].label}</Badge>;
 
 const FilePicker = ({ files, setFiles }: { files: File[]; setFiles: (f: File[]) => void }) => {
-  const { t } = useLanguage();
+  const { t: translate } = useLanguage();
   const ref = useRef<HTMLInputElement>(null);
   return (
     <div className="flex flex-wrap items-center gap-2">
@@ -97,9 +97,9 @@ export const SupportTickets = ({ mode }: { mode: "client" | "lumatek" }) => {
   return (
     <div className="space-y-4">
       <div className="grid gap-3 sm:grid-cols-3">
-        <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">{t("Tickets ouverts")}</div><div className="text-2xl font-semibold">{counts.open}</div></CardContent></Card>
-        <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">{t("Critiques ouverts")}</div><div className="text-2xl font-semibold text-destructive">{counts.critical}</div></CardContent></Card>
-        <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">{t("SLA dépassés")}</div><div className="text-2xl font-semibold text-orange-400">{counts.breached}</div></CardContent></Card>
+        <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">{translate("Tickets ouverts")}</div><div className="text-2xl font-semibold">{counts.open}</div></CardContent></Card>
+        <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">{translate("Critiques ouverts")}</div><div className="text-2xl font-semibold text-destructive">{counts.critical}</div></CardContent></Card>
+        <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">{translate("SLA dépassés")}</div><div className="text-2xl font-semibold text-orange-400">{counts.breached}</div></CardContent></Card>
       </div>
       <Card>
         <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2">
@@ -108,23 +108,23 @@ export const SupportTickets = ({ mode }: { mode: "client" | "lumatek" }) => {
             <Select value={statusF} onValueChange={setStatusF}>
               <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="open">{t("Ouverts")}</SelectItem>
-                <SelectItem value="all">{t("Tous")}</SelectItem>
+                <SelectItem value="open">{translate("Ouverts")}</SelectItem>
+                <SelectItem value="all">{translate("Tous")}</SelectItem>
                 {Object.entries(TICKET_STATUSES).map(([k, v]) => <SelectItem key={k} value={k}>{v.label}</SelectItem>)}
               </SelectContent>
             </Select>
-            {!isLumatek && <Button size="sm" onClick={() => setCreating(true)}><Plus className="h-4 w-4 mr-1" />{t("Nouveau ticket")}</Button>}
+            {!isLumatek && <Button size="sm" onClick={() => setCreating(true)}><Plus className="h-4 w-4 mr-1" />{translate("Nouveau ticket")}</Button>}
           </div>
         </CardHeader>
         <CardContent className="overflow-x-auto">
           {isLoading ? <Skeleton className="h-32 w-full" /> : !rows.length ? (
-            <p className="py-6 text-center text-sm text-muted-foreground">{t("Aucun ticket.")}</p>
+            <p className="py-6 text-center text-sm text-muted-foreground">{translate("Aucun ticket.")}</p>
           ) : (
             <Table>
               <TableHeader><TableRow>
-                <TableHead>N°</TableHead><TableHead>{t("Ouvert le")}</TableHead>{isLumatek && <TableHead>{t("Client")}</TableHead>}
-                <TableHead>{t("Objet")}</TableHead><TableHead>{t("Catégorie")}</TableHead><TableHead>{t("Priorité")}</TableHead>
-                <TableHead>{t("Statut")}</TableHead><TableHead>{t("Responsable")}</TableHead><TableHead>SLA</TableHead><TableHead />
+                <TableHead>N°</TableHead><TableHead>{translate("Ouvert le")}</TableHead>{isLumatek && <TableHead>{translate("Client")}</TableHead>}
+                <TableHead>{translate("Objet")}</TableHead><TableHead>{translate("Catégorie")}</TableHead><TableHead>{translate("Priorité")}</TableHead>
+                <TableHead>{translate("Statut")}</TableHead><TableHead>{translate("Responsable")}</TableHead><TableHead>SLA</TableHead><TableHead />
               </TableRow></TableHeader>
               <TableBody>
                 {rows.map((t) => (
@@ -138,9 +138,9 @@ export const SupportTickets = ({ mode }: { mode: "client" | "lumatek" }) => {
                     <TableCell><SBadge s={t.status} /></TableCell>
                     <TableCell className="text-xs">{t.assigned_to_name || "—"}</TableCell>
                     <TableCell className="text-xs">
-                      {slaBreached(t) ? <span className="text-destructive inline-flex items-center gap-1"><AlertTriangle className="h-3 w-3" />{t("Dépassé")}</span> : `${t.sla_hours} h`}
+                      {slaBreached(t) ? <span className="text-destructive inline-flex items-center gap-1"><AlertTriangle className="h-3 w-3" />{translate("Dépassé")}</span> : `${t.sla_hours} h`}
                     </TableCell>
-                    <TableCell><Button size="icon" variant="ghost" aria-label={t("Ouvrir")}><Eye className="h-4 w-4" /></Button></TableCell>
+                    <TableCell><Button size="icon" variant="ghost" aria-label={translate("Ouvrir")}><Eye className="h-4 w-4" /></Button></TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -152,34 +152,34 @@ export const SupportTickets = ({ mode }: { mode: "client" | "lumatek" }) => {
       {/* Création (client) */}
       <Dialog open={creating} onOpenChange={setCreating}>
         <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>{t("Nouveau ticket")}</DialogTitle><DialogDescription>{t("Le support LUMATEK sera notifié.")}</DialogDescription></DialogHeader>
+          <DialogHeader><DialogTitle>{translate("Nouveau ticket")}</DialogTitle><DialogDescription>{translate("Le support LUMATEK sera notifié.")}</DialogDescription></DialogHeader>
           <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-1.5"><Label>{t("Catégorie *")}</Label>
+            <div className="space-y-1.5"><Label>{translate("Catégorie *")}</Label>
               <Select value={form.category} onValueChange={(v) => setForm({ ...form, category: v as TicketCategory })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>{Object.entries(TICKET_CATEGORIES).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}</SelectContent>
               </Select></div>
-            <div className="space-y-1.5"><Label>{t("Priorité *")}</Label>
+            <div className="space-y-1.5"><Label>{translate("Priorité *")}</Label>
               <Select value={form.priority} onValueChange={(v) => setForm({ ...form, priority: v as TicketPriority })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>{Object.entries(TICKET_PRIORITIES).map(([k, v]) => <SelectItem key={k} value={k}>{v.label}</SelectItem>)}</SelectContent>
               </Select></div>
-            <div className="space-y-1.5"><Label>{t("Module")}</Label>
+            <div className="space-y-1.5"><Label>{translate("Module")}</Label>
               <Select value={form.module_key || "none"} onValueChange={(v) => setForm({ ...form, module_key: v === "none" ? "" : v })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent><SelectItem value="none">{t("Non précisé")}</SelectItem>{modules.map((m) => <SelectItem key={m.key} value={m.key}>{m.label}</SelectItem>)}</SelectContent>
+                <SelectContent><SelectItem value="none">{translate("Non précisé")}</SelectItem>{modules.map((m) => <SelectItem key={m.key} value={m.key}>{m.label}</SelectItem>)}</SelectContent>
               </Select></div>
-            <div className="space-y-1.5"><Label>{t("Station (si applicable)")}</Label>
+            <div className="space-y-1.5"><Label>{translate("Station (si applicable)")}</Label>
               <Select value={form.station_id || "none"} onValueChange={(v) => setForm({ ...form, station_id: v === "none" ? "" : v })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent><SelectItem value="none">{t("Aucune")}</SelectItem>{stations.map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent>
+                <SelectContent><SelectItem value="none">{translate("Aucune")}</SelectItem>{stations.map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent>
               </Select></div>
-            <div className="space-y-1.5 sm:col-span-2"><Label>{t("Objet *")}</Label><Input value={form.subject} maxLength={200} onChange={(e) => setForm({ ...form, subject: e.target.value })} /></div>
-            <div className="space-y-1.5 sm:col-span-2"><Label>{t("Description")}</Label><Textarea rows={5} value={form.description} maxLength={5000} onChange={(e) => setForm({ ...form, description: e.target.value })} /></div>
-            <div className="space-y-1.5 sm:col-span-2"><Label>{t("Pièces jointes (10 Mo max chacune)")}</Label><FilePicker files={files} setFiles={setFiles} /></div>
+            <div className="space-y-1.5 sm:col-span-2"><Label>{translate("Objet *")}</Label><Input value={form.subject} maxLength={200} onChange={(e) => setForm({ ...form, subject: e.target.value })} /></div>
+            <div className="space-y-1.5 sm:col-span-2"><Label>{translate("Description")}</Label><Textarea rows={5} value={form.description} maxLength={5000} onChange={(e) => setForm({ ...form, description: e.target.value })} /></div>
+            <div className="space-y-1.5 sm:col-span-2"><Label>{translate("Pièces jointes (10 Mo max chacune)")}</Label><FilePicker files={files} setFiles={setFiles} /></div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setCreating(false)}>{t("Annuler")}</Button>
+            <Button variant="outline" onClick={() => setCreating(false)}>{translate("Annuler")}</Button>
             <Button onClick={submitNew} disabled={busy}>{busy ? "Envoi…" : "Créer le ticket"}</Button>
           </DialogFooter>
         </DialogContent>
