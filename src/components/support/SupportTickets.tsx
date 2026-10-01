@@ -30,7 +30,7 @@ const FilePicker = ({ files, setFiles }: { files: File[]; setFiles: (f: File[]) 
   const ref = useRef<HTMLInputElement>(null);
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <Button type="button" size="sm" variant="outline" onClick={() => ref.current?.click()}><Paperclip className="h-4 w-4 mr-1" />{t("Joindre")}</Button>
+      <Button type="button" size="sm" variant="outline" onClick={() => ref.current?.click()}><Paperclip className="h-4 w-4 mr-1" />{translate("Joindre")}</Button>
       {files.map((f, i) => (
         <Badge key={i} variant="secondary" className="cursor-pointer" onClick={() => setFiles(files.filter((_, k) => k !== i))}>{f.name} ✕</Badge>
       ))}
@@ -51,7 +51,7 @@ const AttachList = ({ list }: { list: Attachment[] }) =>
   ) : null;
 
 export const SupportTickets = ({ mode }: { mode: "client" | "lumatek" }) => {
-  const { t } = useLanguage();
+  const { t: translate } = useLanguage();
   const isLumatek = mode === "lumatek";
   const { tenantId, countryId } = useScope();
   const { tickets, isLoading, create, update, comment } = useSupportTickets(isLumatek ? null : tenantId);
