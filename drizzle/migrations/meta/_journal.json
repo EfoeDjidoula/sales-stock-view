@@ -148,6 +148,13 @@
       "when": 1790868553564,
       "tag": "0020_correct_fuel_account_country_reference",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1790868588346,
+      "tag": "0021_guard_fuel_credit_restoration_and_immutable_records",
+      "breakpoints": true
     }
   ]
 }
