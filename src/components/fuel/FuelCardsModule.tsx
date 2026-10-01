@@ -80,7 +80,7 @@ export function FuelCardsModule() {
     const candidates = key === "client_id" ? data?.clients : key === "station_id" || key === "stations" ? data?.stations : key === "product_id" || key === "products" ? data?.products : key === "vehicle_id" || key === "vehicles" ? data?.vehicles.filter(x => x.account_id === dialog?.account && x.active) : key === "driver_id" ? data?.drivers.filter(x => x.account_id === dialog?.account && x.active) : key === "invoice_id" ? data?.invoices.filter(x => x.account_id === dialog?.account && Number(x.paid) < Number(x.amount)) : [];
     return (candidates || []).map(x => ({ id: x.id, label: "name" in x ? String(x.name) : "plate" in x ? String(x.plate) : "number" in x ? String(x.number) : x.id.slice(0, 8) }));
   };
-  const button = (action: Action, account?: string, card?: string, defaults?: Record<string, string>) => allowed(action) && <Button key={action} size="sm" variant="outline" onClick={() => open(action, account, card, defaults)}>{tr(language, ...actions[action])}</Button>;
+  const button = (action: Action, account?: string, card?: string, defaults?: Record<string, string>) => allowed(action) && <Button key={action} size="sm" variant="outline" onClick={() => open(action, account, card, defaults)}>{tr(language, actions[action][0], actions[action][1])}</Button>;
   const submit = async () => {
     if (!dialog || !tenantId || !countryId || !allowed(dialog.action) || busy) return;
     const body: Record<string, Json> = {};
