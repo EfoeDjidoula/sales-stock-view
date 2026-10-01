@@ -134,6 +134,13 @@
       "when": 1790697180792,
       "tag": "0018_fraud_anomaly_center",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1790868388191,
+      "tag": "0019_fuel_card_accounts_and_secure_ledger",
+      "breakpoints": true
     }
   ]
 }
