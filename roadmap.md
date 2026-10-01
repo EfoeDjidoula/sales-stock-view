@@ -1,5 +1,5 @@
 - [x] Ajouter un choix Français / English visible à côté du profil, conservé par utilisateur et initialisé selon la langue du client.
 - [ ] Traduire les parcours visibles : connexion, choix de pays, navigation, tableau de bord, saisie et administration. Les libellés principaux sont traduits ; les écrans métier et messages secondaires restent partiellement en français.
 - [x] Vérifier le changement de langue et sa conservation dans l'application.
-- [ ] Créer Fuel Cards prépayées/postpayées : comptes, cartes, véhicules, conducteurs, transactions, blocage, remplacement, expiration et facturation ; isolation par client.
-- [ ] Appliquer allocations et plafonds, restrictions configurables, journal des modifications de plafond, validation serveur et alertes d'anomalies ; vérifier les flux bout en bout.
+- [x] Créer Fuel Cards prépayées/postpayées : comptes, cartes, véhicules, conducteurs, transactions, blocage, remplacement, expiration et facturation ; isolation par client.
+- [ ] Appliquer allocations et plafonds, restrictions configurables, journal des modifications de plafond, validation serveur et alertes d'anomalies ; vérifier les flux bout en bout. Les règles et écrans sont livrés ; une transaction réelle attend un compte et une carte du client (aucun compte existant au 1er octobre 2026).
