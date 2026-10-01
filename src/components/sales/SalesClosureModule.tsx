@@ -16,6 +16,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useLanguage } from "@/hooks/useLanguage";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const db = supabase as any;
@@ -35,6 +36,7 @@ const errMsg = (e: unknown) => (e as { message?: string })?.message ?? String(e)
 interface Line { nozzle: Row; index_start: string; index_end: string; volume: string; volume_mode: "index" | "manual"; unit_price: string }
 
 export const SalesClosureModule = () => {
+  const { t, language } = useLanguage();
   const { tenantId, countryId, scopeQuery } = useScope();
   const { can } = usePermissions();
   const { isPlatformAdmin } = usePlatformAdmin();
@@ -235,7 +237,7 @@ export const SalesClosureModule = () => {
   return (
     <div className="space-y-4">
       <Card className="border-border bg-card">
-        <CardHeader><CardTitle>Ventes & clôture journalière</CardTitle></CardHeader>
+         <CardHeader><CardTitle>{t("Ventes & clôture journalière")}</CardTitle></CardHeader>
         <CardContent className="grid gap-3 md:grid-cols-4 items-end">
           <div className="space-y-1">
             <Label>Station</Label>
@@ -249,11 +251,11 @@ export const SalesClosureModule = () => {
             <Input type="date" value={date} max={today} onChange={(e) => setDate(e.target.value)} />
           </div>
           <div className="flex items-center gap-2">
-            {status ? <Badge variant={status.variant}>{status.label}</Badge> : <span className="text-sm text-muted-foreground">Aucune clôture pour ce jour</span>}
-            {locked && <Lock className="w-4 h-4 text-muted-foreground" aria-label="Verrouillée" />}
+             {status ? <Badge variant={status.variant}>{t(status.label)}</Badge> : <span className="text-sm text-muted-foreground">{t("Aucune clôture pour ce jour")}</span>}
+             {locked && <Lock className="w-4 h-4 text-muted-foreground" aria-label={t("Verrouillée")} />}
           </div>
           {!closure && canWrite && (
-            <Button onClick={createClosure} disabled={busy || !stationId} className="gap-2"><Plus className="w-4 h-4" /> Ouvrir la clôture</Button>
+             <Button onClick={createClosure} disabled={busy || !stationId} className="gap-2"><Plus className="w-4 h-4" /> {t("Ouvrir la clôture")}</Button>
           )}
         </CardContent>
       </Card>
@@ -263,23 +265,23 @@ export const SalesClosureModule = () => {
       ) : (
         <Tabs defaultValue="saisie">
           <TabsList className="flex-wrap h-auto">
-            <TabsTrigger value="saisie">Saisie des ventes</TabsTrigger>
-            <TabsTrigger value="encaissements">Encaissements</TabsTrigger>
-            <TabsTrigger value="cloture">Clôture du jour</TabsTrigger>
-            <TabsTrigger value="historique">Historique des clôtures</TabsTrigger>
-            <TabsTrigger value="modes">Modes de paiement</TabsTrigger>
+             <TabsTrigger value="saisie">{t("Saisie des ventes")}</TabsTrigger>
+             <TabsTrigger value="encaissements">{t("Encaissements")}</TabsTrigger>
+             <TabsTrigger value="cloture">{t("Clôture du jour")}</TabsTrigger>
+             <TabsTrigger value="historique">{t("Historique des clôtures")}</TabsTrigger>
+             <TabsTrigger value="modes">{t("Modes de paiement")}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="saisie" className="mt-4 space-y-3">
-            {!lines.length && <p className="text-sm text-muted-foreground">Aucun pistolet actif pour cette station (Configuration → Stations → Référentiels).</p>}
+             {!lines.length && <p className="text-sm text-muted-foreground">{t("Aucun pistolet actif pour cette station (Configuration → Stations → Référentiels).")}</p>}
             {!!lines.length && (
               <div className="overflow-x-auto rounded-lg border border-border">
                 <table className="w-full text-sm">
                   <thead className="bg-muted/40 text-muted-foreground">
                     <tr>
-                      <th className="p-2 text-left">Pompe / Pistolet</th><th className="p-2 text-left">Produit</th>
-                      <th className="p-2 text-left">Mode</th><th className="p-2 text-left">Index début</th><th className="p-2 text-left">Index fin</th>
-                      <th className="p-2 text-right">Volume (L)</th><th className="p-2 text-left">Prix / L</th><th className="p-2 text-right">Montant</th>
+                       <th className="p-2 text-left">{t("Pompe / Pistolet")}</th><th className="p-2 text-left">{t("Produit")}</th>
+                       <th className="p-2 text-left">{t("Mode")}</th><th className="p-2 text-left">{t("Index début")}</th><th className="p-2 text-left">{t("Index fin")}</th>
+                       <th className="p-2 text-right">Volume (L)</th><th className="p-2 text-left">{t("Prix / L")}</th><th className="p-2 text-right">{t("Montant")}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -294,7 +296,7 @@ export const SalesClosureModule = () => {
                           <td className="p-1 w-28">
                             <Select value={l.volume_mode} disabled={!editable} onValueChange={(val) => setLine(i, { volume_mode: val as Line["volume_mode"] })}>
                               <SelectTrigger><SelectValue /></SelectTrigger>
-                              <SelectContent><SelectItem value="index">Index</SelectItem><SelectItem value="manual">Manuel</SelectItem></SelectContent>
+                               <SelectContent><SelectItem value="index">Index</SelectItem><SelectItem value="manual">{t("Manuel")}</SelectItem></SelectContent>
                             </Select>
                           </td>
                           <td className="p-1"><Input type="number" min={0} aria-label={`Index début ${l.nozzle.name}`} disabled={!editable || l.volume_mode === "manual"} value={l.index_start} onChange={(e) => setLine(i, { index_start: e.target.value })} /></td>
@@ -310,21 +312,21 @@ export const SalesClosureModule = () => {
                       );
                     })}
                     <tr className="border-t border-border font-semibold bg-muted/20">
-                      <td className="p-2" colSpan={5}>Total</td>
+                       <td className="p-2" colSpan={5}>{t("Total")}</td>
                       <td className="p-2 text-right">{fmt(liveTotal.v)}</td><td /><td className="p-2 text-right">{fmt(liveTotal.m)}</td>
                     </tr>
                   </tbody>
                 </table>
               </div>
             )}
-            {editable && <div className="flex justify-end"><Button onClick={saveSales} disabled={busy} className="gap-2"><Save className="w-4 h-4" /> Enregistrer les ventes</Button></div>}
+             {editable && <div className="flex justify-end"><Button onClick={saveSales} disabled={busy} className="gap-2"><Save className="w-4 h-4" /> {t("Enregistrer les ventes")}</Button></div>}
             {!closure && <p className="text-sm text-muted-foreground">Ouvrez d'abord la clôture de ce jour pour saisir les ventes.</p>}
           </TabsContent>
 
           <TabsContent value="encaissements" className="mt-4 space-y-3">
             <div className="overflow-x-auto rounded-lg border border-border">
               <table className="w-full text-sm">
-                <thead className="bg-muted/40 text-muted-foreground"><tr><th className="p-2 text-left">Mode</th><th className="p-2 text-left">Montant</th><th className="p-2 text-left">Référence</th></tr></thead>
+                 <thead className="bg-muted/40 text-muted-foreground"><tr><th className="p-2 text-left">{t("Mode")}</th><th className="p-2 text-left">{t("Montant")}</th><th className="p-2 text-left">{t("Référence")}</th></tr></thead>
                 <tbody>
                   {methods.filter((m) => m.is_active || payments[m.id]).map((m) => (
                     <tr key={m.id} className="border-t border-border">
@@ -333,11 +335,11 @@ export const SalesClosureModule = () => {
                       <td className="p-1"><Input disabled={!editable} value={payments[m.id]?.reference ?? ""} onChange={(e) => setPayments((p) => ({ ...p, [m.id]: { amount: p[m.id]?.amount ?? "", reference: e.target.value } }))} /></td>
                     </tr>
                   ))}
-                  <tr className="border-t border-border font-semibold bg-muted/20"><td className="p-2">Total encaissé</td><td className="p-2">{fmt(payTotal)}</td><td /></tr>
+                   <tr className="border-t border-border font-semibold bg-muted/20"><td className="p-2">{t("Total encaissé")}</td><td className="p-2">{fmt(payTotal)}</td><td /></tr>
                 </tbody>
               </table>
             </div>
-            {editable && <div className="flex justify-end"><Button onClick={savePayments} disabled={busy} className="gap-2"><Save className="w-4 h-4" /> Enregistrer les encaissements</Button></div>}
+             {editable && <div className="flex justify-end"><Button onClick={savePayments} disabled={busy} className="gap-2"><Save className="w-4 h-4" /> {t("Enregistrer les encaissements")}</Button></div>}
           </TabsContent>
 
           <TabsContent value="cloture" className="mt-4 space-y-4">
@@ -346,36 +348,36 @@ export const SalesClosureModule = () => {
                 <div className="grid gap-3 md:grid-cols-4">
                   {[["Volume total", `${fmt(closure.total_volume)} L`], ["Montant des ventes", fmt(closure.total_amount)], ["Total encaissé", fmt(closure.total_collected)], ["Écart d'encaissement", fmt(closure.cash_variance)]].map(([k, v], i) => (
                     <Card key={k} className="border-border bg-card"><CardContent className="p-4">
-                      <p className="text-xs text-muted-foreground">{k}</p>
+                       <p className="text-xs text-muted-foreground">{t(k)}</p>
                       <p className={`text-xl font-bold ${i === 3 && Number(closure.cash_variance) !== 0 ? (Number(closure.cash_variance) < 0 ? "text-destructive" : "text-primary") : ""}`}>{v}</p>
                     </CardContent></Card>
                   ))}
                 </div>
                 <div className="grid gap-4 lg:grid-cols-2">
-                  <Card className="border-border bg-card"><CardHeader><CardTitle className="text-base">Ventes par produit</CardTitle></CardHeader><CardContent>
+                   <Card className="border-border bg-card"><CardHeader><CardTitle className="text-base">{t("Ventes par produit")}</CardTitle></CardHeader><CardContent>
                     <table className="w-full text-sm"><tbody>
                       {Object.entries(byProduct).map(([pid, v]) => <tr key={pid} className="border-t border-border"><td className="p-2">{products[pid]?.name ?? "—"}</td><td className="p-2 text-right">{fmt(v.volume)} L</td><td className="p-2 text-right">{fmt(v.amount)}</td></tr>)}
                     </tbody></table>
                   </CardContent></Card>
-                  <Card className="border-border bg-card"><CardHeader><CardTitle className="text-base">Encaissements par mode</CardTitle></CardHeader><CardContent>
+                   <Card className="border-border bg-card"><CardHeader><CardTitle className="text-base">{t("Encaissements par mode")}</CardTitle></CardHeader><CardContent>
                     <table className="w-full text-sm"><tbody>
                       {methods.filter((m) => Number(payments[m.id]?.amount) > 0).map((m) => <tr key={m.id} className="border-t border-border"><td className="p-2">{m.label}</td><td className="p-2 text-right">{fmt(Number(payments[m.id].amount))}</td></tr>)}
                     </tbody></table>
                   </CardContent></Card>
-                  <Card className="border-border bg-card"><CardHeader><CardTitle className="text-base">Ventes par pistolet</CardTitle></CardHeader><CardContent>
+                   <Card className="border-border bg-card"><CardHeader><CardTitle className="text-base">{t("Ventes par pistolet")}</CardTitle></CardHeader><CardContent>
                     <table className="w-full text-sm"><tbody>
                       {savedSales.map((s) => { const n = nozzleName(s.nozzle_id); return <tr key={s.id} className="border-t border-border"><td className="p-2">{n?.pump?.name ?? "—"} · {n?.name ?? "—"}</td><td className="p-2 text-right">{fmt(s.volume)} L</td><td className="p-2 text-right">{fmt(s.amount)}</td></tr>; })}
                     </tbody></table>
                   </CardContent></Card>
-                  <Card className="border-border bg-card"><CardHeader><CardTitle className="text-base">Impact sur le stock par cuve</CardTitle></CardHeader><CardContent>
+                   <Card className="border-border bg-card"><CardHeader><CardTitle className="text-base">{t("Impact sur le stock par cuve")}</CardTitle></CardHeader><CardContent>
                     <table className="w-full text-sm">
-                      <thead className="text-muted-foreground"><tr><th className="p-2 text-left">Cuve</th><th className="p-2 text-right">Vendu</th><th className="p-2 text-right">Stock théorique</th><th className="p-2 text-right">{closure.status === "validated" ? "" : "Après validation"}</th></tr></thead>
+                       <thead className="text-muted-foreground"><tr><th className="p-2 text-left">{t("Cuve")}</th><th className="p-2 text-right">{t("Vendu")}</th><th className="p-2 text-right">{t("Stock théorique")}</th><th className="p-2 text-right">{closure.status === "validated" ? "" : t("Après validation")}</th></tr></thead>
                       <tbody>
                         {Object.entries(byTank).map(([tid, vol]) => {
                           const lv = levels.find((x) => x.tank_id === tid);
                           const th = Number(lv?.theoretical ?? 0);
                           const after = th - vol;
-                          return <tr key={tid} className="border-t border-border"><td className="p-2">{tanks[tid]?.name ?? "—"}</td><td className="p-2 text-right">{fmt(vol)} L</td><td className="p-2 text-right">{lv ? `${fmt(th)} L` : "non initialisé"}</td>
+                           return <tr key={tid} className="border-t border-border"><td className="p-2">{tanks[tid]?.name ?? "—"}</td><td className="p-2 text-right">{fmt(vol)} L</td><td className="p-2 text-right">{lv ? `${fmt(th)} L` : t("non initialisé")}</td>
                             <td className={`p-2 text-right ${after < 0 && closure.status !== "validated" ? "text-destructive" : ""}`}>{closure.status === "validated" ? "" : `${fmt(after)} L`}</td></tr>;
                         })}
                       </tbody>
@@ -385,18 +387,18 @@ export const SalesClosureModule = () => {
                     )}
                   </CardContent></Card>
                 </div>
-                {closure.last_reason && <p className="text-sm text-muted-foreground">Dernier motif : {closure.last_reason}</p>}
+                 {closure.last_reason && <p className="text-sm text-muted-foreground">{t("Dernier motif :")} {closure.last_reason}</p>}
                 <div className="flex flex-wrap gap-2 justify-end">
-                  {canWrite && ["draft", "rejected"].includes(closure.status) && <Button onClick={() => transition("submit")} disabled={busy} className="gap-2"><Send className="w-4 h-4" /> Soumettre</Button>}
+                   {canWrite && ["draft", "rejected"].includes(closure.status) && <Button onClick={() => transition("submit")} disabled={busy} className="gap-2"><Send className="w-4 h-4" /> {t("Soumettre")}</Button>}
                   {canValidate && closure.status === "submitted" && <>
-                    <Button variant="destructive" onClick={() => setReasonFor("reject")} disabled={busy} className="gap-2"><X className="w-4 h-4" /> Rejeter</Button>
-                    <Button onClick={() => transition("validate")} disabled={busy} className="gap-2"><Check className="w-4 h-4" /> Valider</Button>
+                     <Button variant="destructive" onClick={() => setReasonFor("reject")} disabled={busy} className="gap-2"><X className="w-4 h-4" /> {t("Rejeter")}</Button>
+                     <Button onClick={() => transition("validate")} disabled={busy} className="gap-2"><Check className="w-4 h-4" /> {t("Valider")}</Button>
                   </>}
-                  {canValidate && closure.status === "validated" && <Button variant="outline" onClick={() => setReasonFor("reopen")} disabled={busy} className="gap-2"><RotateCcw className="w-4 h-4" /> Rouvrir</Button>}
+                   {canValidate && closure.status === "validated" && <Button variant="outline" onClick={() => setReasonFor("reopen")} disabled={busy} className="gap-2"><RotateCcw className="w-4 h-4" /> {t("Rouvrir")}</Button>}
                 </div>
-                <Card className="border-border bg-card"><CardHeader><CardTitle className="text-base">Historique de cette clôture</CardTitle></CardHeader><CardContent className="space-y-1">
-                  {!events.length && <p className="text-sm text-muted-foreground">Aucun changement d'état.</p>}
-                  {events.map((e) => <p key={e.id} className="text-sm"><span className="text-muted-foreground">{new Date(e.created_at).toLocaleString("fr-FR")}</span> · {ACTION_LABEL[e.action] ?? e.action} par {e.author_name ?? "—"} ({CLOSURE_STATUS[e.from_status]?.label} → {CLOSURE_STATUS[e.to_status]?.label}){e.reason ? ` — ${e.reason}` : ""}</p>)}
+                 <Card className="border-border bg-card"><CardHeader><CardTitle className="text-base">{t("Historique de cette clôture")}</CardTitle></CardHeader><CardContent className="space-y-1">
+                   {!events.length && <p className="text-sm text-muted-foreground">{t("Aucun changement d'état.")}</p>}
+                   {events.map((e) => <p key={e.id} className="text-sm"><span className="text-muted-foreground">{new Date(e.created_at).toLocaleString(language === "en" ? "en-US" : "fr-FR")}</span> · {t(ACTION_LABEL[e.action] ?? e.action)} {language === "en" ? "by" : "par"} {e.author_name ?? "—"} ({t(CLOSURE_STATUS[e.from_status]?.label ?? "")} → {t(CLOSURE_STATUS[e.to_status]?.label ?? "")}){e.reason ? ` — ${e.reason}` : ""}</p>)}
                 </CardContent></Card>
               </>
             )}
@@ -409,13 +411,13 @@ export const SalesClosureModule = () => {
 
       <Dialog open={!!reasonFor} onOpenChange={(o) => !o && setReasonFor(null)}>
         <DialogContent>
-          <DialogHeader><DialogTitle>{reasonFor === "reject" ? "Rejeter la clôture" : "Rouvrir la clôture validée"}</DialogTitle></DialogHeader>
+           <DialogHeader><DialogTitle>{t(reasonFor === "reject" ? "Rejeter la clôture" : "Rouvrir la clôture validée")}</DialogTitle></DialogHeader>
           {reasonFor === "reopen" && <p className="text-sm text-muted-foreground">Les ventes déjà sorties du stock seront réintégrées par un ajustement tracé. La clôture repasse en brouillon.</p>}
-          <Label>Motif (obligatoire)</Label>
+           <Label>{t("Motif (obligatoire)")}</Label>
           <Textarea value={reason} onChange={(e) => setReason(e.target.value)} />
           <DialogFooter>
-            <Button variant="outline" onClick={() => setReasonFor(null)}>Annuler</Button>
-            <Button disabled={!reason.trim() || busy} onClick={() => reasonFor && transition(reasonFor, reason.trim())}>Confirmer</Button>
+             <Button variant="outline" onClick={() => setReasonFor(null)}>{t("Annuler")}</Button>
+             <Button disabled={!reason.trim() || busy} onClick={() => reasonFor && transition(reasonFor, reason.trim())}>{t("Confirmer")}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
