@@ -143,4 +143,7 @@ export const translations: Record<string, string> = {
   "Alerte": "Alert", "Pourquoi cette alerte ?": "Why was this flagged?",
   "Données sources": "Source data", "seuil": "threshold", "fenêtre": "window",
   "Commentaire (obligatoire sauf « Passer en analyse »)": "Comment (required except when starting a review)",
+  "Historique": "History", "Aucune action.": "No activity.",
+  "Règle :": "Rule:", "j": "days",
+  "nouvelle(s) alerte(s)": "new alert(s)",
 };
