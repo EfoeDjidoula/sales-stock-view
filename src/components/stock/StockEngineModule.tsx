@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PendingTab, LedgerTab, VarianceTab, SummaryTab, TransfersTab, ThresholdsTab } from "./StockAnalysisTabs";
+import { useLanguage } from "@/hooks/useLanguage";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const db = supabase as any;
@@ -389,6 +390,7 @@ const TransferForm = ({ refs, onDone }: { refs: Record<string, Row[]>; onDone: (
 };
 
 export const StockEngineModule = () => {
+  const { t } = useLanguage();
   const refs = useRefs();
   const { can } = usePermissions();
   const { isPlatformAdmin } = usePlatformAdmin();
@@ -399,21 +401,21 @@ export const StockEngineModule = () => {
   return (
     <div className="space-y-4">
       <div>
-        <h2 className="text-lg font-display font-semibold">Moteur de stock</h2>
-        <p className="text-sm text-muted-foreground">Stocks par pays, dépôt, station, cuve et produit — registre de mouvements tracé.</p>
+         <h2 className="text-lg font-display font-semibold">{t("Moteur de stock")}</h2>
+         <p className="text-sm text-muted-foreground">{t("Stocks par pays, dépôt, station, cuve et produit — registre de mouvements tracé.")}</p>
       </div>
       <Tabs value={tab} onValueChange={setTab}>
         <TabsList className="bg-secondary flex-wrap h-auto">
-          <TabsTrigger value="niveaux">Niveaux & alertes</TabsTrigger>
-          <TabsTrigger value="synthese">Synthèse par produit</TabsTrigger>
-          <TabsTrigger value="fiche">Fiche de stock</TabsTrigger>
-          <TabsTrigger value="registre">Registre des mouvements</TabsTrigger>
-          <TabsTrigger value="validations">Validations en attente</TabsTrigger>
-          <TabsTrigger value="ecarts">Écarts d'inventaire</TabsTrigger>
-          <TabsTrigger value="transferts">Suivi des transferts</TabsTrigger>
-          <TabsTrigger value="seuils">Seuils d'alerte</TabsTrigger>
-          {canWrite && <TabsTrigger value="mouvement">Nouveau mouvement</TabsTrigger>}
-          {canWrite && <TabsTrigger value="transfert">Transfert</TabsTrigger>}
+           <TabsTrigger value="niveaux">{t("Niveaux & alertes")}</TabsTrigger>
+           <TabsTrigger value="synthese">{t("Synthèse par produit")}</TabsTrigger>
+           <TabsTrigger value="fiche">{t("Fiche de stock")}</TabsTrigger>
+           <TabsTrigger value="registre">{t("Registre des mouvements")}</TabsTrigger>
+           <TabsTrigger value="validations">{t("Validations en attente")}</TabsTrigger>
+           <TabsTrigger value="ecarts">{t("Écarts d'inventaire")}</TabsTrigger>
+           <TabsTrigger value="transferts">{t("Suivi des transferts")}</TabsTrigger>
+           <TabsTrigger value="seuils">{t("Seuils d'alerte")}</TabsTrigger>
+           {canWrite && <TabsTrigger value="mouvement">{t("Nouveau mouvement")}</TabsTrigger>}
+           {canWrite && <TabsTrigger value="transfert">{t("Transfert")}</TabsTrigger>}
         </TabsList>
         <TabsContent value="niveaux" className="mt-4"><LevelsTab refs={refs} reload={reload} /></TabsContent>
         <TabsContent value="synthese" className="mt-4"><SummaryTab refs={refs} reload={reload} /></TabsContent>
