@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useLanguage } from "@/hooks/useLanguage";
 import { supabase } from "@/integrations/supabase/client";
 import { useScope } from "@/hooks/useScope";
 import { toast } from "sonner";
@@ -67,6 +68,7 @@ const useMovements = (reload: number, filter?: (q: any) => any) => { // eslint-d
 
 /* ---------- 1. Validations en attente ---------- */
 export const PendingTab = ({ refs, reload, onChanged, canValidate }: { refs: Refs; reload: number; onChanged: () => void; canValidate: boolean }) => {
+  const { t } = useLanguage();
   const filter = useCallback((q: any) => q.eq("status", "pending"), []); // eslint-disable-line @typescript-eslint/no-explicit-any
   const { rows, loading, load } = useMovements(reload, filter);
   const decide = async (r: Row, next: "validated" | "rejected") => {
@@ -80,7 +82,7 @@ export const PendingTab = ({ refs, reload, onChanged, canValidate }: { refs: Ref
   if (loading) return <div className="flex justify-center py-8"><Loader2 className="w-5 h-5 animate-spin" /></div>;
   return (
     <div className="space-y-2">
-      <p className="text-sm text-muted-foreground">{rows.length} mouvement(s) en attente de validation. Ils n'affectent pas le stock tant qu'ils ne sont pas validés.</p>
+      <p className="text-sm text-muted-foreground">{rows.length} {t("mouvement(s) en attente de validation. Ils n'affectent pas le stock tant qu'ils ne sont pas validés.")}</p>
       <Table head={["Date", "Type", "Emplacement", "Cuve", "Quantité", "Motif", "Demandé par", "Âge", ""]} empty={rows.length === 0}>
         {rows.map((r) => {
           const age = Math.floor((Date.now() - new Date(r.created_at).getTime()) / 864e5);
@@ -97,10 +99,10 @@ export const PendingTab = ({ refs, reload, onChanged, canValidate }: { refs: Ref
               <td className="p-2 whitespace-nowrap">
                 {canValidate ? (
                   <>
-                    <Button size="icon" variant="ghost" onClick={() => decide(r, "validated")} aria-label="Valider"><Check className="w-4 h-4 text-success" /></Button>
-                    <Button size="icon" variant="ghost" onClick={() => decide(r, "rejected")} aria-label="Rejeter"><X className="w-4 h-4 text-destructive" /></Button>
+                    <Button size="icon" variant="ghost" onClick={() => decide(r, "validated")} aria-label={t("Valider")}><Check className="w-4 h-4 text-success" /></Button>
+                    <Button size="icon" variant="ghost" onClick={() => decide(r, "rejected")} aria-label={t("Rejeter")}><X className="w-4 h-4 text-destructive" /></Button>
                   </>
-                ) : <span className="text-xs text-muted-foreground">Validation non autorisée</span>}
+                ) : <span className="text-xs text-muted-foreground">{t("Validation non autorisée")}</span>}
               </td>
             </tr>
           );
@@ -112,6 +114,7 @@ export const PendingTab = ({ refs, reload, onChanged, canValidate }: { refs: Ref
 
 /* ---------- 2. Fiche de stock (solde cumulé) ---------- */
 export const LedgerTab = ({ refs, reload }: { refs: Refs; reload: number }) => {
+  const { t } = useLanguage();
   const [locType, setLocType] = useState("station");
   const [locId, setLocId] = useState("");
   const [tankId, setTankId] = useState("");
@@ -141,31 +144,31 @@ export const LedgerTab = ({ refs, reload }: { refs: Refs; reload: number }) => {
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap gap-2 items-end">
-        <div className="grid gap-1"><Label className="text-xs">Type</Label>
+        <div className="grid gap-1"><Label className="text-xs">{t("Type")}</Label>
           <Select value={locType} onValueChange={(v) => { setLocType(v); setLocId(""); setTankId(""); }}>
             <SelectTrigger className="w-32"><SelectValue /></SelectTrigger>
-            <SelectContent><SelectItem value="station">Station</SelectItem><SelectItem value="depot">Dépôt</SelectItem></SelectContent>
+            <SelectContent><SelectItem value="station">{t("Station")}</SelectItem><SelectItem value="depot">{t("Dépôt")}</SelectItem></SelectContent>
           </Select></div>
-        <div className="grid gap-1"><Label className="text-xs">Emplacement</Label>
+        <div className="grid gap-1"><Label className="text-xs">{t("Emplacement")}</Label>
           <Select value={locId} onValueChange={(v) => { setLocId(v); setTankId(""); }}>
-            <SelectTrigger className="w-52"><SelectValue placeholder="Choisir…" /></SelectTrigger>
+            <SelectTrigger className="w-52"><SelectValue placeholder={t("Choisir…")} /></SelectTrigger>
             <SelectContent>{list.map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent>
           </Select></div>
         {locType === "station" && (
-          <div className="grid gap-1"><Label className="text-xs">Cuve</Label>
+          <div className="grid gap-1"><Label className="text-xs">{t("Cuve")}</Label>
             <Select value={tankId || "all"} onValueChange={(v) => setTankId(v === "all" ? "" : v)}>
               <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
-              <SelectContent><SelectItem value="all">Toutes</SelectItem>{tanks.map((t) => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}</SelectContent>
+              <SelectContent><SelectItem value="all">{t("Toutes")}</SelectItem>{tanks.map((t) => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}</SelectContent>
             </Select></div>
         )}
-        <div className="grid gap-1"><Label className="text-xs">Produit</Label>
+        <div className="grid gap-1"><Label className="text-xs">{t("Produit")}</Label>
           <Select value={productId || "all"} onValueChange={(v) => setProductId(v === "all" ? "" : v)}>
             <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
-            <SelectContent><SelectItem value="all">Tous</SelectItem>{refs.products.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent>
+            <SelectContent><SelectItem value="all">{t("Tous")}</SelectItem>{refs.products.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent>
           </Select></div>
         <Period from={from} to={to} setFrom={setFrom} setTo={setTo} />
       </div>
-      {!locId ? <p className="text-sm text-muted-foreground">Choisissez un emplacement pour afficher sa fiche de stock.</p> : loading ? (
+      {!locId ? <p className="text-sm text-muted-foreground">{t("Choisissez un emplacement pour afficher sa fiche de stock.")}</p> : loading ? (
         <div className="flex justify-center py-8"><Loader2 className="w-5 h-5 animate-spin" /></div>
       ) : (
         <>
@@ -183,7 +186,7 @@ export const LedgerTab = ({ refs, reload }: { refs: Refs; reload: number }) => {
                 <td className="p-2">{nameOf(refs.products, r.product_id)}</td>
                 <td className="p-2 text-success">{r.s > 0 ? fmt(r.s) : ""}</td>
                 <td className="p-2 text-destructive">{r.s < 0 ? fmt(-r.s) : ""}</td>
-                <td className="p-2 font-semibold">{r.movement_type === "inventory" ? <span className="text-muted-foreground font-normal">mesuré {fmt(r.physical_level)}</span> : fmt(r.bal)}</td>
+                <td className="p-2 font-semibold">{r.movement_type === "inventory" ? <span className="text-muted-foreground font-normal">{t("mesuré")} {fmt(r.physical_level)}</span> : fmt(r.bal)}</td>
                 <td className="p-2 max-w-[240px] truncate">{[r.reference, r.reason].filter(Boolean).join(" · ") || "—"}</td>
               </tr>
             ))}
@@ -196,6 +199,7 @@ export const LedgerTab = ({ refs, reload }: { refs: Refs; reload: number }) => {
 
 /* ---------- 3. Écarts d'inventaire ---------- */
 export const VarianceTab = ({ refs, reload }: { refs: Refs; reload: number }) => {
+  const { t } = useLanguage();
   const [from, setFrom] = useState(daysAgo(90));
   const [to, setTo] = useState(today());
   const filter = useCallback((q: any) => q.eq("movement_type", "inventory").neq("status", "rejected").gte("movement_date", from).lte("movement_date", `${to}T23:59:59`), [from, to]); // eslint-disable-line @typescript-eslint/no-explicit-any
@@ -212,9 +216,9 @@ export const VarianceTab = ({ refs, reload }: { refs: Refs; reload: number }) =>
     <div className="space-y-3">
       <div className="flex flex-wrap gap-2 items-end"><Period from={from} to={to} setFrom={setFrom} setTo={setTo} /></div>
       <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-        <div className="rounded-xl border border-border bg-card p-3"><div className="text-xs text-muted-foreground">Inventaires</div><div className="text-xl font-display font-bold">{list.length}</div></div>
-        <div className="rounded-xl border border-border bg-card p-3"><div className="text-xs text-muted-foreground">Écart cumulé (validés)</div><div className={`text-xl font-display font-bold ${total < 0 ? "text-destructive" : ""}`}>{fmt(total)} L</div></div>
-        <div className="rounded-xl border border-border bg-card p-3"><div className="text-xs text-muted-foreground">Hors tolérance (±{tol} %)</div><div className="text-xl font-display font-bold text-destructive">{list.filter((r) => Math.abs(r.pct) > tol).length}</div></div>
+        <div className="rounded-xl border border-border bg-card p-3"><div className="text-xs text-muted-foreground">{t("Inventaires")}</div><div className="text-xl font-display font-bold">{list.length}</div></div>
+        <div className="rounded-xl border border-border bg-card p-3"><div className="text-xs text-muted-foreground">{t("Écart cumulé (validés)")}</div><div className={`text-xl font-display font-bold ${total < 0 ? "text-destructive" : ""}`}>{fmt(total)} L</div></div>
+        <div className="rounded-xl border border-border bg-card p-3"><div className="text-xs text-muted-foreground">{t("Hors tolérance (±")}{tol} %)</div><div className="text-xl font-display font-bold text-destructive">{list.filter((r) => Math.abs(r.pct) > tol).length}</div></div>
       </div>
       <Table head={["Date", "Emplacement", "Cuve", "Produit", "Théorique", "Mesuré", "Écart", "Écart %", "Statut", "Motif"]} empty={list.length === 0}>
         {list.map((r) => (
@@ -231,13 +235,14 @@ export const VarianceTab = ({ refs, reload }: { refs: Refs; reload: number }) =>
           </tr>
         ))}
       </Table>
-      <p className="text-xs text-muted-foreground">Tolérance indicative de ±{tol} % choisie par défaut. Un écart se corrige par un ajustement motivé et validé.</p>
+      <p className="text-xs text-muted-foreground">{t("Tolérance indicative de ±")}{tol} {t("% choisie par défaut. Un écart se corrige par un ajustement motivé et validé.")}</p>
     </div>
   );
 };
 
 /* ---------- 4. Synthèse par produit ---------- */
 export const SummaryTab = ({ refs, reload }: { refs: Refs; reload: number }) => {
+  const { t } = useLanguage();
   const { scopeQuery, tenantId } = useScope();
   const [levels, setLevels] = useState<Row[]>([]);
   const [from, setFrom] = useState(daysAgo(30));
@@ -282,7 +287,7 @@ export const SummaryTab = ({ refs, reload }: { refs: Refs; reload: number }) => 
           </tr>
         ))}
       </Table>
-      <p className="text-xs text-muted-foreground">Autonomie = stock total ÷ ventes moyennes par jour sur la période. Les mouvements de la période sont ceux déjà validés.</p>
+      <p className="text-xs text-muted-foreground">{t("Autonomie = stock total ÷ ventes moyennes par jour sur la période. Les mouvements de la période sont ceux déjà validés.")}</p>
     </div>
   );
 };
@@ -325,6 +330,7 @@ export const TransfersTab = ({ refs, reload }: { refs: Refs; reload: number }) =
 
 /* ---------- 6. Seuils d'alerte ---------- */
 export const ThresholdsTab = ({ refs, onChanged, canEdit }: { refs: Refs; onChanged: () => void; canEdit: boolean }) => {
+  const { t } = useLanguage();
   const { scopeQuery, tenantId } = useScope();
   const [tanks, setTanks] = useState<Row[]>([]);
   const [edits, setEdits] = useState<Record<string, Row>>({});
@@ -360,12 +366,12 @@ export const ThresholdsTab = ({ refs, onChanged, canEdit }: { refs: Refs; onChan
               <td className="p-2">{fmt(t.capacity_liters)}</td>
               <td className="p-2"><Input type="number" min={0} disabled={!canEdit} className="w-32" placeholder={`défaut ${fmt(Number(t.capacity_liters) * 0.25)}`} value={e.min ?? t.min_threshold ?? ""} onChange={(ev) => setEdits((s) => ({ ...s, [t.id]: { ...e, min: ev.target.value } }))} /></td>
               <td className="p-2"><Input type="number" min={0} disabled={!canEdit} className="w-32" placeholder={`défaut ${fmt(Number(t.capacity_liters) * 0.1)}`} value={e.crit ?? t.critical_threshold ?? ""} onChange={(ev) => setEdits((s) => ({ ...s, [t.id]: { ...e, crit: ev.target.value } }))} /></td>
-              <td className="p-2">{canEdit && edits[t.id] && <Button size="sm" variant="outline" className="gap-1" onClick={() => save(t)}><Save className="w-3.5 h-3.5" />Enregistrer</Button>}</td>
+              <td className="p-2">{canEdit && edits[t.id] && <Button size="sm" variant="outline" className="gap-1" onClick={() => save(t)}><Save className="w-3.5 h-3.5" />{t("Enregistrer")}</Button>}</td>
             </tr>
           );
         })}
       </Table>
-      <p className="text-xs text-muted-foreground">Laissez vide pour utiliser les valeurs par défaut (25 % et 10 % de la capacité). Chaque modification est inscrite dans le journal système.</p>
+      <p className="text-xs text-muted-foreground">{t("Laissez vide pour utiliser les valeurs par défaut (25 % et 10 % de la capacité). Chaque modification est inscrite dans le journal système.")}</p>
     </div>
   );
 };

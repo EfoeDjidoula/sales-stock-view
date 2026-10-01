@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useLanguage } from "@/hooks/useLanguage";
 import { format } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { useScope } from "@/hooks/useScope";
@@ -47,6 +48,7 @@ const errMsg = (e: unknown) => (e as { message?: string })?.message ?? String(e)
 const nowLocal = () => format(new Date(), "yyyy-MM-dd'T'HH:mm");
 
 export const SupplyWorkflowModule = () => {
+  const { t } = useLanguage();
   const { tenantId, countryId, scopeQuery } = useScope();
   const { can } = usePermissions();
   const { isPlatformAdmin } = usePlatformAdmin();
@@ -157,12 +159,12 @@ export const SupplyWorkflowModule = () => {
     <div className="space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-3">
         <div>
-          <h2 className="text-xl font-display font-semibold">Approvisionnement & réception</h2>
-          <p className="text-sm text-muted-foreground">Besoin → Demande → Validation → Commande → Chargement → Transport → Livraison → Réception → Mise en stock</p>
+          <h2 className="text-xl font-display font-semibold">{t("Approvisionnement & réception")}</h2>
+          <p className="text-sm text-muted-foreground">{t("Besoin → Demande → Validation → Commande → Chargement → Transport → Livraison → Réception → Mise en stock")}</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline" className="gap-2" onClick={exportPdf} disabled={filtered.length === 0}><FileDown className="w-4 h-4" />Export PDF</Button>
-          {canWrite && <Button className="gap-2" onClick={() => setCreating(true)}><Plus className="w-4 h-4" />Nouveau besoin</Button>}
+          <Button variant="outline" className="gap-2" onClick={exportPdf} disabled={filtered.length === 0}><FileDown className="w-4 h-4" />{t("Export PDF")}</Button>
+          {canWrite && <Button className="gap-2" onClick={() => setCreating(true)}><Plus className="w-4 h-4" />{t("Nouveau besoin")}</Button>}
         </div>
       </div>
 
@@ -178,27 +180,27 @@ export const SupplyWorkflowModule = () => {
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between gap-2">
-          <CardTitle className="text-base">Dossiers d'approvisionnement</CardTitle>
+          <CardTitle className="text-base">{t("Dossiers d'approvisionnement")}</CardTitle>
           <Select value={statusFilter} onValueChange={setStatusFilter}>
             <SelectTrigger className="w-56"><SelectValue /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="open">En cours</SelectItem>
-              <SelectItem value="all">Tous</SelectItem>
+              <SelectItem value="open">{t("En cours")}</SelectItem>
+              <SelectItem value="all">{t("Tous")}</SelectItem>
               {Object.entries(SUPPLY_STATUS).map(([k, v]) => <SelectItem key={k} value={k}>{v.label}</SelectItem>)}
             </SelectContent>
           </Select>
         </CardHeader>
         <CardContent>
           {loading ? <div className="flex justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-primary" /></div> : filtered.length === 0 ? (
-            <p className="text-center text-muted-foreground py-8">Aucun dossier</p>
+            <p className="text-center text-muted-foreground py-8">{t("Aucun dossier")}</p>
           ) : (
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader><TableRow>
-                  <TableHead>Réf.</TableHead><TableHead>Station</TableHead><TableHead>Produit</TableHead>
-                  <TableHead className="text-right">Demandé</TableHead><TableHead className="text-right">Chargé</TableHead>
-                  <TableHead className="text-right">Livré</TableHead><TableHead className="text-right">Réceptionné</TableHead>
-                  <TableHead className="text-right">Écart livr.</TableHead><TableHead>BL</TableHead><TableHead>Statut</TableHead><TableHead />
+                  <TableHead>Réf.</TableHead><TableHead>{t("Station")}</TableHead><TableHead>{t("Produit")}</TableHead>
+                  <TableHead className="text-right">{t("Demandé")}</TableHead><TableHead className="text-right">{t("Chargé")}</TableHead>
+                  <TableHead className="text-right">{t("Livré")}</TableHead><TableHead className="text-right">{t("Réceptionné")}</TableHead>
+                  <TableHead className="text-right">{t("Écart livr.")}</TableHead><TableHead>BL</TableHead><TableHead>{t("Statut")}</TableHead><TableHead />
                 </TableRow></TableHeader>
                 <TableBody>
                   {filtered.map((r) => (
@@ -213,7 +215,7 @@ export const SupplyWorkflowModule = () => {
                       <TableCell className={`text-right ${Number(r.delivery_variance) < 0 ? "text-destructive" : ""}`}>{fmt(r.delivery_variance)}</TableCell>
                       <TableCell>{r.bl_number ?? "—"}</TableCell>
                       <TableCell><Badge variant={SUPPLY_STATUS[r.status]?.variant}>{SUPPLY_STATUS[r.status]?.label}</Badge></TableCell>
-                      <TableCell><Button size="icon" variant="ghost" aria-label="Ouvrir" onClick={() => setSelected(r)}><Eye className="w-4 h-4" /></Button></TableCell>
+                      <TableCell><Button size="icon" variant="ghost" aria-label={t("Ouvrir")} onClick={() => setSelected(r)}><Eye className="w-4 h-4" /></Button></TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -225,36 +227,36 @@ export const SupplyWorkflowModule = () => {
 
       <Dialog open={creating} onOpenChange={setCreating}>
         <DialogContent className="sm:max-w-[520px]">
-          <DialogHeader><DialogTitle>Nouveau besoin d'approvisionnement</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{t("Nouveau besoin d'approvisionnement")}</DialogTitle></DialogHeader>
           <div className="grid grid-cols-2 gap-3">
-            <div className="col-span-2 space-y-1"><Label>Station destination</Label>
+            <div className="col-span-2 space-y-1"><Label>{t("Station destination")}</Label>
               <Select value={form.station_id} onValueChange={(v) => setForm({ ...form, station_id: v, tank_id: "" })}>
-                <SelectTrigger><SelectValue placeholder="Choisir" /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder={t("Choisir")} /></SelectTrigger>
                 <SelectContent>{stations.map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent>
               </Select></div>
-            <div className="space-y-1"><Label>Produit</Label>
+            <div className="space-y-1"><Label>{t("Produit")}</Label>
               <Select value={form.product_id} onValueChange={(v) => setForm({ ...form, product_id: v, tank_id: "" })}>
-                <SelectTrigger><SelectValue placeholder="Choisir" /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder={t("Choisir")} /></SelectTrigger>
                 <SelectContent>{products.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent>
               </Select></div>
-            <div className="space-y-1"><Label>Cuve (optionnel)</Label>
+            <div className="space-y-1"><Label>{t("Cuve (optionnel)")}</Label>
               <Select value={form.tank_id} onValueChange={(v) => setForm({ ...form, tank_id: v })}>
-                <SelectTrigger><SelectValue placeholder="À préciser" /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder={t("À préciser")} /></SelectTrigger>
                 <SelectContent>{stationTanks.map((t) => <SelectItem key={t.id} value={t.id}>{t.name} ({fmt(t.capacity_liters)} L)</SelectItem>)}</SelectContent>
               </Select></div>
-            <div className="space-y-1"><Label>Quantité demandée (L)</Label>
+            <div className="space-y-1"><Label>{t("Quantité demandée (L)")}</Label>
               <Input type="number" min={1} value={form.qty_requested} onChange={(e) => setForm({ ...form, qty_requested: e.target.value })} /></div>
-            <div className="space-y-1"><Label>Date souhaitée</Label>
+            <div className="space-y-1"><Label>{t("Date souhaitée")}</Label>
               <Input type="date" value={form.needed_date} onChange={(e) => setForm({ ...form, needed_date: e.target.value })} /></div>
-            <div className="col-span-2 space-y-1"><Label>Dépôt source (optionnel)</Label>
+            <div className="col-span-2 space-y-1"><Label>{t("Dépôt source (optionnel)")}</Label>
               <Select value={form.depot_id} onValueChange={(v) => setForm({ ...form, depot_id: v })}>
-                <SelectTrigger><SelectValue placeholder="À préciser" /></SelectTrigger>
+                <SelectTrigger><SelectValue placeholder={t("À préciser")} /></SelectTrigger>
                 <SelectContent>{depots.map((d) => <SelectItem key={d.id} value={d.id}>{d.name}</SelectItem>)}</SelectContent>
               </Select></div>
-            <div className="col-span-2 space-y-1"><Label>Motif du besoin</Label>
+            <div className="col-span-2 space-y-1"><Label>{t("Motif du besoin")}</Label>
               <Textarea rows={2} value={form.need_reason} onChange={(e) => setForm({ ...form, need_reason: e.target.value })} /></div>
           </div>
-          <DialogFooter><Button variant="outline" onClick={() => setCreating(false)}>Annuler</Button><Button onClick={create}>Enregistrer</Button></DialogFooter>
+          <DialogFooter><Button variant="outline" onClick={() => setCreating(false)}>{t("Annuler")}</Button><Button onClick={create}>{t("Enregistrer")}</Button></DialogFooter>
         </DialogContent>
       </Dialog>
 
@@ -279,6 +281,7 @@ interface DetailProps {
 }
 
 const SupplyDetail = ({ request: r, onClose, onChanged, canWrite, canValidate, lookups, name }: DetailProps) => {
+  const { t } = useLanguage();
   const [events, setEvents] = useState<Row[]>([]);
   const [d, setD] = useState<Row>({});
   const [reason, setReason] = useState("");
@@ -317,7 +320,7 @@ const SupplyDetail = ({ request: r, onClose, onChanged, canWrite, canValidate, l
   const field = (label: string, node: React.ReactNode, span = false) => <div className={`space-y-1 ${span ? "col-span-2" : ""}`}><Label>{label}</Label>{node}</div>;
   const pick = (k: string, list: Row[], labelKey = "name", onPick?: (x: Row) => void) => (
     <Select value={d[k] || ""} onValueChange={(v) => { const x = list.find((i) => i.id === v); setD({ ...d, [k]: v, ...(onPick && x ? onPick(x) : {}) }); }}>
-      <SelectTrigger><SelectValue placeholder="Choisir" /></SelectTrigger>
+      <SelectTrigger><SelectValue placeholder={t("Choisir")} /></SelectTrigger>
       <SelectContent>{list.map((i) => <SelectItem key={i.id} value={i.id}>{i[labelKey]}</SelectItem>)}</SelectContent>
     </Select>
   );
@@ -325,19 +328,19 @@ const SupplyDetail = ({ request: r, onClose, onChanged, canWrite, canValidate, l
   let stepForm: React.ReactNode = null;
   if (canWrite) {
     if (["draft", "rejected"].includes(r.status)) {
-      stepForm = <Button disabled={busy} onClick={() => run("submit")}>Soumettre la demande</Button>;
+      stepForm = <Button disabled={busy} onClick={() => run("submit")}>{t("Soumettre la demande")}</Button>;
     } else if (r.status === "submitted" && canValidate) {
       stepForm = <div className="grid grid-cols-2 gap-3 items-end">
         {field("Quantité validée (L)", <Input type="number" value={d.qty_approved} onChange={set("qty_approved")} />)}
-        <div className="flex gap-2"><Button disabled={busy} onClick={() => run("approve", { qty_approved: Number(d.qty_approved) })}><Check className="w-4 h-4 mr-1" />Valider</Button>
-          <Button variant="destructive" disabled={busy} onClick={() => setConfirmAction("reject")}><X className="w-4 h-4 mr-1" />Rejeter</Button></div>
+        <div className="flex gap-2"><Button disabled={busy} onClick={() => run("approve", { qty_approved: Number(d.qty_approved) })}><Check className="w-4 h-4 mr-1" />{t("Valider")}</Button>
+          <Button variant="destructive" disabled={busy} onClick={() => setConfirmAction("reject")}><X className="w-4 h-4 mr-1" />{t("Rejeter")}</Button></div>
       </div>;
     } else if (r.status === "approved") {
       stepForm = <div className="grid grid-cols-2 gap-3">
         {field("N° commande / ordre", <Input value={d.order_number} onChange={set("order_number")} />)}
         {field("Fournisseur", pick("supplier_id", lookups.suppliers))}
         {field("Dépôt source", pick("depot_id", lookups.depots), true)}
-        <Button className="col-span-2" disabled={busy} onClick={() => run("order", { order_number: d.order_number, supplier_id: d.supplier_id, depot_id: d.depot_id })}>Enregistrer la commande</Button>
+        <Button className="col-span-2" disabled={busy} onClick={() => run("order", { order_number: d.order_number, supplier_id: d.supplier_id, depot_id: d.depot_id })}>{t("Enregistrer la commande")}</Button>
       </div>;
     } else if (r.status === "ordered") {
       stepForm = <div className="grid grid-cols-2 gap-3">
@@ -348,22 +351,22 @@ const SupplyDetail = ({ request: r, onClose, onChanged, canWrite, canValidate, l
         {field("Camion", pick("truck_id", lookups.trucks, "registration", (t) => ({ vehicle_registration: t.registration, driver_name: t.driver_name ?? d.driver_name })))}
         {field("Immatriculation", <Input value={d.vehicle_registration} onChange={set("vehicle_registration")} />)}
         {field("Chauffeur", <Input value={d.driver_name} onChange={set("driver_name")} />)}
-        {field("Scellés (n°)", <Input value={d.seals} onChange={set("seals")} placeholder="Optionnel" />)}
+        {field("Scellés (n°)", <Input value={d.seals} onChange={set("seals")} placeholder={t("Optionnel")} />)}
         <Button className="col-span-2" disabled={busy} onClick={() => run("load", {
           qty_loaded: Number(d.qty_loaded), bl_number: d.bl_number, loaded_at: d.loaded_at, depot_id: d.depot_id, truck_id: d.truck_id,
-          vehicle_registration: d.vehicle_registration, driver_name: d.driver_name, seals: d.seals })}>Enregistrer le chargement</Button>
+          vehicle_registration: d.vehicle_registration, driver_name: d.driver_name, seals: d.seals })}>{t("Enregistrer le chargement")}</Button>
       </div>;
     } else if (r.status === "loaded") {
       stepForm = <div className="grid grid-cols-2 gap-3 items-end">
         {field("Date/heure de départ", <Input type="datetime-local" value={d.departed_at} onChange={set("departed_at")} />)}
-        <Button disabled={busy} onClick={() => run("depart", { departed_at: d.departed_at })}>Démarrer le transport</Button>
+        <Button disabled={busy} onClick={() => run("depart", { departed_at: d.departed_at })}>{t("Démarrer le transport")}</Button>
       </div>;
     } else if (r.status === "in_transit") {
       stepForm = <div className="grid grid-cols-2 gap-3">
         {field("Quantité livrée (L)", <Input type="number" value={d.qty_delivered} onChange={set("qty_delivered")} />)}
         {field("Date/heure d'arrivée", <Input type="datetime-local" value={d.delivered_at} onChange={set("delivered_at")} />)}
-        {r.seals && <label className="col-span-2 flex items-center gap-2 text-sm"><Checkbox checked={!!d.seals_intact} onCheckedChange={(v) => setD({ ...d, seals_intact: !!v })} />Scellés intacts à l'arrivée ({r.seals})</label>}
-        <Button className="col-span-2" disabled={busy} onClick={() => run("deliver", { qty_delivered: Number(d.qty_delivered), delivered_at: d.delivered_at, ...(r.seals ? { seals_intact: !!d.seals_intact } : {}) })}>Enregistrer la livraison</Button>
+        {r.seals && <label className="col-span-2 flex items-center gap-2 text-sm"><Checkbox checked={!!d.seals_intact} onCheckedChange={(v) => setD({ ...d, seals_intact: !!v })} />{t("Scellés intacts à l'arrivée (")}{r.seals})</label>}
+        <Button className="col-span-2" disabled={busy} onClick={() => run("deliver", { qty_delivered: Number(d.qty_delivered), delivered_at: d.delivered_at, ...(r.seals ? { seals_intact: !!d.seals_intact } : {}) })}>{t("Enregistrer la livraison")}</Button>
       </div>;
     } else if (r.status === "delivered") {
       stepForm = canValidate ? <div className="grid grid-cols-2 gap-3">
@@ -372,16 +375,16 @@ const SupplyDetail = ({ request: r, onClose, onChanged, canWrite, canValidate, l
         {field("Jauge après (L)", <Input type="number" value={d.gauge_after} onChange={set("gauge_after")} />)}
         {field("Date/heure de réception", <Input type="datetime-local" value={d.received_at} onChange={set("received_at")} />, true)}
         <div className="col-span-2 rounded-lg border p-3 text-sm grid grid-cols-3 gap-2">
-          <div><div className="text-muted-foreground">Livré (BL)</div><div className="font-semibold">{fmt(r.qty_delivered)} L</div></div>
-          <div><div className="text-muted-foreground">Réceptionné (jauges)</div><div className="font-semibold">{hasGauges ? `${fmt(received)} L` : "—"}</div></div>
-          <div><div className="text-muted-foreground">Écart de livraison</div>
+          <div><div className="text-muted-foreground">{t("Livré (BL)")}</div><div className="font-semibold">{fmt(r.qty_delivered)} L</div></div>
+          <div><div className="text-muted-foreground">{t("Réceptionné (jauges)")}</div><div className="font-semibold">{hasGauges ? `${fmt(received)} L` : "—"}</div></div>
+          <div><div className="text-muted-foreground">{t("Écart de livraison")}</div>
             <div className={`font-semibold ${liveVariance !== null && liveVariance < 0 ? "text-destructive" : ""}`}>
               {liveVariance === null ? "—" : `${liveVariance > 0 ? "+" : ""}${fmt(liveVariance)} L (${((liveVariance / Number(r.qty_delivered)) * 100).toFixed(2)} %)`}</div></div>
         </div>
         <Button className="col-span-2" disabled={busy || !d.tank_id || !hasGauges} onClick={() => run("receive", {
           tank_id: d.tank_id, gauge_before: Number(d.gauge_before), gauge_after: Number(d.gauge_after), received_at: d.received_at })}>
-          Valider la réception et mettre en stock</Button>
-      </div> : <p className="text-sm text-muted-foreground">En attente de validation de la réception par un responsable.</p>;
+          {t("Valider la réception et mettre en stock")}</Button>
+      </div> : <p className="text-sm text-muted-foreground">{t("En attente de validation de la réception par un responsable.")}</p>;
     }
   }
 
@@ -415,26 +418,26 @@ const SupplyDetail = ({ request: r, onClose, onChanged, canWrite, canValidate, l
         <div className="grid grid-cols-2 md:grid-cols-4 gap-x-4 gap-y-2 text-sm">
           {info.map(([k, v]) => <div key={k}><div className="text-muted-foreground text-xs">{k}</div><div className="font-medium">{v}</div></div>)}
         </div>
-        {r.need_reason && <p className="text-sm"><span className="text-muted-foreground">Motif du besoin : </span>{r.need_reason}</p>}
-        {r.observations && <p className="text-sm whitespace-pre-line"><span className="text-muted-foreground">Observations : </span>{r.observations}</p>}
-        {r.stock_movement_id && <p className="text-sm text-primary">Entrée en stock générée automatiquement ({fmt(r.qty_received)} L).</p>}
+        {r.need_reason && <p className="text-sm"><span className="text-muted-foreground">{t("Motif du besoin :")} </span>{r.need_reason}</p>}
+        {r.observations && <p className="text-sm whitespace-pre-line"><span className="text-muted-foreground">{t("Observations :")} </span>{r.observations}</p>}
+        {r.stock_movement_id && <p className="text-sm text-primary">{t("Entrée en stock générée automatiquement (")}{fmt(r.qty_received)} {t("L).")}</p>}
 
         {stepForm && (
-          <Card><CardHeader className="pb-2"><CardTitle className="text-sm">Étape suivante</CardTitle></CardHeader>
+          <Card><CardHeader className="pb-2"><CardTitle className="text-sm">{t("Étape suivante")}</CardTitle></CardHeader>
             <CardContent className="space-y-3">
               {stepForm}
-              <div className="space-y-1"><Label>Observations (ajoutées à l'étape)</Label>
+              <div className="space-y-1"><Label>{t("Observations (ajoutées à l'étape)")}</Label>
                 <Textarea rows={2} value={d.observations} onChange={(e) => setD({ ...d, observations: e.target.value })} /></div>
             </CardContent></Card>
         )}
 
         {canWrite && !["received", "cancelled"].includes(r.status) && (canValidate || ["draft", "submitted", "rejected"].includes(r.status)) && (
-          <Button variant="outline" className="text-destructive w-fit" onClick={() => setConfirmAction("cancel")}><Ban className="w-4 h-4 mr-1" />Annuler le dossier</Button>
+          <Button variant="outline" className="text-destructive w-fit" onClick={() => setConfirmAction("cancel")}><Ban className="w-4 h-4 mr-1" />{t("Annuler le dossier")}</Button>
         )}
 
         <div>
-          <h4 className="text-sm font-semibold mb-2">Historique</h4>
-          {events.length === 0 ? <p className="text-sm text-muted-foreground">Aucune étape</p> : (
+          <h4 className="text-sm font-semibold mb-2">{t("Historique")}</h4>
+          {events.length === 0 ? <p className="text-sm text-muted-foreground">{t("Aucune étape")}</p> : (
             <ul className="space-y-1 text-sm">
               {events.map((e) => (
                 <li key={e.id} className="border-l-2 border-primary pl-3">
@@ -449,10 +452,10 @@ const SupplyDetail = ({ request: r, onClose, onChanged, canWrite, canValidate, l
         <Dialog open={!!confirmAction} onOpenChange={(o) => !o && setConfirmAction(null)}>
           <DialogContent>
             <DialogHeader><DialogTitle>{confirmAction === "reject" ? "Rejeter la demande" : "Annuler le dossier"}</DialogTitle></DialogHeader>
-            <Label>Motif (obligatoire)</Label>
+            <Label>{t("Motif (obligatoire)")}</Label>
             <Textarea value={reason} onChange={(e) => setReason(e.target.value)} />
             <DialogFooter>
-              <Button variant="destructive" disabled={busy || !reason.trim()} onClick={() => run(confirmAction!, {}, reason)}>Confirmer</Button>
+              <Button variant="destructive" disabled={busy || !reason.trim()} onClick={() => run(confirmAction!, {}, reason)}>{t("Confirmer")}</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
