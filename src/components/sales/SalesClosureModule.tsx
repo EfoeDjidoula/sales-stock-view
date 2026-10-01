@@ -426,6 +426,7 @@ export const SalesClosureModule = () => {
 };
 
 const ClosureHistory = ({ stations, onOpen }: { stations: Row[]; onOpen: (stationId: string, date: string) => void }) => {
+  const { t } = useLanguage();
   const { scopeQuery } = useScope();
   const [station, setStation] = useState("all");
   const [status, setStatus] = useState("all");
@@ -445,25 +446,25 @@ const ClosureHistory = ({ stations, onOpen }: { stations: Row[]; onOpen: (statio
   return (
     <div className="space-y-3">
       <div className="grid gap-3 md:grid-cols-4">
-        <Select value={station} onValueChange={setStation}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">Toutes les stations</SelectItem>{stations.map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent></Select>
-        <Select value={status} onValueChange={setStatus}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">Tous les statuts</SelectItem>{Object.entries(CLOSURE_STATUS).map(([k, v]) => <SelectItem key={k} value={k}>{v.label}</SelectItem>)}</SelectContent></Select>
+         <Select value={station} onValueChange={setStation}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">{t("Toutes les stations")}</SelectItem>{stations.map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent></Select>
+         <Select value={status} onValueChange={setStatus}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">{t("Tous les statuts")}</SelectItem>{Object.entries(CLOSURE_STATUS).map(([k, v]) => <SelectItem key={k} value={k}>{t(v.label)}</SelectItem>)}</SelectContent></Select>
         <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
         <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} />
       </div>
       <div className="overflow-x-auto rounded-lg border border-border">
         <table className="w-full text-sm">
-          <thead className="bg-muted/40 text-muted-foreground"><tr><th className="p-2 text-left">Date</th><th className="p-2 text-left">Station</th><th className="p-2 text-left">Statut</th><th className="p-2 text-right">Volume</th><th className="p-2 text-right">Montant</th><th className="p-2 text-right">Encaissé</th><th className="p-2 text-right">Écart</th><th /></tr></thead>
+           <thead className="bg-muted/40 text-muted-foreground"><tr><th className="p-2 text-left">Date</th><th className="p-2 text-left">{t("Station")}</th><th className="p-2 text-left">{t("Statut")}</th><th className="p-2 text-right">{t("Volume")}</th><th className="p-2 text-right">{t("Montant")}</th><th className="p-2 text-right">{t("Encaissé")}</th><th className="p-2 text-right">{t("Écart")}</th><th /></tr></thead>
           <tbody>
             {rows.map((r) => (
               <tr key={r.id} className="border-t border-border">
                 <td className="p-2">{r.closure_date}</td><td className="p-2">{name(r.station_id)}</td>
-                <td className="p-2"><Badge variant={CLOSURE_STATUS[r.status]?.variant}>{CLOSURE_STATUS[r.status]?.label}</Badge></td>
+                 <td className="p-2"><Badge variant={CLOSURE_STATUS[r.status]?.variant}>{t(CLOSURE_STATUS[r.status]?.label ?? "")}</Badge></td>
                 <td className="p-2 text-right">{fmt(r.total_volume)} L</td><td className="p-2 text-right">{fmt(r.total_amount)}</td><td className="p-2 text-right">{fmt(r.total_collected)}</td>
                 <td className={`p-2 text-right ${Number(r.cash_variance) < 0 ? "text-destructive" : ""}`}>{fmt(r.cash_variance)}</td>
-                <td className="p-1"><Button size="sm" variant="ghost" onClick={() => onOpen(r.station_id, r.closure_date)}>Ouvrir</Button></td>
+                 <td className="p-1"><Button size="sm" variant="ghost" onClick={() => onOpen(r.station_id, r.closure_date)}>{t("Ouvrir")}</Button></td>
               </tr>
             ))}
-            {!rows.length && <tr><td colSpan={8} className="p-4 text-center text-muted-foreground">Aucune clôture sur cette période.</td></tr>}
+             {!rows.length && <tr><td colSpan={8} className="p-4 text-center text-muted-foreground">{t("Aucune clôture sur cette période.")}</td></tr>}
           </tbody>
         </table>
       </div>
@@ -472,6 +473,7 @@ const ClosureHistory = ({ stations, onOpen }: { stations: Row[]; onOpen: (statio
 };
 
 const PaymentMethodsTab = ({ methods, canEdit, onChanged }: { methods: Row[]; canEdit: boolean; onChanged: () => void }) => {
+  const { t } = useLanguage();
   const { tenantId, countryId } = useScope();
   const [label, setLabel] = useState("");
   const update = async (id: string, patch: Row) => {
@@ -491,15 +493,15 @@ const PaymentMethodsTab = ({ methods, canEdit, onChanged }: { methods: Row[]; ca
         {methods.map((m) => (
           <div key={m.id} className="flex items-center gap-3 p-2">
             <Input className="max-w-xs" defaultValue={m.label} disabled={!canEdit} onBlur={(e) => e.target.value.trim() && e.target.value !== m.label && update(m.id, { label: e.target.value.trim() })} />
-            <Badge variant={m.is_active ? "outline" : "secondary"}>{m.is_active ? "Actif" : "Inactif"}</Badge>
-            {canEdit && <Button size="sm" variant="ghost" onClick={() => update(m.id, { is_active: !m.is_active })}>{m.is_active ? "Désactiver" : "Activer"}</Button>}
+             <Badge variant={m.is_active ? "outline" : "secondary"}>{t(m.is_active ? "Actif" : "Inactif")}</Badge>
+             {canEdit && <Button size="sm" variant="ghost" onClick={() => update(m.id, { is_active: !m.is_active })}>{t(m.is_active ? "Désactiver" : "Activer")}</Button>}
           </div>
         ))}
       </div>
       {canEdit && (
         <div className="flex gap-2 max-w-md">
-          <Input placeholder="Nouveau mode de paiement" value={label} onChange={(e) => setLabel(e.target.value)} />
-          <Button onClick={add} disabled={!label.trim()} className="gap-2"><Plus className="w-4 h-4" /> Ajouter</Button>
+           <Input placeholder={t("Nouveau mode de paiement")} value={label} onChange={(e) => setLabel(e.target.value)} />
+           <Button onClick={add} disabled={!label.trim()} className="gap-2"><Plus className="w-4 h-4" /> {t("Ajouter")}</Button>
         </div>
       )}
     </div>

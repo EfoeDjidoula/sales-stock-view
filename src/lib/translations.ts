@@ -175,4 +175,7 @@ export const translations: Record<string, string> = {
   "Soumettre": "Submit", "Rejeter": "Reject", "Valider": "Validate",
   "Historique de cette clôture": "History of this close", "Aucun changement d'état.": "No status changes.",
   "Rejeter la clôture": "Reject daily close", "Rouvrir la clôture validée": "Reopen validated close", "Motif (obligatoire)": "Reason (required)", "Confirmer": "Confirm",
+  "Tous les statuts": "All statuses", "Volume": "Volume", "Encaissé": "Collected", "Écart": "Variance", "Ouvrir": "Open",
+  "Aucune clôture sur cette période.": "No daily closes for this period.", "Inactif": "Inactive", "Désactiver": "Deactivate", "Activer": "Activate",
+  "Nouveau mode de paiement": "New payment method", "Ajouter": "Add", "Bas": "Low", "Moyen": "Medium", "Bon": "Good", "Capacité": "Capacity",
 };
