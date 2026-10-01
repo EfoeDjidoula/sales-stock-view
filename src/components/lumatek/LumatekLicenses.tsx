@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useLanguage } from "@/hooks/useLanguage";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -36,6 +37,7 @@ const today = () => new Date().toISOString().slice(0, 10);
 const inOneYear = () => { const d = new Date(); d.setFullYear(d.getFullYear() + 1); return d.toISOString().slice(0, 10); };
 
 export const LumatekLicenses = () => {
+  const { t } = useLanguage();
   const { plans, licenses, usage, isLoading, savePlan, deletePlan, saveLicense, licenseAction } = useLicenses();
   const { tenants } = useLumatekTenants();
   const { data: catalog = [] } = useModuleCatalog();
@@ -78,34 +80,34 @@ export const LumatekLicenses = () => {
   return (
     <Tabs defaultValue="licenses">
       <TabsList>
-        <TabsTrigger value="licenses">Licences</TabsTrigger>
-        <TabsTrigger value="plans">Plans</TabsTrigger>
+        <TabsTrigger value="licenses">{t("Licences")}</TabsTrigger>
+        <TabsTrigger value="plans">{t("Plans")}</TabsTrigger>
       </TabsList>
 
       <TabsContent value="licenses">
         <Card className="border-indigo-500/20">
           <CardHeader className="flex flex-row items-center justify-between gap-4">
             <CardTitle className="text-base">
-              Licences clients
+              {t("Licences clients")}
               {unlicensed.length > 0 && (
-                <span className="ml-2 text-xs font-normal text-amber-400">{unlicensed.length} client(s) sans licence</span>
+                <span className="ml-2 text-xs font-normal text-amber-400">{unlicensed.length} {t("client(s) sans licence")}</span>
               )}
             </CardTitle>
             <Button className="gap-2" onClick={() => setLic({
               status: "draft", start_date: today(), expiration_date: inOneYear(), grace_period_days: 15,
               automatic_renewal: false, tenant_id: unlicensed[0]?.id, plan_id: plans[0]?.id,
             })}>
-              <Plus className="h-4 w-4" /> Nouvelle licence
+              <Plus className="h-4 w-4" /> {t("Nouvelle licence")}
             </Button>
           </CardHeader>
           <CardContent className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>N° licence</TableHead><TableHead>Client</TableHead><TableHead>Plan</TableHead>
-                  <TableHead>Période</TableHead><TableHead>Statut</TableHead>
-                  <TableHead>Utilisateurs</TableHead><TableHead>Pays</TableHead><TableHead>Stations</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead>{t("N° licence")}</TableHead><TableHead>{t("Client")}</TableHead><TableHead>{t("Plan")}</TableHead>
+                  <TableHead>{t("Période")}</TableHead><TableHead>{t("Statut")}</TableHead>
+                  <TableHead>{t("Utilisateurs")}</TableHead><TableHead>{t("Pays")}</TableHead><TableHead>{t("Stations")}</TableHead>
+                  <TableHead className="text-right">{t("Actions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -119,7 +121,7 @@ export const LumatekLicenses = () => {
                       <TableCell>{p?.name || "—"}</TableCell>
                       <TableCell className="text-xs">
                         {l.start_date} → {l.expiration_date}
-                        <div className="text-muted-foreground">Grâce {l.grace_period_days} j{l.automatic_renewal ? " · renouv. auto" : ""}</div>
+                        <div className="text-muted-foreground">{t("Grâce")} {l.grace_period_days} j{l.automatic_renewal ? " · renouv. auto" : ""}</div>
                       </TableCell>
                       <TableCell><Badge variant="outline" className={STATUS_META[st].className}>{STATUS_META[st].label}</Badge></TableCell>
                       <TableCell>{usageCell(usage.users[l.tenant_id] || 0, l.max_users ?? p?.max_users ?? null)}</TableCell>
@@ -127,21 +129,21 @@ export const LumatekLicenses = () => {
                       <TableCell>{usageCell(usage.stations[l.tenant_id] || 0, l.max_stations ?? p?.max_stations ?? null)}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-1">
-                          <Button size="icon" variant="ghost" title="Prolonger de 30 jours" onClick={() => licenseAction.mutate({ license: l, action: "extend", days: 30 })}><CalendarPlus className="h-4 w-4" /></Button>
-                          <Button size="icon" variant="ghost" title="Renouveler (même durée)" onClick={() => licenseAction.mutate({ license: l, action: "renew" })}><RefreshCw className="h-4 w-4" /></Button>
+                          <Button size="icon" variant="ghost" title={t("Prolonger de 30 jours")} onClick={() => licenseAction.mutate({ license: l, action: "extend", days: 30 })}><CalendarPlus className="h-4 w-4" /></Button>
+                          <Button size="icon" variant="ghost" title={t("Renouveler (même durée)")} onClick={() => licenseAction.mutate({ license: l, action: "renew" })}><RefreshCw className="h-4 w-4" /></Button>
                           {l.status === "suspended" ? (
-                            <Button size="icon" variant="ghost" title="Réactiver" onClick={() => licenseAction.mutate({ license: l, action: "reactivate" })}><PlayCircle className="h-4 w-4 text-emerald-500" /></Button>
+                            <Button size="icon" variant="ghost" title={t("Réactiver")} onClick={() => licenseAction.mutate({ license: l, action: "reactivate" })}><PlayCircle className="h-4 w-4 text-emerald-500" /></Button>
                           ) : (
-                            <Button size="icon" variant="ghost" title="Suspendre" onClick={() => licenseAction.mutate({ license: l, action: "suspend" })}><PauseCircle className="h-4 w-4 text-destructive" /></Button>
+                            <Button size="icon" variant="ghost" title={t("Suspendre")} onClick={() => licenseAction.mutate({ license: l, action: "suspend" })}><PauseCircle className="h-4 w-4 text-destructive" /></Button>
                           )}
-                          <Button size="icon" variant="ghost" title="Modifier" onClick={() => setLic(l)}><Pencil className="h-4 w-4" /></Button>
+                          <Button size="icon" variant="ghost" title={t("Modifier")} onClick={() => setLic(l)}><Pencil className="h-4 w-4" /></Button>
                         </div>
                       </TableCell>
                     </TableRow>
                   );
                 })}
                 {licenses.length === 0 && (
-                  <TableRow><TableCell colSpan={9} className="text-center text-sm text-muted-foreground">Aucune licence.</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={9} className="text-center text-sm text-muted-foreground">{t("Aucune licence.")}</TableCell></TableRow>
                 )}
               </TableBody>
             </Table>
@@ -152,18 +154,18 @@ export const LumatekLicenses = () => {
       <TabsContent value="plans">
         <Card className="border-indigo-500/20">
           <CardHeader className="flex flex-row items-center justify-between gap-4">
-            <CardTitle className="text-base">Plans de licence</CardTitle>
+            <CardTitle className="text-base">{t("Plans de licence")}</CardTitle>
             <Button className="gap-2" onClick={() => setPlan({ code: "", name: "", is_active: true, modules: catalog.filter((m) => m.is_core).map((m) => m.key) })}>
-              <Plus className="h-4 w-4" /> Nouveau plan
+              <Plus className="h-4 w-4" /> {t("Nouveau plan")}
             </Button>
           </CardHeader>
           <CardContent className="overflow-x-auto">
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Code</TableHead><TableHead>Nom</TableHead><TableHead>Modules</TableHead>
-                  <TableHead>Utilisateurs</TableHead><TableHead>Pays</TableHead><TableHead>Stations</TableHead>
-                  <TableHead>Statut</TableHead><TableHead className="text-right">Actions</TableHead>
+                  <TableHead>{t("Code")}</TableHead><TableHead>{t("Nom")}</TableHead><TableHead>{t("Modules")}</TableHead>
+                  <TableHead>{t("Utilisateurs")}</TableHead><TableHead>{t("Pays")}</TableHead><TableHead>{t("Stations")}</TableHead>
+                  <TableHead>{t("Statut")}</TableHead><TableHead className="text-right">{t("Actions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -178,10 +180,10 @@ export const LumatekLicenses = () => {
                     <TableCell>{lim(p.max_users)}</TableCell>
                     <TableCell>{lim(p.max_countries)}</TableCell>
                     <TableCell>{lim(p.max_stations)}</TableCell>
-                    <TableCell>{p.is_active ? <Badge variant="outline">Actif</Badge> : <Badge variant="outline" className="text-muted-foreground">Inactif</Badge>}</TableCell>
+                    <TableCell>{p.is_active ? <Badge variant="outline">{t("Actif")}</Badge> : <Badge variant="outline" className="text-muted-foreground">{t("Inactif")}</Badge>}</TableCell>
                     <TableCell className="text-right">
-                      <Button size="icon" variant="ghost" title="Modifier" onClick={() => setPlan({ ...p })}><Pencil className="h-4 w-4" /></Button>
-                      <Button size="icon" variant="ghost" title="Supprimer" onClick={() => setToDelete(p)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                      <Button size="icon" variant="ghost" title={t("Modifier")} onClick={() => setPlan({ ...p })}><Pencil className="h-4 w-4" /></Button>
+                      <Button size="icon" variant="ghost" title={t("Supprimer")} onClick={() => setToDelete(p)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -196,68 +198,68 @@ export const LumatekLicenses = () => {
         <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{lic?.id ? "Modifier la licence" : "Nouvelle licence"}</DialogTitle>
-            <DialogDescription>Les limites vides reprennent celles du plan. Elles sont contrôlées par le serveur.</DialogDescription>
+            <DialogDescription>{t("Les limites vides reprennent celles du plan. Elles sont contrôlées par le serveur.")}</DialogDescription>
           </DialogHeader>
           {lic && (
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="space-y-1.5">
-                <Label>Client *</Label>
+                <Label>{t("Client *")}</Label>
                 <Select value={lic.tenant_id} onValueChange={(v) => setLic({ ...lic, tenant_id: v })} disabled={!!lic.id}>
-                  <SelectTrigger><SelectValue placeholder="Choisir" /></SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder={t("Choisir")} /></SelectTrigger>
                   <SelectContent>{tenants.map((t) => <SelectItem key={t.id} value={t.id}>{t.trade_name}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
               <div className="space-y-1.5">
-                <Label>Plan *</Label>
+                <Label>{t("Plan *")}</Label>
                 <Select value={lic.plan_id} onValueChange={(v) => setLic({ ...lic, plan_id: v })}>
-                  <SelectTrigger><SelectValue placeholder="Choisir" /></SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder={t("Choisir")} /></SelectTrigger>
                   <SelectContent>{plans.filter((p) => p.is_active || p.id === lic.plan_id).map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
               <div className="space-y-1.5">
-                <Label>N° licence</Label>
-                <Input value={lic.license_number ?? ""} placeholder="Généré automatiquement" onChange={(e) => setLic({ ...lic, license_number: e.target.value })} />
+                <Label>{t("N° licence")}</Label>
+                <Input value={lic.license_number ?? ""} placeholder={t("Généré automatiquement")} onChange={(e) => setLic({ ...lic, license_number: e.target.value })} />
               </div>
               <div className="space-y-1.5">
-                <Label>Statut</Label>
+                <Label>{t("Statut")}</Label>
                 <Select value={lic.status} onValueChange={(v) => setLic({ ...lic, status: v as LicenseStatus })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>{LICENSE_STATUSES.map((s) => <SelectItem key={s} value={s}>{STATUS_META[s].label}</SelectItem>)}</SelectContent>
                 </Select>
               </div>
-              <div className="space-y-1.5"><Label>Date de début *</Label><Input type="date" value={lic.start_date ?? ""} onChange={(e) => setLic({ ...lic, start_date: e.target.value })} /></div>
+              <div className="space-y-1.5"><Label>{t("Date de début *")}</Label><Input type="date" value={lic.start_date ?? ""} onChange={(e) => setLic({ ...lic, start_date: e.target.value })} /></div>
               <div className="space-y-1.5">
-                <Label>Date d'expiration *</Label>
+                <Label>{t("Date d'expiration *")}</Label>
                 <Input type="date" min={lic.start_date} value={lic.expiration_date ?? ""} onChange={(e) => setLic({ ...lic, expiration_date: e.target.value })} />
                 {lic.start_date && lic.expiration_date && lic.expiration_date < lic.start_date && (
-                  <p className="text-xs text-destructive">L'expiration doit suivre le début.</p>
+                  <p className="text-xs text-destructive">{t("L'expiration doit suivre le début.")}</p>
                 )}
               </div>
-              <div className="space-y-1.5"><Label>Date d'activation</Label><Input type="date" value={lic.activation_date ?? ""} onChange={(e) => setLic({ ...lic, activation_date: e.target.value })} /></div>
+              <div className="space-y-1.5"><Label>{t("Date d'activation")}</Label><Input type="date" value={lic.activation_date ?? ""} onChange={(e) => setLic({ ...lic, activation_date: e.target.value })} /></div>
               {numField("Période de grâce (jours)", lic.grace_period_days, (v) => setLic({ ...lic, grace_period_days: v ?? 0 }), "15")}
               {numField("Utilisateurs max", lic.max_users, (v) => setLic({ ...lic, max_users: v }), `Plan : ${lim(planOf(lic.plan_id || "")?.max_users ?? null)}`)}
               {numField("Pays max", lic.max_countries, (v) => setLic({ ...lic, max_countries: v }), `Plan : ${lim(planOf(lic.plan_id || "")?.max_countries ?? null)}`)}
               {numField("Stations max", lic.max_stations, (v) => setLic({ ...lic, max_stations: v }), `Plan : ${lim(planOf(lic.plan_id || "")?.max_stations ?? null)}`)}
               <div className="space-y-1.5">
-                <Label>Après la période de grâce</Label>
+                <Label>{t("Après la période de grâce")}</Label>
                 <Select value={lic.expiry_policy ?? "read_only"} onValueChange={(v) => setLic({ ...lic, expiry_policy: v as License["expiry_policy"] })}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="read_only">Lecture seule (tout consultable)</SelectItem>
-                    <SelectItem value="limited">Accès limité (ventes, stock, historique)</SelectItem>
+                    <SelectItem value="read_only">{t("Lecture seule (tout consultable)")}</SelectItem>
+                    <SelectItem value="limited">{t("Accès limité (ventes, stock, historique)")}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div className="flex items-center gap-2 pt-6">
                 <Switch checked={!!lic.automatic_renewal} onCheckedChange={(c) => setLic({ ...lic, automatic_renewal: c })} />
-                <Label>Renouvellement automatique</Label>
+                <Label>{t("Renouvellement automatique")}</Label>
               </div>
-              <div className="space-y-1.5 sm:col-span-2"><Label>Notes</Label><Textarea value={lic.notes ?? ""} onChange={(e) => setLic({ ...lic, notes: e.target.value })} /></div>
+              <div className="space-y-1.5 sm:col-span-2"><Label>{t("Notes")}</Label><Textarea value={lic.notes ?? ""} onChange={(e) => setLic({ ...lic, notes: e.target.value })} /></div>
             </div>
           )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setLic(null)}>Annuler</Button>
-            <Button onClick={submitLicense} disabled={saveLicense.isPending}>Enregistrer</Button>
+            <Button variant="outline" onClick={() => setLic(null)}>{t("Annuler")}</Button>
+            <Button onClick={submitLicense} disabled={saveLicense.isPending}>{t("Enregistrer")}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -267,28 +269,28 @@ export const LumatekLicenses = () => {
         <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{plan?.id ? "Modifier le plan" : "Nouveau plan"}</DialogTitle>
-            <DialogDescription>Laissez une limite vide pour « illimité ». Les modules cœur restent toujours accessibles.</DialogDescription>
+            <DialogDescription>{t("Laissez une limite vide pour « illimité ». Les modules cœur restent toujours accessibles.")}</DialogDescription>
           </DialogHeader>
           {plan && (
             <div className="space-y-4">
               <div className="grid gap-4 sm:grid-cols-2">
-                <div className="space-y-1.5"><Label>Code *</Label><Input value={plan.code ?? ""} onChange={(e) => setPlan({ ...plan, code: e.target.value })} /></div>
-                <div className="space-y-1.5"><Label>Nom *</Label><Input value={plan.name ?? ""} onChange={(e) => setPlan({ ...plan, name: e.target.value })} /></div>
-                <div className="space-y-1.5 sm:col-span-2"><Label>Description</Label><Input value={plan.description ?? ""} onChange={(e) => setPlan({ ...plan, description: e.target.value })} /></div>
+                <div className="space-y-1.5"><Label>{t("Code *")}</Label><Input value={plan.code ?? ""} onChange={(e) => setPlan({ ...plan, code: e.target.value })} /></div>
+                <div className="space-y-1.5"><Label>{t("Nom *")}</Label><Input value={plan.name ?? ""} onChange={(e) => setPlan({ ...plan, name: e.target.value })} /></div>
+                <div className="space-y-1.5 sm:col-span-2"><Label>{t("Description")}</Label><Input value={plan.description ?? ""} onChange={(e) => setPlan({ ...plan, description: e.target.value })} /></div>
                 {numField("Utilisateurs max", plan.max_users, (v) => setPlan({ ...plan, max_users: v }))}
                 {numField("Pays max", plan.max_countries, (v) => setPlan({ ...plan, max_countries: v }))}
                 {numField("Stations max", plan.max_stations, (v) => setPlan({ ...plan, max_stations: v }))}
                 <div className="flex items-center gap-2 pt-6">
                   <Switch checked={plan.is_active ?? true} onCheckedChange={(c) => setPlan({ ...plan, is_active: c })} />
-                  <Label>Plan disponible</Label>
+                  <Label>{t("Plan disponible")}</Label>
                 </div>
               </div>
               <div>
                 <div className="mb-2 flex items-center justify-between">
-                  <Label>Modules autorisés ({plan.modules.length}/{catalog.length})</Label>
+                  <Label>{t("Modules autorisés (")}{plan.modules.length}/{catalog.length})</Label>
                   <div className="flex gap-2">
-                    <Button size="sm" variant="outline" onClick={() => setPlan({ ...plan, modules: catalog.map((m) => m.key) })}>Tout</Button>
-                    <Button size="sm" variant="outline" onClick={() => setPlan({ ...plan, modules: catalog.filter((m) => m.is_core).map((m) => m.key) })}>Cœur seul</Button>
+                    <Button size="sm" variant="outline" onClick={() => setPlan({ ...plan, modules: catalog.map((m) => m.key) })}>{t("Tout")}</Button>
+                    <Button size="sm" variant="outline" onClick={() => setPlan({ ...plan, modules: catalog.filter((m) => m.is_core).map((m) => m.key) })}>{t("Cœur seul")}</Button>
                   </div>
                 </div>
                 <div className="grid gap-2 sm:grid-cols-3">
@@ -304,7 +306,7 @@ export const LumatekLicenses = () => {
                             modules: c ? [...plan.modules, m.key] : plan.modules.filter((k) => k !== m.key),
                           })}
                         />
-                        {m.label}{m.is_core && <span className="text-xs text-muted-foreground">(cœur)</span>}
+                        {m.label}{m.is_core && <span className="text-xs text-muted-foreground">{t("(cœur)")}</span>}
                       </label>
                     );
                   })}
@@ -313,8 +315,8 @@ export const LumatekLicenses = () => {
             </div>
           )}
           <DialogFooter>
-            <Button variant="outline" onClick={() => setPlan(null)}>Annuler</Button>
-            <Button onClick={submitPlan} disabled={savePlan.isPending}>Enregistrer</Button>
+            <Button variant="outline" onClick={() => setPlan(null)}>{t("Annuler")}</Button>
+            <Button onClick={submitPlan} disabled={savePlan.isPending}>{t("Enregistrer")}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -322,14 +324,14 @@ export const LumatekLicenses = () => {
       <AlertDialog open={!!toDelete} onOpenChange={(o) => !o && setToDelete(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Supprimer le plan « {toDelete?.name} » ?</AlertDialogTitle>
+            <AlertDialogTitle>{t("Supprimer le plan «")} {toDelete?.name} » ?</AlertDialogTitle>
             <AlertDialogDescription>
-              Action définitive. Un plan utilisé par une licence ne peut pas être supprimé : changez d'abord le plan de ces licences.
+              {t("Action définitive. Un plan utilisé par une licence ne peut pas être supprimé : changez d'abord le plan de ces licences.")}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Annuler</AlertDialogCancel>
-            <AlertDialogAction onClick={() => { if (toDelete) deletePlan.mutate(toDelete.id); setToDelete(null); }}>Supprimer</AlertDialogAction>
+            <AlertDialogCancel>{t("Annuler")}</AlertDialogCancel>
+            <AlertDialogAction onClick={() => { if (toDelete) deletePlan.mutate(toDelete.id); setToDelete(null); }}>{t("Supprimer")}</AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

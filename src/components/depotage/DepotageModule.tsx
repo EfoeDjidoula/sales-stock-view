@@ -1,4 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
+import { useLanguage } from "@/hooks/useLanguage";
 import { useDepotages, DepotageInsert, ProductType } from "@/hooks/useDepotages";
 import { useStations } from "@/hooks/useStations";
 import { useTanks } from "@/hooks/useTanks";
@@ -175,6 +176,7 @@ const validateDepotage = (
 };
 
 export const DepotageModule = () => {
+  const { t } = useLanguage();
   const { depotages, loading, createDepotage, deleteDepotage } = useDepotages();
   const { stations, loading: stationsLoading } = useStations();
   const { trucks } = useTrucks();
@@ -290,30 +292,30 @@ export const DepotageModule = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-display font-semibold">Gestion des dépotages</h2>
+          <h2 className="text-xl font-display font-semibold">{t("Gestion des dépotages")}</h2>
           <p className="text-sm text-muted-foreground">
-            Suivez les dépotages des camions, la tolérance appliquée et les écarts par cuve
+            {t("Suivez les dépotages des camions, la tolérance appliquée et les écarts par cuve")}
           </p>
         </div>
         <Dialog open={isOpen} onOpenChange={(open) => { setIsOpen(open); if (!open) { setErrors([]); setGaugeAuto(true); } }}>
           <DialogTrigger asChild>
             <Button className="gap-2">
               <Plus className="w-4 h-4" />
-              Nouveau dépotage
+              {t("Nouveau dépotage")}
             </Button>
           </DialogTrigger>
           <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <Droplets className="w-5 h-5" />
-                Enregistrer un dépotage
+                {t("Enregistrer un dépotage")}
               </DialogTitle>
             </DialogHeader>
             <form onSubmit={handleSubmit} className="space-y-4 mt-4">
               {errors.length > 0 && (
                 <Alert variant="destructive">
                   <AlertTriangle className="w-4 h-4" />
-                  <AlertTitle>Erreurs de saisie</AlertTitle>
+                  <AlertTitle>{t("Erreurs de saisie")}</AlertTitle>
                   <AlertDescription>
                     <ul className="list-disc pl-4 space-y-1">
                       {errors.map((err, i) => (
@@ -325,10 +327,10 @@ export const DepotageModule = () => {
               )}
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label>Station</Label>
+                  <Label>{t("Station")}</Label>
                   <Select value={formData.station_id} onValueChange={handleStationSelect} required>
                     <SelectTrigger>
-                      <SelectValue placeholder="Sélectionner" />
+                      <SelectValue placeholder={t("Sélectionner")} />
                     </SelectTrigger>
                     <SelectContent>
                       {stations.map((s) => (
@@ -340,7 +342,7 @@ export const DepotageModule = () => {
                   </Select>
                 </div>
                 <div className="space-y-2">
-                  <Label>Produit</Label>
+                  <Label>{t("Produit")}</Label>
                   <Select value={formData.product_type} onValueChange={(v) => handleProductSelect(v as ProductType)}>
                     <SelectTrigger>
                       <SelectValue />
@@ -354,7 +356,7 @@ export const DepotageModule = () => {
               </div>
 
               <div className="space-y-2">
-                <Label>Cuve concernée</Label>
+                <Label>{t("Cuve concernée")}</Label>
                 <Select
                   value={formData.tank_id || ""}
                   onValueChange={handleTankSelect}
@@ -373,13 +375,13 @@ export const DepotageModule = () => {
                 </Select>
                 {formData.tank_id && (
                   <p className="text-xs text-muted-foreground">
-                    Capacité de la cuve : {formData.tank_capacity_liters.toLocaleString()} L · Stock précédent : {fmt(formData.stock_before)} L
+                    {t("Capacité de la cuve :")} {formData.tank_capacity_liters.toLocaleString()} {t("L · Stock précédent :")} {fmt(formData.stock_before)} L
                   </p>
                 )}
               </div>
 
               <div className="space-y-2">
-                <Label>Camion</Label>
+                <Label>{t("Camion")}</Label>
                 <Select
                   value={formData.truck_id || ""}
                   onValueChange={handleTruckSelect}
@@ -399,17 +401,17 @@ export const DepotageModule = () => {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="truck_registration">Immatriculation camion</Label>
+                  <Label htmlFor="truck_registration">{t("Immatriculation camion")}</Label>
                   <Input
                     id="truck_registration"
                     value={formData.truck_registration}
                     onChange={(e) => setFormData({ ...formData, truck_registration: e.target.value })}
-                    placeholder="Ex: AB 1234 RB"
+                    placeholder={t("Ex: AB 1234 RB")}
                     required
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="truck_nominal_capacity">Capacité nominale camion (L)</Label>
+                  <Label htmlFor="truck_nominal_capacity">{t("Capacité nominale camion (L)")}</Label>
                   <Input
                     id="truck_nominal_capacity"
                     type="number"
@@ -423,7 +425,7 @@ export const DepotageModule = () => {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="quantity_to_unload">Quantité à dépoter (L)</Label>
+                  <Label htmlFor="quantity_to_unload">{t("Quantité à dépoter (L)")}</Label>
                   <Input
                     id="quantity_to_unload"
                     type="number"
@@ -434,7 +436,7 @@ export const DepotageModule = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="quantity_unloaded">Quantité réellement dépotée (L)</Label>
+                  <Label htmlFor="quantity_unloaded">{t("Quantité réellement dépotée (L)")}</Label>
                   <Input
                     id="quantity_unloaded"
                     type="number"
@@ -448,7 +450,7 @@ export const DepotageModule = () => {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="stock_before">Stock précédent cuve (L)</Label>
+                  <Label htmlFor="stock_before">{t("Stock précédent cuve (L)")}</Label>
                   <Input
                     id="stock_before"
                     type="number"
@@ -459,14 +461,14 @@ export const DepotageModule = () => {
                 </div>
                 <div className="space-y-2">
                   <div className="flex items-center justify-between">
-                    <Label htmlFor="gauge_after">Jauge après dépotage (L)</Label>
+                    <Label htmlFor="gauge_after">{t("Jauge après dépotage (L)")}</Label>
                     {!gaugeAuto && (
                       <button
                         type="button"
                         onClick={() => setGaugeAuto(true)}
                         className="text-xs text-primary hover:underline"
                       >
-                        Revenir à la jauge théorique
+                        {t("Revenir à la jauge théorique")}
                       </button>
                     )}
                   </div>
@@ -489,7 +491,7 @@ export const DepotageModule = () => {
                   />
                   {gaugeAuto && (
                     <p className="text-xs text-muted-foreground">
-                      Valeur automatique = stock précédent + quantité dépotée. Modifiez ce champ pour saisir une jauge réelle.
+                      {t("Valeur automatique = stock précédent + quantité dépotée. Modifiez ce champ pour saisir une jauge réelle.")}
                     </p>
                   )}
                 </div>
@@ -497,7 +499,7 @@ export const DepotageModule = () => {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="start_time">Heure début dépotage</Label>
+                  <Label htmlFor="start_time">{t("Heure début dépotage")}</Label>
                   <Input
                     id="start_time"
                     type="time"
@@ -516,7 +518,7 @@ export const DepotageModule = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="end_time">Heure fin dépotage</Label>
+                  <Label htmlFor="end_time">{t("Heure fin dépotage")}</Label>
                   <Input
                     id="end_time"
                     type="time"
@@ -530,7 +532,7 @@ export const DepotageModule = () => {
 
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
-                  <Label htmlFor="tolerance_rate">Taux de tolérance (%)</Label>
+                  <Label htmlFor="tolerance_rate">{t("Taux de tolérance (%)")}</Label>
                   <Input
                     id="tolerance_rate"
                     type="number"
@@ -542,7 +544,7 @@ export const DepotageModule = () => {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="depotage_date">Date du dépotage</Label>
+                  <Label htmlFor="depotage_date">{t("Date du dépotage")}</Label>
                   <Input
                     id="depotage_date"
                     type="date"
@@ -556,48 +558,48 @@ export const DepotageModule = () => {
               {formData.quantity_to_unload > 0 && (
                 <Card className="bg-muted/50 border-primary/20">
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-semibold">Calcul en temps réel</CardTitle>
+                    <CardTitle className="text-sm font-semibold">{t("Calcul en temps réel")}</CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-2 text-sm">
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Stock précédent cuve :</span>
+                      <span className="text-muted-foreground">{t("Stock précédent cuve :")}</span>
                       <span>{fmt(formData.stock_before)} L</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Stock théorique après dépotage :</span>
+                      <span className="text-muted-foreground">{t("Stock théorique après dépotage :")}</span>
                       <span>{fmt(previewTheoretical)} L</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Jauge après dépotage :</span>
+                      <span className="text-muted-foreground">{t("Jauge après dépotage :")}</span>
                       <span>{fmt(formData.gauge_after)} L</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Écart dépotage (jauge − théorique) :</span>
+                      <span className="text-muted-foreground">{t("Écart dépotage (jauge − théorique) :")}</span>
                       <span className={previewDepotageEcart === 0 ? "" : "text-destructive"}>
                         {previewDepotageEcart > 0 ? "+" : ""}
                         {fmt(previewDepotageEcart)} L
                       </span>
                     </div>
                     <div className="border-t border-border pt-2 flex justify-between">
-                      <span className="text-muted-foreground">Seuil de tolérance :</span>
+                      <span className="text-muted-foreground">{t("Seuil de tolérance :")}</span>
                       <span>± {fmt(previewSeuil)} L</span>
                     </div>
                     <div className="flex justify-between">
-                      <span className="text-muted-foreground">Écart (réel − à dépoter) :</span>
+                      <span className="text-muted-foreground">{t("Écart (réel − à dépoter) :")}</span>
                       <span className={previewEcart === 0 ? "" : previewConforme ? "text-emerald-500" : "text-destructive"}>
                         {previewEcart > 0 ? "+" : ""}
                         {fmt(previewEcart)} L
                       </span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-muted-foreground">Statut :</span>
+                      <span className="text-muted-foreground">{t("Statut :")}</span>
                       {previewConforme ? (
                         <Badge className="bg-emerald-500 hover:bg-emerald-600 gap-1">
-                          <CheckCircle2 className="w-3 h-3" /> Conforme
+                          <CheckCircle2 className="w-3 h-3" /> {t("Conforme")}
                         </Badge>
                       ) : (
                         <Badge variant="destructive" className="gap-1">
-                          <AlertTriangle className="w-3 h-3" /> Hors tolérance
+                          <AlertTriangle className="w-3 h-3" /> {t("Hors tolérance")}
                         </Badge>
                       )}
                     </div>
@@ -606,7 +608,7 @@ export const DepotageModule = () => {
               )}
 
               <div className="space-y-2">
-                <Label htmlFor="notes">Notes (optionnel)</Label>
+                <Label htmlFor="notes">{t("Notes (optionnel)")}</Label>
                 <Textarea
                   id="notes"
                   value={formData.notes || ""}
@@ -617,10 +619,10 @@ export const DepotageModule = () => {
 
               <div className="flex justify-end gap-2 pt-2">
                 <Button type="button" variant="outline" onClick={() => setIsOpen(false)}>
-                  Annuler
+                  {t("Annuler")}
                 </Button>
                 <Button type="submit" disabled={stationsLoading || !formData.station_id}>
-                  Enregistrer
+                  {t("Enregistrer")}
                 </Button>
               </div>
             </form>
@@ -630,34 +632,34 @@ export const DepotageModule = () => {
 
       <Card>
         <CardHeader>
-          <CardTitle className="text-base">Historique des dépotages</CardTitle>
+          <CardTitle className="text-base">{t("Historique des dépotages")}</CardTitle>
         </CardHeader>
         <CardContent>
           {depotages.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
               <Droplets className="w-12 h-12 mx-auto mb-4 opacity-50" />
-              <p>Aucun dépotage enregistré</p>
-              <p className="text-sm">Cliquez sur « Nouveau dépotage » pour commencer</p>
+              <p>{t("Aucun dépotage enregistré")}</p>
+              <p className="text-sm">{t("Cliquez sur « Nouveau dépotage » pour commencer")}</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead>Date</TableHead>
-                    <TableHead>Station</TableHead>
-                    <TableHead>Cuve</TableHead>
-                    <TableHead>Produit</TableHead>
-                    <TableHead>Immat. camion</TableHead>
-                    <TableHead className="text-right">À dépoter</TableHead>
-                    <TableHead className="text-right">Dépotée</TableHead>
-                    <TableHead className="text-right">Stock préc.</TableHead>
-                    <TableHead className="text-right">Théorique</TableHead>
-                    <TableHead className="text-right">Jauge après</TableHead>
-                    <TableHead className="text-right">Écart dépot.</TableHead>
-                    <TableHead>Horaires</TableHead>
-                    <TableHead className="text-right">Écart</TableHead>
-                    <TableHead>Statut</TableHead>
+                    <TableHead>{t("Date")}</TableHead>
+                    <TableHead>{t("Station")}</TableHead>
+                    <TableHead>{t("Cuve")}</TableHead>
+                    <TableHead>{t("Produit")}</TableHead>
+                    <TableHead>{t("Immat. camion")}</TableHead>
+                    <TableHead className="text-right">{t("À dépoter")}</TableHead>
+                    <TableHead className="text-right">{t("Dépotée")}</TableHead>
+                    <TableHead className="text-right">{t("Stock préc.")}</TableHead>
+                    <TableHead className="text-right">{t("Théorique")}</TableHead>
+                    <TableHead className="text-right">{t("Jauge après")}</TableHead>
+                    <TableHead className="text-right">{t("Écart dépot.")}</TableHead>
+                    <TableHead>{t("Horaires")}</TableHead>
+                    <TableHead className="text-right">{t("Écart")}</TableHead>
+                    <TableHead>{t("Statut")}</TableHead>
                     <TableHead className="w-[50px]"></TableHead>
                   </TableRow>
                 </TableHeader>
@@ -697,11 +699,11 @@ export const DepotageModule = () => {
                         <TableCell>
                           {conforme ? (
                             <Badge className="bg-emerald-500 hover:bg-emerald-600 gap-1">
-                              <CheckCircle2 className="w-3 h-3" /> Conforme
+                              <CheckCircle2 className="w-3 h-3" /> {t("Conforme")}
                             </Badge>
                           ) : (
                             <Badge variant="destructive" className="gap-1">
-                              <AlertTriangle className="w-3 h-3" /> Hors tolérance
+                              <AlertTriangle className="w-3 h-3" /> {t("Hors tolérance")}
                             </Badge>
                           )}
                         </TableCell>

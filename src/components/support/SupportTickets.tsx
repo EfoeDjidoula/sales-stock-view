@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState } from "react";
+import { useLanguage } from "@/hooks/useLanguage";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -25,10 +26,11 @@ const SBadge = ({ s }: { s: TicketStatus }) => <Badge variant="outline" classNam
 const PBadge = ({ p }: { p: TicketPriority }) => <Badge variant="outline" className={TICKET_PRIORITIES[p].cls}>{TICKET_PRIORITIES[p].label}</Badge>;
 
 const FilePicker = ({ files, setFiles }: { files: File[]; setFiles: (f: File[]) => void }) => {
+  const { t: translate } = useLanguage();
   const ref = useRef<HTMLInputElement>(null);
   return (
     <div className="flex flex-wrap items-center gap-2">
-      <Button type="button" size="sm" variant="outline" onClick={() => ref.current?.click()}><Paperclip className="h-4 w-4 mr-1" />Joindre</Button>
+      <Button type="button" size="sm" variant="outline" onClick={() => ref.current?.click()}><Paperclip className="h-4 w-4 mr-1" />{translate("Joindre")}</Button>
       {files.map((f, i) => (
         <Badge key={i} variant="secondary" className="cursor-pointer" onClick={() => setFiles(files.filter((_, k) => k !== i))}>{f.name} ✕</Badge>
       ))}
@@ -49,6 +51,7 @@ const AttachList = ({ list }: { list: Attachment[] }) =>
   ) : null;
 
 export const SupportTickets = ({ mode }: { mode: "client" | "lumatek" }) => {
+  const { t: translate } = useLanguage();
   const isLumatek = mode === "lumatek";
   const { tenantId, countryId } = useScope();
   const { tickets, isLoading, create, update, comment } = useSupportTickets(isLumatek ? null : tenantId);
@@ -94,9 +97,9 @@ export const SupportTickets = ({ mode }: { mode: "client" | "lumatek" }) => {
   return (
     <div className="space-y-4">
       <div className="grid gap-3 sm:grid-cols-3">
-        <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">Tickets ouverts</div><div className="text-2xl font-semibold">{counts.open}</div></CardContent></Card>
-        <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">Critiques ouverts</div><div className="text-2xl font-semibold text-destructive">{counts.critical}</div></CardContent></Card>
-        <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">SLA dépassés</div><div className="text-2xl font-semibold text-orange-400">{counts.breached}</div></CardContent></Card>
+        <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">{translate("Tickets ouverts")}</div><div className="text-2xl font-semibold">{counts.open}</div></CardContent></Card>
+        <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">{translate("Critiques ouverts")}</div><div className="text-2xl font-semibold text-destructive">{counts.critical}</div></CardContent></Card>
+        <Card><CardContent className="p-4"><div className="text-xs text-muted-foreground">{translate("SLA dépassés")}</div><div className="text-2xl font-semibold text-orange-400">{counts.breached}</div></CardContent></Card>
       </div>
       <Card>
         <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2">
@@ -105,23 +108,23 @@ export const SupportTickets = ({ mode }: { mode: "client" | "lumatek" }) => {
             <Select value={statusF} onValueChange={setStatusF}>
               <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
               <SelectContent>
-                <SelectItem value="open">Ouverts</SelectItem>
-                <SelectItem value="all">Tous</SelectItem>
+                <SelectItem value="open">{translate("Ouverts")}</SelectItem>
+                <SelectItem value="all">{translate("Tous")}</SelectItem>
                 {Object.entries(TICKET_STATUSES).map(([k, v]) => <SelectItem key={k} value={k}>{v.label}</SelectItem>)}
               </SelectContent>
             </Select>
-            {!isLumatek && <Button size="sm" onClick={() => setCreating(true)}><Plus className="h-4 w-4 mr-1" />Nouveau ticket</Button>}
+            {!isLumatek && <Button size="sm" onClick={() => setCreating(true)}><Plus className="h-4 w-4 mr-1" />{translate("Nouveau ticket")}</Button>}
           </div>
         </CardHeader>
         <CardContent className="overflow-x-auto">
           {isLoading ? <Skeleton className="h-32 w-full" /> : !rows.length ? (
-            <p className="py-6 text-center text-sm text-muted-foreground">Aucun ticket.</p>
+            <p className="py-6 text-center text-sm text-muted-foreground">{translate("Aucun ticket.")}</p>
           ) : (
             <Table>
               <TableHeader><TableRow>
-                <TableHead>N°</TableHead><TableHead>Ouvert le</TableHead>{isLumatek && <TableHead>Client</TableHead>}
-                <TableHead>Objet</TableHead><TableHead>Catégorie</TableHead><TableHead>Priorité</TableHead>
-                <TableHead>Statut</TableHead><TableHead>Responsable</TableHead><TableHead>SLA</TableHead><TableHead />
+                <TableHead>N°</TableHead><TableHead>{translate("Ouvert le")}</TableHead>{isLumatek && <TableHead>{translate("Client")}</TableHead>}
+                <TableHead>{translate("Objet")}</TableHead><TableHead>{translate("Catégorie")}</TableHead><TableHead>{translate("Priorité")}</TableHead>
+                <TableHead>{translate("Statut")}</TableHead><TableHead>{translate("Responsable")}</TableHead><TableHead>SLA</TableHead><TableHead />
               </TableRow></TableHeader>
               <TableBody>
                 {rows.map((t) => (
@@ -135,9 +138,9 @@ export const SupportTickets = ({ mode }: { mode: "client" | "lumatek" }) => {
                     <TableCell><SBadge s={t.status} /></TableCell>
                     <TableCell className="text-xs">{t.assigned_to_name || "—"}</TableCell>
                     <TableCell className="text-xs">
-                      {slaBreached(t) ? <span className="text-destructive inline-flex items-center gap-1"><AlertTriangle className="h-3 w-3" />Dépassé</span> : `${t.sla_hours} h`}
+                      {slaBreached(t) ? <span className="text-destructive inline-flex items-center gap-1"><AlertTriangle className="h-3 w-3" />{translate("Dépassé")}</span> : `${t.sla_hours} h`}
                     </TableCell>
-                    <TableCell><Button size="icon" variant="ghost" aria-label="Ouvrir"><Eye className="h-4 w-4" /></Button></TableCell>
+                    <TableCell><Button size="icon" variant="ghost" aria-label={translate("Ouvrir")}><Eye className="h-4 w-4" /></Button></TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -149,34 +152,34 @@ export const SupportTickets = ({ mode }: { mode: "client" | "lumatek" }) => {
       {/* Création (client) */}
       <Dialog open={creating} onOpenChange={setCreating}>
         <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>Nouveau ticket</DialogTitle><DialogDescription>Le support LUMATEK sera notifié.</DialogDescription></DialogHeader>
+          <DialogHeader><DialogTitle>{translate("Nouveau ticket")}</DialogTitle><DialogDescription>{translate("Le support LUMATEK sera notifié.")}</DialogDescription></DialogHeader>
           <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-1.5"><Label>Catégorie *</Label>
+            <div className="space-y-1.5"><Label>{translate("Catégorie *")}</Label>
               <Select value={form.category} onValueChange={(v) => setForm({ ...form, category: v as TicketCategory })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>{Object.entries(TICKET_CATEGORIES).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}</SelectContent>
               </Select></div>
-            <div className="space-y-1.5"><Label>Priorité *</Label>
+            <div className="space-y-1.5"><Label>{translate("Priorité *")}</Label>
               <Select value={form.priority} onValueChange={(v) => setForm({ ...form, priority: v as TicketPriority })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>{Object.entries(TICKET_PRIORITIES).map(([k, v]) => <SelectItem key={k} value={k}>{v.label}</SelectItem>)}</SelectContent>
               </Select></div>
-            <div className="space-y-1.5"><Label>Module</Label>
+            <div className="space-y-1.5"><Label>{translate("Module")}</Label>
               <Select value={form.module_key || "none"} onValueChange={(v) => setForm({ ...form, module_key: v === "none" ? "" : v })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent><SelectItem value="none">Non précisé</SelectItem>{modules.map((m) => <SelectItem key={m.key} value={m.key}>{m.label}</SelectItem>)}</SelectContent>
+                <SelectContent><SelectItem value="none">{translate("Non précisé")}</SelectItem>{modules.map((m) => <SelectItem key={m.key} value={m.key}>{m.label}</SelectItem>)}</SelectContent>
               </Select></div>
-            <div className="space-y-1.5"><Label>Station (si applicable)</Label>
+            <div className="space-y-1.5"><Label>{translate("Station (si applicable)")}</Label>
               <Select value={form.station_id || "none"} onValueChange={(v) => setForm({ ...form, station_id: v === "none" ? "" : v })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent><SelectItem value="none">Aucune</SelectItem>{stations.map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent>
+                <SelectContent><SelectItem value="none">{translate("Aucune")}</SelectItem>{stations.map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent>
               </Select></div>
-            <div className="space-y-1.5 sm:col-span-2"><Label>Objet *</Label><Input value={form.subject} maxLength={200} onChange={(e) => setForm({ ...form, subject: e.target.value })} /></div>
-            <div className="space-y-1.5 sm:col-span-2"><Label>Description</Label><Textarea rows={5} value={form.description} maxLength={5000} onChange={(e) => setForm({ ...form, description: e.target.value })} /></div>
-            <div className="space-y-1.5 sm:col-span-2"><Label>Pièces jointes (10 Mo max chacune)</Label><FilePicker files={files} setFiles={setFiles} /></div>
+            <div className="space-y-1.5 sm:col-span-2"><Label>{translate("Objet *")}</Label><Input value={form.subject} maxLength={200} onChange={(e) => setForm({ ...form, subject: e.target.value })} /></div>
+            <div className="space-y-1.5 sm:col-span-2"><Label>{translate("Description")}</Label><Textarea rows={5} value={form.description} maxLength={5000} onChange={(e) => setForm({ ...form, description: e.target.value })} /></div>
+            <div className="space-y-1.5 sm:col-span-2"><Label>{translate("Pièces jointes (10 Mo max chacune)")}</Label><FilePicker files={files} setFiles={setFiles} /></div>
           </div>
           <DialogFooter>
-            <Button variant="outline" onClick={() => setCreating(false)}>Annuler</Button>
+            <Button variant="outline" onClick={() => setCreating(false)}>{translate("Annuler")}</Button>
             <Button onClick={submitNew} disabled={busy}>{busy ? "Envoi…" : "Créer le ticket"}</Button>
           </DialogFooter>
         </DialogContent>
@@ -196,6 +199,7 @@ const TicketDetail = ({ ticket: t, isLumatek, onClose, tenantName, moduleLabel, 
   ticket: SupportTicket; isLumatek: boolean; onClose: () => void; tenantName: string; moduleLabel: string; stationName: string;
   agents: { id: string; name: string }[]; update: Hook["update"]; comment: Hook["comment"];
 }) => {
+  const { t: translate } = useLanguage();
   const { data: events = [], isLoading } = useTicketEvents(t.id);
   const [msg, setMsg] = useState("");
   const [files, setFiles] = useState<File[]>([]);
@@ -239,17 +243,17 @@ const TicketDetail = ({ ticket: t, isLumatek, onClose, tenantName, moduleLabel, 
 
         {isLumatek ? (
           <div className="grid gap-3 sm:grid-cols-3 rounded-md border border-border p-3">
-            <div className="space-y-1.5"><Label>Responsable</Label>
+            <div className="space-y-1.5"><Label>{translate("Responsable")}</Label>
               <Select value={t.assigned_to || "none"} onValueChange={(v) => update.mutate({ id: t.id, assigned_to: v === "none" ? null : v, assigned_to_name: v === "none" ? null : agents.find((a) => a.id === v)?.name ?? null })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent><SelectItem value="none">Non assigné</SelectItem>{agents.map((a) => <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>)}</SelectContent>
+                <SelectContent><SelectItem value="none">{translate("Non assigné")}</SelectItem>{agents.map((a) => <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>)}</SelectContent>
               </Select></div>
-            <div className="space-y-1.5"><Label>Statut</Label>
+            <div className="space-y-1.5"><Label>{translate("Statut")}</Label>
               <Select value={t.status} onValueChange={(v) => update.mutate({ id: t.id, status: v as TicketStatus })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>{Object.entries(TICKET_STATUSES).map(([k, v]) => <SelectItem key={k} value={k}>{v.label}</SelectItem>)}</SelectContent>
               </Select></div>
-            <div className="space-y-1.5"><Label>Priorité</Label>
+            <div className="space-y-1.5"><Label>{translate("Priorité")}</Label>
               <Select value={t.priority} onValueChange={(v) => update.mutate({ id: t.id, priority: v as TicketPriority })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>{Object.entries(TICKET_PRIORITIES).map(([k, v]) => <SelectItem key={k} value={k}>{v.label}</SelectItem>)}</SelectContent>
@@ -257,13 +261,13 @@ const TicketDetail = ({ ticket: t, isLumatek, onClose, tenantName, moduleLabel, 
           </div>
         ) : (
           <div className="flex flex-wrap gap-2">
-            {["waiting_client", "resolved"].includes(t.status) && <Button size="sm" variant="outline" onClick={() => update.mutate({ id: t.id, status: "in_progress" })}>Relancer le ticket</Button>}
-            {t.status !== "closed" && <Button size="sm" variant="outline" onClick={() => update.mutate({ id: t.id, status: "closed" })}>Fermer le ticket</Button>}
+            {["waiting_client", "resolved"].includes(t.status) && <Button size="sm" variant="outline" onClick={() => update.mutate({ id: t.id, status: "in_progress" })}>{translate("Relancer le ticket")}</Button>}
+            {t.status !== "closed" && <Button size="sm" variant="outline" onClick={() => update.mutate({ id: t.id, status: "closed" })}>{translate("Fermer le ticket")}</Button>}
           </div>
         )}
 
         <div className="space-y-2">
-          <h4 className="text-sm font-semibold">Historique</h4>
+          <h4 className="text-sm font-semibold">{translate("Historique")}</h4>
           {isLoading ? <Skeleton className="h-20" /> : events.map((e) => (
             <div key={e.id} className={`rounded-md border p-2 text-sm ${e.event_type === "comment" ? (e.is_lumatek ? "border-primary/40 bg-primary/5" : "border-border") : "border-transparent text-muted-foreground"}`}>
               <div className="text-xs"><span className="font-medium">{e.author_name || (e.is_lumatek ? "Support LUMATEK" : "Client")}</span> · {dt(e.created_at)} {describe(e)}</div>
@@ -275,14 +279,14 @@ const TicketDetail = ({ ticket: t, isLumatek, onClose, tenantName, moduleLabel, 
 
         {t.status !== "closed" && (
           <div className="space-y-2">
-            <Textarea rows={3} placeholder="Votre message…" value={msg} maxLength={5000} onChange={(e) => setMsg(e.target.value)} />
+            <Textarea rows={3} placeholder={translate("Votre message…")} value={msg} maxLength={5000} onChange={(e) => setMsg(e.target.value)} />
             <div className="flex items-center justify-between gap-2">
               <FilePicker files={files} setFiles={setFiles} />
               <Button size="sm" onClick={send} disabled={busy}><Send className="h-4 w-4 mr-1" />{busy ? "Envoi…" : "Envoyer"}</Button>
             </div>
           </div>
         )}
-        <DialogFooter><Button variant="outline" onClick={onClose}>Fermer</Button></DialogFooter>
+        <DialogFooter><Button variant="outline" onClick={onClose}>{translate("Fermer")}</Button></DialogFooter>
       </DialogContent>
     </Dialog>
   );

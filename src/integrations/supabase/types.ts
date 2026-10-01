@@ -1248,6 +1248,466 @@ export type Database = {
           },
         ]
       }
+      fuel_card_accounts: {
+        Row: {
+          client_id: string
+          contract_reference: string | null
+          country_id: string
+          created_at: string
+          credit_limit: number
+          credit_used: number
+          id: string
+          kind: string
+          prepaid_balance: number
+          status: string
+          tenant_id: string
+        }
+        Insert: {
+          client_id: string
+          contract_reference?: string | null
+          country_id: string
+          created_at?: string
+          credit_limit?: number
+          credit_used?: number
+          id?: string
+          kind: string
+          prepaid_balance?: number
+          status?: string
+          tenant_id: string
+        }
+        Update: {
+          client_id?: string
+          contract_reference?: string | null
+          country_id?: string
+          created_at?: string
+          credit_limit?: number
+          credit_used?: number
+          id?: string
+          kind?: string
+          prepaid_balance?: number
+          status?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fuel_card_accounts_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fuel_card_accounts_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "countries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fuel_card_accounts_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fuel_card_alerts: {
+        Row: {
+          account_id: string
+          card_id: string | null
+          country_id: string
+          created_at: string
+          explanation: string
+          id: string
+          rule_code: string
+          severity: string
+          tenant_id: string
+          transaction_id: string | null
+        }
+        Insert: {
+          account_id: string
+          card_id?: string | null
+          country_id: string
+          created_at?: string
+          explanation: string
+          id?: string
+          rule_code: string
+          severity?: string
+          tenant_id: string
+          transaction_id?: string | null
+        }
+        Update: {
+          account_id?: string
+          card_id?: string | null
+          country_id?: string
+          created_at?: string
+          explanation?: string
+          id?: string
+          rule_code?: string
+          severity?: string
+          tenant_id?: string
+          transaction_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fuel_card_alerts_account_id_tenant_id_country_id_fkey"
+            columns: ["account_id", "tenant_id", "country_id"]
+            isOneToOne: false
+            referencedRelation: "fuel_card_accounts"
+            referencedColumns: ["id", "tenant_id", "country_id"]
+          },
+          {
+            foreignKeyName: "fuel_card_alerts_card_id_tenant_id_country_id_fkey"
+            columns: ["card_id", "tenant_id", "country_id"]
+            isOneToOne: false
+            referencedRelation: "fuel_cards"
+            referencedColumns: ["id", "tenant_id", "country_id"]
+          },
+        ]
+      }
+      fuel_card_drivers: {
+        Row: {
+          account_id: string
+          active: boolean
+          country_id: string
+          id: string
+          name: string
+          phone: string | null
+          tenant_id: string
+        }
+        Insert: {
+          account_id: string
+          active?: boolean
+          country_id: string
+          id?: string
+          name: string
+          phone?: string | null
+          tenant_id: string
+        }
+        Update: {
+          account_id?: string
+          active?: boolean
+          country_id?: string
+          id?: string
+          name?: string
+          phone?: string | null
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fuel_card_drivers_account_id_tenant_id_country_id_fkey"
+            columns: ["account_id", "tenant_id", "country_id"]
+            isOneToOne: false
+            referencedRelation: "fuel_card_accounts"
+            referencedColumns: ["id", "tenant_id", "country_id"]
+          },
+        ]
+      }
+      fuel_card_invoices: {
+        Row: {
+          account_id: string
+          actor_id: string
+          amount: number
+          country_id: string
+          created_at: string
+          id: string
+          number: string
+          paid: number
+          period_end: string
+          period_start: string
+          tenant_id: string
+        }
+        Insert: {
+          account_id: string
+          actor_id: string
+          amount: number
+          country_id: string
+          created_at?: string
+          id?: string
+          number: string
+          paid?: number
+          period_end: string
+          period_start: string
+          tenant_id: string
+        }
+        Update: {
+          account_id?: string
+          actor_id?: string
+          amount?: number
+          country_id?: string
+          created_at?: string
+          id?: string
+          number?: string
+          paid?: number
+          period_end?: string
+          period_start?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fuel_card_invoices_account_id_tenant_id_country_id_fkey"
+            columns: ["account_id", "tenant_id", "country_id"]
+            isOneToOne: false
+            referencedRelation: "fuel_card_accounts"
+            referencedColumns: ["id", "tenant_id", "country_id"]
+          },
+        ]
+      }
+      fuel_card_limit_events: {
+        Row: {
+          account_id: string
+          actor_id: string
+          card_id: string | null
+          country_id: string
+          created_at: string
+          id: string
+          new_limit: number
+          old_limit: number
+          reason: string
+          tenant_id: string
+        }
+        Insert: {
+          account_id: string
+          actor_id: string
+          card_id?: string | null
+          country_id: string
+          created_at?: string
+          id?: string
+          new_limit: number
+          old_limit: number
+          reason: string
+          tenant_id: string
+        }
+        Update: {
+          account_id?: string
+          actor_id?: string
+          card_id?: string | null
+          country_id?: string
+          created_at?: string
+          id?: string
+          new_limit?: number
+          old_limit?: number
+          reason?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fuel_card_limit_events_account_id_tenant_id_country_id_fkey"
+            columns: ["account_id", "tenant_id", "country_id"]
+            isOneToOne: false
+            referencedRelation: "fuel_card_accounts"
+            referencedColumns: ["id", "tenant_id", "country_id"]
+          },
+          {
+            foreignKeyName: "fuel_card_limit_events_card_id_tenant_id_country_id_fkey"
+            columns: ["card_id", "tenant_id", "country_id"]
+            isOneToOne: false
+            referencedRelation: "fuel_cards"
+            referencedColumns: ["id", "tenant_id", "country_id"]
+          },
+        ]
+      }
+      fuel_card_transactions: {
+        Row: {
+          account_id: string
+          actor_id: string
+          amount: number
+          card_id: string | null
+          country_id: string
+          driver_id: string | null
+          id: string
+          kind: string
+          litres: number | null
+          note: string | null
+          occurred_at: string
+          product_id: string | null
+          reference: string | null
+          station_id: string | null
+          tenant_id: string
+          vehicle_id: string | null
+        }
+        Insert: {
+          account_id: string
+          actor_id: string
+          amount: number
+          card_id?: string | null
+          country_id: string
+          driver_id?: string | null
+          id?: string
+          kind: string
+          litres?: number | null
+          note?: string | null
+          occurred_at?: string
+          product_id?: string | null
+          reference?: string | null
+          station_id?: string | null
+          tenant_id: string
+          vehicle_id?: string | null
+        }
+        Update: {
+          account_id?: string
+          actor_id?: string
+          amount?: number
+          card_id?: string | null
+          country_id?: string
+          driver_id?: string | null
+          id?: string
+          kind?: string
+          litres?: number | null
+          note?: string | null
+          occurred_at?: string
+          product_id?: string | null
+          reference?: string | null
+          station_id?: string | null
+          tenant_id?: string
+          vehicle_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fuel_card_transactions_account_id_tenant_id_country_id_fkey"
+            columns: ["account_id", "tenant_id", "country_id"]
+            isOneToOne: false
+            referencedRelation: "fuel_card_accounts"
+            referencedColumns: ["id", "tenant_id", "country_id"]
+          },
+          {
+            foreignKeyName: "fuel_card_transactions_card_id_tenant_id_country_id_fkey"
+            columns: ["card_id", "tenant_id", "country_id"]
+            isOneToOne: false
+            referencedRelation: "fuel_cards"
+            referencedColumns: ["id", "tenant_id", "country_id"]
+          },
+          {
+            foreignKeyName: "fuel_card_transactions_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "petroleum_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fuel_card_transactions_station_id_fkey"
+            columns: ["station_id"]
+            isOneToOne: false
+            referencedRelation: "stations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fuel_card_vehicles: {
+        Row: {
+          account_id: string
+          active: boolean
+          country_id: string
+          description: string | null
+          id: string
+          plate: string
+          tenant_id: string
+        }
+        Insert: {
+          account_id: string
+          active?: boolean
+          country_id: string
+          description?: string | null
+          id?: string
+          plate: string
+          tenant_id: string
+        }
+        Update: {
+          account_id?: string
+          active?: boolean
+          country_id?: string
+          description?: string | null
+          id?: string
+          plate?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fuel_card_vehicles_account_id_tenant_id_country_id_fkey"
+            columns: ["account_id", "tenant_id", "country_id"]
+            isOneToOne: false
+            referencedRelation: "fuel_card_accounts"
+            referencedColumns: ["id", "tenant_id", "country_id"]
+          },
+        ]
+      }
+      fuel_cards: {
+        Row: {
+          account_id: string
+          allocated_limit: number
+          card_number: string
+          country_id: string
+          created_at: string
+          driver_id: string | null
+          expires_on: string
+          holder_name: string | null
+          id: string
+          remaining: number
+          replaced_by: string | null
+          restrictions: Json
+          status: string
+          tenant_id: string
+          vehicle_id: string | null
+        }
+        Insert: {
+          account_id: string
+          allocated_limit?: number
+          card_number: string
+          country_id: string
+          created_at?: string
+          driver_id?: string | null
+          expires_on: string
+          holder_name?: string | null
+          id?: string
+          remaining?: number
+          replaced_by?: string | null
+          restrictions?: Json
+          status?: string
+          tenant_id: string
+          vehicle_id?: string | null
+        }
+        Update: {
+          account_id?: string
+          allocated_limit?: number
+          card_number?: string
+          country_id?: string
+          created_at?: string
+          driver_id?: string | null
+          expires_on?: string
+          holder_name?: string | null
+          id?: string
+          remaining?: number
+          replaced_by?: string | null
+          restrictions?: Json
+          status?: string
+          tenant_id?: string
+          vehicle_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fuel_cards_account_id_tenant_id_country_id_fkey"
+            columns: ["account_id", "tenant_id", "country_id"]
+            isOneToOne: false
+            referencedRelation: "fuel_card_accounts"
+            referencedColumns: ["id", "tenant_id", "country_id"]
+          },
+          {
+            foreignKeyName: "fuel_cards_driver_id_tenant_id_country_id_fkey"
+            columns: ["driver_id", "tenant_id", "country_id"]
+            isOneToOne: false
+            referencedRelation: "fuel_card_drivers"
+            referencedColumns: ["id", "tenant_id", "country_id"]
+          },
+          {
+            foreignKeyName: "fuel_cards_vehicle_id_tenant_id_country_id_fkey"
+            columns: ["vehicle_id", "tenant_id", "country_id"]
+            isOneToOne: false
+            referencedRelation: "fuel_card_vehicles"
+            referencedColumns: ["id", "tenant_id", "country_id"]
+          },
+        ]
+      }
       index_entries: {
         Row: {
           bons_carburant_nombre: number
@@ -4328,6 +4788,17 @@ export type Database = {
           unit: string
           window_days: number
         }[]
+      }
+      fuel_card_action: {
+        Args: {
+          _account?: string
+          _action: string
+          _card?: string
+          _country: string
+          _data?: Json
+          _tenant: string
+        }
+        Returns: Json
       }
       get_user_permissions: {
         Args: { _user_id: string }

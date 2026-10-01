@@ -134,6 +134,34 @@
       "when": 1790697180792,
       "tag": "0018_fraud_anomaly_center",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1790868388191,
+      "tag": "0019_fuel_card_accounts_and_secure_ledger",
+      "breakpoints": true
+    },
+    {
+      "idx": 20,
+      "version": "7",
+      "when": 1790868553564,
+      "tag": "0020_correct_fuel_account_country_reference",
+      "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1790868588346,
+      "tag": "0021_guard_fuel_credit_restoration_and_immutable_records",
+      "breakpoints": true
+    },
+    {
+      "idx": 22,
+      "version": "7",
+      "when": 1790868622389,
+      "tag": "0022_prevent_unbilled_fuel_card_payments_and_manual_resets",
+      "breakpoints": true
     }
   ]
 }

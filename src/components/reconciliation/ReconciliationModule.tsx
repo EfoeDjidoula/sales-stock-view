@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useLanguage } from "@/hooks/useLanguage";
 import { format, subDays } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { useScope } from "@/hooks/useScope";
@@ -39,6 +40,7 @@ const fmt = (n: unknown) => (n == null ? "—" : Math.round(Number(n)).toLocaleS
 const errMsg = (e: unknown) => (e as { message?: string })?.message ?? "Erreur";
 
 export function ReconciliationModule() {
+  const { t } = useLanguage();
   const { tenantId, countryId, scopeQuery } = useScope();
   const { can } = usePermissions();
   const { isPlatformAdmin } = usePlatformAdmin() as { isPlatformAdmin: boolean };
@@ -94,8 +96,8 @@ export function ReconciliationModule() {
     <div className="space-y-4">
       <Tabs defaultValue="results">
         <TabsList>
-          <TabsTrigger value="results">Résultats</TabsTrigger>
-          <TabsTrigger value="tolerances">Seuils de tolérance</TabsTrigger>
+          <TabsTrigger value="results">{t("Résultats")}</TabsTrigger>
+          <TabsTrigger value="tolerances">{t("Seuils de tolérance")}</TabsTrigger>
         </TabsList>
         <TabsContent value="results" className="space-y-4">
           <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
@@ -106,20 +108,20 @@ export function ReconciliationModule() {
             ))}
           </div>
           <div className="flex flex-wrap items-end gap-2">
-            <div><Label>Du</Label><Input type="date" value={start} max={end} onChange={(e) => setStart(e.target.value)} className="w-40" /></div>
-            <div><Label>Au</Label><Input type="date" value={end} max={format(new Date(), "yyyy-MM-dd")} onChange={(e) => setEnd(e.target.value)} className="w-40" /></div>
+            <div><Label>{t("Du")}</Label><Input type="date" value={start} max={end} onChange={(e) => setStart(e.target.value)} className="w-40" /></div>
+            <div><Label>{t("Au")}</Label><Input type="date" value={end} max={format(new Date(), "yyyy-MM-dd")} onChange={(e) => setEnd(e.target.value)} className="w-40" /></div>
             <Select value={stationF} onValueChange={setStationF}>
               <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
-              <SelectContent><SelectItem value="all">Toutes les stations</SelectItem>{stations.map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent>
+              <SelectContent><SelectItem value="all">{t("Toutes les stations")}</SelectItem>{stations.map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent>
             </Select>
-            {canRun && <Button onClick={run} disabled={running || !stations.length}>{running ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}Lancer la réconciliation</Button>}
+            {canRun && <Button onClick={run} disabled={running || !stations.length}>{running ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="mr-2 h-4 w-4" />}{t("Lancer la réconciliation")}</Button>}
           </div>
           <Card><CardContent className="p-0">
             <Table>
               <TableHeader><TableRow>
-                <TableHead>Date</TableHead><TableHead>Station</TableHead><TableHead className="text-right">Ventes (L)</TableHead><TableHead className="text-right">Ventes (F)</TableHead>
-                <TableHead className="text-right">Encaissé (F)</TableHead><TableHead className="text-right">Écart vol. (L)</TableHead><TableHead className="text-right">Écart valeur (F)</TableHead>
-                <TableHead>Résultat</TableHead><TableHead>Suivi</TableHead><TableHead />
+                <TableHead>{t("Date")}</TableHead><TableHead>{t("Station")}</TableHead><TableHead className="text-right">{t("Ventes (L)")}</TableHead><TableHead className="text-right">{t("Ventes (F)")}</TableHead>
+                <TableHead className="text-right">{t("Encaissé (F)")}</TableHead><TableHead className="text-right">{t("Écart vol. (L)")}</TableHead><TableHead className="text-right">{t("Écart valeur (F)")}</TableHead>
+                <TableHead>{t("Résultat")}</TableHead><TableHead>{t("Suivi")}</TableHead><TableHead />
               </TableRow></TableHeader>
               <TableBody>
                 {loading ? <TableRow><TableCell colSpan={10} className="text-center"><Loader2 className="mx-auto h-4 w-4 animate-spin" /></TableCell></TableRow>
@@ -131,10 +133,10 @@ export function ReconciliationModule() {
                       <TableCell className="text-right">{fmt(r.value_variance)}</TableCell>
                       <TableCell><Badge variant="outline" className={RECON_RESULT[r.result]?.cls}>{RECON_RESULT[r.result]?.label}</Badge></TableCell>
                       <TableCell><Badge variant="secondary">{WORKFLOW[r.workflow]}</Badge></TableCell>
-                      <TableCell><Button size="icon" variant="ghost" aria-label="Ouvrir" onClick={() => setOpenId(r.id)}><Eye className="h-4 w-4" /></Button></TableCell>
+                      <TableCell><Button size="icon" variant="ghost" aria-label={t("Ouvrir")} onClick={() => setOpenId(r.id)}><Eye className="h-4 w-4" /></Button></TableCell>
                     </TableRow>
                   ))}
-                {!loading && !filtered.length && <TableRow><TableCell colSpan={10} className="text-center text-muted-foreground">Aucune réconciliation sur la période. Cliquez sur « Lancer la réconciliation ».</TableCell></TableRow>}
+                {!loading && !filtered.length && <TableRow><TableCell colSpan={10} className="text-center text-muted-foreground">{t("Aucune réconciliation sur la période. Cliquez sur « Lancer la réconciliation ».")}</TableCell></TableRow>}
               </TableBody>
             </Table>
           </CardContent></Card>
@@ -149,6 +151,7 @@ export function ReconciliationModule() {
 }
 
 function Detail({ id, stationName, onClose, canAnalyze, canValidate, canRun }: { id: string; stationName: (id: string) => string; onClose: () => void; canAnalyze: boolean; canValidate: boolean; canRun: boolean }) {
+  const { t } = useLanguage();
   const [r, setR] = useState<Row | null>(null);
   const [events, setEvents] = useState<Row[]>([]);
   const [comment, setComment] = useState("");
@@ -183,20 +186,20 @@ function Detail({ id, stationName, onClose, canAnalyze, canValidate, canRun }: {
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-h-[90vh] max-w-5xl overflow-y-auto">
-        <DialogHeader><DialogTitle>Réconciliation — {r ? `${stationName(r.station_id)} · ${format(new Date(r.recon_date), "dd/MM/yyyy")}` : "…"}</DialogTitle></DialogHeader>
+        <DialogHeader><DialogTitle>{t("Réconciliation —")} {r ? `${stationName(r.station_id)} · ${format(new Date(r.recon_date), "dd/MM/yyyy")}` : "…"}</DialogTitle></DialogHeader>
         {!r ? <Loader2 className="h-5 w-5 animate-spin" /> : (
           <div className="space-y-4">
             <div className="flex flex-wrap gap-2">
               <Badge variant="outline" className={RECON_RESULT[r.result]?.cls}>{RECON_RESULT[r.result]?.label}</Badge>
               <Badge variant="secondary">{WORKFLOW[r.workflow]}</Badge>
-              <Badge variant="outline">Clôture : {d.closure_status ?? "absente"}</Badge>
+              <Badge variant="outline">{t("Clôture :")} {d.closure_status ?? "absente"}</Badge>
             </div>
-            <Card><CardHeader><CardTitle className="text-base">Volumes par produit</CardTitle></CardHeader><CardContent className="p-0">
+            <Card><CardHeader><CardTitle className="text-base">{t("Volumes par produit")}</CardTitle></CardHeader><CardContent className="p-0">
               <Table>
                 <TableHeader><TableRow>
-                  <TableHead>Produit</TableHead><TableHead className="text-right">Index pistolets</TableHead><TableHead className="text-right">Ventes enreg.</TableHead>
-                  <TableHead className="text-right">Sorties cuves</TableHead><TableHead className="text-right">Écart jaugeage</TableHead><TableHead className="text-right">Ajustements</TableHead>
-                  <TableHead className="text-right">Index journal</TableHead><TableHead className="text-right">Écart %</TableHead><TableHead className="text-right">Écart F</TableHead><TableHead>Résultat</TableHead>
+                  <TableHead>{t("Produit")}</TableHead><TableHead className="text-right">{t("Index pistolets")}</TableHead><TableHead className="text-right">{t("Ventes enreg.")}</TableHead>
+                  <TableHead className="text-right">{t("Sorties cuves")}</TableHead><TableHead className="text-right">{t("Écart jaugeage")}</TableHead><TableHead className="text-right">{t("Ajustements")}</TableHead>
+                  <TableHead className="text-right">{t("Index journal")}</TableHead><TableHead className="text-right">{t("Écart %")}</TableHead><TableHead className="text-right">{t("Écart F")}</TableHead><TableHead>{t("Résultat")}</TableHead>
                 </TableRow></TableHeader>
                 <TableBody>
                   {(d.products ?? []).map((l: Row) => (
@@ -211,34 +214,34 @@ function Detail({ id, stationName, onClose, canAnalyze, canValidate, canRun }: {
                 </TableBody>
               </Table>
             </CardContent></Card>
-            <Card><CardHeader><CardTitle className="text-base">Encaissements</CardTitle></CardHeader><CardContent className="space-y-2 text-sm">
+            <Card><CardHeader><CardTitle className="text-base">{t("Encaissements")}</CardTitle></CardHeader><CardContent className="space-y-2 text-sm">
               <div className="grid gap-2 md:grid-cols-5">
-                <div>Ventes : <b>{fmt(r.sales_amount)} F</b></div><div>Encaissé : <b>{fmt(r.collected_amount)} F</b></div>
-                <div>Espèces : <b>{fmt(d.cash)} F</b></div><div>Fuel cards : <b>{fmt(d.fuel_cards)} F</b></div><div>Crédit B2B : <b>{fmt(d.b2b_credit)} F</b></div>
+                <div>{t("Ventes :")} <b>{fmt(r.sales_amount)} F</b></div><div>{t("Encaissé :")} <b>{fmt(r.collected_amount)} F</b></div>
+                <div>{t("Espèces :")} <b>{fmt(d.cash)} F</b></div><div>Fuel cards : <b>{fmt(d.fuel_cards)} F</b></div><div>{t("Crédit B2B :")} <b>{fmt(d.b2b_credit)} F</b></div>
               </div>
-              <div className="flex items-center gap-2">Écart d'encaissement : <b>{fmt(r.value_variance)} F</b>
+              <div className="flex items-center gap-2">{t("Écart d'encaissement :")} <b>{fmt(r.value_variance)} F</b>
                 {d.payment_result && <Badge variant="outline" className={RECON_RESULT[d.payment_result]?.cls}>{RECON_RESULT[d.payment_result]?.label}</Badge>}</div>
               <div className="flex flex-wrap gap-2">{(d.payments ?? []).map((p: Row, i: number) => <Badge key={i} variant="secondary">{p.method} : {fmt(p.amount)} F</Badge>)}</div>
             </CardContent></Card>
 
-            <Card><CardHeader><CardTitle className="text-base">Traitement du contrôleur</CardTitle></CardHeader><CardContent className="space-y-2">
-              <Textarea placeholder="Commentaire, analyse, justification…" value={comment} onChange={(e) => setComment(e.target.value)} />
+            <Card><CardHeader><CardTitle className="text-base">{t("Traitement du contrôleur")}</CardTitle></CardHeader><CardContent className="space-y-2">
+              <Textarea placeholder={t("Commentaire, analyse, justification…")} value={comment} onChange={(e) => setComment(e.target.value)} />
               <div className="flex flex-wrap gap-2">
-                <Button size="sm" variant="outline" disabled={busy || !comment.trim()} onClick={() => act("comment")}>Commenter</Button>
+                <Button size="sm" variant="outline" disabled={busy || !comment.trim()} onClick={() => act("comment")}>{t("Commenter")}</Button>
                 {canAnalyze && !validated && <>
-                  <Button size="sm" variant="outline" disabled={busy} onClick={() => act("analyze")}>Passer en analyse</Button>
-                  <Button size="sm" variant="outline" disabled={busy || !comment.trim()} onClick={() => act("request_justification")}>Demander justification</Button>
-                  <Button size="sm" variant="destructive" disabled={busy || !comment.trim()} onClick={() => act("escalate")}>Escalader</Button>
+                  <Button size="sm" variant="outline" disabled={busy} onClick={() => act("analyze")}>{t("Passer en analyse")}</Button>
+                  <Button size="sm" variant="outline" disabled={busy || !comment.trim()} onClick={() => act("request_justification")}>{t("Demander justification")}</Button>
+                  <Button size="sm" variant="destructive" disabled={busy || !comment.trim()} onClick={() => act("escalate")}>{t("Escalader")}</Button>
                 </>}
-                {r.workflow === "justification_requested" && <Button size="sm" variant="outline" disabled={busy || !comment.trim()} onClick={() => act("justify")}>Fournir la justification</Button>}
-                {canValidate && !validated && <Button size="sm" disabled={busy || !comment.trim()} onClick={() => act("validate")}>Valider</Button>}
-                {canValidate && validated && <Button size="sm" variant="outline" disabled={busy || !comment.trim()} onClick={() => act("reopen")}>Rouvrir</Button>}
-                {canRun && !validated && <Button size="sm" variant="ghost" disabled={busy} onClick={recompute}><RefreshCw className="mr-1 h-4 w-4" />Recalculer</Button>}
+                {r.workflow === "justification_requested" && <Button size="sm" variant="outline" disabled={busy || !comment.trim()} onClick={() => act("justify")}>{t("Fournir la justification")}</Button>}
+                {canValidate && !validated && <Button size="sm" disabled={busy || !comment.trim()} onClick={() => act("validate")}>{t("Valider")}</Button>}
+                {canValidate && validated && <Button size="sm" variant="outline" disabled={busy || !comment.trim()} onClick={() => act("reopen")}>{t("Rouvrir")}</Button>}
+                {canRun && !validated && <Button size="sm" variant="ghost" disabled={busy} onClick={recompute}><RefreshCw className="mr-1 h-4 w-4" />{t("Recalculer")}</Button>}
               </div>
-              <p className="text-xs text-muted-foreground">Un commentaire est obligatoire pour chaque action (sauf « Passer en analyse »).</p>
+              <p className="text-xs text-muted-foreground">{t("Un commentaire est obligatoire pour chaque action (sauf « Passer en analyse »).")}</p>
             </CardContent></Card>
 
-            <Card><CardHeader><CardTitle className="text-base">Historique</CardTitle></CardHeader><CardContent className="space-y-1 text-sm">
+            <Card><CardHeader><CardTitle className="text-base">{t("Historique")}</CardTitle></CardHeader><CardContent className="space-y-1 text-sm">
               {events.map((e) => (
                 <div key={e.id} className="flex flex-wrap gap-2 border-b border-border py-1">
                   <span className="text-muted-foreground">{format(new Date(e.created_at), "dd/MM/yyyy HH:mm")}</span>
@@ -263,6 +266,7 @@ const FIELDS: [string, string][] = [
 const DEFAULTS: Row = { vol_watch_pct: 0.3, vol_anomaly_pct: 0.5, vol_critical_pct: 1, amt_watch: 5000, amt_anomaly: 20000, amt_critical: 100000 };
 
 function Tolerances({ tenantId, countryId, products, canEdit }: { tenantId: string | null; countryId: string | null; products: Row[]; canEdit: boolean }) {
+  const { t } = useLanguage();
   const [items, setItems] = useState<Record<string, Row>>({});
   const load = useCallback(async () => {
     if (!tenantId || !countryId) return;
@@ -282,7 +286,7 @@ function Tolerances({ tenantId, countryId, products, canEdit }: { tenantId: stri
 
   return (
     <div className="space-y-3">
-      <p className="text-sm text-muted-foreground">Seuils pour la société et le pays actifs. Un seuil produit remplace le seuil par défaut. Écart en % du volume vendu, écart de valeur en FCFA.</p>
+      <p className="text-sm text-muted-foreground">{t("Seuils pour la société et le pays actifs. Un seuil produit remplace le seuil par défaut. Écart en % du volume vendu, écart de valeur en FCFA.")}</p>
       {[{ id: "default", name: "Par défaut (tous produits + encaissements)" }, ...products].map((p) => (
         <TolRow key={p.id} title={p.name} initial={items[p.id] ?? (p.id === "default" ? DEFAULTS : items.default ?? DEFAULTS)} custom={!!items[p.id]} canEdit={canEdit} onSave={(v) => save(p.id, v)} />
       ))}
@@ -291,15 +295,16 @@ function Tolerances({ tenantId, countryId, products, canEdit }: { tenantId: stri
 }
 
 function TolRow({ title, initial, custom, canEdit, onSave }: { title: string; initial: Row; custom: boolean; canEdit: boolean; onSave: (v: Row) => void }) {
+  const { t } = useLanguage();
   const [v, setV] = useState<Row>(initial);
   useEffect(() => setV(initial), [initial]);
   return (
     <Card><CardContent className="space-y-2 p-4">
-      <div className="flex items-center justify-between"><b>{title}</b>{!custom && <Badge variant="secondary">Hérité</Badge>}</div>
+      <div className="flex items-center justify-between"><b>{title}</b>{!custom && <Badge variant="secondary">{t("Hérité")}</Badge>}</div>
       <div className="grid grid-cols-2 gap-2 md:grid-cols-6">
         {FIELDS.map(([f, l]) => <div key={f}><Label className="text-xs">{l}</Label><Input type="number" min={0} step="any" disabled={!canEdit} value={v[f] ?? ""} onChange={(e) => setV({ ...v, [f]: e.target.value })} /></div>)}
       </div>
-      {canEdit && <Button size="sm" onClick={() => onSave(v)}><Save className="mr-1 h-4 w-4" />Enregistrer</Button>}
+      {canEdit && <Button size="sm" onClick={() => onSave(v)}><Save className="mr-1 h-4 w-4" />{t("Enregistrer")}</Button>}
     </CardContent></Card>
   );
 }

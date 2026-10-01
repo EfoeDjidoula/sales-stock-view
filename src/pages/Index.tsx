@@ -34,6 +34,7 @@ import { SupplyWorkflowModule } from "@/components/supply/SupplyWorkflowModule";
 import { SalesClosureModule } from "@/components/sales/SalesClosureModule";
 import { ReconciliationModule } from "@/components/reconciliation/ReconciliationModule";
 import { FraudCenterModule } from "@/components/fraud/FraudCenterModule";
+import { FuelCardsModule } from "@/components/fuel/FuelCardsModule";
 import { StationManagement } from "@/components/stations/StationManagement";
 import { FiscalYearModule } from "@/components/fiscal/FiscalYearModule";
 import { HistoryModule } from "@/components/history/HistoryModule";
@@ -66,6 +67,7 @@ import {
   ChevronDown,
   Building2,
   Contact,
+  CreditCard,
 } from "lucide-react";
 import { ClientsModule } from "@/components/clients/ClientsModule";
 import { SuppliersModule } from "@/components/suppliers/SuppliersModule";
@@ -111,6 +113,7 @@ const TAB_PERMISSIONS: Record<string, AppRole[]> = {
   proforma: ["admin", "manager", "operator"],
   analyse_ia: ["admin", "manager"],
   support: ["admin", "manager", "operator"],
+  fuel_cards: ["admin", "manager", "operator"],
 
   exercices: ["admin"],
   droits: ["admin"],
@@ -138,6 +141,7 @@ const TAB_META: Record<string, { label: string; icon: typeof TrendingUp }> = {
   analyse_ia: { label: "Analyse IA", icon: BarChart3 },
   support: { label: "Mes tickets", icon: LifeBuoy },
   clients: { label: "Clients", icon: Users },
+  fuel_cards: { label: "Cartes carburant", icon: CreditCard },
   fournisseurs: { label: "Fournisseurs", icon: Building2 },
   exercices: { label: "Exercices", icon: BookOpen },
   droits: { label: "Gestion des droits", icon: Users },
@@ -165,6 +169,7 @@ const TAB_RBAC: Record<string, string[] | null> = {
   analyse_ia: ["reports.view"],
   support: null,
   clients: ["clients.view"],
+  fuel_cards: ["fuel_cards.view"],
   fournisseurs: ["suppliers.view"],
   exercices: ["fiscal_years.view"],
   droits: ["users.view", "users.administer"],
@@ -190,6 +195,7 @@ const TAB_MODULE: Record<string, string> = {
   proforma: "commandes",
   analyse_ia: "ia",
   clients: "clients_b2b",
+  fuel_cards: "cartes_carburant",
   fournisseurs: "achats",
 };
 
@@ -203,7 +209,7 @@ const TAB_GROUPS: {
   { id: "suivi", label: "Suivi & Analyse", icon: BarChart3, tabs: ["command", "ventes", "ventes_cloture", "reconciliation", "anti_fraude", "stock", "moteur_stock", "historique", "analyse_ia"] },
   { id: "logistique", label: "Logistique & Flux", icon: Truck, tabs: ["commandes", "chaine_appro", "depotage", "camions"] },
   { id: "config", label: "Configuration", icon: Settings2, tabs: ["stations", "perequation", "structure_prix", "proforma"] },
-  { id: "tiers", label: "Tiers", icon: Contact, tabs: ["clients", "fournisseurs"] },
+  { id: "tiers", label: "Tiers", icon: Contact, tabs: ["clients", "fuel_cards", "fournisseurs"] },
   { id: "support", label: "Support", icon: LifeBuoy, tabs: ["support"] },
   { id: "admin", label: "Administration", icon: ShieldCheck, tabs: ["exercices", "droits", "societe"] },
 ];
@@ -613,6 +619,10 @@ const Index = () => {
             ) : (
               <AccessDenied onGoBack={() => setActiveTab("ventes")} />
             )}
+          </TabsContent>
+
+          <TabsContent value="fuel_cards" className="animate-fade-in">
+            {canAccessTab("fuel_cards") ? <FuelCardsModule /> : <AccessDenied onGoBack={() => setActiveTab(allowedTabs[0] ?? "ventes")} />}
           </TabsContent>
 
           <TabsContent value="fournisseurs" className="animate-fade-in">
