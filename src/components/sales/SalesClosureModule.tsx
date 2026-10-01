@@ -16,6 +16,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { useLanguage } from "@/hooks/useLanguage";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const db = supabase as any;
@@ -35,6 +36,7 @@ const errMsg = (e: unknown) => (e as { message?: string })?.message ?? String(e)
 interface Line { nozzle: Row; index_start: string; index_end: string; volume: string; volume_mode: "index" | "manual"; unit_price: string }
 
 export const SalesClosureModule = () => {
+  const { t, language } = useLanguage();
   const { tenantId, countryId, scopeQuery } = useScope();
   const { can } = usePermissions();
   const { isPlatformAdmin } = usePlatformAdmin();
@@ -144,7 +146,7 @@ export const SalesClosureModule = () => {
     const { error } = await db.from("daily_closures").insert({ station_id: stationId, closure_date: date, tenant_id: tenantId, country_id: countryId });
     setBusy(false);
     if (error) return toast.error(error.message);
-    toast.success("Clôture ouverte en brouillon");
+    toast.success(t("Clôture ouverte en brouillon"));
     load();
   };
 
@@ -162,7 +164,7 @@ export const SalesClosureModule = () => {
       const hasData = l.volume_mode === "manual" ? l.volume !== "" : l.index_end !== "";
       if (!hasData) continue;
       const v = lineVolume(l);
-      if ([l.index_start, l.index_end, l.volume, l.unit_price].some((x) => x !== "" && Number(x) < 0)) return toast.error("Valeurs négatives interdites");
+       if ([l.index_start, l.index_end, l.volume, l.unit_price].some((x) => x !== "" && Number(x) < 0)) return toast.error(t("Valeurs négatives interdites"));
       if (l.volume_mode === "index" && (l.index_start === "" || v < 0)) return toast.error(`${l.nozzle.name} : l'index de fin doit être ≥ à l'index de début`);
       rows.push({
         closure_id: closure.id, tenant_id: closure.tenant_id, country_id: closure.country_id, nozzle_id: l.nozzle.id,
@@ -171,12 +173,12 @@ export const SalesClosureModule = () => {
         volume: v, volume_mode: l.volume_mode, unit_price: Number(l.unit_price) || 0,
       });
     }
-    if (!rows.length) return toast.error("Aucune vente à enregistrer");
+     if (!rows.length) return toast.error(t("Aucune vente à enregistrer"));
     setBusy(true);
     const { error } = await db.from("closure_sales").upsert(rows, { onConflict: "closure_id,nozzle_id" });
     setBusy(false);
     if (error) return toast.error(error.message);
-    toast.success("Ventes enregistrées");
+     toast.success(t("Ventes enregistrées"));
     load();
   };
 
@@ -186,7 +188,7 @@ export const SalesClosureModule = () => {
     for (const m of methods) {
       const p = payments[m.id];
       const amt = Number(p?.amount) || 0;
-      if (amt < 0) return toast.error("Montant négatif interdit");
+       if (amt < 0) return toast.error(t("Montant négatif interdit"));
       if (amt > 0) up.push({ closure_id: closure.id, tenant_id: closure.tenant_id, country_id: closure.country_id, payment_method_id: m.id, amount: amt, reference: p?.reference || null });
       else if (p) del.push(m.id);
     }
@@ -194,7 +196,7 @@ export const SalesClosureModule = () => {
     try {
       if (up.length) { const { error } = await db.from("closure_payments").upsert(up, { onConflict: "closure_id,payment_method_id" }); if (error) throw error; }
       if (del.length) { const { error } = await db.from("closure_payments").delete().eq("closure_id", closure.id).in("payment_method_id", del); if (error) throw error; }
-      toast.success("Encaissements enregistrés");
+       toast.success(t("Encaissements enregistrés"));
       load();
     } catch (e) { toast.error(errMsg(e)); } finally { setBusy(false); }
   };
@@ -205,7 +207,7 @@ export const SalesClosureModule = () => {
     const { error } = await db.rpc("closure_transition", { _id: closure.id, _action: action, _reason: why ?? null });
     setBusy(false);
     if (error) return toast.error(error.message);
-    toast.success(`${ACTION_LABEL[action]} effectuée`);
+     toast.success(language === "en" ? `${t(ACTION_LABEL[action])} completed` : `${ACTION_LABEL[action]} effectuée`);
     setReasonFor(null); setReason("");
     load();
   };
@@ -235,7 +237,7 @@ export const SalesClosureModule = () => {
   return (
     <div className="space-y-4">
       <Card className="border-border bg-card">
-        <CardHeader><CardTitle>Ventes & clôture journalière</CardTitle></CardHeader>
+         <CardHeader><CardTitle>{t("Ventes & clôture journalière")}</CardTitle></CardHeader>
         <CardContent className="grid gap-3 md:grid-cols-4 items-end">
           <div className="space-y-1">
             <Label>Station</Label>
@@ -249,11 +251,11 @@ export const SalesClosureModule = () => {
             <Input type="date" value={date} max={today} onChange={(e) => setDate(e.target.value)} />
           </div>
           <div className="flex items-center gap-2">
-            {status ? <Badge variant={status.variant}>{status.label}</Badge> : <span className="text-sm text-muted-foreground">Aucune clôture pour ce jour</span>}
-            {locked && <Lock className="w-4 h-4 text-muted-foreground" aria-label="Verrouillée" />}
+             {status ? <Badge variant={status.variant}>{t(status.label)}</Badge> : <span className="text-sm text-muted-foreground">{t("Aucune clôture pour ce jour")}</span>}
+             {locked && <Lock className="w-4 h-4 text-muted-foreground" aria-label={t("Verrouillée")} />}
           </div>
           {!closure && canWrite && (
-            <Button onClick={createClosure} disabled={busy || !stationId} className="gap-2"><Plus className="w-4 h-4" /> Ouvrir la clôture</Button>
+             <Button onClick={createClosure} disabled={busy || !stationId} className="gap-2"><Plus className="w-4 h-4" /> {t("Ouvrir la clôture")}</Button>
           )}
         </CardContent>
       </Card>
@@ -263,23 +265,23 @@ export const SalesClosureModule = () => {
       ) : (
         <Tabs defaultValue="saisie">
           <TabsList className="flex-wrap h-auto">
-            <TabsTrigger value="saisie">Saisie des ventes</TabsTrigger>
-            <TabsTrigger value="encaissements">Encaissements</TabsTrigger>
-            <TabsTrigger value="cloture">Clôture du jour</TabsTrigger>
-            <TabsTrigger value="historique">Historique des clôtures</TabsTrigger>
-            <TabsTrigger value="modes">Modes de paiement</TabsTrigger>
+             <TabsTrigger value="saisie">{t("Saisie des ventes")}</TabsTrigger>
+             <TabsTrigger value="encaissements">{t("Encaissements")}</TabsTrigger>
+             <TabsTrigger value="cloture">{t("Clôture du jour")}</TabsTrigger>
+             <TabsTrigger value="historique">{t("Historique des clôtures")}</TabsTrigger>
+             <TabsTrigger value="modes">{t("Modes de paiement")}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="saisie" className="mt-4 space-y-3">
-            {!lines.length && <p className="text-sm text-muted-foreground">Aucun pistolet actif pour cette station (Configuration → Stations → Référentiels).</p>}
+             {!lines.length && <p className="text-sm text-muted-foreground">{t("Aucun pistolet actif pour cette station (Configuration → Stations → Référentiels).")}</p>}
             {!!lines.length && (
               <div className="overflow-x-auto rounded-lg border border-border">
                 <table className="w-full text-sm">
                   <thead className="bg-muted/40 text-muted-foreground">
                     <tr>
-                      <th className="p-2 text-left">Pompe / Pistolet</th><th className="p-2 text-left">Produit</th>
-                      <th className="p-2 text-left">Mode</th><th className="p-2 text-left">Index début</th><th className="p-2 text-left">Index fin</th>
-                      <th className="p-2 text-right">Volume (L)</th><th className="p-2 text-left">Prix / L</th><th className="p-2 text-right">Montant</th>
+                       <th className="p-2 text-left">{t("Pompe / Pistolet")}</th><th className="p-2 text-left">{t("Produit")}</th>
+                       <th className="p-2 text-left">{t("Mode")}</th><th className="p-2 text-left">{t("Index début")}</th><th className="p-2 text-left">{t("Index fin")}</th>
+                       <th className="p-2 text-right">Volume (L)</th><th className="p-2 text-left">{t("Prix / L")}</th><th className="p-2 text-right">{t("Montant")}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -294,7 +296,7 @@ export const SalesClosureModule = () => {
                           <td className="p-1 w-28">
                             <Select value={l.volume_mode} disabled={!editable} onValueChange={(val) => setLine(i, { volume_mode: val as Line["volume_mode"] })}>
                               <SelectTrigger><SelectValue /></SelectTrigger>
-                              <SelectContent><SelectItem value="index">Index</SelectItem><SelectItem value="manual">Manuel</SelectItem></SelectContent>
+                               <SelectContent><SelectItem value="index">Index</SelectItem><SelectItem value="manual">{t("Manuel")}</SelectItem></SelectContent>
                             </Select>
                           </td>
                           <td className="p-1"><Input type="number" min={0} aria-label={`Index début ${l.nozzle.name}`} disabled={!editable || l.volume_mode === "manual"} value={l.index_start} onChange={(e) => setLine(i, { index_start: e.target.value })} /></td>
@@ -310,21 +312,21 @@ export const SalesClosureModule = () => {
                       );
                     })}
                     <tr className="border-t border-border font-semibold bg-muted/20">
-                      <td className="p-2" colSpan={5}>Total</td>
+                       <td className="p-2" colSpan={5}>{t("Total")}</td>
                       <td className="p-2 text-right">{fmt(liveTotal.v)}</td><td /><td className="p-2 text-right">{fmt(liveTotal.m)}</td>
                     </tr>
                   </tbody>
                 </table>
               </div>
             )}
-            {editable && <div className="flex justify-end"><Button onClick={saveSales} disabled={busy} className="gap-2"><Save className="w-4 h-4" /> Enregistrer les ventes</Button></div>}
-            {!closure && <p className="text-sm text-muted-foreground">Ouvrez d'abord la clôture de ce jour pour saisir les ventes.</p>}
+             {editable && <div className="flex justify-end"><Button onClick={saveSales} disabled={busy} className="gap-2"><Save className="w-4 h-4" /> {t("Enregistrer les ventes")}</Button></div>}
+             {!closure && <p className="text-sm text-muted-foreground">{t("Ouvrez d'abord la clôture de ce jour pour saisir les ventes.")}</p>}
           </TabsContent>
 
           <TabsContent value="encaissements" className="mt-4 space-y-3">
             <div className="overflow-x-auto rounded-lg border border-border">
               <table className="w-full text-sm">
-                <thead className="bg-muted/40 text-muted-foreground"><tr><th className="p-2 text-left">Mode</th><th className="p-2 text-left">Montant</th><th className="p-2 text-left">Référence</th></tr></thead>
+                 <thead className="bg-muted/40 text-muted-foreground"><tr><th className="p-2 text-left">{t("Mode")}</th><th className="p-2 text-left">{t("Montant")}</th><th className="p-2 text-left">{t("Référence")}</th></tr></thead>
                 <tbody>
                   {methods.filter((m) => m.is_active || payments[m.id]).map((m) => (
                     <tr key={m.id} className="border-t border-border">
@@ -333,70 +335,70 @@ export const SalesClosureModule = () => {
                       <td className="p-1"><Input disabled={!editable} value={payments[m.id]?.reference ?? ""} onChange={(e) => setPayments((p) => ({ ...p, [m.id]: { amount: p[m.id]?.amount ?? "", reference: e.target.value } }))} /></td>
                     </tr>
                   ))}
-                  <tr className="border-t border-border font-semibold bg-muted/20"><td className="p-2">Total encaissé</td><td className="p-2">{fmt(payTotal)}</td><td /></tr>
+                   <tr className="border-t border-border font-semibold bg-muted/20"><td className="p-2">{t("Total encaissé")}</td><td className="p-2">{fmt(payTotal)}</td><td /></tr>
                 </tbody>
               </table>
             </div>
-            {editable && <div className="flex justify-end"><Button onClick={savePayments} disabled={busy} className="gap-2"><Save className="w-4 h-4" /> Enregistrer les encaissements</Button></div>}
+             {editable && <div className="flex justify-end"><Button onClick={savePayments} disabled={busy} className="gap-2"><Save className="w-4 h-4" /> {t("Enregistrer les encaissements")}</Button></div>}
           </TabsContent>
 
           <TabsContent value="cloture" className="mt-4 space-y-4">
-            {!closure ? <p className="text-sm text-muted-foreground">Aucune clôture pour ce jour.</p> : (
+             {!closure ? <p className="text-sm text-muted-foreground">{t("Aucune clôture pour ce jour.")}</p> : (
               <>
                 <div className="grid gap-3 md:grid-cols-4">
                   {[["Volume total", `${fmt(closure.total_volume)} L`], ["Montant des ventes", fmt(closure.total_amount)], ["Total encaissé", fmt(closure.total_collected)], ["Écart d'encaissement", fmt(closure.cash_variance)]].map(([k, v], i) => (
                     <Card key={k} className="border-border bg-card"><CardContent className="p-4">
-                      <p className="text-xs text-muted-foreground">{k}</p>
+                       <p className="text-xs text-muted-foreground">{t(k)}</p>
                       <p className={`text-xl font-bold ${i === 3 && Number(closure.cash_variance) !== 0 ? (Number(closure.cash_variance) < 0 ? "text-destructive" : "text-primary") : ""}`}>{v}</p>
                     </CardContent></Card>
                   ))}
                 </div>
                 <div className="grid gap-4 lg:grid-cols-2">
-                  <Card className="border-border bg-card"><CardHeader><CardTitle className="text-base">Ventes par produit</CardTitle></CardHeader><CardContent>
+                   <Card className="border-border bg-card"><CardHeader><CardTitle className="text-base">{t("Ventes par produit")}</CardTitle></CardHeader><CardContent>
                     <table className="w-full text-sm"><tbody>
                       {Object.entries(byProduct).map(([pid, v]) => <tr key={pid} className="border-t border-border"><td className="p-2">{products[pid]?.name ?? "—"}</td><td className="p-2 text-right">{fmt(v.volume)} L</td><td className="p-2 text-right">{fmt(v.amount)}</td></tr>)}
                     </tbody></table>
                   </CardContent></Card>
-                  <Card className="border-border bg-card"><CardHeader><CardTitle className="text-base">Encaissements par mode</CardTitle></CardHeader><CardContent>
+                   <Card className="border-border bg-card"><CardHeader><CardTitle className="text-base">{t("Encaissements par mode")}</CardTitle></CardHeader><CardContent>
                     <table className="w-full text-sm"><tbody>
                       {methods.filter((m) => Number(payments[m.id]?.amount) > 0).map((m) => <tr key={m.id} className="border-t border-border"><td className="p-2">{m.label}</td><td className="p-2 text-right">{fmt(Number(payments[m.id].amount))}</td></tr>)}
                     </tbody></table>
                   </CardContent></Card>
-                  <Card className="border-border bg-card"><CardHeader><CardTitle className="text-base">Ventes par pistolet</CardTitle></CardHeader><CardContent>
+                   <Card className="border-border bg-card"><CardHeader><CardTitle className="text-base">{t("Ventes par pistolet")}</CardTitle></CardHeader><CardContent>
                     <table className="w-full text-sm"><tbody>
                       {savedSales.map((s) => { const n = nozzleName(s.nozzle_id); return <tr key={s.id} className="border-t border-border"><td className="p-2">{n?.pump?.name ?? "—"} · {n?.name ?? "—"}</td><td className="p-2 text-right">{fmt(s.volume)} L</td><td className="p-2 text-right">{fmt(s.amount)}</td></tr>; })}
                     </tbody></table>
                   </CardContent></Card>
-                  <Card className="border-border bg-card"><CardHeader><CardTitle className="text-base">Impact sur le stock par cuve</CardTitle></CardHeader><CardContent>
+                   <Card className="border-border bg-card"><CardHeader><CardTitle className="text-base">{t("Impact sur le stock par cuve")}</CardTitle></CardHeader><CardContent>
                     <table className="w-full text-sm">
-                      <thead className="text-muted-foreground"><tr><th className="p-2 text-left">Cuve</th><th className="p-2 text-right">Vendu</th><th className="p-2 text-right">Stock théorique</th><th className="p-2 text-right">{closure.status === "validated" ? "" : "Après validation"}</th></tr></thead>
+                       <thead className="text-muted-foreground"><tr><th className="p-2 text-left">{t("Cuve")}</th><th className="p-2 text-right">{t("Vendu")}</th><th className="p-2 text-right">{t("Stock théorique")}</th><th className="p-2 text-right">{closure.status === "validated" ? "" : t("Après validation")}</th></tr></thead>
                       <tbody>
                         {Object.entries(byTank).map(([tid, vol]) => {
                           const lv = levels.find((x) => x.tank_id === tid);
                           const th = Number(lv?.theoretical ?? 0);
                           const after = th - vol;
-                          return <tr key={tid} className="border-t border-border"><td className="p-2">{tanks[tid]?.name ?? "—"}</td><td className="p-2 text-right">{fmt(vol)} L</td><td className="p-2 text-right">{lv ? `${fmt(th)} L` : "non initialisé"}</td>
+                           return <tr key={tid} className="border-t border-border"><td className="p-2">{tanks[tid]?.name ?? "—"}</td><td className="p-2 text-right">{fmt(vol)} L</td><td className="p-2 text-right">{lv ? `${fmt(th)} L` : t("non initialisé")}</td>
                             <td className={`p-2 text-right ${after < 0 && closure.status !== "validated" ? "text-destructive" : ""}`}>{closure.status === "validated" ? "" : `${fmt(after)} L`}</td></tr>;
                         })}
                       </tbody>
                     </table>
                     {closure.status !== "validated" && Object.entries(byTank).some(([tid, vol]) => Number(levels.find((x) => x.tank_id === tid)?.theoretical ?? 0) < vol) && (
-                      <p className="text-xs text-destructive mt-2">Stock insuffisant sur au moins une cuve : la validation sera refusée tant que le stock initial ou les entrées ne sont pas saisis.</p>
+                       <p className="text-xs text-destructive mt-2">{t("Stock insuffisant sur au moins une cuve : la validation sera refusée tant que le stock initial ou les entrées ne sont pas saisis.")}</p>
                     )}
                   </CardContent></Card>
                 </div>
-                {closure.last_reason && <p className="text-sm text-muted-foreground">Dernier motif : {closure.last_reason}</p>}
+                 {closure.last_reason && <p className="text-sm text-muted-foreground">{t("Dernier motif :")} {closure.last_reason}</p>}
                 <div className="flex flex-wrap gap-2 justify-end">
-                  {canWrite && ["draft", "rejected"].includes(closure.status) && <Button onClick={() => transition("submit")} disabled={busy} className="gap-2"><Send className="w-4 h-4" /> Soumettre</Button>}
+                   {canWrite && ["draft", "rejected"].includes(closure.status) && <Button onClick={() => transition("submit")} disabled={busy} className="gap-2"><Send className="w-4 h-4" /> {t("Soumettre")}</Button>}
                   {canValidate && closure.status === "submitted" && <>
-                    <Button variant="destructive" onClick={() => setReasonFor("reject")} disabled={busy} className="gap-2"><X className="w-4 h-4" /> Rejeter</Button>
-                    <Button onClick={() => transition("validate")} disabled={busy} className="gap-2"><Check className="w-4 h-4" /> Valider</Button>
+                     <Button variant="destructive" onClick={() => setReasonFor("reject")} disabled={busy} className="gap-2"><X className="w-4 h-4" /> {t("Rejeter")}</Button>
+                     <Button onClick={() => transition("validate")} disabled={busy} className="gap-2"><Check className="w-4 h-4" /> {t("Valider")}</Button>
                   </>}
-                  {canValidate && closure.status === "validated" && <Button variant="outline" onClick={() => setReasonFor("reopen")} disabled={busy} className="gap-2"><RotateCcw className="w-4 h-4" /> Rouvrir</Button>}
+                   {canValidate && closure.status === "validated" && <Button variant="outline" onClick={() => setReasonFor("reopen")} disabled={busy} className="gap-2"><RotateCcw className="w-4 h-4" /> {t("Rouvrir")}</Button>}
                 </div>
-                <Card className="border-border bg-card"><CardHeader><CardTitle className="text-base">Historique de cette clôture</CardTitle></CardHeader><CardContent className="space-y-1">
-                  {!events.length && <p className="text-sm text-muted-foreground">Aucun changement d'état.</p>}
-                  {events.map((e) => <p key={e.id} className="text-sm"><span className="text-muted-foreground">{new Date(e.created_at).toLocaleString("fr-FR")}</span> · {ACTION_LABEL[e.action] ?? e.action} par {e.author_name ?? "—"} ({CLOSURE_STATUS[e.from_status]?.label} → {CLOSURE_STATUS[e.to_status]?.label}){e.reason ? ` — ${e.reason}` : ""}</p>)}
+                 <Card className="border-border bg-card"><CardHeader><CardTitle className="text-base">{t("Historique de cette clôture")}</CardTitle></CardHeader><CardContent className="space-y-1">
+                   {!events.length && <p className="text-sm text-muted-foreground">{t("Aucun changement d'état.")}</p>}
+                   {events.map((e) => <p key={e.id} className="text-sm"><span className="text-muted-foreground">{new Date(e.created_at).toLocaleString(language === "en" ? "en-US" : "fr-FR")}</span> · {t(ACTION_LABEL[e.action] ?? e.action)} {language === "en" ? "by" : "par"} {e.author_name ?? "—"} ({t(CLOSURE_STATUS[e.from_status]?.label ?? "")} → {t(CLOSURE_STATUS[e.to_status]?.label ?? "")}){e.reason ? ` — ${e.reason}` : ""}</p>)}
                 </CardContent></Card>
               </>
             )}
@@ -409,13 +411,13 @@ export const SalesClosureModule = () => {
 
       <Dialog open={!!reasonFor} onOpenChange={(o) => !o && setReasonFor(null)}>
         <DialogContent>
-          <DialogHeader><DialogTitle>{reasonFor === "reject" ? "Rejeter la clôture" : "Rouvrir la clôture validée"}</DialogTitle></DialogHeader>
-          {reasonFor === "reopen" && <p className="text-sm text-muted-foreground">Les ventes déjà sorties du stock seront réintégrées par un ajustement tracé. La clôture repasse en brouillon.</p>}
-          <Label>Motif (obligatoire)</Label>
+           <DialogHeader><DialogTitle>{t(reasonFor === "reject" ? "Rejeter la clôture" : "Rouvrir la clôture validée")}</DialogTitle></DialogHeader>
+           {reasonFor === "reopen" && <p className="text-sm text-muted-foreground">{t("Les ventes déjà sorties du stock seront réintégrées par un ajustement tracé. La clôture repasse en brouillon.")}</p>}
+           <Label>{t("Motif (obligatoire)")}</Label>
           <Textarea value={reason} onChange={(e) => setReason(e.target.value)} />
           <DialogFooter>
-            <Button variant="outline" onClick={() => setReasonFor(null)}>Annuler</Button>
-            <Button disabled={!reason.trim() || busy} onClick={() => reasonFor && transition(reasonFor, reason.trim())}>Confirmer</Button>
+             <Button variant="outline" onClick={() => setReasonFor(null)}>{t("Annuler")}</Button>
+             <Button disabled={!reason.trim() || busy} onClick={() => reasonFor && transition(reasonFor, reason.trim())}>{t("Confirmer")}</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -424,6 +426,7 @@ export const SalesClosureModule = () => {
 };
 
 const ClosureHistory = ({ stations, onOpen }: { stations: Row[]; onOpen: (stationId: string, date: string) => void }) => {
+  const { t } = useLanguage();
   const { scopeQuery } = useScope();
   const [station, setStation] = useState("all");
   const [status, setStatus] = useState("all");
@@ -443,25 +446,25 @@ const ClosureHistory = ({ stations, onOpen }: { stations: Row[]; onOpen: (statio
   return (
     <div className="space-y-3">
       <div className="grid gap-3 md:grid-cols-4">
-        <Select value={station} onValueChange={setStation}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">Toutes les stations</SelectItem>{stations.map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent></Select>
-        <Select value={status} onValueChange={setStatus}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">Tous les statuts</SelectItem>{Object.entries(CLOSURE_STATUS).map(([k, v]) => <SelectItem key={k} value={k}>{v.label}</SelectItem>)}</SelectContent></Select>
+         <Select value={station} onValueChange={setStation}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">{t("Toutes les stations")}</SelectItem>{stations.map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent></Select>
+         <Select value={status} onValueChange={setStatus}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">{t("Tous les statuts")}</SelectItem>{Object.entries(CLOSURE_STATUS).map(([k, v]) => <SelectItem key={k} value={k}>{t(v.label)}</SelectItem>)}</SelectContent></Select>
         <Input type="date" value={from} onChange={(e) => setFrom(e.target.value)} />
         <Input type="date" value={to} onChange={(e) => setTo(e.target.value)} />
       </div>
       <div className="overflow-x-auto rounded-lg border border-border">
         <table className="w-full text-sm">
-          <thead className="bg-muted/40 text-muted-foreground"><tr><th className="p-2 text-left">Date</th><th className="p-2 text-left">Station</th><th className="p-2 text-left">Statut</th><th className="p-2 text-right">Volume</th><th className="p-2 text-right">Montant</th><th className="p-2 text-right">Encaissé</th><th className="p-2 text-right">Écart</th><th /></tr></thead>
+           <thead className="bg-muted/40 text-muted-foreground"><tr><th className="p-2 text-left">Date</th><th className="p-2 text-left">{t("Station")}</th><th className="p-2 text-left">{t("Statut")}</th><th className="p-2 text-right">{t("Volume")}</th><th className="p-2 text-right">{t("Montant")}</th><th className="p-2 text-right">{t("Encaissé")}</th><th className="p-2 text-right">{t("Écart")}</th><th /></tr></thead>
           <tbody>
             {rows.map((r) => (
               <tr key={r.id} className="border-t border-border">
                 <td className="p-2">{r.closure_date}</td><td className="p-2">{name(r.station_id)}</td>
-                <td className="p-2"><Badge variant={CLOSURE_STATUS[r.status]?.variant}>{CLOSURE_STATUS[r.status]?.label}</Badge></td>
+                 <td className="p-2"><Badge variant={CLOSURE_STATUS[r.status]?.variant}>{t(CLOSURE_STATUS[r.status]?.label ?? "")}</Badge></td>
                 <td className="p-2 text-right">{fmt(r.total_volume)} L</td><td className="p-2 text-right">{fmt(r.total_amount)}</td><td className="p-2 text-right">{fmt(r.total_collected)}</td>
                 <td className={`p-2 text-right ${Number(r.cash_variance) < 0 ? "text-destructive" : ""}`}>{fmt(r.cash_variance)}</td>
-                <td className="p-1"><Button size="sm" variant="ghost" onClick={() => onOpen(r.station_id, r.closure_date)}>Ouvrir</Button></td>
+                 <td className="p-1"><Button size="sm" variant="ghost" onClick={() => onOpen(r.station_id, r.closure_date)}>{t("Ouvrir")}</Button></td>
               </tr>
             ))}
-            {!rows.length && <tr><td colSpan={8} className="p-4 text-center text-muted-foreground">Aucune clôture sur cette période.</td></tr>}
+             {!rows.length && <tr><td colSpan={8} className="p-4 text-center text-muted-foreground">{t("Aucune clôture sur cette période.")}</td></tr>}
           </tbody>
         </table>
       </div>
@@ -470,6 +473,7 @@ const ClosureHistory = ({ stations, onOpen }: { stations: Row[]; onOpen: (statio
 };
 
 const PaymentMethodsTab = ({ methods, canEdit, onChanged }: { methods: Row[]; canEdit: boolean; onChanged: () => void }) => {
+  const { t } = useLanguage();
   const { tenantId, countryId } = useScope();
   const [label, setLabel] = useState("");
   const update = async (id: string, patch: Row) => {
@@ -489,15 +493,15 @@ const PaymentMethodsTab = ({ methods, canEdit, onChanged }: { methods: Row[]; ca
         {methods.map((m) => (
           <div key={m.id} className="flex items-center gap-3 p-2">
             <Input className="max-w-xs" defaultValue={m.label} disabled={!canEdit} onBlur={(e) => e.target.value.trim() && e.target.value !== m.label && update(m.id, { label: e.target.value.trim() })} />
-            <Badge variant={m.is_active ? "outline" : "secondary"}>{m.is_active ? "Actif" : "Inactif"}</Badge>
-            {canEdit && <Button size="sm" variant="ghost" onClick={() => update(m.id, { is_active: !m.is_active })}>{m.is_active ? "Désactiver" : "Activer"}</Button>}
+             <Badge variant={m.is_active ? "outline" : "secondary"}>{t(m.is_active ? "Actif" : "Inactif")}</Badge>
+             {canEdit && <Button size="sm" variant="ghost" onClick={() => update(m.id, { is_active: !m.is_active })}>{t(m.is_active ? "Désactiver" : "Activer")}</Button>}
           </div>
         ))}
       </div>
       {canEdit && (
         <div className="flex gap-2 max-w-md">
-          <Input placeholder="Nouveau mode de paiement" value={label} onChange={(e) => setLabel(e.target.value)} />
-          <Button onClick={add} disabled={!label.trim()} className="gap-2"><Plus className="w-4 h-4" /> Ajouter</Button>
+           <Input placeholder={t("Nouveau mode de paiement")} value={label} onChange={(e) => setLabel(e.target.value)} />
+           <Button onClick={add} disabled={!label.trim()} className="gap-2"><Plus className="w-4 h-4" /> {t("Ajouter")}</Button>
         </div>
       )}
     </div>

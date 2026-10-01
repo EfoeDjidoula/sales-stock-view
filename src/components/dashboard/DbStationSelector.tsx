@@ -7,6 +7,7 @@ import {
 } from "@/components/ui/select";
 import { MapPin, Loader2 } from "lucide-react";
 import { useStations } from "@/hooks/useIndexEntries";
+import { useLanguage } from "@/hooks/useLanguage";
 
 interface DbStation {
   id: string;
@@ -26,12 +27,13 @@ export const DbStationSelector = ({
   showAll = true,
 }: DbStationSelectorProps) => {
   const { data: stations, isLoading } = useStations();
+  const { t } = useLanguage();
 
   if (isLoading) {
     return (
       <div className="flex items-center gap-2 px-4 py-2 bg-secondary rounded-lg">
         <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
-        <span className="text-sm text-muted-foreground">Chargement...</span>
+         <span className="text-sm text-muted-foreground">{t("Chargement...")}</span>
       </div>
     );
   }
@@ -53,13 +55,13 @@ export const DbStationSelector = ({
       <SelectTrigger className="w-[220px] bg-secondary border-border">
         <div className="flex items-center gap-2">
           <MapPin className="w-4 h-4 text-primary" />
-          <SelectValue placeholder="Sélectionner une station" />
+           <SelectValue placeholder={t("Sélectionner une station")} />
         </div>
       </SelectTrigger>
       <SelectContent className="bg-card border-border">
         {showAll && (
           <SelectItem value="all" className="cursor-pointer">
-            Toutes les stations
+             {t("Toutes les stations")}
           </SelectItem>
         )}
         {stations?.map((station) => (

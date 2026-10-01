@@ -244,6 +244,7 @@ export function FraudCenterModule() {
 function RulesEditor({ defaults, rules, canEdit, tenantId, countryId, onSaved }: {
   defaults: Row[]; rules: Record<string, Row>; canEdit: boolean; tenantId: string | null; countryId: string | null; onSaved: () => void;
 }) {
+  const { t } = useLanguage();
   const [draft, setDraft] = useState<Record<string, Row>>({});
   useEffect(() => {
     setDraft(Object.fromEntries(defaults.map((d) => {
@@ -258,12 +259,12 @@ function RulesEditor({ defaults, rules, canEdit, tenantId, countryId, onSaved }:
       tenant_id: tenantId, country_id: countryId, rule_code: code, is_enabled: v.is_enabled,
       threshold: Number(v.threshold), window_days: Number(v.window_days), severity: v.severity,
     }, { onConflict: "tenant_id,country_id,rule_code" });
-    if (error) toast.error(errMsg(error)); else { toast.success("Règle enregistrée"); onSaved(); }
+    if (error) toast.error(errMsg(error)); else { toast.success(t("Règle enregistrée")); onSaved(); }
   };
   return (
     <Card className="glass-card"><CardContent className="p-0">
       <Table>
-        <TableHeader><TableRow><TableHead>Actif</TableHead><TableHead>Règle</TableHead><TableHead>Seuil</TableHead><TableHead>Fenêtre (j)</TableHead><TableHead>Sévérité</TableHead><TableHead /></TableRow></TableHeader>
+         <TableHeader><TableRow>{["Actif", "Règle", "Seuil", "Fenêtre (j)", "Sévérité"].map((label) => <TableHead key={label}>{t(label)}</TableHead>)}<TableHead /></TableRow></TableHeader>
         <TableBody>
           {defaults.map((d) => {
             const v = draft[d.rule_code]; if (!v) return null;
@@ -271,14 +272,14 @@ function RulesEditor({ defaults, rules, canEdit, tenantId, countryId, onSaved }:
             return (
               <TableRow key={d.rule_code}>
                 <TableCell><Switch checked={!!v.is_enabled} disabled={!canEdit || fuel} onCheckedChange={(c) => set(d.rule_code, "is_enabled", c)} /></TableCell>
-                <TableCell><p className="font-medium">{d.label}{rules[d.rule_code] ? "" : " (défaut)"}</p><p className="text-xs text-muted-foreground max-w-md">{d.description}</p></TableCell>
+                 <TableCell><p className="font-medium">{d.label}{rules[d.rule_code] ? "" : t(" (défaut)")}</p><p className="text-xs text-muted-foreground max-w-md">{d.description}</p></TableCell>
                 <TableCell><div className="flex items-center gap-1"><Input type="number" min={0} className="w-20" value={v.threshold} disabled={!canEdit || fuel} onChange={(e) => set(d.rule_code, "threshold", e.target.value)} /><span className="text-xs text-muted-foreground">{d.unit}</span></div></TableCell>
                 <TableCell><Input type="number" min={1} max={90} className="w-20" value={v.window_days} disabled={!canEdit || fuel} onChange={(e) => set(d.rule_code, "window_days", e.target.value)} /></TableCell>
                 <TableCell>
                   <Select value={v.severity} disabled={!canEdit || fuel} onValueChange={(s) => set(d.rule_code, "severity", s)}><SelectTrigger className="w-32"><SelectValue /></SelectTrigger>
-                    <SelectContent>{Object.entries(SEVERITY).map(([k, s]) => <SelectItem key={k} value={k}>{s.label}</SelectItem>)}</SelectContent></Select>
+                     <SelectContent>{Object.entries(SEVERITY).map(([k, s]) => <SelectItem key={k} value={k}>{t(s.label)}</SelectItem>)}</SelectContent></Select>
                 </TableCell>
-                <TableCell>{canEdit && !fuel && <Button size="icon" variant="ghost" aria-label="Enregistrer" onClick={() => save(d.rule_code)}><Save className="h-4 w-4" /></Button>}</TableCell>
+                 <TableCell>{canEdit && !fuel && <Button size="icon" variant="ghost" aria-label={t("Enregistrer")} onClick={() => save(d.rule_code)}><Save className="h-4 w-4" /></Button>}</TableCell>
               </TableRow>
             );
           })}
@@ -291,6 +292,7 @@ function RulesEditor({ defaults, rules, canEdit, tenantId, countryId, onSaved }:
 function AlertDialog({ id, onClose, onChanged, stationName, ruleLabel, canEdit, canValidate }: {
   id: string | null; onClose: () => void; onChanged: () => void; stationName: Record<string, string>; ruleLabel: Record<string, string>; canEdit: boolean; canValidate: boolean;
 }) {
+  const { t } = useLanguage();
   const [alert, setAlert] = useState<Row | null>(null);
   const [events, setEvents] = useState<Row[]>([]);
   const [comment, setComment] = useState("");
@@ -310,7 +312,7 @@ function AlertDialog({ id, onClose, onChanged, stationName, ruleLabel, canEdit, 
     const { error } = await db.rpc("fraud_alert_action", { _id: id, _action: action, _comment: comment });
     setBusy(false);
     if (error) return toast.error(errMsg(error));
-    toast.success(ACTIONS[action]); setComment(""); await load(); onChanged();
+    toast.success(t(ACTIONS[action])); setComment(""); await load(); onChanged();
   };
   const wf = alert?.workflow;
   const available: string[] = [];
@@ -330,38 +332,38 @@ function AlertDialog({ id, onClose, onChanged, stationName, ruleLabel, canEdit, 
   return (
     <Dialog open={!!id} onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader><DialogTitle>{alert?.title ?? "Alerte"}</DialogTitle></DialogHeader>
+         <DialogHeader><DialogTitle>{alert?.title ?? t("Alerte")}</DialogTitle></DialogHeader>
         {alert && (
           <div className="space-y-4 text-sm">
             <div className="flex flex-wrap gap-2">
-              <Badge variant="outline" className={SEVERITY[alert.severity]?.cls}>{SEVERITY[alert.severity]?.label}</Badge>
-              <Badge variant="secondary">{WORKFLOW[alert.workflow]}</Badge>
+               <Badge variant="outline" className={SEVERITY[alert.severity]?.cls}>{t(SEVERITY[alert.severity]?.label ?? "")}</Badge>
+               <Badge variant="secondary">{t(WORKFLOW[alert.workflow] ?? "")}</Badge>
               <span className="text-muted-foreground">{stationName[alert.station_id] ?? "—"} · {format(new Date(alert.alert_date), "dd/MM/yyyy")}</span>
             </div>
             <div className="rounded-md border border-border p-3 space-y-1">
-              <p className="font-medium">Pourquoi cette alerte ?</p>
+               <p className="font-medium">{t("Pourquoi cette alerte ?")}</p>
               <p>{alert.explanation}</p>
-              <p className="text-xs text-muted-foreground">Règle : {ruleLabel[alert.rule_code] ?? alert.rule_code} · seuil {String(evidence.threshold ?? "—")} · fenêtre {String(evidence.window_days ?? "—")} j</p>
+               <p className="text-xs text-muted-foreground">{t("Règle :")} {ruleLabel[alert.rule_code] ?? alert.rule_code} · {t("seuil")} {String(evidence.threshold ?? "—")} · {t("fenêtre")} {String(evidence.window_days ?? "—")} {t("j")}</p>
             </div>
-            <details><summary className="cursor-pointer text-muted-foreground">Données sources</summary>
+             <details><summary className="cursor-pointer text-muted-foreground">{t("Données sources")}</summary>
               <pre className="mt-2 whitespace-pre-wrap rounded bg-muted p-2 text-xs">{JSON.stringify(evidence, null, 2)}</pre></details>
             {available.length > 0 && (
               <div className="space-y-2">
-                <Textarea placeholder="Commentaire (obligatoire sauf « Passer en analyse »)" value={comment} onChange={(e) => setComment(e.target.value)} />
+                 <Textarea placeholder={t("Commentaire (obligatoire sauf « Passer en analyse »)")} value={comment} onChange={(e) => setComment(e.target.value)} />
                 <div className="flex flex-wrap gap-2">
                   {available.map((a) => (
-                    <Button key={a} size="sm" variant={a === "confirm" ? "destructive" : a === "comment" ? "outline" : "secondary"} disabled={busy} onClick={() => act(a)}>{ACTIONS[a]}</Button>
+                     <Button key={a} size="sm" variant={a === "confirm" ? "destructive" : a === "comment" ? "outline" : "secondary"} disabled={busy} onClick={() => act(a)}>{t(ACTIONS[a])}</Button>
                   ))}
                 </div>
               </div>
             )}
             <div>
-              <p className="font-medium mb-1">Historique</p>
-              {events.length === 0 ? <p className="text-muted-foreground">Aucune action.</p> : (
+               <p className="font-medium mb-1">{t("Historique")}</p>
+               {events.length === 0 ? <p className="text-muted-foreground">{t("Aucune action.")}</p> : (
                 <ul className="space-y-1">{events.map((e) => (
                   <li key={e.id} className="border-l-2 border-primary/40 pl-2">
-                    <span className="text-muted-foreground">{format(new Date(e.created_at), "dd/MM/yyyy HH:mm")} · {e.author_name ?? "—"}</span> — {ACTIONS[e.action] ?? e.action}
-                    {e.from_workflow !== e.to_workflow && ` (${WORKFLOW[e.from_workflow]} → ${WORKFLOW[e.to_workflow]})`}
+                     <span className="text-muted-foreground">{format(new Date(e.created_at), "dd/MM/yyyy HH:mm")} · {e.author_name ?? "—"}</span> — {t(ACTIONS[e.action] ?? e.action)}
+                     {e.from_workflow !== e.to_workflow && ` (${t(WORKFLOW[e.from_workflow] ?? "")} → ${t(WORKFLOW[e.to_workflow] ?? "")})`}
                     {e.comment && <p>{e.comment}</p>}
                   </li>))}</ul>
               )}

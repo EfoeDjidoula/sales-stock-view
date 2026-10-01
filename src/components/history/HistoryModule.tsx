@@ -20,8 +20,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Calendar } from "@/components/ui/calendar";
 import { cn } from "@/lib/utils";
+import { useLanguage } from "@/hooks/useLanguage";
 
 export const HistoryModule = () => {
+  const { language, t } = useLanguage();
+  const locale = language === "en" ? "en-US" : "fr-FR";
   const [stationFilter, setStationFilter] = useState<string>("all");
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
   const [endDate, setEndDate] = useState<Date | undefined>(undefined);
@@ -41,10 +44,10 @@ export const HistoryModule = () => {
     const { error } = await supabase.from("index_entries").delete().eq("id", deleteEntry.id);
     setDeleting(false);
     if (error) {
-      toast.error("Erreur lors de la suppression", { description: error.message });
+       toast.error(t("Erreur lors de la suppression"), { description: error.message });
       return;
     }
-    toast.success("Saisie supprimée");
+     toast.success(t("Saisie supprimée"));
     setIsRefreshing(true);
     try {
       await Promise.all([
@@ -94,20 +97,20 @@ export const HistoryModule = () => {
         <CardHeader className="pb-3">
           <CardTitle className="text-lg flex items-center gap-2">
             <Search className="w-5 h-5" />
-            Filtres
+             {t("Filtres")}
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex flex-wrap gap-3 items-end">
             {/* Station filter */}
             <div className="space-y-1">
-              <label className="text-xs font-medium text-muted-foreground">Station</label>
+               <label className="text-xs font-medium text-muted-foreground">{t("Station")}</label>
               <Select value={stationFilter} onValueChange={setStationFilter}>
                 <SelectTrigger className="w-[200px]">
-                  <SelectValue placeholder="Toutes les stations" />
+                   <SelectValue placeholder={t("Toutes les stations")} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="all">Toutes les stations</SelectItem>
+                   <SelectItem value="all">{t("Toutes les stations")}</SelectItem>
                   {stations?.map(s => (
                     <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
                   ))}
@@ -117,12 +120,12 @@ export const HistoryModule = () => {
 
             {/* Start date */}
             <div className="space-y-1">
-              <label className="text-xs font-medium text-muted-foreground">Date début</label>
+               <label className="text-xs font-medium text-muted-foreground">{t("Date début")}</label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button variant="outline" className={cn("w-[160px] justify-start text-left font-normal", !startDate && "text-muted-foreground")}>
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {startDate ? format(startDate, "dd/MM/yyyy") : "Début"}
+                     {startDate ? format(startDate, "dd/MM/yyyy") : t("Début")}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
@@ -133,12 +136,12 @@ export const HistoryModule = () => {
 
             {/* End date */}
             <div className="space-y-1">
-              <label className="text-xs font-medium text-muted-foreground">Date fin</label>
+               <label className="text-xs font-medium text-muted-foreground">{t("Date fin")}</label>
               <Popover>
                 <PopoverTrigger asChild>
                   <Button variant="outline" className={cn("w-[160px] justify-start text-left font-normal", !endDate && "text-muted-foreground")}>
                     <CalendarIcon className="mr-2 h-4 w-4" />
-                    {endDate ? format(endDate, "dd/MM/yyyy") : "Fin"}
+                     {endDate ? format(endDate, "dd/MM/yyyy") : t("Fin")}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
@@ -150,7 +153,7 @@ export const HistoryModule = () => {
             {/* Reset */}
             {(stationFilter !== "all" || startDate || endDate) && (
               <Button variant="ghost" size="sm" onClick={() => { setStationFilter("all"); setStartDate(undefined); setEndDate(undefined); }}>
-                Réinitialiser
+                 {t("Réinitialiser")}
               </Button>
             )}
           </div>
@@ -160,11 +163,11 @@ export const HistoryModule = () => {
       {/* Totals */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         <Card className="p-3">
-          <p className="text-xs text-muted-foreground">Super (L)</p>
+           <p className="text-xs text-muted-foreground">Super (L)</p>
           {isLoading || isRefreshing ? (
             <Skeleton className="h-7 w-24 mt-1" />
           ) : (
-            <p className="text-lg font-bold">{totals.superL.toLocaleString("fr-FR")}</p>
+             <p className="text-lg font-bold">{totals.superL.toLocaleString(locale)}</p>
           )}
         </Card>
         <Card className="p-3">
@@ -172,11 +175,11 @@ export const HistoryModule = () => {
           {isLoading || isRefreshing ? (
             <Skeleton className="h-7 w-24 mt-1" />
           ) : (
-            <p className="text-lg font-bold">{totals.gasoilL.toLocaleString("fr-FR")}</p>
+             <p className="text-lg font-bold">{totals.gasoilL.toLocaleString(locale)}</p>
           )}
         </Card>
         <Card className="p-3">
-          <p className="text-xs text-muted-foreground">Montant total</p>
+           <p className="text-xs text-muted-foreground">{t("Montant total")}</p>
           {isLoading || isRefreshing ? (
             <Skeleton className="h-7 w-28 mt-1" />
           ) : (
@@ -184,7 +187,7 @@ export const HistoryModule = () => {
           )}
         </Card>
         <Card className="p-3">
-          <p className="text-xs text-muted-foreground">Versements</p>
+           <p className="text-xs text-muted-foreground">{t("Versements")}</p>
           {isLoading || isRefreshing ? (
             <Skeleton className="h-7 w-28 mt-1" />
           ) : (
@@ -205,10 +208,10 @@ export const HistoryModule = () => {
                     <TableHead>Station</TableHead>
                     <TableHead className="text-right">Super (L)</TableHead>
                     <TableHead className="text-right">Gasoil (L)</TableHead>
-                    <TableHead className="text-right">Montant</TableHead>
-                    <TableHead className="text-right">Versements</TableHead>
-                    <TableHead className="text-right">Bons</TableHead>
-                    <TableHead className="text-center">Actions</TableHead>
+                     <TableHead className="text-right">{t("Montant")}</TableHead>
+                     <TableHead className="text-right">{t("Versements")}</TableHead>
+                     <TableHead className="text-right">{t("Bons")}</TableHead>
+                     <TableHead className="text-center">{t("Actions")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -229,7 +232,7 @@ export const HistoryModule = () => {
             </div>
           ) : !entries?.length ? (
             <div className="text-center py-12 text-muted-foreground">
-              Aucune saisie trouvée pour les filtres sélectionnés.
+               {t("Aucune saisie trouvée pour les filtres sélectionnés.")}
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -240,10 +243,10 @@ export const HistoryModule = () => {
                     <TableHead>Station</TableHead>
                     <TableHead className="text-right">Super (L)</TableHead>
                     <TableHead className="text-right">Gasoil (L)</TableHead>
-                    <TableHead className="text-right">Montant</TableHead>
-                    <TableHead className="text-right">Versements</TableHead>
-                    <TableHead className="text-right">Bons</TableHead>
-                    <TableHead className="text-center">Actions</TableHead>
+                     <TableHead className="text-right">{t("Montant")}</TableHead>
+                     <TableHead className="text-right">{t("Versements")}</TableHead>
+                     <TableHead className="text-right">{t("Bons")}</TableHead>
+                     <TableHead className="text-center">{t("Actions")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -255,19 +258,19 @@ export const HistoryModule = () => {
                     return (
                       <TableRow key={entry.id}>
                         <TableCell className="whitespace-nowrap">
-                          {new Date(entry.entry_date).toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" })}
+                           {new Date(entry.entry_date).toLocaleDateString(locale, { day: "2-digit", month: "short", year: "numeric" })}
                         </TableCell>
                         <TableCell className="font-medium">{entry.stations?.name || "—"}</TableCell>
-                        <TableCell className="text-right">{superL.toLocaleString("fr-FR")}</TableCell>
-                        <TableCell className="text-right">{gasoilL.toLocaleString("fr-FR")}</TableCell>
+                         <TableCell className="text-right">{superL.toLocaleString(locale)}</TableCell>
+                         <TableCell className="text-right">{gasoilL.toLocaleString(locale)}</TableCell>
                         <TableCell className="text-right">{formatCurrency(amount)}</TableCell>
                         <TableCell className="text-right">{formatCurrency(versements)}</TableCell>
                         <TableCell className="text-right">{formatCurrency(bons)}</TableCell>
                         <TableCell className="text-center">
-                          <Button variant="ghost" size="icon" onClick={() => setEditEntry(entry)} title="Modifier">
+                           <Button variant="ghost" size="icon" onClick={() => setEditEntry(entry)} title={t("Modifier")}>
                             <Pencil className="w-4 h-4" />
                           </Button>
-                          <Button variant="ghost" size="icon" onClick={() => setDeleteEntry(entry)} title="Supprimer" className="text-destructive hover:text-destructive">
+                           <Button variant="ghost" size="icon" onClick={() => setDeleteEntry(entry)} title={t("Supprimer")} className="text-destructive hover:text-destructive">
                             <Trash2 className="w-4 h-4" />
                           </Button>
                         </TableCell>
@@ -286,21 +289,21 @@ export const HistoryModule = () => {
       <AlertDialog open={!!deleteEntry} onOpenChange={open => { if (!open && !deleting) setDeleteEntry(null); }}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Supprimer cette saisie ?</AlertDialogTitle>
+             <AlertDialogTitle>{t("Supprimer cette saisie ?")}</AlertDialogTitle>
             <AlertDialogDescription>
               {deleteEntry && (
                 <>
-                  Vous êtes sur le point de supprimer la saisie du{" "}
-                  <strong>{new Date(deleteEntry.entry_date).toLocaleDateString("fr-FR")}</strong>{" "}
-                  pour la station <strong>{deleteEntry.stations?.name}</strong>. Cette action est irréversible.
+                   {t("Vous êtes sur le point de supprimer la saisie du")}{" "}
+                   <strong>{new Date(deleteEntry.entry_date).toLocaleDateString(locale)}</strong>{" "}
+                   {t("pour la station")} <strong>{deleteEntry.stations?.name}</strong>{t(". Cette action est irréversible.")}
                 </>
               )}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleting}>Annuler</AlertDialogCancel>
+             <AlertDialogCancel disabled={deleting}>{t("Annuler")}</AlertDialogCancel>
             <AlertDialogAction onClick={(e) => { e.preventDefault(); handleDelete(); }} disabled={deleting} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              {deleting ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Suppression...</> : "Supprimer"}
+               {deleting ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" />{t("Suppression...")}</> : t("Supprimer")}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

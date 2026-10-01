@@ -1,6 +1,7 @@
 import { cn } from "@/lib/utils";
 import { formatNumber } from "@/data/stationsData";
 import { useEffect, useRef } from "react";
+import { useLanguage } from "@/hooks/useLanguage";
 
 interface StockGaugeProps {
   tank: string;
@@ -14,6 +15,7 @@ const prefersReducedMotion = () =>
   window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 
 export const StockGauge = ({ tank, capacity, currentStock, product }: StockGaugeProps) => {
+  const { t } = useLanguage();
   const percentage = capacity > 0 ? Math.round((currentStock / capacity) * 100) : 0;
 
   const getStatusText = () => {
@@ -124,7 +126,7 @@ export const StockGauge = ({ tank, capacity, currentStock, product }: StockGauge
               : "bg-success/20 text-success"
           )}
         >
-          {getStatusText()}
+           {t(getStatusText())}
         </span>
       </div>
 
@@ -233,7 +235,7 @@ export const StockGauge = ({ tank, capacity, currentStock, product }: StockGauge
               <span className="text-sm font-normal text-muted-foreground">L</span>
             </p>
             <p className="text-xs text-muted-foreground mt-1">
-              Capacité {formatNumber(capacity)} L
+               {t("Capacité")} {formatNumber(capacity)} L
             </p>
           </div>
           <div className="h-1.5 rounded-full bg-secondary overflow-hidden">
