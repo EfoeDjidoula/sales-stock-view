@@ -1300,7 +1300,7 @@ export type Database = {
             foreignKeyName: "fuel_card_accounts_country_id_fkey"
             columns: ["country_id"]
             isOneToOne: false
-            referencedRelation: "tenant_countries"
+            referencedRelation: "countries"
             referencedColumns: ["id"]
           },
           {

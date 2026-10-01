@@ -1,0 +1,1 @@
+ALTER TABLE public.fuel_card_accounts DROP CONSTRAINT fuel_card_accounts_country_id_fkey; ALTER TABLE public.fuel_card_accounts ADD CONSTRAINT fuel_card_accounts_country_id_fkey FOREIGN KEY(country_id) REFERENCES public.countries(id);
