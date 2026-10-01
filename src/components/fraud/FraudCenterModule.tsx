@@ -5,6 +5,7 @@ import { useScope } from "@/hooks/useScope";
 import { usePermissions } from "@/hooks/usePermissions";
 import { usePlatformAdmin } from "@/hooks/usePlatformAdmin";
 import { toast } from "sonner";
+import { useLanguage } from "@/hooks/useLanguage";
 import { Eye, Loader2, Save, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -57,6 +58,7 @@ const scoreCls = (s: number) =>
   s >= 60 ? "text-destructive" : s >= 30 ? "text-warning" : "text-success";
 
 export function FraudCenterModule() {
+  const { t } = useLanguage();
   const { tenantId, countryId, scopeQuery } = useScope();
   const { can } = usePermissions();
   const { isPlatformAdmin } = usePlatformAdmin() as { isPlatformAdmin: boolean };
