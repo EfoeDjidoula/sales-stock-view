@@ -172,7 +172,7 @@ export const translations: Record<string, string> = {
   "Ventes par produit": "Sales by product", "Encaissements par mode": "Collections by method", "Ventes par pistolet": "Sales by nozzle",
   "Impact sur le stock par cuve": "Tank stock impact", "Cuve": "Tank", "Vendu": "Sold", "Stock théorique": "Theoretical stock",
   "Après validation": "After validation", "non initialisé": "not initialized", "Dernier motif :": "Last reason:",
-  "Soumettre": "Submit", "Rejeter": "Reject", "Valider": "Validate", "Rouvrir": "Reopen",
+  "Soumettre": "Submit", "Rejeter": "Reject", "Valider": "Validate",
   "Historique de cette clôture": "History of this close", "Aucun changement d'état.": "No status changes.",
   "Rejeter la clôture": "Reject daily close", "Rouvrir la clôture validée": "Reopen validated close", "Motif (obligatoire)": "Reason (required)", "Confirmer": "Confirm",
 };
