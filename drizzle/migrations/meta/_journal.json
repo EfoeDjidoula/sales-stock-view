@@ -169,6 +169,13 @@
       "when": 1790869334963,
       "tag": "0023_b2b_credit_contracts_and_billing",
       "breakpoints": true
+    },
+    {
+      "idx": 24,
+      "version": "7",
+      "when": 1790869496199,
+      "tag": "0024_b2b_invoice_due_dates_and_card_contract_rules",
+      "breakpoints": true
     }
   ]
 }

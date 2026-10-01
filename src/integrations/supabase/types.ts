@@ -1761,6 +1761,7 @@ export type Database = {
           amount: number
           country_id: string
           created_at: string
+          due_on: string | null
           id: string
           number: string
           paid: number
@@ -1774,6 +1775,7 @@ export type Database = {
           amount: number
           country_id: string
           created_at?: string
+          due_on?: string | null
           id?: string
           number: string
           paid?: number
@@ -1787,6 +1789,7 @@ export type Database = {
           amount?: number
           country_id?: string
           created_at?: string
+          due_on?: string | null
           id?: string
           number?: string
           paid?: number
