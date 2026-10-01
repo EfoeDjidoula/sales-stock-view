@@ -9,9 +9,11 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useCountry } from "@/hooks/useCountry";
+import { useLanguage } from "@/hooks/useLanguage";
 
 export const CountrySwitcher = () => {
   const { country, countries, setCountryId } = useCountry();
+  const { t } = useLanguage();
 
   if (!country) return null;
 
@@ -39,12 +41,12 @@ export const CountrySwitcher = () => {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="outline" className="gap-2" aria-label="Changer de pays">
+         <Button variant="outline" className="gap-2" aria-label={t("Changer de pays")}>
           {content}
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="bg-popover z-50 w-56">
-        <DropdownMenuLabel>Pays autorisés</DropdownMenuLabel>
+         <DropdownMenuLabel>{t("Pays autorisés")}</DropdownMenuLabel>
         <DropdownMenuSeparator />
         {countries.map((c) => (
           <DropdownMenuItem

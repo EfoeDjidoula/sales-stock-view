@@ -146,4 +146,6 @@ export const translations: Record<string, string> = {
   "Aucune action.": "No activity.",
   "Règle :": "Rule:", "j": "days",
   "nouvelle(s) alerte(s)": "new alert(s)",
+  "Changer de pays": "Change country", "Pays autorisés": "Available countries",
+  "Client": "Customer", "Chargement...": "Loading...", "Sélectionner une station": "Select a station",
 };

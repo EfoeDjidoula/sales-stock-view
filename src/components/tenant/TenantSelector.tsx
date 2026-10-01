@@ -8,10 +8,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useUserRoles } from "@/hooks/useUserRoles";
+import { useLanguage } from "@/hooks/useLanguage";
 
 export const TenantSelector = () => {
   const { tenants, tenantId, setTenantId, canSwitchTenant } = useTenant();
   const { isAdmin } = useUserRoles();
+  const { t } = useLanguage();
 
   if (!isAdmin || !canSwitchTenant || !tenantId) return null;
 
@@ -20,7 +22,7 @@ export const TenantSelector = () => {
       <SelectTrigger className="w-[220px] bg-card border-border hover:border-primary/50 transition-colors">
         <div className="flex items-center gap-2">
           <Building2 className="w-4 h-4 text-primary" />
-          <SelectValue placeholder="Client" />
+           <SelectValue placeholder={t("Client")} />
         </div>
       </SelectTrigger>
       <SelectContent className="bg-card border-border">
