@@ -68,6 +68,356 @@ export type Database = {
         }
         Relationships: []
       }
+      b2b_consumptions: {
+        Row: {
+          actor_id: string
+          amount: number | null
+          client_id: string
+          consumed_on: string
+          country_id: string
+          created_at: string
+          id: string
+          litres: number
+          product_id: string
+          reference: string
+          station_id: string
+          tenant_id: string
+          unit_price: number
+        }
+        Insert: {
+          actor_id: string
+          amount?: number | null
+          client_id: string
+          consumed_on?: string
+          country_id: string
+          created_at?: string
+          id?: string
+          litres: number
+          product_id: string
+          reference: string
+          station_id: string
+          tenant_id: string
+          unit_price: number
+        }
+        Update: {
+          actor_id?: string
+          amount?: number | null
+          client_id?: string
+          consumed_on?: string
+          country_id?: string
+          created_at?: string
+          id?: string
+          litres?: number
+          product_id?: string
+          reference?: string
+          station_id?: string
+          tenant_id?: string
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "b2b_consumptions_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "b2b_consumptions_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "petroleum_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "b2b_consumptions_station_id_fkey"
+            columns: ["station_id"]
+            isOneToOne: false
+            referencedRelation: "stations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      b2b_credit_alerts: {
+        Row: {
+          client_id: string
+          country_id: string
+          created_at: string
+          credit_limit: number
+          exposure: number
+          id: string
+          level: number
+          tenant_id: string
+        }
+        Insert: {
+          client_id: string
+          country_id: string
+          created_at?: string
+          credit_limit: number
+          exposure: number
+          id?: string
+          level: number
+          tenant_id: string
+        }
+        Update: {
+          client_id?: string
+          country_id?: string
+          created_at?: string
+          credit_limit?: number
+          exposure?: number
+          id?: string
+          level?: number
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "b2b_credit_alerts_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      b2b_exceptions: {
+        Row: {
+          actor_id: string
+          authorized_total: number
+          client_id: string
+          country_id: string
+          created_at: string
+          expires_on: string
+          id: string
+          reason: string
+          tenant_id: string
+        }
+        Insert: {
+          actor_id: string
+          authorized_total: number
+          client_id: string
+          country_id: string
+          created_at?: string
+          expires_on: string
+          id?: string
+          reason: string
+          tenant_id: string
+        }
+        Update: {
+          actor_id?: string
+          authorized_total?: number
+          client_id?: string
+          country_id?: string
+          created_at?: string
+          expires_on?: string
+          id?: string
+          reason?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "b2b_exceptions_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      b2b_invoice_lines: {
+        Row: {
+          consumption_id: string
+          country_id: string
+          id: string
+          invoice_id: string
+          tenant_id: string
+        }
+        Insert: {
+          consumption_id: string
+          country_id: string
+          id?: string
+          invoice_id: string
+          tenant_id: string
+        }
+        Update: {
+          consumption_id?: string
+          country_id?: string
+          id?: string
+          invoice_id?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "b2b_invoice_lines_consumption_id_tenant_id_country_id_fkey"
+            columns: ["consumption_id", "tenant_id", "country_id"]
+            isOneToOne: false
+            referencedRelation: "b2b_consumptions"
+            referencedColumns: ["id", "tenant_id", "country_id"]
+          },
+          {
+            foreignKeyName: "b2b_invoice_lines_invoice_id_tenant_id_country_id_fkey"
+            columns: ["invoice_id", "tenant_id", "country_id"]
+            isOneToOne: false
+            referencedRelation: "b2b_invoices"
+            referencedColumns: ["id", "tenant_id", "country_id"]
+          },
+        ]
+      }
+      b2b_invoices: {
+        Row: {
+          actor_id: string
+          amount: number
+          client_id: string
+          country_id: string
+          created_at: string
+          due_on: string
+          id: string
+          number: string
+          period_end: string
+          period_start: string
+          tenant_id: string
+        }
+        Insert: {
+          actor_id: string
+          amount: number
+          client_id: string
+          country_id: string
+          created_at?: string
+          due_on: string
+          id?: string
+          number: string
+          period_end: string
+          period_start: string
+          tenant_id: string
+        }
+        Update: {
+          actor_id?: string
+          amount?: number
+          client_id?: string
+          country_id?: string
+          created_at?: string
+          due_on?: string
+          id?: string
+          number?: string
+          period_end?: string
+          period_start?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "b2b_invoices_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      b2b_payments: {
+        Row: {
+          actor_id: string
+          amount: number
+          country_id: string
+          created_at: string
+          id: string
+          invoice_id: string
+          paid_on: string
+          reference: string
+          tenant_id: string
+        }
+        Insert: {
+          actor_id: string
+          amount: number
+          country_id: string
+          created_at?: string
+          id?: string
+          invoice_id: string
+          paid_on?: string
+          reference: string
+          tenant_id: string
+        }
+        Update: {
+          actor_id?: string
+          amount?: number
+          country_id?: string
+          created_at?: string
+          id?: string
+          invoice_id?: string
+          paid_on?: string
+          reference?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "b2b_payments_invoice_id_tenant_id_country_id_fkey"
+            columns: ["invoice_id", "tenant_id", "country_id"]
+            isOneToOne: false
+            referencedRelation: "b2b_invoices"
+            referencedColumns: ["id", "tenant_id", "country_id"]
+          },
+        ]
+      }
+      b2b_terms: {
+        Row: {
+          actor_id: string
+          alert_levels: number[]
+          client_id: string
+          contract_reference: string
+          country_id: string
+          created_at: string
+          credit_limit: number
+          effective_at: string
+          id: string
+          negotiated_prices: Json
+          payment_days: number
+          policy: string
+          reason: string
+          site_ids: string[]
+          tenant_id: string
+        }
+        Insert: {
+          actor_id: string
+          alert_levels?: number[]
+          client_id: string
+          contract_reference: string
+          country_id: string
+          created_at?: string
+          credit_limit: number
+          effective_at?: string
+          id?: string
+          negotiated_prices?: Json
+          payment_days?: number
+          policy?: string
+          reason: string
+          site_ids?: string[]
+          tenant_id: string
+        }
+        Update: {
+          actor_id?: string
+          alert_levels?: number[]
+          client_id?: string
+          contract_reference?: string
+          country_id?: string
+          created_at?: string
+          credit_limit?: number
+          effective_at?: string
+          id?: string
+          negotiated_prices?: Json
+          payment_days?: number
+          policy?: string
+          reason?: string
+          site_ids?: string[]
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "b2b_terms_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       clients: {
         Row: {
           address: string | null
@@ -4736,6 +5086,25 @@ export type Database = {
     }
     Functions: {
       audit_request_meta: { Args: never; Returns: Record<string, unknown> }
+      b2b_action: {
+        Args: {
+          _action: string
+          _client: string
+          _country: string
+          _data?: Json
+          _tenant: string
+        }
+        Returns: Json
+      }
+      b2b_check_credit: {
+        Args: {
+          _client: string
+          _country: string
+          _delta: number
+          _tenant: string
+        }
+        Returns: undefined
+      }
       can_access_tenant: {
         Args: { _tenant_id: string; _user_id: string }
         Returns: boolean
