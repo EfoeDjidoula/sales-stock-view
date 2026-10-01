@@ -9,6 +9,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { ProfileMenu } from "@/components/ProfileMenu";
+import { useLanguage } from "@/hooks/useLanguage";
 import { DbStationSelector } from "@/components/dashboard/DbStationSelector";
 import { usePumps } from "@/hooks/usePumps";
 import { useTanks } from "@/hooks/useTanks";
@@ -138,6 +139,7 @@ import { AccessDenied } from "@/components/AccessDenied";
 
 const IndexEntry = () => {
   const brand = useBranding();
+  const { t } = useLanguage();
   const { isModuleEnabled, isLoading: modulesLoading } = useModules();
   const { data: dbStations } = useStations();
   const { fiscalYears } = useFiscalYears();
@@ -621,10 +623,10 @@ const IndexEntry = () => {
                 </div>
                 <div>
                   <h1 className="text-xl md:text-2xl font-display font-bold">
-                    Saisie des Index
+                     {t("Saisie des Index")}
                   </h1>
                   <p className="text-sm text-muted-foreground">
-                    Enregistrement journalier
+                     {t("Enregistrement journalier")}
                   </p>
                 </div>
               </div>
@@ -651,7 +653,7 @@ const IndexEntry = () => {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Calendar className="w-5 h-5 text-primary" />
-                  Date de Saisie
+                   {t("Date de Saisie")}
                 </CardTitle>
                 <CardDescription>
                   Sélectionnez la date pour laquelle vous saisissez les index

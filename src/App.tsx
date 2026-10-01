@@ -7,6 +7,7 @@ import { AuthProvider, useAuth } from "@/hooks/useAuth";
 import { TenantProvider } from "@/hooks/useTenant";
 import { CountryProvider, useCountry } from "@/hooks/useCountry";
 import { BrandingProvider } from "@/hooks/useBranding";
+import { LanguageProvider } from "@/hooks/useLanguage";
 import { WorkspaceSelector } from "@/components/tenant/WorkspaceSelector";
 import Index from "./pages/Index";
 import IndexEntry from "./pages/IndexEntry";
@@ -98,11 +99,11 @@ const App = () => (
         <AuthProvider>
           <TenantProvider>
             <BrandingProvider>
-              <CountryProvider>
+              <LanguageProvider><CountryProvider>
                 <Toaster />
                 <Sonner />
                 <AppRoutes />
-              </CountryProvider>
+              </CountryProvider></LanguageProvider>
             </BrandingProvider>
           </TenantProvider>
         </AuthProvider>

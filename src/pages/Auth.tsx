@@ -13,6 +13,8 @@ import {
 } from "@/components/ui/card";
 import { toast } from "sonner";
 import { Fuel, LogIn, Loader2 } from "lucide-react";
+import { useLanguage } from "@/hooks/useLanguage";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -23,6 +25,7 @@ const Auth = () => {
       ? nextParam
       : "/";
   const { signIn } = useAuth();
+  const { t } = useLanguage();
   const [isLoading, setIsLoading] = useState(false);
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
@@ -34,11 +37,11 @@ const Auth = () => {
     const { error } = await signIn(loginEmail, loginPassword);
     
     if (error) {
-      toast.error("Erreur de connexion", {
+       toast.error(t("Erreur de connexion"), {
         description: error.message,
       });
     } else {
-      toast.success("Connexion réussie");
+       toast.success(t("Connexion réussie"));
       navigate(redirectTo);
     }
     
@@ -48,6 +51,7 @@ const Auth = () => {
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
       <div className="w-full max-w-md space-y-6">
+        <div className="flex justify-end"><LanguageSwitcher /></div>
         {/* Logo */}
         <div className="flex flex-col items-center gap-4">
           <div className="p-4 rounded-2xl bg-primary/10 glow-primary">
@@ -55,10 +59,10 @@ const Auth = () => {
           </div>
           <div className="text-center">
             <h1 className="text-2xl font-display font-bold">
-              Gestion des stations-service
+               {t("Gestion des stations-service")}
             </h1>
             <p className="text-sm text-muted-foreground">
-              Connectez-vous pour accéder à votre espace
+               {t("Connectez-vous pour accéder à votre espace")}
             </p>
           </div>
         </div>
@@ -68,10 +72,10 @@ const Auth = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <LogIn className="w-5 h-5" />
-              Connexion
+               {t("Connexion")}
             </CardTitle>
             <CardDescription>
-              Connectez-vous avec vos identifiants fournis par l'administrateur.
+               {t("Connectez-vous avec vos identifiants fournis par l'administrateur.")}
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -89,7 +93,7 @@ const Auth = () => {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="login-password">Mot de passe</Label>
+                 <Label htmlFor="login-password">{t("Mot de passe")}</Label>
                 <Input
                   id="login-password"
                   type="password"
@@ -108,12 +112,12 @@ const Auth = () => {
                 {isLoading ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-                    Connexion...
+                     {t("Connexion...")}
                   </>
                 ) : (
                   <>
                     <LogIn className="w-4 h-4 mr-2" />
-                    Se connecter
+                     {t("Se connecter")}
                   </>
                 )}
               </Button>

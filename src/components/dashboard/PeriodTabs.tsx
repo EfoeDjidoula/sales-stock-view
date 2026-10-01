@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import { useLanguage } from "@/hooks/useLanguage";
 
 type Period = "day" | "week" | "month";
 
@@ -14,6 +15,7 @@ const periods: { value: Period; label: string }[] = [
 ];
 
 export const PeriodTabs = ({ selected, onSelect }: PeriodTabsProps) => {
+  const { t } = useLanguage();
   return (
     <div className="inline-flex bg-secondary rounded-lg p-1">
       {periods.map((period) => (
@@ -27,7 +29,7 @@ export const PeriodTabs = ({ selected, onSelect }: PeriodTabsProps) => {
               : "text-muted-foreground hover:text-foreground"
           )}
         >
-          {period.label}
+           {t(period.label)}
         </button>
       ))}
     </div>
