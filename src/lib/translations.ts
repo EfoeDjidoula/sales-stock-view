@@ -148,4 +148,13 @@ export const translations: Record<string, string> = {
   "nouvelle(s) alerte(s)": "new alert(s)",
   "Changer de pays": "Change country", "Pays autorisés": "Available countries",
   "Client": "Customer", "Chargement...": "Loading...", "Sélectionner une station": "Select a station",
+  "Filtres": "Filters", "Date début": "Start date", "Date fin": "End date", "Début": "Start", "Fin": "End", "Réinitialiser": "Reset",
+  "Montant total": "Total amount", "Versements": "Payments", "Montant": "Amount", "Bons": "Vouchers", "Actions": "Actions",
+  "Aucune saisie trouvée pour les filtres sélectionnés.": "No entries found for the selected filters.",
+  "Modifier": "Edit", "Supprimer": "Delete", "Annuler": "Cancel", "Suppression...": "Deleting...",
+  "Erreur lors de la suppression": "Unable to delete", "Saisie supprimée": "Entry deleted",
+  "Supprimer cette saisie ?": "Delete this entry?", "Vous êtes sur le point de supprimer la saisie du": "You are about to delete the entry from",
+  "pour la station": "for station", ". Cette action est irréversible.": ". This action cannot be undone.",
+  "Alertes Stock Bas": "Low stock alerts", "Détail des jauges par station": "Tank readings by station",
+  "Aucune donnée de stock disponible. Importez un fichier Excel pour voir les jauges.": "No stock data available. Import an Excel file to view tank readings.",
 };

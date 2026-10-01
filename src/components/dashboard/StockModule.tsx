@@ -8,12 +8,14 @@ import { useAuth } from "@/hooks/useAuth";
 import { useTenant } from "@/hooks/useTenant";
 import { useCountry } from "@/hooks/useCountry";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useLanguage } from "@/hooks/useLanguage";
 
 interface StockModuleProps {
   stationId?: string | null;
 }
 
 export const StockModule = ({ stationId }: StockModuleProps) => {
+  const { t } = useLanguage();
   const { user } = useAuth();
   const { tenantId } = useTenant();
   const { countryId } = useCountry();
@@ -224,7 +226,7 @@ export const StockModule = ({ stationId }: StockModuleProps) => {
           <div className="flex items-center gap-2 mb-3">
             <AlertTriangle className="w-5 h-5 text-destructive" />
             <h4 className="font-display font-semibold text-destructive">
-              Alertes Stock Bas ({lowStockAlerts.length})
+               {t("Alertes Stock Bas")} ({lowStockAlerts.length})
             </h4>
           </div>
           <div className="space-y-2">
@@ -265,12 +267,12 @@ export const StockModule = ({ stationId }: StockModuleProps) => {
         </div>
       ) : entries.length === 0 ? (
         <div data-testid="stock-empty" className="flex items-center justify-center py-12 text-muted-foreground">
-          Aucune donnée de stock disponible. Importez un fichier Excel pour voir les jauges.
+           {t("Aucune donnée de stock disponible. Importez un fichier Excel pour voir les jauges.")}
         </div>
       ) : (
         <div data-testid="stock-list" className="space-y-4">
           <h3 className="text-lg font-display font-semibold">
-            Détail des jauges par station
+             {t("Détail des jauges par station")}
           </h3>
           {entries.map((entry) => (
             <div key={entry.stationId} data-testid="stock-list-station" className="space-y-3">
