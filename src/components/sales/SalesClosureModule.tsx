@@ -146,7 +146,7 @@ export const SalesClosureModule = () => {
     const { error } = await db.from("daily_closures").insert({ station_id: stationId, closure_date: date, tenant_id: tenantId, country_id: countryId });
     setBusy(false);
     if (error) return toast.error(error.message);
-    toast.success("Clôture ouverte en brouillon");
+    toast.success(t("Clôture ouverte en brouillon"));
     load();
   };
 
@@ -164,7 +164,7 @@ export const SalesClosureModule = () => {
       const hasData = l.volume_mode === "manual" ? l.volume !== "" : l.index_end !== "";
       if (!hasData) continue;
       const v = lineVolume(l);
-      if ([l.index_start, l.index_end, l.volume, l.unit_price].some((x) => x !== "" && Number(x) < 0)) return toast.error("Valeurs négatives interdites");
+       if ([l.index_start, l.index_end, l.volume, l.unit_price].some((x) => x !== "" && Number(x) < 0)) return toast.error(t("Valeurs négatives interdites"));
       if (l.volume_mode === "index" && (l.index_start === "" || v < 0)) return toast.error(`${l.nozzle.name} : l'index de fin doit être ≥ à l'index de début`);
       rows.push({
         closure_id: closure.id, tenant_id: closure.tenant_id, country_id: closure.country_id, nozzle_id: l.nozzle.id,
@@ -173,12 +173,12 @@ export const SalesClosureModule = () => {
         volume: v, volume_mode: l.volume_mode, unit_price: Number(l.unit_price) || 0,
       });
     }
-    if (!rows.length) return toast.error("Aucune vente à enregistrer");
+     if (!rows.length) return toast.error(t("Aucune vente à enregistrer"));
     setBusy(true);
     const { error } = await db.from("closure_sales").upsert(rows, { onConflict: "closure_id,nozzle_id" });
     setBusy(false);
     if (error) return toast.error(error.message);
-    toast.success("Ventes enregistrées");
+     toast.success(t("Ventes enregistrées"));
     load();
   };
 
@@ -188,7 +188,7 @@ export const SalesClosureModule = () => {
     for (const m of methods) {
       const p = payments[m.id];
       const amt = Number(p?.amount) || 0;
-      if (amt < 0) return toast.error("Montant négatif interdit");
+       if (amt < 0) return toast.error(t("Montant négatif interdit"));
       if (amt > 0) up.push({ closure_id: closure.id, tenant_id: closure.tenant_id, country_id: closure.country_id, payment_method_id: m.id, amount: amt, reference: p?.reference || null });
       else if (p) del.push(m.id);
     }
@@ -196,7 +196,7 @@ export const SalesClosureModule = () => {
     try {
       if (up.length) { const { error } = await db.from("closure_payments").upsert(up, { onConflict: "closure_id,payment_method_id" }); if (error) throw error; }
       if (del.length) { const { error } = await db.from("closure_payments").delete().eq("closure_id", closure.id).in("payment_method_id", del); if (error) throw error; }
-      toast.success("Encaissements enregistrés");
+       toast.success(t("Encaissements enregistrés"));
       load();
     } catch (e) { toast.error(errMsg(e)); } finally { setBusy(false); }
   };
@@ -207,7 +207,7 @@ export const SalesClosureModule = () => {
     const { error } = await db.rpc("closure_transition", { _id: closure.id, _action: action, _reason: why ?? null });
     setBusy(false);
     if (error) return toast.error(error.message);
-    toast.success(`${ACTION_LABEL[action]} effectuée`);
+     toast.success(language === "en" ? `${t(ACTION_LABEL[action])} completed` : `${ACTION_LABEL[action]} effectuée`);
     setReasonFor(null); setReason("");
     load();
   };
@@ -320,7 +320,7 @@ export const SalesClosureModule = () => {
               </div>
             )}
              {editable && <div className="flex justify-end"><Button onClick={saveSales} disabled={busy} className="gap-2"><Save className="w-4 h-4" /> {t("Enregistrer les ventes")}</Button></div>}
-            {!closure && <p className="text-sm text-muted-foreground">Ouvrez d'abord la clôture de ce jour pour saisir les ventes.</p>}
+             {!closure && <p className="text-sm text-muted-foreground">{t("Ouvrez d'abord la clôture de ce jour pour saisir les ventes.")}</p>}
           </TabsContent>
 
           <TabsContent value="encaissements" className="mt-4 space-y-3">
@@ -343,7 +343,7 @@ export const SalesClosureModule = () => {
           </TabsContent>
 
           <TabsContent value="cloture" className="mt-4 space-y-4">
-            {!closure ? <p className="text-sm text-muted-foreground">Aucune clôture pour ce jour.</p> : (
+             {!closure ? <p className="text-sm text-muted-foreground">{t("Aucune clôture pour ce jour.")}</p> : (
               <>
                 <div className="grid gap-3 md:grid-cols-4">
                   {[["Volume total", `${fmt(closure.total_volume)} L`], ["Montant des ventes", fmt(closure.total_amount)], ["Total encaissé", fmt(closure.total_collected)], ["Écart d'encaissement", fmt(closure.cash_variance)]].map(([k, v], i) => (
@@ -383,7 +383,7 @@ export const SalesClosureModule = () => {
                       </tbody>
                     </table>
                     {closure.status !== "validated" && Object.entries(byTank).some(([tid, vol]) => Number(levels.find((x) => x.tank_id === tid)?.theoretical ?? 0) < vol) && (
-                      <p className="text-xs text-destructive mt-2">Stock insuffisant sur au moins une cuve : la validation sera refusée tant que le stock initial ou les entrées ne sont pas saisis.</p>
+                       <p className="text-xs text-destructive mt-2">{t("Stock insuffisant sur au moins une cuve : la validation sera refusée tant que le stock initial ou les entrées ne sont pas saisis.")}</p>
                     )}
                   </CardContent></Card>
                 </div>
@@ -412,7 +412,7 @@ export const SalesClosureModule = () => {
       <Dialog open={!!reasonFor} onOpenChange={(o) => !o && setReasonFor(null)}>
         <DialogContent>
            <DialogHeader><DialogTitle>{t(reasonFor === "reject" ? "Rejeter la clôture" : "Rouvrir la clôture validée")}</DialogTitle></DialogHeader>
-          {reasonFor === "reopen" && <p className="text-sm text-muted-foreground">Les ventes déjà sorties du stock seront réintégrées par un ajustement tracé. La clôture repasse en brouillon.</p>}
+           {reasonFor === "reopen" && <p className="text-sm text-muted-foreground">{t("Les ventes déjà sorties du stock seront réintégrées par un ajustement tracé. La clôture repasse en brouillon.")}</p>}
            <Label>{t("Motif (obligatoire)")}</Label>
           <Textarea value={reason} onChange={(e) => setReason(e.target.value)} />
           <DialogFooter>
