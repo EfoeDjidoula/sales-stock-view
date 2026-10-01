@@ -48,6 +48,7 @@ export const translations: Record<string, string> = {
   "Analyse IA": "AI analysis",
   "Mes tickets": "My tickets",
   "Clients": "Customers",
+  "Cartes carburant": "Fuel cards",
   "Fournisseurs": "Suppliers",
   "Exercices": "Fiscal years",
   "Gestion des droits": "Access management",

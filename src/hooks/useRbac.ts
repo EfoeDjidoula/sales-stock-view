@@ -44,6 +44,7 @@ export const MODULE_LABELS: Record<string, string> = {
   orders: "Commandes",
   supplies: "Approvisionnements",
   clients: "Clients",
+  fuel_cards: "Cartes carburant",
   suppliers: "Fournisseurs",
   trucks: "Camions",
   stations: "Stations, cuves et pompes",
