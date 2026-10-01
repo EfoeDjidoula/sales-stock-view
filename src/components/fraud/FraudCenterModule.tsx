@@ -5,6 +5,7 @@ import { useScope } from "@/hooks/useScope";
 import { usePermissions } from "@/hooks/usePermissions";
 import { usePlatformAdmin } from "@/hooks/usePlatformAdmin";
 import { toast } from "sonner";
+import { useLanguage } from "@/hooks/useLanguage";
 import { Eye, Loader2, Save, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -57,6 +58,7 @@ const scoreCls = (s: number) =>
   s >= 60 ? "text-destructive" : s >= 30 ? "text-warning" : "text-success";
 
 export function FraudCenterModule() {
+  const { t } = useLanguage();
   const { tenantId, countryId, scopeQuery } = useScope();
   const { can } = usePermissions();
   const { isPlatformAdmin } = usePlatformAdmin() as { isPlatformAdmin: boolean };
@@ -125,7 +127,7 @@ export function FraudCenterModule() {
     try {
       const { data, error } = await db.rpc("run_fraud_scan", { _tenant: tenantId, _country: countryId, _from: start, _to: end });
       if (error) throw error;
-      toast.success(`${data ?? 0} nouvelle(s) alerte(s)`);
+       toast.success(`${data ?? 0} ${t("nouvelle(s) alerte(s)")}`);
       await load();
     } catch (e) {
       toast.error(errMsg(e));
@@ -145,57 +147,57 @@ export function FraudCenterModule() {
     <div className="space-y-4">
       <div className="flex flex-wrap items-end gap-3">
         <div className="mr-auto">
-          <h2 className="font-display text-2xl font-bold flex items-center gap-2"><ShieldAlert className="h-6 w-6 text-primary" />Fraud & Anomaly Center</h2>
-          <p className="text-sm text-muted-foreground">Règles explicables : chaque alerte indique la règle, le seuil et les valeurs qui l'ont déclenchée.</p>
+           <h2 className="font-display text-2xl font-bold flex items-center gap-2"><ShieldAlert className="h-6 w-6 text-primary" />{t("Fraud & Anomaly Center")}</h2>
+           <p className="text-sm text-muted-foreground">{t("Règles explicables : chaque alerte indique la règle, le seuil et les valeurs qui l'ont déclenchée.")}</p>
         </div>
-        <div><Label>Du</Label><Input type="date" value={start} onChange={(e) => setStart(e.target.value)} /></div>
-        <div><Label>Au</Label><Input type="date" value={end} onChange={(e) => setEnd(e.target.value)} /></div>
+         <div><Label>{t("Du")}</Label><Input type="date" value={start} onChange={(e) => setStart(e.target.value)} /></div>
+         <div><Label>{t("Au")}</Label><Input type="date" value={end} onChange={(e) => setEnd(e.target.value)} /></div>
         {canRun && (
           <Button onClick={runScan} disabled={running}>
-            {running ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ShieldAlert className="mr-2 h-4 w-4" />}Lancer l'analyse
+             {running ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <ShieldAlert className="mr-2 h-4 w-4" />}{t("Lancer l'analyse")}
           </Button>
         )}
       </div>
 
       <div className="grid gap-3 sm:grid-cols-4">
         {[["Alertes ouvertes", counts.open], ["Critiques ouvertes", counts.critique], ["Fraudes confirmées", counts.confirmed], ["Stations à risque élevé", counts.highRisk]].map(([l, v]) => (
-          <Card key={l as string} className="glass-card"><CardContent className="p-4"><p className="text-xs text-muted-foreground">{l}</p><p className="font-display text-2xl font-bold">{v}</p></CardContent></Card>
+           <Card key={l as string} className="glass-card"><CardContent className="p-4"><p className="text-xs text-muted-foreground">{t(l as string)}</p><p className="font-display text-2xl font-bold">{v}</p></CardContent></Card>
         ))}
       </div>
 
       <Tabs defaultValue="alerts">
         <TabsList>
-          <TabsTrigger value="alerts">Alertes</TabsTrigger>
-          <TabsTrigger value="risk">Risk Score stations</TabsTrigger>
-          <TabsTrigger value="rules">Règles</TabsTrigger>
+           <TabsTrigger value="alerts">{t("Alertes")}</TabsTrigger>
+           <TabsTrigger value="risk">{t("Risk Score stations")}</TabsTrigger>
+           <TabsTrigger value="rules">{t("Règles")}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="alerts" className="space-y-3">
           <div className="flex flex-wrap gap-2">
             <Select value={stationF} onValueChange={setStationF}><SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
-              <SelectContent><SelectItem value="all">Toutes stations</SelectItem>{stations.map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent></Select>
+               <SelectContent><SelectItem value="all">{t("Toutes stations")}</SelectItem>{stations.map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent></Select>
             <Select value={ruleF} onValueChange={setRuleF}><SelectTrigger className="w-60"><SelectValue /></SelectTrigger>
-              <SelectContent><SelectItem value="all">Tous types</SelectItem>{defaults.map((d) => <SelectItem key={d.rule_code} value={d.rule_code}>{d.label}</SelectItem>)}</SelectContent></Select>
+               <SelectContent><SelectItem value="all">{t("Tous types")}</SelectItem>{defaults.map((d) => <SelectItem key={d.rule_code} value={d.rule_code}>{d.label}</SelectItem>)}</SelectContent></Select>
             <Select value={sevF} onValueChange={setSevF}><SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
-              <SelectContent><SelectItem value="all">Toutes priorités</SelectItem>{Object.entries(SEVERITY).map(([k, v]) => <SelectItem key={k} value={k}>{v.label}</SelectItem>)}</SelectContent></Select>
+               <SelectContent><SelectItem value="all">{t("Toutes priorités")}</SelectItem>{Object.entries(SEVERITY).map(([k, v]) => <SelectItem key={k} value={k}>{t(v.label)}</SelectItem>)}</SelectContent></Select>
             <Select value={wfF} onValueChange={setWfF}><SelectTrigger className="w-52"><SelectValue /></SelectTrigger>
-              <SelectContent><SelectItem value="open">Non closes</SelectItem><SelectItem value="all">Tous statuts</SelectItem>{Object.entries(WORKFLOW).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}</SelectContent></Select>
+               <SelectContent><SelectItem value="open">{t("Non closes")}</SelectItem><SelectItem value="all">{t("Tous statuts")}</SelectItem>{Object.entries(WORKFLOW).map(([k, v]) => <SelectItem key={k} value={k}>{t(v)}</SelectItem>)}</SelectContent></Select>
           </div>
           <Card className="glass-card"><CardContent className="p-0">
             <Table>
-              <TableHeader><TableRow><TableHead>Priorité</TableHead><TableHead>Date</TableHead><TableHead>Station</TableHead><TableHead>Règle déclenchée</TableHead><TableHead>Explication</TableHead><TableHead>Statut</TableHead><TableHead /></TableRow></TableHeader>
+               <TableHeader><TableRow>{["Priorité", "Date", "Station", "Règle déclenchée", "Explication", "Statut"].map((label) => <TableHead key={label}>{t(label)}</TableHead>)}<TableHead /></TableRow></TableHeader>
               <TableBody>
                 {loading ? <TableRow><TableCell colSpan={7} className="text-center py-6"><Loader2 className="mx-auto h-5 w-5 animate-spin" /></TableCell></TableRow>
-                  : filtered.length === 0 ? <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-6">Aucune alerte. Lancez l'analyse sur la période.</TableCell></TableRow>
+                   : filtered.length === 0 ? <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground py-6">{t("Aucune alerte. Lancez l'analyse sur la période.")}</TableCell></TableRow>
                   : filtered.map((a) => (
                     <TableRow key={a.id}>
-                      <TableCell><Badge variant="outline" className={SEVERITY[a.severity]?.cls}>{SEVERITY[a.severity]?.label}</Badge></TableCell>
+                       <TableCell><Badge variant="outline" className={SEVERITY[a.severity]?.cls}>{t(SEVERITY[a.severity]?.label ?? "")}</Badge></TableCell>
                       <TableCell className="whitespace-nowrap">{format(new Date(a.alert_date), "dd/MM/yyyy")}</TableCell>
                       <TableCell>{stationName[a.station_id] ?? "—"}</TableCell>
                       <TableCell className="font-medium">{a.title}</TableCell>
                       <TableCell className="max-w-md text-sm text-muted-foreground">{a.explanation}</TableCell>
-                      <TableCell><Badge variant="secondary">{WORKFLOW[a.workflow]}</Badge></TableCell>
-                      <TableCell><Button size="icon" variant="ghost" aria-label="Ouvrir l'alerte" onClick={() => setOpenId(a.id)}><Eye className="h-4 w-4" /></Button></TableCell>
+                       <TableCell><Badge variant="secondary">{t(WORKFLOW[a.workflow] ?? "")}</Badge></TableCell>
+                       <TableCell><Button size="icon" variant="ghost" aria-label={t("Ouvrir l'alerte")} onClick={() => setOpenId(a.id)}><Eye className="h-4 w-4" /></Button></TableCell>
                     </TableRow>
                   ))}
               </TableBody>
@@ -205,8 +207,8 @@ export function FraudCenterModule() {
 
         <TabsContent value="risk" className="space-y-3">
           <p className="text-sm text-muted-foreground">
-            Score de 0 à 100 sur la période : Critique 35 pts, Haute 20, Moyenne 10, Faible 5 par alerte. Fraude confirmée ×1,5 ; alerte close ×0,5 ; faux positif 0. Plafonné à 100.
-            Vert &lt; 30, Orange 30–59, Rouge ≥ 60.
+             {t("Score de 0 à 100 sur la période : Critique 35 pts, Haute 20, Moyenne 10, Faible 5 par alerte. Fraude confirmée ×1,5 ; alerte close ×0,5 ; faux positif 0. Plafonné à 100.")}
+             {t("Vert < 30, Orange 30–59, Rouge ≥ 60.")}
           </p>
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
             {risk.map((r) => (
@@ -217,11 +219,11 @@ export function FraudCenterModule() {
                 </CardHeader>
                 <CardContent className="space-y-1 text-sm">
                   <div className="h-2 rounded bg-muted overflow-hidden"><div className={`h-full ${r.score >= 60 ? "bg-destructive" : r.score >= 30 ? "bg-warning" : "bg-success"}`} style={{ width: `${r.score}%` }} /></div>
-                  {r.factors.length === 0 ? <p className="text-muted-foreground">Aucun facteur de risque.</p>
+                   {r.factors.length === 0 ? <p className="text-muted-foreground">{t("Aucun facteur de risque.")}</p>
                     : (riskStation === r.id ? r.factors : r.factors.slice(0, 3)).map((f) => (
                       <div key={f.label} className="flex justify-between"><span>{f.label} × {f.count}</span><span className="font-medium">+{Math.round(f.points)}</span></div>
                     ))}
-                  {r.factors.length > 3 && riskStation !== r.id && <p className="text-xs text-muted-foreground">Cliquez pour voir tous les facteurs</p>}
+                   {r.factors.length > 3 && riskStation !== r.id && <p className="text-xs text-muted-foreground">{t("Cliquez pour voir tous les facteurs")}</p>}
                 </CardContent>
               </Card>
             ))}
@@ -229,7 +231,7 @@ export function FraudCenterModule() {
         </TabsContent>
 
         <TabsContent value="rules">
-          <RulesEditor defaults={defaults} rules={rules} canEdit={canValidate} tenantId={tenantId} countryId={countryId} onSaved={load} />
+           <RulesEditor defaults={defaults} rules={rules} canEdit={canValidate} tenantId={tenantId} countryId={countryId} onSaved={load} />
         </TabsContent>
       </Tabs>
 

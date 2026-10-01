@@ -4,6 +4,7 @@ import { format, subDays, startOfMonth } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { useTenant } from "@/hooks/useTenant";
 import { useCountry } from "@/hooks/useCountry";
+import { useLanguage } from "@/hooks/useLanguage";
 import { FUEL_PRICES } from "@/config/prices";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -39,6 +40,7 @@ function range(p: PeriodKey) {
 export function CommandCenter() {
   const { tenantId, tenants } = useTenant() as any;
   const { countries, countryId } = useCountry();
+  const { t } = useLanguage();
   const [period, setPeriod] = useState<PeriodKey>("day");
   const [countryF, setCountryF] = useState<string>(countries.length > 1 ? "all" : countryId ?? "all");
   const [stationF, setStationF] = useState("all");
@@ -166,10 +168,10 @@ export function CommandCenter() {
   }, [d, productF, stationF, drill.zone, drill.station, today]);
 
   const countryName = (id?: string) => countries.find((c) => c.id === id)?.name ?? "—";
-  const zoneName = (id?: string) => (id === "none" ? "Sans zone" : d?.zones.find((z) => z.id === id)?.name ?? "—");
-  const tenantName = tenants?.find?.((t: any) => t.id === tenantId)?.name ?? "Groupe";
+   const zoneName = (id?: string) => (id === "none" ? t("Sans zone") : d?.zones.find((z) => z.id === id)?.name ?? "—");
+   const tenantName = tenants?.find?.((t: any) => t.id === tenantId)?.name ?? t("Groupe");
 
-  if (!allowed.length) return <p className="text-muted-foreground">Aucun pays autorisé pour ce compte.</p>;
+   if (!allowed.length) return <p className="text-muted-foreground">{t("Aucun pays autorisé pour ce compte.")}</p>;
 
   return (
     <div className="space-y-6">
@@ -178,15 +180,15 @@ export function CommandCenter() {
         <Select value={period} onValueChange={(v) => setPeriod(v as PeriodKey)}>
           <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="day">Aujourd'hui</SelectItem><SelectItem value="7d">7 derniers jours</SelectItem>
-            <SelectItem value="30d">30 derniers jours</SelectItem><SelectItem value="month">Mois en cours</SelectItem>
+             <SelectItem value="day">{t("Aujourd'hui")}</SelectItem><SelectItem value="7d">{t("7 derniers jours")}</SelectItem>
+             <SelectItem value="30d">{t("30 derniers jours")}</SelectItem><SelectItem value="month">{t("Mois en cours")}</SelectItem>
           </SelectContent>
         </Select>
         {countries.length > 1 && (
           <Select value={countryF} onValueChange={(v) => { setCountryF(v); setDrill({}); setStationF("all"); }}>
             <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">Tous mes pays</SelectItem>
+               <SelectItem value="all">{t("Tous mes pays")}</SelectItem>
               {countries.map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
             </SelectContent>
           </Select>
@@ -194,18 +196,18 @@ export function CommandCenter() {
         <Select value={stationF} onValueChange={setStationF}>
           <SelectTrigger className="w-48"><SelectValue /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Toutes les stations</SelectItem>
+             <SelectItem value="all">{t("Toutes les stations")}</SelectItem>
             {d?.stations.map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
           </SelectContent>
         </Select>
         <Select value={productF} onValueChange={setProductF}>
           <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Tous les produits</SelectItem>
+             <SelectItem value="all">{t("Tous les produits")}</SelectItem>
             {d?.products.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}{countries.length > 1 ? "" : ""}</SelectItem>)}
           </SelectContent>
         </Select>
-        {q.isFetching && <span className="text-xs text-muted-foreground">Actualisation…</span>}
+         {q.isFetching && <span className="text-xs text-muted-foreground">{t("Actualisation…")}</span>}
       </div>
 
       {/* Fil d'Ariane drill-down */}
@@ -222,29 +224,29 @@ export function CommandCenter() {
       {q.isLoading || !view ? (
         <div className="grid grid-cols-2 md:grid-cols-5 gap-4">{Array.from({ length: 10 }).map((_, i) => <Skeleton key={i} className="h-24" />)}</div>
       ) : q.error ? (
-        <p className="text-destructive">Impossible de charger les indicateurs.</p>
+         <p className="text-destructive">{t("Impossible de charger les indicateurs.")}</p>
       ) : (
         <>
           <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-            <Kpi icon={Banknote} label="CA du jour" value={`${fmt(view.kpi.caToday)} F`} />
-            <Kpi icon={TrendingUp} label="CA de la période" value={`${fmt(view.kpi.caPeriod)} F`} />
-            <Kpi icon={Fuel} label="Volume vendu" value={`${fmt(view.kpi.volume)} L`} />
-            <Kpi icon={Package} label="Stock disponible" value={`${fmt(view.kpi.stock)} L`} />
-            <Kpi icon={MapPin} label="Stations" value={fmt(view.kpi.stations)} />
-            <Kpi icon={AlertTriangle} label="Critiques / surveillance" value={`${view.kpi.red} / ${view.kpi.orange}`} tone={view.kpi.red ? "red" : view.kpi.orange ? "orange" : undefined} />
-            <Kpi icon={Droplets} label="Écarts de stock (abs.)" value={`${fmt(view.kpi.variance)} L`} />
-            <Kpi icon={Truck} label="Appro. en cours" value={fmt(view.supplies.length)} />
-            <Kpi icon={Activity} label="Alertes stock" value={fmt(view.kpi.alerts)} tone={view.kpi.alerts ? "orange" : undefined} />
-            <Kpi icon={Scale} label="Anomalies réconciliation" value={`${view.recons.filter((x: any) => x.result === "critique").length} / ${view.recons.filter((x: any) => x.result === "anomalie").length}`} tone={view.recons.some((x: any) => x.result === "critique") ? "red" : view.recons.some((x: any) => x.result === "anomalie") ? "orange" : undefined} />
-            <Kpi icon={LifeBuoy} label="Incidents ouverts" value={fmt(view.tickets.length)} tone={view.tickets.some((t) => t.priority === "critical") ? "red" : undefined} />
+             <Kpi icon={Banknote} label={t("CA du jour")} value={`${fmt(view.kpi.caToday)} F`} />
+             <Kpi icon={TrendingUp} label={t("CA de la période")} value={`${fmt(view.kpi.caPeriod)} F`} />
+             <Kpi icon={Fuel} label={t("Volume vendu")} value={`${fmt(view.kpi.volume)} L`} />
+             <Kpi icon={Package} label={t("Stock disponible")} value={`${fmt(view.kpi.stock)} L`} />
+             <Kpi icon={MapPin} label={t("Stations")} value={fmt(view.kpi.stations)} />
+             <Kpi icon={AlertTriangle} label={t("Critiques / surveillance")} value={`${view.kpi.red} / ${view.kpi.orange}`} tone={view.kpi.red ? "red" : view.kpi.orange ? "orange" : undefined} />
+             <Kpi icon={Droplets} label={t("Écarts de stock (abs.)")} value={`${fmt(view.kpi.variance)} L`} />
+             <Kpi icon={Truck} label={t("Appro. en cours")} value={fmt(view.supplies.length)} />
+             <Kpi icon={Activity} label={t("Alertes stock")} value={fmt(view.kpi.alerts)} tone={view.kpi.alerts ? "orange" : undefined} />
+             <Kpi icon={Scale} label={t("Anomalies réconciliation")} value={`${view.recons.filter((x: any) => x.result === "critique").length} / ${view.recons.filter((x: any) => x.result === "anomalie").length}`} tone={view.recons.some((x: any) => x.result === "critique") ? "red" : view.recons.some((x: any) => x.result === "anomalie") ? "orange" : undefined} />
+             <Kpi icon={LifeBuoy} label={t("Incidents ouverts")} value={fmt(view.tickets.length)} tone={view.tickets.some((t) => t.priority === "critical") ? "red" : undefined} />
           </div>
 
           {drill.station ? (
-            <StationDetail station={view.rows[0]} data={d!} levels={view.levels} productF={productF} />
+             <StationDetail station={view.rows[0]} data={d!} levels={view.levels} productF={productF} t={t} />
           ) : (
             <>
               {!drill.country && scope.length > 1 && (
-                <Card><CardHeader><CardTitle className="text-base">Pays</CardTitle></CardHeader>
+                 <Card><CardHeader><CardTitle className="text-base">{t("Pays")}</CardTitle></CardHeader>
                   <CardContent className="grid gap-3 md:grid-cols-3">
                     {scope.map((cid) => {
                       const rs = view.rows.filter((x) => x.country_id === cid);
@@ -253,7 +255,7 @@ export function CommandCenter() {
                   </CardContent></Card>
               )}
               {(drill.country || scope.length === 1) && !drill.zone && d!.stations.some((s) => s.zone_id) && (
-                <Card><CardHeader><CardTitle className="text-base">Zones</CardTitle></CardHeader>
+                 <Card><CardHeader><CardTitle className="text-base">{t("Zones")}</CardTitle></CardHeader>
                   <CardContent className="grid gap-3 md:grid-cols-3">
                     {[...new Set(view.rows.map((x) => x.zone_id ?? "none"))].map((z) => (
                       <Group key={z} title={zoneName(z)} rows={view.rows.filter((x) => (x.zone_id ?? "none") === z)} onClick={() => setDrill({ country: drill.country ?? scope[0], zone: z })} />
@@ -263,37 +265,37 @@ export function CommandCenter() {
 
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between">
-                  <CardTitle className="text-base">Vue réseau</CardTitle>
-                  <div className="flex gap-2 text-xs">{(["green", "orange", "red"] as Health[]).map((h) => <Badge key={h} variant="outline" className={HEALTH_CLS[h]}>{HEALTH_LABEL[h]}</Badge>)}</div>
+                   <CardTitle className="text-base">{t("Vue réseau")}</CardTitle>
+                   <div className="flex gap-2 text-xs">{(["green", "orange", "red"] as Health[]).map((h) => <Badge key={h} variant="outline" className={HEALTH_CLS[h]}>{t(HEALTH_LABEL[h])}</Badge>)}</div>
                 </CardHeader>
                 <CardContent className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
                   {[...view.rows].sort((a, b) => ({ red: 0, orange: 1, green: 2 }[a.health] - { red: 0, orange: 1, green: 2 }[b.health])).map((s) => (
                     <button key={s.id} onClick={() => setDrill({ country: s.country_id, zone: drill.zone, station: s.id })}
                       className={`rounded-lg border p-3 text-left transition hover:scale-[1.02] ${HEALTH_CLS[s.health as Health]}`}>
-                      <div className="flex items-center justify-between"><span className="font-semibold text-foreground">{s.name}</span><span className="text-xs">{HEALTH_LABEL[s.health as Health]}</span></div>
-                      <div className="mt-1 text-xs text-muted-foreground">{fmt(s.amt)} F · {fmt(s.vol)} L · stock {fmt(s.stock)} L</div>
-                      {s.reasons.length > 0 && <div className="mt-1 text-xs">{s.reasons.join(" · ")}</div>}
+                       <div className="flex items-center justify-between"><span className="font-semibold text-foreground">{s.name}</span><span className="text-xs">{t(HEALTH_LABEL[s.health as Health])}</span></div>
+                       <div className="mt-1 text-xs text-muted-foreground">{fmt(s.amt)} F · {fmt(s.vol)} L · {t("stock")} {fmt(s.stock)} L</div>
+                       {s.reasons.length > 0 && <div className="mt-1 text-xs">{s.reasons.map(t).join(" · ")}</div>}
                     </button>
                   ))}
-                  {view.rows.length === 0 && <p className="text-sm text-muted-foreground">Aucune station dans ce périmètre.</p>}
+                   {view.rows.length === 0 && <p className="text-sm text-muted-foreground">{t("Aucune station dans ce périmètre.")}</p>}
                 </CardContent>
               </Card>
 
               <div className="grid gap-4 md:grid-cols-2">
-                <Ranking title="Top stations" icon={TrendingUp} rows={view.ranked.slice(0, 5)} />
-                <Ranking title="Bottom stations" icon={TrendingDown} rows={[...view.ranked].reverse().slice(0, 5)} />
+                 <Ranking title={t("Top stations")} icon={TrendingUp} rows={view.ranked.slice(0, 5)} empty={t("Aucune donnée.")} />
+                 <Ranking title={t("Bottom stations")} icon={TrendingDown} rows={[...view.ranked].reverse().slice(0, 5)} empty={t("Aucune donnée.")} />
               </div>
 
               <div className="grid gap-4 md:grid-cols-2">
-                <Card><CardHeader><CardTitle className="text-base">Approvisionnements en cours</CardTitle></CardHeader>
+                 <Card><CardHeader><CardTitle className="text-base">{t("Approvisionnements en cours")}</CardTitle></CardHeader>
                   <CardContent className="space-y-1 text-sm">
                     {view.supplies.slice(0, 8).map((s) => <div key={s.id} className="flex justify-between"><span>{s.reference} · {d!.stations.find((x) => x.id === s.station_id)?.name}</span><Badge variant="outline">{s.status}</Badge></div>)}
-                    {!view.supplies.length && <p className="text-muted-foreground">Aucun.</p>}
+                     {!view.supplies.length && <p className="text-muted-foreground">{t("Aucun.")}</p>}
                   </CardContent></Card>
-                <Card><CardHeader><CardTitle className="text-base">Incidents ouverts</CardTitle></CardHeader>
+                 <Card><CardHeader><CardTitle className="text-base">{t("Incidents ouverts")}</CardTitle></CardHeader>
                   <CardContent className="space-y-1 text-sm">
                     {view.tickets.slice(0, 8).map((t) => <div key={t.id} className="flex justify-between gap-2"><span className="truncate">{t.ticket_number} · {t.subject}</span><Badge variant="outline" className={t.priority === "critical" ? HEALTH_CLS.red : ""}>{t.priority}</Badge></div>)}
-                    {!view.tickets.length && <p className="text-muted-foreground">Aucun.</p>}
+                     {!view.tickets.length && <p className="text-muted-foreground">{t("Aucun.")}</p>}
                   </CardContent></Card>
               </div>
             </>
@@ -326,17 +328,17 @@ function Group({ title, rows, onClick }: { title: string; rows: any[]; onClick: 
   );
 }
 
-function Ranking({ title, icon: Icon, rows }: { title: string; icon: any; rows: any[] }) {
+function Ranking({ title, icon: Icon, rows, empty }: { title: string; icon: any; rows: any[]; empty: string }) {
   return (
     <Card><CardHeader><CardTitle className="flex items-center gap-2 text-base"><Icon className="h-4 w-4" />{title}</CardTitle></CardHeader>
       <CardContent className="space-y-1 text-sm">
         {rows.map((s, i) => <div key={s.id} className="flex justify-between"><span>{i + 1}. {s.name}</span><span className="font-medium">{fmt(s.amt)} F · {fmt(s.vol)} L</span></div>)}
-        {!rows.length && <p className="text-muted-foreground">Aucune donnée.</p>}
+         {!rows.length && <p className="text-muted-foreground">{empty}</p>}
       </CardContent></Card>
   );
 }
 
-function StationDetail({ station, data, levels, productF }: { station: any; data: any; levels: any[]; productF: string }) {
+function StationDetail({ station, data, levels, productF, t }: { station: any; data: any; levels: any[]; productF: string; t: (text: string) => string }) {
   if (!station) return null;
   const tanks = data.tanks.filter((t: any) => t.station_id === station.id && (productF === "all" || t.product_id === productF));
   const pumps = data.pumps.filter((p: any) => p.station_id === station.id && (productF === "all" || p.product_id === productF));
@@ -345,11 +347,11 @@ function StationDetail({ station, data, levels, productF }: { station: any; data
     <div className="space-y-4">
       <Card className={HEALTH_CLS[station.health as Health]}>
         <CardContent className="p-4">
-          <div className="font-display text-lg font-bold text-foreground">{station.name} — {HEALTH_LABEL[station.health as Health]}</div>
-          <div className="text-sm text-muted-foreground">{station.location} · {station.reasons.join(" · ") || "Aucune anomalie"}</div>
+           <div className="font-display text-lg font-bold text-foreground">{station.name} — {t(HEALTH_LABEL[station.health as Health])}</div>
+           <div className="text-sm text-muted-foreground">{station.location} · {station.reasons.length ? station.reasons.map(t).join(" · ") : t("Aucune anomalie")}</div>
         </CardContent>
       </Card>
-      <Card><CardHeader><CardTitle className="text-base">Cuves / produits</CardTitle></CardHeader>
+       <Card><CardHeader><CardTitle className="text-base">{t("Cuves / produits")}</CardTitle></CardHeader>
         <CardContent className="grid gap-3 md:grid-cols-3">
           {tanks.map((t: any) => {
             const l = levels.find((x) => x.tank_id === t.id);
@@ -360,17 +362,17 @@ function StationDetail({ station, data, levels, productF }: { station: any; data
                 <div className="flex justify-between font-semibold text-foreground"><span>{t.name}</span><span className="text-xs">{prod(t.product_id)}</span></div>
                 <div className="mt-2 h-2 rounded bg-muted"><div className="h-2 rounded bg-primary" style={{ width: `${pct}%` }} /></div>
                 <div className="mt-1 text-xs text-muted-foreground">
-                  {l ? `${fmt(Number(l.theoretical))} / ${fmt(t.capacity_liters)} L · écart ${l.variance != null ? fmt(Number(l.variance)) + " L" : "—"}` : "Stock non initialisé"}
+                   {l ? `${fmt(Number(l.theoretical))} / ${fmt(t.capacity_liters)} L · ${t("écart")} ${l.variance != null ? fmt(Number(l.variance)) + " L" : "—"}` : t("Stock non initialisé")}
                 </div>
               </div>
             );
           })}
-          {!tanks.length && <p className="text-sm text-muted-foreground">Aucune cuve.</p>}
+           {!tanks.length && <p className="text-sm text-muted-foreground">{t("Aucune cuve.")}</p>}
         </CardContent></Card>
-      <Card><CardHeader><CardTitle className="text-base">Pompes</CardTitle></CardHeader>
+       <Card><CardHeader><CardTitle className="text-base">{t("Pompes")}</CardTitle></CardHeader>
         <CardContent className="flex flex-wrap gap-2">
           {pumps.map((p: any) => <Badge key={p.id} variant="outline" className={p.status === "active" ? HEALTH_CLS.green : HEALTH_CLS.orange}>{p.name} · {prod(p.product_id)} · {data.tanks.find((t: any) => t.id === p.tank_id)?.name ?? "—"}</Badge>)}
-          {!pumps.length && <p className="text-sm text-muted-foreground">Aucune pompe.</p>}
+           {!pumps.length && <p className="text-sm text-muted-foreground">{t("Aucune pompe.")}</p>}
         </CardContent></Card>
     </div>
   );

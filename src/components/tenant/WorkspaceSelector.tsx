@@ -3,23 +3,27 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { useCountry } from "@/hooks/useCountry";
 import { useTenant } from "@/hooks/useTenant";
+import { useLanguage } from "@/hooks/useLanguage";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 
 export const WorkspaceSelector = () => {
   const { countries, setCountryId } = useCountry();
   const { tenant } = useTenant();
+  const { t } = useLanguage();
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-4xl">
+        <div className="mb-4 flex justify-end"><LanguageSwitcher /></div>
         <div className="text-center mb-10">
           <div className="inline-flex p-3 rounded-2xl bg-primary/10 mb-4">
             <Globe className="w-8 h-8 text-primary" />
           </div>
           <h1 className="text-3xl md:text-4xl font-display font-bold">
-            Sélectionnez votre espace de travail
+             {t("Sélectionnez votre espace de travail")}
           </h1>
           <p className="text-muted-foreground mt-2">
-            Choisissez le pays dans lequel vous souhaitez travailler.
+             {t("Choisissez le pays dans lequel vous souhaitez travailler.")}
           </p>
         </div>
 
@@ -41,7 +45,7 @@ export const WorkspaceSelector = () => {
                   </p>
                 </div>
                 <Button className="w-full gap-2 mt-2" onClick={() => setCountryId(c.id)}>
-                  Accéder
+                   {t("Accéder")}
                   <ArrowRight className="w-4 h-4" />
                 </Button>
               </CardContent>

@@ -8,6 +8,7 @@ import { CountrySwitcher } from "@/components/tenant/CountrySwitcher";
 import { TenantSettingsModule } from "@/components/tenant/TenantSettingsModule";
 import { useTenant } from "@/hooks/useTenant";
 import { useBranding } from "@/hooks/useBranding";
+import { useLanguage } from "@/hooks/useLanguage";
 import { usePlatformAdmin } from "@/hooks/usePlatformAdmin";
 import { useModules } from "@/hooks/useModules";
 import { useLicenseState } from "@/hooks/useLicenseState";
@@ -220,6 +221,7 @@ const Index = () => {
   const canExport = can("index_entries", "export") || can("reports", "export");
   const { tenant } = useTenant();
   const brand = useBranding();
+  const { t, language } = useLanguage();
   const { isModuleEnabled, enabledMap, isLoading: modulesLoading } = useModules();
   const license = useLicenseState();
   const queryClient = useQueryClient();
@@ -295,7 +297,7 @@ const Index = () => {
                   {brand.companyName}
                 </h1>
                 <p className="text-sm text-muted-foreground">
-                  Tableau de bord - Gestion 2026
+                   {t("Tableau de bord - Gestion 2026")}
                 </p>
               </div>
               <div className="hidden md:block h-8 w-px bg-border mx-1" />
@@ -326,7 +328,7 @@ const Index = () => {
                   trigger={
                     <Button variant="outline" className="gap-2">
                       <Upload className="w-4 h-4" />
-                      Importer
+                       {t("Importer")}
                     </Button>
                   }
                 />
@@ -336,7 +338,7 @@ const Index = () => {
                   trigger={
                     <Button variant="outline" className="gap-2">
                       <Download className="w-4 h-4" />
-                      Exporter
+                       {t("Exporter")}
                     </Button>
                   }
                 />
@@ -345,7 +347,7 @@ const Index = () => {
                 <Link to="/saisie">
                   <Button className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2">
                     <PenLine className="w-4 h-4" />
-                    Saisie Index
+                     {t("Saisie Index")}
                   </Button>
                 </Link>
               )}
@@ -365,11 +367,11 @@ const Index = () => {
                   await queryClient.invalidateQueries({ queryKey: ["supplies"] });
                   await queryClient.invalidateQueries({ queryKey: ["stations"] });
                   setIsRefreshing(false);
-                  toast({ title: "Données actualisées", description: "Toutes les données ont été rafraîchies." });
+                   toast({ title: t("Données actualisées"), description: t("Toutes les données ont été rafraîchies.") });
                 }}
               >
                 <RefreshCw className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`} />
-                Actualiser
+                 {t("Actualiser")}
               </Button>
               <DbStationSelector
                 selectedStation={selectedStation}
@@ -378,7 +380,7 @@ const Index = () => {
               <div className="flex items-center gap-2 text-sm text-muted-foreground bg-secondary px-3 py-2 rounded-lg">
                 <Calendar className="w-4 h-4" />
                 <span>
-                  {new Date().toLocaleDateString("fr-FR", {
+                   {new Date().toLocaleDateString(language === "en" ? "en-GB" : "fr-FR", {
                     weekday: "long",
                     day: "numeric",
                     month: "long",
@@ -416,15 +418,15 @@ const Index = () => {
                         }`}
                       >
                         <GroupIcon className="w-4 h-4" />
-                        <span>{group.label}</span>
+                         <span>{t(group.label)}</span>
                         {activeMeta && (
-                          <span className="opacity-80">· {activeMeta.label}</span>
+                           <span className="opacity-80">· {t(activeMeta.label)}</span>
                         )}
                         <ChevronDown className="w-3.5 h-3.5 opacity-70" />
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="start" className="w-56">
-                      <DropdownMenuLabel>{group.label}</DropdownMenuLabel>
+                       <DropdownMenuLabel>{t(group.label)}</DropdownMenuLabel>
                       <DropdownMenuSeparator />
                       {visibleTabs.map((tab) => {
                         const meta = TAB_META[tab];
@@ -438,7 +440,7 @@ const Index = () => {
                             }`}
                           >
                             <ItemIcon className="w-4 h-4" />
-                            {meta.label}
+                             {t(meta.label)}
                           </DropdownMenuItem>
                         );
                       })}

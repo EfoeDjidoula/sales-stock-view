@@ -13,6 +13,8 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { useLanguage } from "@/hooks/useLanguage";
 
 const ROLE_CONFIG = {
   admin: {
@@ -36,6 +38,7 @@ export const ProfileMenu = () => {
   const { user, signOut } = useAuth();
   const { data: profile } = useProfile();
   const { currentUserRole } = useUserRoles();
+  const { t } = useLanguage();
 
   const displayName = profile?.full_name || user?.email?.split("@")[0] || "Utilisateur";
   const initials = displayName
@@ -49,7 +52,7 @@ export const ProfileMenu = () => {
   const RoleIcon = roleConfig?.icon || Shield;
 
   return (
-    <DropdownMenu>
+    <div className="flex items-center gap-2"><LanguageSwitcher /><DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button
           variant="ghost"
@@ -66,7 +69,7 @@ export const ProfileMenu = () => {
           {roleConfig && (
             <Badge variant={roleConfig.variant} className="hidden md:flex gap-1 text-xs">
               <RoleIcon className="w-3 h-3" />
-              {roleConfig.label}
+               {t(roleConfig.label)}
             </Badge>
           )}
         </Button>
@@ -81,12 +84,12 @@ export const ProfileMenu = () => {
             {roleConfig && (
               <Badge variant={roleConfig.variant} className="w-fit gap-1 text-xs">
                 <RoleIcon className="w-3 h-3" />
-                {roleConfig.label}
+                 {t(roleConfig.label)}
               </Badge>
             )}
             {!roleConfig && (
               <Badge variant="outline" className="w-fit text-xs text-muted-foreground">
-                Aucun rôle attribué
+                 {t("Aucun rôle attribué")}
               </Badge>
             )}
           </div>
@@ -94,11 +97,11 @@ export const ProfileMenu = () => {
         <DropdownMenuSeparator />
         <DropdownMenuItem className="gap-2 cursor-pointer">
           <User className="w-4 h-4" />
-          Mon profil
+           {t("Mon profil")}
         </DropdownMenuItem>
         <DropdownMenuItem className="gap-2 cursor-pointer">
           <Settings className="w-4 h-4" />
-          Paramètres
+           {t("Paramètres")}
         </DropdownMenuItem>
         <DropdownMenuSeparator />
         <DropdownMenuItem
@@ -106,9 +109,9 @@ export const ProfileMenu = () => {
           className="gap-2 cursor-pointer text-destructive focus:text-destructive"
         >
           <LogOut className="w-4 h-4" />
-          Se déconnecter
+           {t("Se déconnecter")}
         </DropdownMenuItem>
       </DropdownMenuContent>
-    </DropdownMenu>
+    </DropdownMenu></div>
   );
 };

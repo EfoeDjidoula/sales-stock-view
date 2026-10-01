@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { usePlatformAdmin } from "@/hooks/usePlatformAdmin";
 import { AccessDenied } from "@/components/AccessDenied";
 import { ProfileMenu } from "@/components/ProfileMenu";
+import { useLanguage } from "@/hooks/useLanguage";
 import { LumatekDashboard } from "@/components/lumatek/LumatekDashboard";
 import { LumatekClients } from "@/components/lumatek/LumatekClients";
 import { LumatekUsers } from "@/components/lumatek/LumatekUsers";
@@ -53,6 +54,7 @@ type MenuId = (typeof MENU)[number]["id"];
 const LumatekAdmin = () => {
   const { isPlatformAdmin, isLoading } = usePlatformAdmin();
   const [active, setActive] = useState<MenuId>("dashboard");
+  const { t } = useLanguage();
 
   if (isLoading) {
     return (
@@ -95,14 +97,14 @@ const LumatekAdmin = () => {
       case "parametres":
         return (
           <LumatekPlaceholder
-            title="Paramètres de la plateforme"
-            description="Paramètres globaux LUMATEK : branding, notifications et intégrations."
+             title={t("Paramètres de la plateforme")}
+             description={t("Paramètres globaux LUMATEK : branding, notifications et intégrations.")}
           />
         );
     }
   };
 
-  const activeLabel = MENU.find((m) => m.id === active)?.label ?? "";
+   const activeLabel = t(MENU.find((m) => m.id === active)?.label ?? "");
 
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100">
@@ -115,7 +117,7 @@ const LumatekAdmin = () => {
             </div>
             <div>
               <h1 className="text-lg font-semibold tracking-tight">LUMATEK SaaS Administration</h1>
-              <p className="text-xs text-slate-400">Espace Super Admin — accès transversal à tous les clients</p>
+               <p className="text-xs text-slate-400">{t("Espace Super Admin — accès transversal à tous les clients")}</p>
             </div>
             <Badge variant="outline" className="border-indigo-400/40 text-indigo-300">
               SUPER ADMIN
@@ -124,7 +126,7 @@ const LumatekAdmin = () => {
           <div className="flex items-center gap-2">
             <Button asChild variant="outline" size="sm" className="gap-2 border-indigo-500/40">
               <Link to="/">
-                <ArrowLeft className="h-4 w-4" /> Espace client
+                 <ArrowLeft className="h-4 w-4" /> {t("Espace client")}
               </Link>
             </Button>
             <ProfileMenu />
@@ -147,7 +149,7 @@ const LumatekAdmin = () => {
                   )}
                 >
                   <item.icon className="h-4 w-4" />
-                  {item.label}
+                   {t(item.label)}
                 </button>
               </li>
             ))}
