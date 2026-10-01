@@ -199,7 +199,7 @@ const TicketDetail = ({ ticket: t, isLumatek, onClose, tenantName, moduleLabel, 
   ticket: SupportTicket; isLumatek: boolean; onClose: () => void; tenantName: string; moduleLabel: string; stationName: string;
   agents: { id: string; name: string }[]; update: Hook["update"]; comment: Hook["comment"];
 }) => {
-  const { t } = useLanguage();
+  const { t: translate } = useLanguage();
   const { data: events = [], isLoading } = useTicketEvents(t.id);
   const [msg, setMsg] = useState("");
   const [files, setFiles] = useState<File[]>([]);
@@ -243,17 +243,17 @@ const TicketDetail = ({ ticket: t, isLumatek, onClose, tenantName, moduleLabel, 
 
         {isLumatek ? (
           <div className="grid gap-3 sm:grid-cols-3 rounded-md border border-border p-3">
-            <div className="space-y-1.5"><Label>{t("Responsable")}</Label>
+            <div className="space-y-1.5"><Label>{translate("Responsable")}</Label>
               <Select value={t.assigned_to || "none"} onValueChange={(v) => update.mutate({ id: t.id, assigned_to: v === "none" ? null : v, assigned_to_name: v === "none" ? null : agents.find((a) => a.id === v)?.name ?? null })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent><SelectItem value="none">{t("Non assigné")}</SelectItem>{agents.map((a) => <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>)}</SelectContent>
+                <SelectContent><SelectItem value="none">{translate("Non assigné")}</SelectItem>{agents.map((a) => <SelectItem key={a.id} value={a.id}>{a.name}</SelectItem>)}</SelectContent>
               </Select></div>
-            <div className="space-y-1.5"><Label>{t("Statut")}</Label>
+            <div className="space-y-1.5"><Label>{translate("Statut")}</Label>
               <Select value={t.status} onValueChange={(v) => update.mutate({ id: t.id, status: v as TicketStatus })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>{Object.entries(TICKET_STATUSES).map(([k, v]) => <SelectItem key={k} value={k}>{v.label}</SelectItem>)}</SelectContent>
               </Select></div>
-            <div className="space-y-1.5"><Label>{t("Priorité")}</Label>
+            <div className="space-y-1.5"><Label>{translate("Priorité")}</Label>
               <Select value={t.priority} onValueChange={(v) => update.mutate({ id: t.id, priority: v as TicketPriority })}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>{Object.entries(TICKET_PRIORITIES).map(([k, v]) => <SelectItem key={k} value={k}>{v.label}</SelectItem>)}</SelectContent>
@@ -261,13 +261,13 @@ const TicketDetail = ({ ticket: t, isLumatek, onClose, tenantName, moduleLabel, 
           </div>
         ) : (
           <div className="flex flex-wrap gap-2">
-            {["waiting_client", "resolved"].includes(t.status) && <Button size="sm" variant="outline" onClick={() => update.mutate({ id: t.id, status: "in_progress" })}>{t("Relancer le ticket")}</Button>}
-            {t.status !== "closed" && <Button size="sm" variant="outline" onClick={() => update.mutate({ id: t.id, status: "closed" })}>{t("Fermer le ticket")}</Button>}
+            {["waiting_client", "resolved"].includes(t.status) && <Button size="sm" variant="outline" onClick={() => update.mutate({ id: t.id, status: "in_progress" })}>{translate("Relancer le ticket")}</Button>}
+            {t.status !== "closed" && <Button size="sm" variant="outline" onClick={() => update.mutate({ id: t.id, status: "closed" })}>{translate("Fermer le ticket")}</Button>}
           </div>
         )}
 
         <div className="space-y-2">
-          <h4 className="text-sm font-semibold">{t("Historique")}</h4>
+          <h4 className="text-sm font-semibold">{translate("Historique")}</h4>
           {isLoading ? <Skeleton className="h-20" /> : events.map((e) => (
             <div key={e.id} className={`rounded-md border p-2 text-sm ${e.event_type === "comment" ? (e.is_lumatek ? "border-primary/40 bg-primary/5" : "border-border") : "border-transparent text-muted-foreground"}`}>
               <div className="text-xs"><span className="font-medium">{e.author_name || (e.is_lumatek ? "Support LUMATEK" : "Client")}</span> · {dt(e.created_at)} {describe(e)}</div>
@@ -279,14 +279,14 @@ const TicketDetail = ({ ticket: t, isLumatek, onClose, tenantName, moduleLabel, 
 
         {t.status !== "closed" && (
           <div className="space-y-2">
-            <Textarea rows={3} placeholder={t("Votre message…")} value={msg} maxLength={5000} onChange={(e) => setMsg(e.target.value)} />
+            <Textarea rows={3} placeholder={translate("Votre message…")} value={msg} maxLength={5000} onChange={(e) => setMsg(e.target.value)} />
             <div className="flex items-center justify-between gap-2">
               <FilePicker files={files} setFiles={setFiles} />
               <Button size="sm" onClick={send} disabled={busy}><Send className="h-4 w-4 mr-1" />{busy ? "Envoi…" : "Envoyer"}</Button>
             </div>
           </div>
         )}
-        <DialogFooter><Button variant="outline" onClick={onClose}>{t("Fermer")}</Button></DialogFooter>
+        <DialogFooter><Button variant="outline" onClick={onClose}>{translate("Fermer")}</Button></DialogFooter>
       </DialogContent>
     </Dialog>
   );
