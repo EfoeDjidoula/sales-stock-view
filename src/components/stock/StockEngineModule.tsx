@@ -87,6 +87,7 @@ const LocationPicker = ({ refs, value, onChange, label, allowDepot = true }: {
 };
 
 const LevelsTab = ({ refs, reload }: { refs: Record<string, Row[]>; reload: number }) => {
+  const { t } = useLanguage();
   const { scopeQuery, tenantId } = useScope();
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
@@ -120,7 +121,7 @@ const LevelsTab = ({ refs, reload }: { refs: Record<string, Row[]>; reload: numb
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
         {Object.entries(ALERT_META).map(([k, m]) => (
           <button key={k} onClick={() => setAlert(alert === k ? "all" : k)} className={`rounded-xl border p-3 text-left ${m.cls} ${alert === k ? "ring-2 ring-ring" : ""}`}>
-            <div className="text-xs">{m.label}</div>
+             <div className="text-xs">{t(m.label)}</div>
             <div className="text-2xl font-display font-bold">{counts[k] || 0}</div>
           </button>
         ))}
@@ -128,14 +129,14 @@ const LevelsTab = ({ refs, reload }: { refs: Record<string, Row[]>; reload: numb
       <div className="flex flex-wrap gap-2">
         <div className="relative flex-1 min-w-[200px]">
           <Search className="w-4 h-4 absolute left-2.5 top-2.5 text-muted-foreground" />
-          <Input className="pl-8" placeholder="Rechercher station, dépôt, cuve, produit…" value={search} onChange={(e) => setSearch(e.target.value)} />
+           <Input className="pl-8" placeholder={t("Rechercher station, dépôt, cuve, produit…")} value={search} onChange={(e) => setSearch(e.target.value)} />
         </div>
         <Select value={loc} onValueChange={setLoc}>
           <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">Stations et dépôts</SelectItem>
-            <SelectItem value="station">Stations</SelectItem>
-            <SelectItem value="depot">Dépôts</SelectItem>
+             <SelectItem value="all">{t("Stations et dépôts")}</SelectItem>
+             <SelectItem value="station">{t("Stations")}</SelectItem>
+             <SelectItem value="depot">{t("Dépôts")}</SelectItem>
           </SelectContent>
         </Select>
       </div>
@@ -143,32 +144,33 @@ const LevelsTab = ({ refs, reload }: { refs: Record<string, Row[]>; reload: numb
         {loading ? <div className="flex justify-center py-8"><Loader2 className="w-5 h-5 animate-spin text-muted-foreground" /></div> : (
           <table className="w-full text-sm">
             <thead className="bg-secondary/50 text-muted-foreground">
-              <tr>{["Emplacement", "Cuve", "Produit", "Initial", "Entrées", "Sorties", "Ventes", "Théorique", "Physique", "Écart", "Seuils (min / crit.)", "Alerte"].map((h) => <th key={h} className="text-left p-2 font-medium whitespace-nowrap">{h}</th>)}</tr>
+               <tr>{["Emplacement", "Cuve", "Produit", "Initial", "Entrées", "Sorties", "Ventes", "Théorique", "Physique", "Écart", "Seuils (min / crit.)", "Alerte"].map((h) => <th key={h} className="text-left p-2 font-medium whitespace-nowrap">{t(h)}</th>)}</tr>
             </thead>
             <tbody>
               {list.map((r, i) => (
                 <tr key={i} className="border-t border-border">
-                  <td className="p-2">{r.locName}<span className="text-xs text-muted-foreground ml-1">({r.location_type === "station" ? "station" : "dépôt"})</span></td>
+                   <td className="p-2">{r.locName}<span className="text-xs text-muted-foreground ml-1">({r.location_type === "station" ? t("Station") : t("Dépôts")})</span></td>
                   <td className="p-2">{r.tankName}</td><td className="p-2">{r.productName}</td>
                   <td className="p-2">{fmt(r.initial_qty)}</td><td className="p-2">{fmt(r.entries)}</td><td className="p-2">{fmt(r.exits)}</td><td className="p-2">{fmt(r.sales)}</td>
                   <td className="p-2 font-semibold">{fmt(r.theoretical)}</td>
                   <td className="p-2">{fmt(r.physical)}</td>
                   <td className={`p-2 ${r.variance < 0 ? "text-destructive" : r.variance > 0 ? "text-success" : ""}`}>{fmt(r.variance)}</td>
                   <td className="p-2 whitespace-nowrap">{fmt(r.min_threshold)} / {fmt(r.critical_threshold)}</td>
-                  <td className="p-2"><span className={`px-2 py-0.5 rounded-full border text-xs ${ALERT_META[r.alert_level]?.cls}`}>{ALERT_META[r.alert_level]?.label}</span></td>
+                   <td className="p-2"><span className={`px-2 py-0.5 rounded-full border text-xs ${ALERT_META[r.alert_level]?.cls}`}>{t(ALERT_META[r.alert_level]?.label ?? "")}</span></td>
                 </tr>
               ))}
-              {list.length === 0 && <tr><td colSpan={12} className="p-6 text-center text-muted-foreground">Aucun stock enregistré. Commencez par saisir un stock initial.</td></tr>}
+               {list.length === 0 && <tr><td colSpan={12} className="p-6 text-center text-muted-foreground">{t("Aucun stock enregistré. Commencez par saisir un stock initial.")}</td></tr>}
             </tbody>
           </table>
         )}
       </div>
-      <p className="text-xs text-muted-foreground">Stock théorique = Stock initial + Entrées − Sorties (ventes incluses). Seuils par défaut : 25 % et 10 % de la capacité.</p>
+       <p className="text-xs text-muted-foreground">{t("Stock théorique = Stock initial + Entrées − Sorties (ventes incluses). Seuils par défaut : 25 % et 10 % de la capacité.")}</p>
     </div>
   );
 };
 
 const RegisterTab = ({ refs, reload, onChanged }: { refs: Record<string, Row[]>; reload: number; onChanged: () => void }) => {
+  const { t, language } = useLanguage();
   const { scopeQuery, tenantId } = useScope();
   const { can } = usePermissions();
   const { isPlatformAdmin } = usePlatformAdmin();
@@ -199,49 +201,49 @@ const RegisterTab = ({ refs, reload, onChanged }: { refs: Record<string, Row[]>;
       <div className="flex flex-wrap gap-2">
         <div className="relative flex-1 min-w-[200px]">
           <Search className="w-4 h-4 absolute left-2.5 top-2.5 text-muted-foreground" />
-          <Input className="pl-8" placeholder="Rechercher emplacement, motif, référence, utilisateur…" value={search} onChange={(e) => setSearch(e.target.value)} />
+           <Input className="pl-8" placeholder={t("Rechercher emplacement, motif, référence, utilisateur…")} value={search} onChange={(e) => setSearch(e.target.value)} />
         </div>
         <Select value={type} onValueChange={setType}>
           <SelectTrigger className="w-52"><SelectValue /></SelectTrigger>
-          <SelectContent><SelectItem value="all">Tous types</SelectItem>{Object.entries(MOVEMENT_LABEL).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}</SelectContent>
+           <SelectContent><SelectItem value="all">{t("Tous types")}</SelectItem>{Object.entries(MOVEMENT_LABEL).map(([k, v]) => <SelectItem key={k} value={k}>{t(v)}</SelectItem>)}</SelectContent>
         </Select>
         <Select value={status} onValueChange={setStatus}>
           <SelectTrigger className="w-40"><SelectValue /></SelectTrigger>
-          <SelectContent><SelectItem value="all">Tous statuts</SelectItem>{Object.entries(STATUS_META).map(([k, v]) => <SelectItem key={k} value={k}>{v.label}</SelectItem>)}</SelectContent>
+           <SelectContent><SelectItem value="all">{t("Tous statuts")}</SelectItem>{Object.entries(STATUS_META).map(([k, v]) => <SelectItem key={k} value={k}>{t(v.label)}</SelectItem>)}</SelectContent>
         </Select>
       </div>
       <div className="rounded-xl border border-border bg-card overflow-x-auto">
         <table className="w-full text-sm">
           <thead className="bg-secondary/50 text-muted-foreground">
-            <tr>{["Date", "Type", "Emplacement", "Cuve", "Produit", "Quantité", "Motif / réf.", "Par", "Statut", ""].map((h, i) => <th key={i} className="text-left p-2 font-medium whitespace-nowrap">{h}</th>)}</tr>
+             <tr>{["Date", "Type", "Emplacement", "Cuve", "Produit", "Quantité", "Motif / réf.", "Par", "Statut", ""].map((h, i) => <th key={i} className="text-left p-2 font-medium whitespace-nowrap">{t(h)}</th>)}</tr>
           </thead>
           <tbody>
             {list.map((r) => (
               <tr key={r.id} className="border-t border-border align-top">
-                <td className="p-2 whitespace-nowrap">{new Date(r.movement_date).toLocaleString("fr-FR")}</td>
-                <td className="p-2">{MOVEMENT_LABEL[r.movement_type]}{r.transfer_id && <ArrowRightLeft className="inline w-3 h-3 ml-1 text-primary" />}</td>
+                 <td className="p-2 whitespace-nowrap">{new Date(r.movement_date).toLocaleString(language === "en" ? "en-US" : "fr-FR")}</td>
+                 <td className="p-2">{t(MOVEMENT_LABEL[r.movement_type] ?? "")}{r.transfer_id && <ArrowRightLeft className="inline w-3 h-3 ml-1 text-primary" />}</td>
                 <td className="p-2">{name(refs.stations, r.station_id) || name(refs.depots, r.depot_id)}</td>
                 <td className="p-2">{name(refs.tanks, r.tank_id) || "—"}</td>
                 <td className="p-2">{name(refs.products, r.product_id)}</td>
                 <td className="p-2 whitespace-nowrap">{r.movement_type === "inventory" ? `mesuré ${fmt(r.physical_level)} (théo. ${fmt(r.theoretical_at_count)})` : `${fmt(r.quantity)} L`}</td>
                 <td className="p-2 max-w-[220px]">{r.reason || "—"}{r.reference && <div className="text-xs text-muted-foreground">Réf. {r.reference}</div>}{r.validation_note && <div className="text-xs text-destructive">{r.validation_note}</div>}</td>
                 <td className="p-2">{r.requested_by_name || "—"}</td>
-                <td className="p-2"><Badge variant={STATUS_META[r.status].variant}>{STATUS_META[r.status].label}</Badge></td>
+                 <td className="p-2"><Badge variant={STATUS_META[r.status].variant}>{t(STATUS_META[r.status].label)}</Badge></td>
                 <td className="p-2 whitespace-nowrap">
                   {r.status === "pending" && canValidate && (
                     <>
-                      <Button size="icon" variant="ghost" aria-label="Valider" onClick={() => decide(r, "validated")}><Check className="w-4 h-4 text-success" /></Button>
-                      <Button size="icon" variant="ghost" aria-label="Rejeter" onClick={() => decide(r, "rejected")}><X className="w-4 h-4 text-destructive" /></Button>
+                       <Button size="icon" variant="ghost" aria-label={t("Valider")} onClick={() => decide(r, "validated")}><Check className="w-4 h-4 text-success" /></Button>
+                       <Button size="icon" variant="ghost" aria-label={t("Rejeter")} onClick={() => decide(r, "rejected")}><X className="w-4 h-4 text-destructive" /></Button>
                     </>
                   )}
                 </td>
               </tr>
             ))}
-            {list.length === 0 && <tr><td colSpan={10} className="p-6 text-center text-muted-foreground">Aucun mouvement</td></tr>}
+             {list.length === 0 && <tr><td colSpan={10} className="p-6 text-center text-muted-foreground">{t("Aucun mouvement")}</td></tr>}
           </tbody>
         </table>
       </div>
-      <p className="text-xs text-muted-foreground">Registre immuable : aucun mouvement ne peut être modifié ni supprimé. Une erreur se corrige par un ajustement motivé.</p>
+       <p className="text-xs text-muted-foreground">{t("Registre immuable : aucun mouvement ne peut être modifié ni supprimé. Une erreur se corrige par un ajustement motivé.")}</p>
     </div>
   );
 };
