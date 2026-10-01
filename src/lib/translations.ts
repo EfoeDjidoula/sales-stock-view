@@ -187,7 +187,7 @@ export const translations: Record<string, string> = {
   "Nouveau mode de paiement": "New payment method", "Ajouter": "Add", "Bas": "Low", "Moyen": "Medium", "Bon": "Good", "Capacité": "Capacity",
   "Rupture": "Out of stock", "Initial": "Opening", "Entrées": "Entries", "Sorties": "Exits", "Théorique": "Theoretical", "Physique": "Physical",
   "Seuils (min / crit.)": "Thresholds (min / critical)", "Emplacement": "Location", "Alerte": "Alert", "Type": "Type", "Quantité": "Quantity",
-  "Initial": "Opening", "Motif / réf.": "Reason / ref.", "Par": "By", "Stock initial": "Opening stock", "Entrée": "Entry", "Sortie": "Exit",
+  "Motif / réf.": "Reason / ref.", "Par": "By", "Stock initial": "Opening stock", "Entrée": "Entry", "Sortie": "Exit",
   "Vente": "Sale", "Transfert sortant": "Outgoing transfer", "Transfert entrant": "Incoming transfer", "Ajustement +": "Adjustment +",
   "Ajustement −": "Adjustment −", "Inventaire / jaugeage": "Inventory / dip reading", "En attente": "Pending",
   "Aucun stock enregistré. Commencez par saisir un stock initial.": "No stock recorded. Start by entering opening stock.",
