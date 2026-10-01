@@ -278,8 +278,8 @@ const Index = () => {
       {/* Header */}
       <header className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-xl">
         <div className="container mx-auto px-4 py-4">
-          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-            <div className="flex items-center gap-3">
+           <div className="flex flex-col gap-3">
+             <div className="flex flex-wrap items-center gap-3">
               <div className="p-2.5 rounded-xl bg-primary/10 glow-primary overflow-hidden">
                 {tenant?.logo_url ? (
                   <img
