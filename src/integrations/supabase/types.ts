@@ -123,6 +123,13 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "b2b_consumptions_client_scope_fk"
+            columns: ["client_id", "tenant_id", "country_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id", "tenant_id", "country_id"]
+          },
+          {
             foreignKeyName: "b2b_consumptions_product_id_fkey"
             columns: ["product_id"]
             isOneToOne: false
@@ -130,11 +137,25 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "b2b_consumptions_product_scope_fk"
+            columns: ["product_id", "tenant_id", "country_id"]
+            isOneToOne: false
+            referencedRelation: "petroleum_products"
+            referencedColumns: ["id", "tenant_id", "country_id"]
+          },
+          {
             foreignKeyName: "b2b_consumptions_station_id_fkey"
             columns: ["station_id"]
             isOneToOne: false
             referencedRelation: "stations"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "b2b_consumptions_station_scope_fk"
+            columns: ["station_id", "tenant_id", "country_id"]
+            isOneToOne: false
+            referencedRelation: "stations"
+            referencedColumns: ["id", "tenant_id", "country_id"]
           },
         ]
       }
@@ -170,6 +191,13 @@ export type Database = {
           tenant_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "b2b_alerts_client_scope_fk"
+            columns: ["client_id", "tenant_id", "country_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id", "tenant_id", "country_id"]
+          },
           {
             foreignKeyName: "b2b_credit_alerts_client_id_fkey"
             columns: ["client_id"]
@@ -220,6 +248,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "clients"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "b2b_exceptions_client_scope_fk"
+            columns: ["client_id", "tenant_id", "country_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id", "tenant_id", "country_id"]
           },
         ]
       }
@@ -309,6 +344,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "clients"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "b2b_invoices_client_scope_fk"
+            columns: ["client_id", "tenant_id", "country_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id", "tenant_id", "country_id"]
           },
         ]
       }
@@ -415,6 +457,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "clients"
             referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "b2b_terms_client_scope_fk"
+            columns: ["client_id", "tenant_id", "country_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id", "tenant_id", "country_id"]
           },
         ]
       }
