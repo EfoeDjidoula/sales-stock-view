@@ -11,6 +11,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { CommandB2B } from "./CommandB2B";
 import {
   AlertTriangle, Banknote, ChevronRight, Droplets, Fuel, LifeBuoy, MapPin, Package, Truck, TrendingDown, TrendingUp, Activity, Scale,
 } from "lucide-react";
@@ -210,6 +212,16 @@ export function CommandCenter() {
          {q.isFetching && <span className="text-xs text-muted-foreground">{t("Actualisation…")}</span>}
       </div>
 
+      <Tabs defaultValue="network">
+      <TabsList>
+        <TabsTrigger value="network">{t("Réseau")}</TabsTrigger>
+        <TabsTrigger value="b2b">B2B</TabsTrigger>
+      </TabsList>
+      <TabsContent value="b2b">
+        <CommandB2B tenantId={tenantId} scope={scope} start={r.start} end={r.end} stationF={stationF} />
+      </TabsContent>
+      <TabsContent value="network" className="space-y-6">
+
       {/* Fil d'Ariane drill-down */}
       <div className="flex flex-wrap items-center gap-1 text-sm">
         <Button variant="ghost" size="sm" onClick={() => setDrill({})}>{tenantName}</Button>
@@ -302,6 +314,8 @@ export function CommandCenter() {
           )}
         </>
       )}
+      </TabsContent>
+      </Tabs>
     </div>
   );
 }

@@ -5137,6 +5137,18 @@ export type Database = {
       }
     }
     Functions: {
+      audit_business_event: {
+        Args: {
+          _action: string
+          _country_id: string
+          _details: Json
+          _device?: string
+          _entity_id: string
+          _entity_type: string
+          _module: string
+        }
+        Returns: undefined
+      }
       audit_request_meta: { Args: never; Returns: Record<string, unknown> }
       b2b_action: {
         Args: {

@@ -190,6 +190,20 @@
       "when": 1791197067787,
       "tag": "0026_fuel_cards_in_reconciliation_and_fraud",
       "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1791276927286,
+      "tag": "0027_fix_business_audit_writes_b2b_fuel_cards",
+      "breakpoints": true
+    },
+    {
+      "idx": 28,
+      "version": "7",
+      "when": 1791276945018,
+      "tag": "0028_seed_b2b_trial_dataset_audit_client_b",
+      "breakpoints": true
     }
   ]
 }

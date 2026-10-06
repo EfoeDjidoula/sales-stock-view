@@ -221,6 +221,13 @@ function Detail({ id, stationName, onClose, canAnalyze, canValidate, canRun }: {
               </div>
               <div className="flex items-center gap-2">{t("Écart d'encaissement :")} <b>{fmt(r.value_variance)} F</b>
                 {d.payment_result && <Badge variant="outline" className={RECON_RESULT[d.payment_result]?.cls}>{RECON_RESULT[d.payment_result]?.label}</Badge>}</div>
+              {d.fuel_card_transactions != null && (
+                <div className="flex flex-wrap items-center gap-2 rounded-md border border-border p-2">
+                  {t("Transactions Fuel Cards :")} <b>{fmt(d.fuel_card_transactions)} F</b> ({d.fuel_card_count ?? 0} · {fmt(d.fuel_card_litres)} L)
+                  · {t("Déclaré en clôture :")} <b>{fmt(d.fuel_cards)} F</b> · {t("Écart :")} <b>{fmt(d.fuel_card_variance)} F</b>
+                  {d.fuel_card_result && <Badge variant="outline" className={RECON_RESULT[d.fuel_card_result]?.cls}>{RECON_RESULT[d.fuel_card_result]?.label}</Badge>}
+                </div>
+              )}
               <div className="flex flex-wrap gap-2">{(d.payments ?? []).map((p: Row, i: number) => <Badge key={i} variant="secondary">{p.method} : {fmt(p.amount)} F</Badge>)}</div>
             </CardContent></Card>
 
