@@ -2399,6 +2399,667 @@ export type Database = {
           },
         ]
       }
+      logistics_carriers: {
+        Row: {
+          address: string | null
+          code: string | null
+          country_id: string
+          created_at: string
+          email: string | null
+          id: string
+          is_internal: boolean
+          name: string
+          phone: string | null
+          status: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          code?: string | null
+          country_id: string
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_internal?: boolean
+          name: string
+          phone?: string | null
+          status?: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          code?: string | null
+          country_id?: string
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_internal?: boolean
+          name?: string
+          phone?: string | null
+          status?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "logistics_carriers_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "countries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "logistics_carriers_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      logistics_compartments: {
+        Row: {
+          calibration_ref: string | null
+          capacity_litres: number
+          country_id: string
+          created_at: string
+          id: string
+          position: number
+          tenant_id: string
+          vehicle_id: string
+        }
+        Insert: {
+          calibration_ref?: string | null
+          capacity_litres: number
+          country_id: string
+          created_at?: string
+          id?: string
+          position: number
+          tenant_id: string
+          vehicle_id: string
+        }
+        Update: {
+          calibration_ref?: string | null
+          capacity_litres?: number
+          country_id?: string
+          created_at?: string
+          id?: string
+          position?: number
+          tenant_id?: string
+          vehicle_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "logistics_compartments_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "countries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "logistics_compartments_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "logistics_compartments_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "logistics_vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      logistics_documents: {
+        Row: {
+          country_id: string
+          created_at: string
+          doc_number: string | null
+          doc_type: string
+          driver_id: string | null
+          entity_type: string
+          expires_on: string | null
+          id: string
+          issued_on: string | null
+          tenant_id: string
+          updated_at: string
+          vehicle_id: string | null
+        }
+        Insert: {
+          country_id: string
+          created_at?: string
+          doc_number?: string | null
+          doc_type: string
+          driver_id?: string | null
+          entity_type: string
+          expires_on?: string | null
+          id?: string
+          issued_on?: string | null
+          tenant_id: string
+          updated_at?: string
+          vehicle_id?: string | null
+        }
+        Update: {
+          country_id?: string
+          created_at?: string
+          doc_number?: string | null
+          doc_type?: string
+          driver_id?: string | null
+          entity_type?: string
+          expires_on?: string | null
+          id?: string
+          issued_on?: string | null
+          tenant_id?: string
+          updated_at?: string
+          vehicle_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "logistics_documents_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "countries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "logistics_documents_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: false
+            referencedRelation: "logistics_drivers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "logistics_documents_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "logistics_documents_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "logistics_vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      logistics_drivers: {
+        Row: {
+          carrier_id: string | null
+          country_id: string
+          created_at: string
+          full_name: string
+          id: string
+          license_number: string | null
+          phone: string | null
+          status: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          carrier_id?: string | null
+          country_id: string
+          created_at?: string
+          full_name: string
+          id?: string
+          license_number?: string | null
+          phone?: string | null
+          status?: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          carrier_id?: string | null
+          country_id?: string
+          created_at?: string
+          full_name?: string
+          id?: string
+          license_number?: string | null
+          phone?: string | null
+          status?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "logistics_drivers_carrier_id_fkey"
+            columns: ["carrier_id"]
+            isOneToOne: false
+            referencedRelation: "logistics_carriers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "logistics_drivers_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "countries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "logistics_drivers_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      logistics_gps_positions: {
+        Row: {
+          country_id: string
+          created_at: string
+          heading: number | null
+          id: string
+          latitude: number
+          longitude: number
+          odometer_km: number | null
+          provider: string | null
+          raw: Json | null
+          recorded_at: string
+          source: string
+          speed_kmh: number | null
+          tenant_id: string
+          trip_id: string | null
+          vehicle_id: string | null
+        }
+        Insert: {
+          country_id: string
+          created_at?: string
+          heading?: number | null
+          id?: string
+          latitude: number
+          longitude: number
+          odometer_km?: number | null
+          provider?: string | null
+          raw?: Json | null
+          recorded_at?: string
+          source?: string
+          speed_kmh?: number | null
+          tenant_id: string
+          trip_id?: string | null
+          vehicle_id?: string | null
+        }
+        Update: {
+          country_id?: string
+          created_at?: string
+          heading?: number | null
+          id?: string
+          latitude?: number
+          longitude?: number
+          odometer_km?: number | null
+          provider?: string | null
+          raw?: Json | null
+          recorded_at?: string
+          source?: string
+          speed_kmh?: number | null
+          tenant_id?: string
+          trip_id?: string | null
+          vehicle_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "logistics_gps_positions_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "countries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "logistics_gps_positions_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "logistics_gps_positions_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "logistics_trips"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "logistics_gps_positions_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "logistics_vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      logistics_seals: {
+        Row: {
+          country_id: string
+          created_at: string
+          id: string
+          serial: string
+          status: string
+          tenant_id: string
+          trip_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          country_id: string
+          created_at?: string
+          id?: string
+          serial: string
+          status?: string
+          tenant_id: string
+          trip_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          country_id?: string
+          created_at?: string
+          id?: string
+          serial?: string
+          status?: string
+          tenant_id?: string
+          trip_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "logistics_seals_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "countries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "logistics_seals_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      logistics_trip_events: {
+        Row: {
+          action: string
+          author_id: string | null
+          author_name: string | null
+          country_id: string
+          created_at: string
+          data: Json | null
+          from_status: string | null
+          id: string
+          reason: string | null
+          tenant_id: string
+          to_status: string | null
+          trip_id: string
+        }
+        Insert: {
+          action: string
+          author_id?: string | null
+          author_name?: string | null
+          country_id: string
+          created_at?: string
+          data?: Json | null
+          from_status?: string | null
+          id?: string
+          reason?: string | null
+          tenant_id: string
+          to_status?: string | null
+          trip_id: string
+        }
+        Update: {
+          action?: string
+          author_id?: string | null
+          author_name?: string | null
+          country_id?: string
+          created_at?: string
+          data?: Json | null
+          from_status?: string | null
+          id?: string
+          reason?: string | null
+          tenant_id?: string
+          to_status?: string | null
+          trip_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "logistics_trip_events_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "countries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "logistics_trip_events_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "logistics_trip_events_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "logistics_trips"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      logistics_trips: {
+        Row: {
+          arrived_at: string | null
+          carrier_id: string | null
+          country_id: string
+          created_at: string
+          created_by: string | null
+          delivered_at: string | null
+          departed_at: string | null
+          driver_id: string | null
+          eta: string | null
+          id: string
+          incident_note: string | null
+          last_position: Json | null
+          loaded_at: string | null
+          loading_started_at: string | null
+          planned_departure: string | null
+          qty_delivered: number | null
+          qty_loaded: number | null
+          reference: string | null
+          status: string
+          supply_request_id: string | null
+          tanker_id: string | null
+          tenant_id: string
+          tolerance_pct: number
+          truck_id: string | null
+          unloading_started_at: string | null
+          updated_at: string
+        }
+        Insert: {
+          arrived_at?: string | null
+          carrier_id?: string | null
+          country_id: string
+          created_at?: string
+          created_by?: string | null
+          delivered_at?: string | null
+          departed_at?: string | null
+          driver_id?: string | null
+          eta?: string | null
+          id?: string
+          incident_note?: string | null
+          last_position?: Json | null
+          loaded_at?: string | null
+          loading_started_at?: string | null
+          planned_departure?: string | null
+          qty_delivered?: number | null
+          qty_loaded?: number | null
+          reference?: string | null
+          status?: string
+          supply_request_id?: string | null
+          tanker_id?: string | null
+          tenant_id: string
+          tolerance_pct?: number
+          truck_id?: string | null
+          unloading_started_at?: string | null
+          updated_at?: string
+        }
+        Update: {
+          arrived_at?: string | null
+          carrier_id?: string | null
+          country_id?: string
+          created_at?: string
+          created_by?: string | null
+          delivered_at?: string | null
+          departed_at?: string | null
+          driver_id?: string | null
+          eta?: string | null
+          id?: string
+          incident_note?: string | null
+          last_position?: Json | null
+          loaded_at?: string | null
+          loading_started_at?: string | null
+          planned_departure?: string | null
+          qty_delivered?: number | null
+          qty_loaded?: number | null
+          reference?: string | null
+          status?: string
+          supply_request_id?: string | null
+          tanker_id?: string | null
+          tenant_id?: string
+          tolerance_pct?: number
+          truck_id?: string | null
+          unloading_started_at?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "logistics_trips_carrier_id_fkey"
+            columns: ["carrier_id"]
+            isOneToOne: false
+            referencedRelation: "logistics_carriers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "logistics_trips_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "countries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "logistics_trips_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: false
+            referencedRelation: "logistics_drivers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "logistics_trips_supply_request_id_fkey"
+            columns: ["supply_request_id"]
+            isOneToOne: false
+            referencedRelation: "supply_requests"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "logistics_trips_tanker_id_fkey"
+            columns: ["tanker_id"]
+            isOneToOne: false
+            referencedRelation: "logistics_vehicles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "logistics_trips_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "logistics_trips_truck_id_fkey"
+            columns: ["truck_id"]
+            isOneToOne: false
+            referencedRelation: "logistics_vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      logistics_vehicles: {
+        Row: {
+          brand: string | null
+          capacity_litres: number | null
+          carrier_id: string | null
+          country_id: string
+          created_at: string
+          gps_device_id: string | null
+          id: string
+          kind: string
+          model: string | null
+          notes: string | null
+          registration: string
+          status: string
+          tenant_id: string
+          updated_at: string
+          vin: string | null
+        }
+        Insert: {
+          brand?: string | null
+          capacity_litres?: number | null
+          carrier_id?: string | null
+          country_id: string
+          created_at?: string
+          gps_device_id?: string | null
+          id?: string
+          kind: string
+          model?: string | null
+          notes?: string | null
+          registration: string
+          status?: string
+          tenant_id: string
+          updated_at?: string
+          vin?: string | null
+        }
+        Update: {
+          brand?: string | null
+          capacity_litres?: number | null
+          carrier_id?: string | null
+          country_id?: string
+          created_at?: string
+          gps_device_id?: string | null
+          id?: string
+          kind?: string
+          model?: string | null
+          notes?: string | null
+          registration?: string
+          status?: string
+          tenant_id?: string
+          updated_at?: string
+          vin?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "logistics_vehicles_carrier_id_fkey"
+            columns: ["carrier_id"]
+            isOneToOne: false
+            referencedRelation: "logistics_carriers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "logistics_vehicles_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "countries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "logistics_vehicles_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       maintenance_contracts: {
         Row: {
           amount: number
@@ -5050,6 +5711,20 @@ export type Database = {
       }
     }
     Views: {
+      logistics_alerts: {
+        Row: {
+          country_id: string | null
+          due_at: string | null
+          entity_id: string | null
+          kind: string | null
+          label: string | null
+          severity: string | null
+          tenant_id: string | null
+          trip_id: string | null
+          value: number | null
+        }
+        Relationships: []
+      }
       stock_levels: {
         Row: {
           alert_level: string | null
@@ -5275,6 +5950,10 @@ export type Database = {
           _module: string
         }
         Returns: undefined
+      }
+      logistics_trip_action: {
+        Args: { _action: string; _data?: Json; _id: string; _reason?: string }
+        Returns: string
       }
       recon_classify: {
         Args: {
