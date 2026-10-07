@@ -4,8 +4,8 @@
 - [x] Créer Fuel Cards prépayées/postpayées : comptes, cartes, véhicules, conducteurs, transactions, blocage, remplacement, expiration et facturation ; isolation par client.
 - [ ] Appliquer allocations et plafonds, restrictions configurables, journal des modifications de plafond, validation serveur et alertes d'anomalies ; vérifier les flux bout en bout. Les règles et écrans sont livrés ; une transaction réelle attend un compte et une carte du client (aucun compte existant au 1er octobre 2026).
 - [x] Créer le CRM Clients B2B : conditions historisées, crédit consolidé, seuils et dérogations contrôlés côté serveur, consommations B2B, factures, échéances et paiements ; rattacher les cartes et factures Fuel Cards existantes.
-- [ ] Vérifier le parcours B2B complet avec un client, une consommation et un paiement authentifiés sans modifier les données réelles ; dépend d'un jeu d'essai autorisé.
-- [ ] Jeu d'essai B2B (client, carte, consommation, facture, paiement) et vérification crédit/seuils.
-- [ ] Transactions Fuel Cards dans la réconciliation et le Fraud Center (comparées aux encaissements/ventes).
-- [ ] Onglet B2B du Command Center : impayés, factures encaissées, échéances, volume B2B par station.
-- [ ] Alertes Fraud Center Fuel Cards : hors plafond, hors horaires, hors restrictions.
+- [x] Vérifier le parcours B2B complet avec un client, une consommation et un paiement authentifiés sans modifier les données réelles ; dépend d'un jeu d'essai autorisé.
+- [x] Jeu d'essai B2B (client, carte, consommation, facture, paiement) et vérification crédit/seuils.
+- [x] Transactions Fuel Cards dans la réconciliation et le Fraud Center (comparées aux encaissements/ventes).
+- [x] Onglet B2B du Command Center : impayés, factures encaissées, échéances, volume B2B par station.
+- [x] Alertes Fraud Center Fuel Cards : hors plafond, hors horaires, hors restrictions.
