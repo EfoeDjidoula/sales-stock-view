@@ -30,6 +30,7 @@ import { DepotageModule } from "@/components/depotage/DepotageModule";
 import { TrucksModule } from "@/components/trucks/TrucksModule";
 import { UsersModule } from "@/components/users/UsersModule";
 import { StockEngineModule } from "@/components/stock/StockEngineModule";
+import { LogisticsModule } from "@/components/logistics/LogisticsModule";
 import { SupplyWorkflowModule } from "@/components/supply/SupplyWorkflowModule";
 import { SalesClosureModule } from "@/components/sales/SalesClosureModule";
 import { ReconciliationModule } from "@/components/reconciliation/ReconciliationModule";
@@ -104,6 +105,7 @@ const TAB_PERMISSIONS: Record<string, AppRole[]> = {
   historique: ["admin", "manager", "operator"],
   commandes: ["admin", "manager"],
   chaine_appro: ["admin", "manager", "operator"],
+  logistique_avancee: ["admin", "manager", "operator"],
   perequation: ["admin", "manager", "operator"],
   stations: ["admin", "manager", "operator"],
   depotage: ["admin", "manager", "operator"],
@@ -134,6 +136,7 @@ const TAB_META: Record<string, { label: string; icon: typeof TrendingUp }> = {
   historique: { label: "Historique", icon: History },
   commandes: { label: "Commandes", icon: FileText },
   chaine_appro: { label: "Appro. & réception", icon: Truck },
+  logistique_avancee: { label: "Transports & flotte", icon: Truck },
   depotage: { label: "Dépotages", icon: Droplets },
   camions: { label: "Camions", icon: Truck },
   stations: { label: "Stations", icon: LayoutDashboard },
@@ -163,6 +166,7 @@ const TAB_RBAC: Record<string, string[] | null> = {
   historique: ["index_entries.view"],
   commandes: ["orders.view"],
   chaine_appro: ["supplies.view"],
+  logistique_avancee: ["supplies.view"],
   depotage: ["depotages.view"],
   camions: ["trucks.view"],
   stations: ["stations.view"],
@@ -191,6 +195,7 @@ const TAB_MODULE: Record<string, string> = {
   historique: "index",
   commandes: "commandes",
   chaine_appro: "livraisons",
+  logistique_avancee: "livraisons",
   depotage: "depots",
   camions: "livraisons",
   stations: "stations",
@@ -212,7 +217,7 @@ const TAB_GROUPS: {
   tabs: string[];
 }[] = [
   { id: "suivi", label: "Suivi & Analyse", icon: BarChart3, tabs: ["command", "ventes", "ventes_cloture", "reconciliation", "anti_fraude", "stock", "moteur_stock", "historique", "analyse_ia"] },
-  { id: "logistique", label: "Logistique & Flux", icon: Truck, tabs: ["commandes", "chaine_appro", "depotage", "camions"] },
+  { id: "logistique", label: "Logistique & Flux", icon: Truck, tabs: ["commandes", "chaine_appro", "logistique_avancee", "depotage", "camions"] },
   { id: "config", label: "Configuration", icon: Settings2, tabs: ["stations", "perequation", "structure_prix", "proforma"] },
   { id: "tiers", label: "Tiers", icon: Contact, tabs: ["clients", "b2b", "fuel_cards", "fournisseurs"] },
   { id: "support", label: "Support", icon: LifeBuoy, tabs: ["support"] },
@@ -598,6 +603,10 @@ const Index = () => {
 
           <TabsContent value="chaine_appro" className="animate-fade-in">
             {canAccessTab("chaine_appro") ? <SupplyWorkflowModule /> : <AccessDenied onGoBack={() => setActiveTab(allowedTabs[0] ?? "ventes")} />}
+          </TabsContent>
+
+          <TabsContent value="logistique_avancee" className="animate-fade-in">
+            {canAccessTab("logistique_avancee") ? <LogisticsModule /> : <AccessDenied onGoBack={() => setActiveTab(allowedTabs[0] ?? "ventes")} />}
           </TabsContent>
 
           {/* Dépotages Tab */}
