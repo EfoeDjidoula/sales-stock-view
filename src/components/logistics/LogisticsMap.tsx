@@ -77,7 +77,7 @@ export const LogisticsMap = ({ trips, vehicles, drivers, L, scopeQuery }: {
                   </CircleMarker>
                 );
               })}
-              {track.length > 1 && <Polyline positions={track.map((p) => [Number(p.latitude), Number(p.longitude)])} pathOptions={{ color: "hsl(var(--primary))", weight: 4 }} />}
+              {track.length > 1 && <Polyline positions={track.map((p) => [Number(p.latitude), Number(p.longitude)] as [number, number])} pathOptions={{ color: "hsl(var(--primary))", weight: 4 }} />}
               {track.map((p) => <CircleMarker key={p.id} center={[Number(p.latitude), Number(p.longitude)]} radius={4} pathOptions={{ color: "hsl(var(--primary))" }} />)}
             </MapContainer>
           </div>
