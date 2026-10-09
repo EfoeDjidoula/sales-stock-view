@@ -7,6 +7,7 @@ import { usePlatformAdmin } from "@/hooks/usePlatformAdmin";
 import { useLanguage } from "@/hooks/useLanguage";
 import { toast } from "sonner";
 import { Loader2, Plus, Eye, AlertTriangle, MapPin } from "lucide-react";
+import { LogisticsMap } from "./LogisticsMap";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -218,6 +219,7 @@ export const LogisticsModule = () => {
       <Tabs defaultValue="trips">
         <TabsList className="flex-wrap h-auto">
           <TabsTrigger value="trips">{L("Transports", "Trips")}</TabsTrigger>
+          <TabsTrigger value="map"><MapPin className="h-4 w-4 mr-1" />{L("Carte & télémétrie GPS", "Map & GPS telemetry")}</TabsTrigger>
           <TabsTrigger value="alerts">{L("Alertes", "Alerts")} {alerts.length > 0 && <Badge variant="destructive" className="ml-1">{alerts.length}</Badge>}</TabsTrigger>
           <TabsTrigger value="carriers">{L("Transporteurs", "Carriers")}</TabsTrigger>
           <TabsTrigger value="vehicles">{L("Camions, tracteurs & citernes", "Trucks, tractors & tankers")}</TabsTrigger>
@@ -268,6 +270,10 @@ export const LogisticsModule = () => {
               </Table>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="map">
+          <LogisticsMap trips={trips} vehicles={d.vehicles ?? []} drivers={d.drivers ?? []} L={L} scopeQuery={scopeQuery} />
         </TabsContent>
 
         <TabsContent value="alerts">
