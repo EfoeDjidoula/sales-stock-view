@@ -2847,6 +2847,101 @@ export type Database = {
           },
         ]
       }
+      logistics_trip_loads: {
+        Row: {
+          client_id: string | null
+          compartment_id: string | null
+          country_id: string
+          created_at: string
+          destination_type: string
+          id: string
+          product_id: string
+          qty_litres: number
+          station_id: string | null
+          stop_order: number
+          tenant_id: string
+          trip_id: string
+        }
+        Insert: {
+          client_id?: string | null
+          compartment_id?: string | null
+          country_id: string
+          created_at?: string
+          destination_type: string
+          id?: string
+          product_id: string
+          qty_litres: number
+          station_id?: string | null
+          stop_order?: number
+          tenant_id: string
+          trip_id: string
+        }
+        Update: {
+          client_id?: string | null
+          compartment_id?: string | null
+          country_id?: string
+          created_at?: string
+          destination_type?: string
+          id?: string
+          product_id?: string
+          qty_litres?: number
+          station_id?: string | null
+          stop_order?: number
+          tenant_id?: string
+          trip_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "logistics_trip_loads_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "logistics_trip_loads_compartment_id_fkey"
+            columns: ["compartment_id"]
+            isOneToOne: false
+            referencedRelation: "logistics_compartments"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "logistics_trip_loads_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "countries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "logistics_trip_loads_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "petroleum_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "logistics_trip_loads_station_id_fkey"
+            columns: ["station_id"]
+            isOneToOne: false
+            referencedRelation: "stations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "logistics_trip_loads_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "logistics_trip_loads_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "logistics_trips"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       logistics_trips: {
         Row: {
           arrived_at: string | null
@@ -2861,6 +2956,7 @@ export type Database = {
           id: string
           incident_note: string | null
           last_position: Json | null
+          load_mode: string
           loaded_at: string | null
           loading_started_at: string | null
           planned_departure: string | null
@@ -2889,6 +2985,7 @@ export type Database = {
           id?: string
           incident_note?: string | null
           last_position?: Json | null
+          load_mode?: string
           loaded_at?: string | null
           loading_started_at?: string | null
           planned_departure?: string | null
@@ -2917,6 +3014,7 @@ export type Database = {
           id?: string
           incident_note?: string | null
           last_position?: Json | null
+          load_mode?: string
           loaded_at?: string | null
           loading_started_at?: string | null
           planned_departure?: string | null
@@ -2994,6 +3092,7 @@ export type Database = {
           gps_device_id: string | null
           id: string
           kind: string
+          legacy_truck_id: string | null
           model: string | null
           notes: string | null
           registration: string
@@ -3011,6 +3110,7 @@ export type Database = {
           gps_device_id?: string | null
           id?: string
           kind: string
+          legacy_truck_id?: string | null
           model?: string | null
           notes?: string | null
           registration: string
@@ -3028,6 +3128,7 @@ export type Database = {
           gps_device_id?: string | null
           id?: string
           kind?: string
+          legacy_truck_id?: string | null
           model?: string | null
           notes?: string | null
           registration?: string
@@ -5950,6 +6051,10 @@ export type Database = {
           _module: string
         }
         Returns: undefined
+      }
+      logistics_set_loads: {
+        Args: { _lines: Json; _mode: string; _trip: string }
+        Returns: number
       }
       logistics_trip_action: {
         Args: { _action: string; _data?: Json; _id: string; _reason?: string }

@@ -211,6 +211,13 @@
       "when": 1791383832638,
       "tag": "0029_logistics_advanced",
       "breakpoints": true
+    },
+    {
+      "idx": 30,
+      "version": "7",
+      "when": 1791590475114,
+      "tag": "0030_logistics_trip_loads",
+      "breakpoints": true
     }
   ]
 }

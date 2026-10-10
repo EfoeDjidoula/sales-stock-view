@@ -8,6 +8,9 @@ import { useLanguage } from "@/hooks/useLanguage";
 import { toast } from "sonner";
 import { Loader2, Plus, Eye, AlertTriangle, MapPin } from "lucide-react";
 import { LogisticsMap } from "./LogisticsMap";
+import { LoadPlanDialog } from "./LoadPlanDialog";
+import { SupplyWorkflowModule } from "@/components/supply/SupplyWorkflowModule";
+import { Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -66,6 +69,7 @@ export const LogisticsModule = () => {
   const [detail, setDetail] = useState<Row | null>(null);
   const [events, setEvents] = useState<Row[]>([]);
   const [busy, setBusy] = useState(false);
+  const [planTrip, setPlanTrip] = useState<Row | null>(null);
 
   const load = useCallback(async () => {
     if (!tenantId) return;
@@ -81,8 +85,12 @@ export const LogisticsModule = () => {
       q("logistics_seals").order("serial"),
       q("logistics_alerts"),
       q("supply_requests", "id,reference,status").not("status", "in", "(received,cancelled,rejected)"),
+      q("logistics_trip_loads"),
+      q("petroleum_products", "id,name,code"),
+      q("stations", "id,name").order("name"),
+      db.from("clients").select("id,name").eq("tenant_id", tenantId).order("name"),
     ]);
-    const keys = ["trips", "carriers", "vehicles", "compartments", "drivers", "documents", "seals", "alerts", "supplies"];
+    const keys = ["trips", "carriers", "vehicles", "compartments", "drivers", "documents", "seals", "alerts", "supplies", "loads", "products", "stations", "clients"];
     const out: Record<string, Row[]> = {};
     res.forEach((r: Row, i: number) => { out[keys[i]] = r.data ?? []; if (r.error) console.error(keys[i], r.error); });
     setD(out);
@@ -218,15 +226,16 @@ export const LogisticsModule = () => {
       {loading && <Loader2 className="h-5 w-5 animate-spin text-primary" />}
       <Tabs defaultValue="trips">
         <TabsList className="flex-wrap h-auto">
-          <TabsTrigger value="trips">{L("Transports", "Trips")}</TabsTrigger>
-          <TabsTrigger value="map"><MapPin className="h-4 w-4 mr-1" />{L("Carte & télémétrie GPS", "Map & GPS telemetry")}</TabsTrigger>
-          <TabsTrigger value="alerts">{L("Alertes", "Alerts")} {alerts.length > 0 && <Badge variant="destructive" className="ml-1">{alerts.length}</Badge>}</TabsTrigger>
-          <TabsTrigger value="carriers">{L("Transporteurs", "Carriers")}</TabsTrigger>
-          <TabsTrigger value="vehicles">{L("Camions, tracteurs & citernes", "Trucks, tractors & tankers")}</TabsTrigger>
-          <TabsTrigger value="compartments">{L("Compartiments", "Compartments")}</TabsTrigger>
-          <TabsTrigger value="drivers">{L("Chauffeurs", "Drivers")}</TabsTrigger>
-          <TabsTrigger value="documents">{L("Documents", "Documents")}</TabsTrigger>
-          <TabsTrigger value="seals">{L("Scellés", "Seals")}</TabsTrigger>
+          <TabsTrigger value="carriers">1. {L("Transporteurs", "Carriers")}</TabsTrigger>
+          <TabsTrigger value="vehicles">2. {L("Camions, tracteurs & citernes", "Trucks, tractors & tankers")}</TabsTrigger>
+          <TabsTrigger value="compartments">3. {L("Compartiments", "Compartments")}</TabsTrigger>
+          <TabsTrigger value="drivers">4. {L("Chauffeurs", "Drivers")}</TabsTrigger>
+          <TabsTrigger value="documents">5. {L("Documents", "Documents")}</TabsTrigger>
+          <TabsTrigger value="seals">6. {L("Scellés", "Seals")}</TabsTrigger>
+          <TabsTrigger value="supplies">7. {L("Demandes d'appro.", "Supply requests")}</TabsTrigger>
+          <TabsTrigger value="trips">8. {L("Chargements & transports", "Loadings & trips")}</TabsTrigger>
+          <TabsTrigger value="map"><MapPin className="h-4 w-4 mr-1" />9. {L("Carte & GPS", "Map & GPS")}</TabsTrigger>
+          <TabsTrigger value="alerts">10. {L("Alertes", "Alerts")} {alerts.length > 0 && <Badge variant="destructive" className="ml-1">{alerts.length}</Badge>}</TabsTrigger>
         </TabsList>
 
         <TabsContent value="trips">
@@ -240,11 +249,11 @@ export const LogisticsModule = () => {
                 <TableHeader><TableRow>
                   <TableHead>{L("Référence", "Reference")}</TableHead><TableHead>{L("Appro.", "Supply")}</TableHead>
                   <TableHead>{L("Véhicule", "Vehicle")}</TableHead><TableHead>{L("Chauffeur", "Driver")}</TableHead>
-                  <TableHead>ETA</TableHead><TableHead>{L("Chargé", "Loaded")}</TableHead><TableHead>{L("Livré", "Delivered")}</TableHead>
+                  <TableHead>ETA</TableHead><TableHead>{L("Chargement", "Load")}</TableHead><TableHead>{L("Chargé", "Loaded")}</TableHead><TableHead>{L("Livré", "Delivered")}</TableHead>
                   <TableHead>{L("Statut", "Status")}</TableHead><TableHead />
                 </TableRow></TableHeader>
                 <TableBody>
-                  {trips.length === 0 && <TableRow><TableCell colSpan={9} className="text-center text-muted-foreground">{L("Aucun transport", "No trips")}</TableCell></TableRow>}
+                  {trips.length === 0 && <TableRow><TableCell colSpan={10} className="text-center text-muted-foreground">{L("Aucun transport", "No trips")}</TableCell></TableRow>}
                   {trips.map((t) => {
                     const n = NEXT[t.status];
                     return (
@@ -254,10 +263,14 @@ export const LogisticsModule = () => {
                         <TableCell>{name("vehicles", t.truck_id, "registration")}{t.tanker_id && ` + ${name("vehicles", t.tanker_id, "registration")}`}</TableCell>
                         <TableCell>{name("drivers", t.driver_id, "full_name")}</TableCell>
                         <TableCell className="text-xs">{fmtDt(t.eta)}</TableCell>
+                        <TableCell className="text-xs">{(() => { const ls = (d.loads ?? []).filter((x) => x.trip_id === t.id); if (!ls.length) return <Badge variant="destructive">{L("À planifier", "To plan")}</Badge>;
+                          const dest = new Set(ls.map((x) => x.station_id ?? x.client_id)).size;
+                          return <>{t.load_mode === "mixed" ? L("Mixte", "Mixed") : L("Mono", "Single")} · {[...new Set(ls.map((x) => name("products", x.product_id)))].join(" + ")} · {dest} {L("dest.", "dest.")}</>; })()}</TableCell>
                         <TableCell>{fmt(t.qty_loaded)}</TableCell><TableCell>{fmt(t.qty_delivered)}</TableCell>
                         <TableCell><Badge variant={t.status === "incident" ? "destructive" : t.status === "delivered" ? "outline" : "default"}>{L(...TRIP_STATUS[t.status])}</Badge></TableCell>
                         <TableCell className="flex gap-1 flex-wrap">
                           <Button size="sm" variant="ghost" onClick={() => openDetail(t)}><Eye className="h-4 w-4" /></Button>
+                          {canWrite && ["planned", "loading"].includes(t.status) && <Button size="sm" variant="outline" title={L("Plan de chargement", "Loading plan")} onClick={() => setPlanTrip(t)}><Package className="h-4 w-4" /></Button>}
                           {canWrite && n && <Button size="sm" onClick={() => { setActionData({}); setAction({ trip: t, action: n[0], title: L(n[1], n[2]) }); }}>{L(n[1], n[2])}</Button>}
                           {canWrite && t.status === "incident" && <Button size="sm" variant="outline" onClick={() => { setActionData({ status: "in_transit" }); setAction({ trip: t, action: "resume", title: L("Reprendre", "Resume") }); }}>{L("Reprendre", "Resume")}</Button>}
                           {canWrite && !["delivered", "incident"].includes(t.status) && <Button size="sm" variant="destructive" onClick={() => { setActionData({}); setAction({ trip: t, action: "incident", title: L("Déclarer un incident", "Report incident") }); }}><AlertTriangle className="h-4 w-4" /></Button>}
@@ -271,6 +284,8 @@ export const LogisticsModule = () => {
             </CardContent>
           </Card>
         </TabsContent>
+
+        <TabsContent value="supplies"><SupplyWorkflowModule /></TabsContent>
 
         <TabsContent value="map">
           <LogisticsMap trips={trips} vehicles={d.vehicles ?? []} drivers={d.drivers ?? []} L={L} scopeQuery={scopeQuery} />
@@ -361,7 +376,7 @@ export const LogisticsModule = () => {
                   <p className="text-xs text-muted-foreground">{L("Un véhicule ou chauffeur avec un document expiré est refusé.", "Vehicles or drivers with expired documents are refused.")}</p>
                 </>}
                 {a === "finish_loading" && <>
-                  {inp("qty_loaded", L("Quantité chargée (L)", "Loaded quantity (L)"), "number")}
+                  <p className="text-sm">{L("Quantité chargée = plan de chargement", "Loaded quantity = loading plan")} : <b>{fmt((d.loads ?? []).filter((x) => x.trip_id === action.trip.id).reduce((s2, x) => s2 + Number(x.qty_litres), 0))} L</b></p>
                   <Label>{L("Scellés posés", "Seals applied")}</Label>
                   <div className="flex flex-wrap gap-2">
                     {(d.seals ?? []).filter((s) => s.status === "available").map((s) => {
@@ -384,6 +399,7 @@ export const LogisticsModule = () => {
               if (!action) return;
               const { _reason, ...rest } = actionData;
               if (action.action === "create") { rest.tenant_id = tenantId; rest.country_id = countryId; }
+              if (action.action === "finish_loading") rest.qty_loaded = (d.loads ?? []).filter((x) => x.trip_id === action.trip.id).reduce((s2, x) => s2 + Number(x.qty_litres), 0);
               if (rest.seals_intact) rest.seals_intact = rest.seals_intact === "true";
               ["planned_departure", "eta"].forEach((k) => { if (rest[k]) rest[k] = new Date(rest[k]).toISOString(); });
               if (await runAction(action.action === "create" ? null : action.trip.id, action.action, _reason, rest)) setAction(null);
@@ -391,6 +407,9 @@ export const LogisticsModule = () => {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <LoadPlanDialog trip={planTrip} onClose={() => setPlanTrip(null)} onSaved={load} L={L}
+        vehicles={d.vehicles ?? []} compartments={d.compartments ?? []} products={d.products ?? []} stations={d.stations ?? []} clients={d.clients ?? []} loads={d.loads ?? []} />
 
       <Dialog open={!!detail} onOpenChange={(o) => !o && setDetail(null)}>
         <DialogContent className="max-w-2xl">

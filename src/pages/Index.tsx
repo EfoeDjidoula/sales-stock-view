@@ -136,7 +136,7 @@ const TAB_META: Record<string, { label: string; icon: typeof TrendingUp }> = {
   historique: { label: "Historique", icon: History },
   commandes: { label: "Commandes", icon: FileText },
   chaine_appro: { label: "Appro. & réception", icon: Truck },
-  logistique_avancee: { label: "Transports & flotte", icon: Truck },
+  logistique_avancee: { label: "Chaîne logistique & appro", icon: Truck },
   depotage: { label: "Dépotages", icon: Droplets },
   camions: { label: "Camions", icon: Truck },
   stations: { label: "Stations", icon: LayoutDashboard },
@@ -217,7 +217,7 @@ const TAB_GROUPS: {
   tabs: string[];
 }[] = [
   { id: "suivi", label: "Suivi & Analyse", icon: BarChart3, tabs: ["command", "ventes", "ventes_cloture", "reconciliation", "anti_fraude", "stock", "moteur_stock", "historique", "analyse_ia"] },
-  { id: "logistique", label: "Logistique & Flux", icon: Truck, tabs: ["commandes", "chaine_appro", "logistique_avancee", "depotage", "camions"] },
+  { id: "logistique", label: "Logistique & Flux", icon: Truck, tabs: ["commandes", "logistique_avancee", "depotage"] },
   { id: "config", label: "Configuration", icon: Settings2, tabs: ["stations", "perequation", "structure_prix", "proforma"] },
   { id: "tiers", label: "Tiers", icon: Contact, tabs: ["clients", "b2b", "fuel_cards", "fournisseurs"] },
   { id: "support", label: "Support", icon: LifeBuoy, tabs: ["support"] },

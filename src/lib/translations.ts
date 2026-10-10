@@ -41,6 +41,7 @@ export const translations: Record<string, string> = {
   "Commandes": "Orders",
   "Appro. & réception": "Supply & receiving",
   "Transports & flotte": "Trips & fleet",
+  "Chaîne logistique & appro": "Logistics & supply chain",
   "Dépotages": "Fuel deliveries",
   "Camions": "Trucks",
   "Stations": "Stations",
