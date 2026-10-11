@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { Loader2, Plus, Eye, AlertTriangle, MapPin } from "lucide-react";
 import { LogisticsMap } from "./LogisticsMap";
 import { LoadPlanDialog } from "./LoadPlanDialog";
+import { SiteCheckinDialog, siteProgress } from "./SiteCheckinDialog";
 import { SupplyWorkflowModule } from "@/components/supply/SupplyWorkflowModule";
 import { Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -70,6 +71,7 @@ export const LogisticsModule = () => {
   const [events, setEvents] = useState<Row[]>([]);
   const [busy, setBusy] = useState(false);
   const [planTrip, setPlanTrip] = useState<Row | null>(null);
+  const [checkTrip, setCheckTrip] = useState<Row | null>(null);
 
   const load = useCallback(async () => {
     if (!tenantId) return;
@@ -89,8 +91,9 @@ export const LogisticsModule = () => {
       q("petroleum_products", "id,name,code"),
       q("stations", "id,name").order("name"),
       db.from("clients").select("id,name").eq("tenant_id", tenantId).order("name"),
+      q("logistics_load_deliveries"),
     ]);
-    const keys = ["trips", "carriers", "vehicles", "compartments", "drivers", "documents", "seals", "alerts", "supplies", "loads", "products", "stations", "clients"];
+    const keys = ["trips", "carriers", "vehicles", "compartments", "drivers", "documents", "seals", "alerts", "supplies", "loads", "products", "stations", "clients", "deliveries"];
     const out: Record<string, Row[]> = {};
     res.forEach((r: Row, i: number) => { out[keys[i]] = r.data ?? []; if (r.error) console.error(keys[i], r.error); });
     setD(out);
@@ -271,6 +274,7 @@ export const LogisticsModule = () => {
                         <TableCell className="flex gap-1 flex-wrap">
                           <Button size="sm" variant="ghost" onClick={() => openDetail(t)}><Eye className="h-4 w-4" /></Button>
                           {canWrite && ["planned", "loading"].includes(t.status) && <Button size="sm" variant="outline" title={L("Plan de chargement", "Loading plan")} onClick={() => setPlanTrip(t)}><Package className="h-4 w-4" /></Button>}
+                          {["arrived", "unloading", "delivered"].includes(t.status) && (() => { const p = siteProgress((d.loads ?? []).filter((x) => x.trip_id === t.id), (d.deliveries ?? []).filter((x) => x.trip_id === t.id)); return p.total ? <Button size="sm" variant="outline" onClick={() => setCheckTrip(t)}>{L("Sites", "Sites")} {p.done}/{p.total}</Button> : null; })()}
                           {canWrite && n && <Button size="sm" onClick={() => { setActionData({}); setAction({ trip: t, action: n[0], title: L(n[1], n[2]) }); }}>{L(n[1], n[2])}</Button>}
                           {canWrite && t.status === "incident" && <Button size="sm" variant="outline" onClick={() => { setActionData({ status: "in_transit" }); setAction({ trip: t, action: "resume", title: L("Reprendre", "Resume") }); }}>{L("Reprendre", "Resume")}</Button>}
                           {canWrite && !["delivered", "incident"].includes(t.status) && <Button size="sm" variant="destructive" onClick={() => { setActionData({}); setAction({ trip: t, action: "incident", title: L("Déclarer un incident", "Report incident") }); }}><AlertTriangle className="h-4 w-4" /></Button>}
@@ -387,7 +391,11 @@ export const LogisticsModule = () => {
                 </>}
                 {a === "depart" && inp("eta", L("ETA (optionnel)", "ETA (optional)"), "datetime-local")}
                 {a === "start_unloading" && sel("seals_intact", L("Scellés intacts ?", "Seals intact?"), [{ v: "true", l: L("Oui", "Yes") }, { v: "false", l: L("Non — rompus", "No — broken") }])}
-                {a === "deliver" && inp("qty_delivered", L("Quantité livrée (L)", "Delivered quantity (L)"), "number")}
+                {a === "deliver" && (() => { const p = siteProgress((d.loads ?? []).filter((x) => x.trip_id === action.trip.id), (d.deliveries ?? []).filter((x) => x.trip_id === action.trip.id));
+                  if (!p.total) return inp("qty_delivered", L("Quantité livrée (L)", "Delivered quantity (L)"), "number");
+                  return p.allDelivered
+                    ? <p className="text-sm">{L("Tous les sites sont livrés", "All sites delivered")} ({p.done}/{p.total}) — {L("total livré recalculé", "recomputed delivered total")} : <b>{fmt(p.received)} L</b></p>
+                    : <p className="text-sm text-destructive">{L(`${p.total - p.done} site(s) non livré(s). Faites le check-in de chaque site avant la livraison finale.`, `${p.total - p.done} site(s) not delivered. Check in every site before final delivery.`)}</p>; })()}
                 {a === "resume" && sel("status", L("Reprendre au statut", "Resume at status"), ["planned", "loading", "loaded", "in_transit", "arrived", "unloading"].map((v) => ({ v, l: L(...TRIP_STATUS[v]) })))}
                 {a === "position" && <>{inp("latitude", "Latitude", "number")}{inp("longitude", "Longitude", "number")}{inp("speed_kmh", L("Vitesse (km/h)", "Speed (km/h)"), "number")}</>}
                 {["incident", "resume"].includes(a) && <div className="grid gap-1"><Label>{L("Description / motif", "Description / reason")}</Label><Textarea value={actionData._reason ?? ""} onChange={(e) => set("_reason", e.target.value)} /></div>}
@@ -400,6 +408,8 @@ export const LogisticsModule = () => {
               const { _reason, ...rest } = actionData;
               if (action.action === "create") { rest.tenant_id = tenantId; rest.country_id = countryId; }
               if (action.action === "finish_loading") rest.qty_loaded = (d.loads ?? []).filter((x) => x.trip_id === action.trip.id).reduce((s2, x) => s2 + Number(x.qty_litres), 0);
+              if (action.action === "deliver") { const p = siteProgress((d.loads ?? []).filter((x) => x.trip_id === action.trip.id), (d.deliveries ?? []).filter((x) => x.trip_id === action.trip.id));
+                if (p.total) { if (!p.allDelivered) return toast.error(L("Tous les sites doivent être livrés", "All sites must be delivered")); rest.qty_delivered = p.received; } }
               if (rest.seals_intact) rest.seals_intact = rest.seals_intact === "true";
               ["planned_departure", "eta"].forEach((k) => { if (rest[k]) rest[k] = new Date(rest[k]).toISOString(); });
               if (await runAction(action.action === "create" ? null : action.trip.id, action.action, _reason, rest)) setAction(null);
@@ -408,6 +418,8 @@ export const LogisticsModule = () => {
         </DialogContent>
       </Dialog>
 
+      <SiteCheckinDialog trip={checkTrip ? (d.trips ?? []).find((x) => x.id === checkTrip.id) ?? checkTrip : null} onClose={() => setCheckTrip(null)} onSaved={load} canWrite={canWrite} L={L}
+        loads={d.loads ?? []} deliveries={d.deliveries ?? []} compartments={d.compartments ?? []} products={d.products ?? []} stations={d.stations ?? []} clients={d.clients ?? []} />
       <LoadPlanDialog trip={planTrip} onClose={() => setPlanTrip(null)} onSaved={load} L={L}
         vehicles={d.vehicles ?? []} compartments={d.compartments ?? []} products={d.products ?? []} stations={d.stations ?? []} clients={d.clients ?? []} loads={d.loads ?? []} />
 
