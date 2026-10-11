@@ -218,6 +218,13 @@
       "when": 1791590475114,
       "tag": "0030_logistics_trip_loads",
       "breakpoints": true
+    },
+    {
+      "idx": 31,
+      "version": "7",
+      "when": 1791746064292,
+      "tag": "0031_logistics_site_checkin",
+      "breakpoints": true
     }
   ]
 }

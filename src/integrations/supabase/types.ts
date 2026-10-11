@@ -2732,6 +2732,71 @@ export type Database = {
           },
         ]
       }
+      logistics_load_deliveries: {
+        Row: {
+          author_id: string | null
+          country_id: string
+          delivered_at: string
+          id: string
+          load_id: string
+          note: string | null
+          qty_delivered: number
+          tenant_id: string
+          trip_id: string
+        }
+        Insert: {
+          author_id?: string | null
+          country_id: string
+          delivered_at?: string
+          id?: string
+          load_id: string
+          note?: string | null
+          qty_delivered: number
+          tenant_id: string
+          trip_id: string
+        }
+        Update: {
+          author_id?: string | null
+          country_id?: string
+          delivered_at?: string
+          id?: string
+          load_id?: string
+          note?: string | null
+          qty_delivered?: number
+          tenant_id?: string
+          trip_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "logistics_load_deliveries_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "countries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "logistics_load_deliveries_load_id_fkey"
+            columns: ["load_id"]
+            isOneToOne: true
+            referencedRelation: "logistics_trip_loads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "logistics_load_deliveries_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "logistics_load_deliveries_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "logistics_trips"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       logistics_seals: {
         Row: {
           country_id: string
@@ -6051,6 +6116,10 @@ export type Database = {
           _module: string
         }
         Returns: undefined
+      }
+      logistics_confirm_site: {
+        Args: { _lines: Json; _note?: string; _trip: string }
+        Returns: number
       }
       logistics_set_loads: {
         Args: { _lines: Json; _mode: string; _trip: string }
