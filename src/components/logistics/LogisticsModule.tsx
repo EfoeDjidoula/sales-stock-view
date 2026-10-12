@@ -10,6 +10,7 @@ import { Loader2, Plus, Eye, AlertTriangle, MapPin } from "lucide-react";
 import { LogisticsMap } from "./LogisticsMap";
 import { LoadPlanDialog } from "./LoadPlanDialog";
 import { SiteCheckinDialog, siteProgress } from "./SiteCheckinDialog";
+import { StationTrackingTab } from "./StationTrackingTab";
 import { SupplyWorkflowModule } from "@/components/supply/SupplyWorkflowModule";
 import { Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -239,7 +240,9 @@ export const LogisticsModule = () => {
           <TabsTrigger value="trips">8. {L("Chargements & transports", "Loadings & trips")}</TabsTrigger>
           <TabsTrigger value="map"><MapPin className="h-4 w-4 mr-1" />9. {L("Carte & GPS", "Map & GPS")}</TabsTrigger>
           <TabsTrigger value="alerts">10. {L("Alertes", "Alerts")} {alerts.length > 0 && <Badge variant="destructive" className="ml-1">{alerts.length}</Badge>}</TabsTrigger>
+          <TabsTrigger value="stations">11. {L("Suivi par station", "Station tracking")}</TabsTrigger>
         </TabsList>
+        <TabsContent value="stations"><StationTrackingTab stations={d.stations ?? []} products={d.products ?? []} /></TabsContent>
 
         <TabsContent value="trips">
           <Card className="glass-card">
