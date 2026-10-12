@@ -225,6 +225,13 @@
       "when": 1791746064292,
       "tag": "0031_logistics_site_checkin",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1791795375655,
+      "tag": "0032_logistics_auto_deliver",
+      "breakpoints": true
     }
   ]
 }

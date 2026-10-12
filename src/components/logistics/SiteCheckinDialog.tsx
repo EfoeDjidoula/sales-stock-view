@@ -58,7 +58,8 @@ export const SiteCheckinDialog = ({ trip, onClose, onSaved, canWrite, loads, del
     const { error } = await db.rpc("logistics_confirm_site", { _trip: trip!.id, _lines: lines });
     setBusy(null);
     if (error) return toast.error(error.message);
-    toast.success(L("Site validé", "Site confirmed"));
+    const last = p.sites.filter((x) => !x.delivered).length === 1;
+    toast.success(last ? L("Tous les sites livrés : transport clôturé automatiquement (sinon, utilisez « Livraison terminée »)", "All sites delivered: trip closed automatically (otherwise use \"Delivered\")") : L("Site validé", "Site confirmed"));
     onSaved();
   };
 
@@ -101,7 +102,7 @@ export const SiteCheckinDialog = ({ trip, onClose, onSaved, canWrite, loads, del
             </div>
           ))}
           {!canCheck && trip && !["delivered"].includes(trip.status) && <p className="text-xs text-muted-foreground">{L("Le check-in s'ouvre à l'arrivée du camion.", "Check-in opens when the truck arrives.")}</p>}
-          <p className="text-xs text-muted-foreground">{L("Chaque site est validé compartiment par compartiment, sans dépasser la capacité chargée. « Livraison terminée » n'est possible qu'une fois tous les sites livrés ; le total livré est recalculé automatiquement.", "Each site is confirmed compartment by compartment, never above loaded capacity. \"Delivered\" is only possible once every site is delivered; the delivered total is recomputed automatically.")}</p>
+          <p className="text-xs text-muted-foreground">{L("Chaque site est validé compartiment par compartiment, sans dépasser la capacité chargée. Après le dernier site, le transport passe automatiquement à « Livré » et le total livré est recalculé. En cas d'échec, le bouton « Livraison terminée » reste disponible.", "Each site is confirmed compartment by compartment, never above loaded capacity. After the last site the trip switches to \"Delivered\" automatically and the total is recomputed. If that fails, the \"Delivered\" button remains available.")}</p>
         </div>
       </DialogContent>
     </Dialog>
