@@ -3226,6 +3226,104 @@ export type Database = {
           },
         ]
       }
+      maintenance_assets: {
+        Row: {
+          asset_number: string
+          category: string
+          country_id: string
+          created_at: string
+          created_by: string | null
+          custom_category: string | null
+          depot_id: string | null
+          id: string
+          installed_on: string | null
+          location_detail: string | null
+          location_type: string
+          manufacturer: string | null
+          model: string | null
+          notes: string | null
+          serial_number: string | null
+          station_id: string | null
+          status: string
+          tenant_id: string
+          updated_at: string
+          warranty_until: string | null
+        }
+        Insert: {
+          asset_number: string
+          category: string
+          country_id: string
+          created_at?: string
+          created_by?: string | null
+          custom_category?: string | null
+          depot_id?: string | null
+          id?: string
+          installed_on?: string | null
+          location_detail?: string | null
+          location_type?: string
+          manufacturer?: string | null
+          model?: string | null
+          notes?: string | null
+          serial_number?: string | null
+          station_id?: string | null
+          status?: string
+          tenant_id: string
+          updated_at?: string
+          warranty_until?: string | null
+        }
+        Update: {
+          asset_number?: string
+          category?: string
+          country_id?: string
+          created_at?: string
+          created_by?: string | null
+          custom_category?: string | null
+          depot_id?: string | null
+          id?: string
+          installed_on?: string | null
+          location_detail?: string | null
+          location_type?: string
+          manufacturer?: string | null
+          model?: string | null
+          notes?: string | null
+          serial_number?: string | null
+          station_id?: string | null
+          status?: string
+          tenant_id?: string
+          updated_at?: string
+          warranty_until?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maintenance_assets_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "countries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_assets_depot_id_fkey"
+            columns: ["depot_id"]
+            isOneToOne: false
+            referencedRelation: "depots"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_assets_station_id_fkey"
+            columns: ["station_id"]
+            isOneToOne: false
+            referencedRelation: "stations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_assets_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       maintenance_contracts: {
         Row: {
           amount: number
@@ -3300,6 +3398,276 @@ export type Database = {
           },
           {
             foreignKeyName: "maintenance_contracts_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      maintenance_events: {
+        Row: {
+          actor_id: string | null
+          asset_id: string
+          country_id: string
+          created_at: string
+          details: Json | null
+          event: string
+          id: string
+          tenant_id: string
+          work_order_id: string | null
+        }
+        Insert: {
+          actor_id?: string | null
+          asset_id: string
+          country_id: string
+          created_at?: string
+          details?: Json | null
+          event: string
+          id?: string
+          tenant_id: string
+          work_order_id?: string | null
+        }
+        Update: {
+          actor_id?: string | null
+          asset_id?: string
+          country_id?: string
+          created_at?: string
+          details?: Json | null
+          event?: string
+          id?: string
+          tenant_id?: string
+          work_order_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maintenance_events_asset_id_fkey"
+            columns: ["asset_id"]
+            isOneToOne: false
+            referencedRelation: "maintenance_assets"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      maintenance_parts: {
+        Row: {
+          country_id: string
+          created_at: string
+          id: string
+          name: string
+          quantity: number
+          tenant_id: string
+          unit_cost: number
+          work_order_id: string
+        }
+        Insert: {
+          country_id: string
+          created_at?: string
+          id?: string
+          name: string
+          quantity: number
+          tenant_id: string
+          unit_cost?: number
+          work_order_id: string
+        }
+        Update: {
+          country_id?: string
+          created_at?: string
+          id?: string
+          name?: string
+          quantity?: number
+          tenant_id?: string
+          unit_cost?: number
+          work_order_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maintenance_parts_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "countries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_parts_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_parts_work_order_id_fkey"
+            columns: ["work_order_id"]
+            isOneToOne: false
+            referencedRelation: "maintenance_work_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      maintenance_plans: {
+        Row: {
+          asset_id: string
+          country_id: string
+          created_at: string
+          frequency_days: number
+          id: string
+          is_active: boolean
+          last_done_on: string | null
+          next_due_on: string
+          provider: string | null
+          tenant_id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          asset_id: string
+          country_id: string
+          created_at?: string
+          frequency_days: number
+          id?: string
+          is_active?: boolean
+          last_done_on?: string | null
+          next_due_on: string
+          provider?: string | null
+          tenant_id: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          asset_id?: string
+          country_id?: string
+          created_at?: string
+          frequency_days?: number
+          id?: string
+          is_active?: boolean
+          last_done_on?: string | null
+          next_due_on?: string
+          provider?: string | null
+          tenant_id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maintenance_plans_asset_id_fkey"
+            columns: ["asset_id"]
+            isOneToOne: false
+            referencedRelation: "maintenance_assets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_plans_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "countries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_plans_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      maintenance_work_orders: {
+        Row: {
+          asset_id: string
+          completed_at: string | null
+          country_id: string
+          created_at: string
+          created_by: string | null
+          downtime_hours: number
+          failure_description: string | null
+          id: string
+          kind: string
+          labour_cost: number
+          number: string | null
+          opened_at: string
+          parts_cost: number
+          plan_id: string | null
+          priority: string
+          provider: string | null
+          report: string | null
+          started_at: string | null
+          status: string
+          technician: string | null
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          asset_id: string
+          completed_at?: string | null
+          country_id: string
+          created_at?: string
+          created_by?: string | null
+          downtime_hours?: number
+          failure_description?: string | null
+          id?: string
+          kind: string
+          labour_cost?: number
+          number?: string | null
+          opened_at?: string
+          parts_cost?: number
+          plan_id?: string | null
+          priority?: string
+          provider?: string | null
+          report?: string | null
+          started_at?: string | null
+          status?: string
+          technician?: string | null
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          asset_id?: string
+          completed_at?: string | null
+          country_id?: string
+          created_at?: string
+          created_by?: string | null
+          downtime_hours?: number
+          failure_description?: string | null
+          id?: string
+          kind?: string
+          labour_cost?: number
+          number?: string | null
+          opened_at?: string
+          parts_cost?: number
+          plan_id?: string | null
+          priority?: string
+          provider?: string | null
+          report?: string | null
+          started_at?: string | null
+          status?: string
+          technician?: string | null
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "maintenance_work_orders_asset_id_fkey"
+            columns: ["asset_id"]
+            isOneToOne: false
+            referencedRelation: "maintenance_assets"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_work_orders_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "countries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_work_orders_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "maintenance_plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "maintenance_work_orders_tenant_id_fkey"
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
