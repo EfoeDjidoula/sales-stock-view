@@ -232,6 +232,13 @@
       "when": 1791795375655,
       "tag": "0032_logistics_auto_deliver",
       "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1791853138457,
+      "tag": "0033_assets_maintenance",
+      "breakpoints": true
     }
   ]
 }
