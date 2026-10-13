@@ -60,7 +60,7 @@ export const StationTrackingTab = ({ stations, products }: { stations: Row[]; pr
     return stations.map((st) => {
       const stock = (data.stock ?? []).filter((x) => x.station_id === st.id);
       const supplies = (data.supplies ?? []).filter((x) => x.station_id === st.id);
-      const dels = (data.deliveries ?? []).map((x) => ({ ...x, load: loadById.get(x.load_id) })).filter((x) => x.load?.station_id === st.id);
+      const dels: Row[] = (data.deliveries ?? []).map((x): Row => ({ ...x, load: loadById.get(x.load_id) })).filter((x) => x.load?.station_id === st.id);
       const qty = stock.reduce((a, x) => a + Number(x.theoretical ?? 0), 0);
       const cap = stock.reduce((a, x) => a + Number(x.capacity ?? 0), 0);
       const pending = supplies.filter((x) => !["received", "cancelled", "rejected"].includes(x.status));
