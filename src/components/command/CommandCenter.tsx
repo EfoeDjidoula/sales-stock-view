@@ -367,16 +367,16 @@ function StationDetail({ station, data, levels, productF, t }: { station: any; d
       </Card>
        <Card><CardHeader><CardTitle className="text-base">{t("Cuves / produits")}</CardTitle></CardHeader>
         <CardContent className="grid gap-3 md:grid-cols-3">
-          {tanks.map((t: any) => {
-            const l = levels.find((x) => x.tank_id === t.id);
-            const pct = l && t.capacity_liters ? Math.min(100, (Number(l.theoretical) / t.capacity_liters) * 100) : 0;
+          {tanks.map((tk: any) => {
+            const l = levels.find((x) => x.tank_id === tk.id);
+            const pct = l && tk.capacity_liters ? Math.min(100, (Number(l.theoretical) / tk.capacity_liters) * 100) : 0;
             const tone: Health = !l ? "orange" : l.alert_level === "rupture" || l.alert_level === "critique" ? "red" : l.alert_level === "faible" ? "orange" : "green";
             return (
-              <div key={t.id} className={`rounded-lg border p-3 ${HEALTH_CLS[tone]}`}>
-                <div className="flex justify-between font-semibold text-foreground"><span>{t.name}</span><span className="text-xs">{prod(t.product_id)}</span></div>
+              <div key={tk.id} className={`rounded-lg border p-3 ${HEALTH_CLS[tone]}`}>
+                <div className="flex justify-between font-semibold text-foreground"><span>{tk.name}</span><span className="text-xs">{prod(tk.product_id)}</span></div>
                 <div className="mt-2 h-2 rounded bg-muted"><div className="h-2 rounded bg-primary" style={{ width: `${pct}%` }} /></div>
                 <div className="mt-1 text-xs text-muted-foreground">
-                   {l ? `${fmt(Number(l.theoretical))} / ${fmt(t.capacity_liters)} L · ${t("écart")} ${l.variance != null ? fmt(Number(l.variance)) + " L" : "—"}` : t("Stock non initialisé")}
+                   {l ? `${fmt(Number(l.theoretical))} / ${fmt(tk.capacity_liters)} L · ${t("écart")} ${l.variance != null ? fmt(Number(l.variance)) + " L" : "—"}` : t("Stock non initialisé")}
                 </div>
               </div>
             );
