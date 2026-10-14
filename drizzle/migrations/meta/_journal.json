@@ -239,6 +239,13 @@
       "when": 1791853138457,
       "tag": "0033_assets_maintenance",
       "breakpoints": true
+    },
+    {
+      "idx": 34,
+      "version": "7",
+      "when": 1791993589249,
+      "tag": "0034_hse_compliance",
+      "breakpoints": true
     }
   ]
 }

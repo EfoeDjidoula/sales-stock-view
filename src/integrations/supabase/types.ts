@@ -2110,6 +2110,638 @@ export type Database = {
           },
         ]
       }
+      hse_attachments: {
+        Row: {
+          country_id: string
+          created_at: string
+          entity_id: string
+          entity_type: string
+          file_name: string
+          file_path: string
+          id: string
+          tenant_id: string
+          uploaded_by: string | null
+        }
+        Insert: {
+          country_id: string
+          created_at?: string
+          entity_id: string
+          entity_type: string
+          file_name: string
+          file_path: string
+          id?: string
+          tenant_id: string
+          uploaded_by?: string | null
+        }
+        Update: {
+          country_id?: string
+          created_at?: string
+          entity_id?: string
+          entity_type?: string
+          file_name?: string
+          file_path?: string
+          id?: string
+          tenant_id?: string
+          uploaded_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hse_attachments_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "countries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hse_attachments_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hse_checklist_items: {
+        Row: {
+          checklist_id: string
+          country_id: string
+          created_at: string
+          id: string
+          is_active: boolean
+          is_critical: boolean
+          label: string
+          position: number
+          tenant_id: string
+          updated_at: string
+          weight: number
+        }
+        Insert: {
+          checklist_id: string
+          country_id: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          is_critical?: boolean
+          label: string
+          position?: number
+          tenant_id: string
+          updated_at?: string
+          weight?: number
+        }
+        Update: {
+          checklist_id?: string
+          country_id?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          is_critical?: boolean
+          label?: string
+          position?: number
+          tenant_id?: string
+          updated_at?: string
+          weight?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hse_checklist_items_checklist_id_fkey"
+            columns: ["checklist_id"]
+            isOneToOne: false
+            referencedRelation: "hse_checklists"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hse_checklist_items_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "countries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hse_checklist_items_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hse_checklists: {
+        Row: {
+          category: string
+          country_id: string
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          country_id: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          country_id?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hse_checklists_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "countries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hse_checklists_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hse_events: {
+        Row: {
+          country_id: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          id: string
+          immediate_actions: string | null
+          injuries: number
+          kind: string
+          occurred_at: string
+          responsible: string | null
+          severity: string
+          station_id: string
+          status: string
+          tenant_id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          country_id: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          immediate_actions?: string | null
+          injuries?: number
+          kind: string
+          occurred_at?: string
+          responsible?: string | null
+          severity?: string
+          station_id: string
+          status?: string
+          tenant_id: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          country_id?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          id?: string
+          immediate_actions?: string | null
+          injuries?: number
+          kind?: string
+          occurred_at?: string
+          responsible?: string | null
+          severity?: string
+          station_id?: string
+          status?: string
+          tenant_id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hse_events_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "countries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hse_events_station_id_fkey"
+            columns: ["station_id"]
+            isOneToOne: false
+            referencedRelation: "stations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hse_events_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hse_history: {
+        Row: {
+          action: string
+          actor_id: string | null
+          comment: string | null
+          country_id: string
+          created_at: string
+          details: Json | null
+          entity_id: string
+          entity_type: string
+          id: string
+          tenant_id: string
+        }
+        Insert: {
+          action: string
+          actor_id?: string | null
+          comment?: string | null
+          country_id: string
+          created_at?: string
+          details?: Json | null
+          entity_id: string
+          entity_type: string
+          id?: string
+          tenant_id: string
+        }
+        Update: {
+          action?: string
+          actor_id?: string | null
+          comment?: string | null
+          country_id?: string
+          created_at?: string
+          details?: Json | null
+          entity_id?: string
+          entity_type?: string
+          id?: string
+          tenant_id?: string
+        }
+        Relationships: []
+      }
+      hse_inspection_answers: {
+        Row: {
+          comment: string | null
+          country_id: string
+          created_at: string
+          id: string
+          inspection_id: string
+          item_id: string
+          result: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          comment?: string | null
+          country_id: string
+          created_at?: string
+          id?: string
+          inspection_id: string
+          item_id: string
+          result: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          comment?: string | null
+          country_id?: string
+          created_at?: string
+          id?: string
+          inspection_id?: string
+          item_id?: string
+          result?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hse_inspection_answers_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "countries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hse_inspection_answers_inspection_id_fkey"
+            columns: ["inspection_id"]
+            isOneToOne: false
+            referencedRelation: "hse_inspections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hse_inspection_answers_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "hse_checklist_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hse_inspection_answers_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hse_inspections: {
+        Row: {
+          checklist_id: string
+          country_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          inspected_on: string
+          inspector: string | null
+          notes: string | null
+          score: number | null
+          station_id: string
+          status: string
+          submitted_at: string | null
+          submitted_by: string | null
+          tenant_id: string
+          updated_at: string
+          validated_at: string | null
+          validated_by: string | null
+        }
+        Insert: {
+          checklist_id: string
+          country_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          inspected_on?: string
+          inspector?: string | null
+          notes?: string | null
+          score?: number | null
+          station_id: string
+          status?: string
+          submitted_at?: string | null
+          submitted_by?: string | null
+          tenant_id: string
+          updated_at?: string
+          validated_at?: string | null
+          validated_by?: string | null
+        }
+        Update: {
+          checklist_id?: string
+          country_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          inspected_on?: string
+          inspector?: string | null
+          notes?: string | null
+          score?: number | null
+          station_id?: string
+          status?: string
+          submitted_at?: string | null
+          submitted_by?: string | null
+          tenant_id?: string
+          updated_at?: string
+          validated_at?: string | null
+          validated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hse_inspections_checklist_id_fkey"
+            columns: ["checklist_id"]
+            isOneToOne: false
+            referencedRelation: "hse_checklists"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hse_inspections_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "countries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hse_inspections_station_id_fkey"
+            columns: ["station_id"]
+            isOneToOne: false
+            referencedRelation: "stations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hse_inspections_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hse_nonconformities: {
+        Row: {
+          closed_at: string | null
+          closed_by: string | null
+          closure_attachment: string | null
+          closure_proof: string | null
+          closure_submitted_at: string | null
+          closure_submitted_by: string | null
+          corrective_action: string | null
+          country_id: string
+          created_at: string
+          created_by: string | null
+          description: string | null
+          due_on: string | null
+          event_id: string | null
+          id: string
+          inspection_id: string | null
+          item_id: string | null
+          responsible: string | null
+          severity: string
+          station_id: string
+          status: string
+          tenant_id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          closed_at?: string | null
+          closed_by?: string | null
+          closure_attachment?: string | null
+          closure_proof?: string | null
+          closure_submitted_at?: string | null
+          closure_submitted_by?: string | null
+          corrective_action?: string | null
+          country_id: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          due_on?: string | null
+          event_id?: string | null
+          id?: string
+          inspection_id?: string | null
+          item_id?: string | null
+          responsible?: string | null
+          severity?: string
+          station_id: string
+          status?: string
+          tenant_id: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          closed_at?: string | null
+          closed_by?: string | null
+          closure_attachment?: string | null
+          closure_proof?: string | null
+          closure_submitted_at?: string | null
+          closure_submitted_by?: string | null
+          corrective_action?: string | null
+          country_id?: string
+          created_at?: string
+          created_by?: string | null
+          description?: string | null
+          due_on?: string | null
+          event_id?: string | null
+          id?: string
+          inspection_id?: string | null
+          item_id?: string | null
+          responsible?: string | null
+          severity?: string
+          station_id?: string
+          status?: string
+          tenant_id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hse_nonconformities_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "countries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hse_nonconformities_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "hse_events"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hse_nonconformities_inspection_id_fkey"
+            columns: ["inspection_id"]
+            isOneToOne: false
+            referencedRelation: "hse_inspections"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hse_nonconformities_item_id_fkey"
+            columns: ["item_id"]
+            isOneToOne: false
+            referencedRelation: "hse_checklist_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hse_nonconformities_station_id_fkey"
+            columns: ["station_id"]
+            isOneToOne: false
+            referencedRelation: "stations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hse_nonconformities_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hse_safety_items: {
+        Row: {
+          country_id: string
+          created_at: string
+          expires_on: string | null
+          id: string
+          kind: string
+          label: string
+          last_check_on: string | null
+          next_check_on: string | null
+          notes: string | null
+          quantity: number
+          reference: string | null
+          station_id: string
+          status: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          country_id: string
+          created_at?: string
+          expires_on?: string | null
+          id?: string
+          kind: string
+          label: string
+          last_check_on?: string | null
+          next_check_on?: string | null
+          notes?: string | null
+          quantity?: number
+          reference?: string | null
+          station_id: string
+          status?: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          country_id?: string
+          created_at?: string
+          expires_on?: string | null
+          id?: string
+          kind?: string
+          label?: string
+          last_check_on?: string | null
+          next_check_on?: string | null
+          notes?: string | null
+          quantity?: number
+          reference?: string | null
+          station_id?: string
+          status?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hse_safety_items_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "countries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hse_safety_items_station_id_fkey"
+            columns: ["station_id"]
+            isOneToOne: false
+            referencedRelation: "stations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hse_safety_items_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       index_entries: {
         Row: {
           bons_carburant_nombre: number
@@ -6463,6 +7095,16 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      hse_action: {
+        Args: {
+          _action: string
+          _comment?: string
+          _data?: Json
+          _entity: string
+          _id: string
+        }
+        Returns: string
       }
       is_module_enabled: {
         Args: { _country_id: string; _module_key: string; _tenant_id: string }
