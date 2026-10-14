@@ -1,3 +1,4 @@
+import AssetsMaintenanceModule from "@/components/maintenance/AssetsMaintenanceModule";
 import { useState, useMemo, useEffect } from "react";
 import { formatCurrency } from "@/data/stationsData";
 import { useUserRoles, AppRole } from "@/hooks/useUserRoles";
@@ -108,6 +109,7 @@ const TAB_PERMISSIONS: Record<string, AppRole[]> = {
   logistique_avancee: ["admin", "manager", "operator"],
   perequation: ["admin", "manager", "operator"],
   stations: ["admin", "manager", "operator"],
+  maintenance: ["admin", "manager", "operator"],
   depotage: ["admin", "manager", "operator"],
   camions: ["admin", "manager", "operator"],
   clients: ["admin", "manager", "operator"],
@@ -140,6 +142,7 @@ const TAB_META: Record<string, { label: string; icon: typeof TrendingUp }> = {
   depotage: { label: "Dépotages", icon: Droplets },
   camions: { label: "Camions", icon: Truck },
   stations: { label: "Stations", icon: LayoutDashboard },
+  maintenance: { label: "Assets & Maintenance", icon: Settings2 },
   perequation: { label: "Péréquation", icon: Coins },
   structure_prix: { label: "Structure de prix", icon: Fuel },
   proforma: { label: "Proforma", icon: FileText },
@@ -170,6 +173,7 @@ const TAB_RBAC: Record<string, string[] | null> = {
   depotage: ["depotages.view"],
   camions: ["trucks.view"],
   stations: ["stations.view"],
+  maintenance: ["stations.view"],
   perequation: ["perequation.view"],
   structure_prix: ["price_structures.view"],
   proforma: ["proforma.view"],
@@ -199,6 +203,7 @@ const TAB_MODULE: Record<string, string> = {
   depotage: "depots",
   camions: "livraisons",
   stations: "stations",
+  maintenance: "stations",
   perequation: "perequation",
   structure_prix: "facturation",
   proforma: "commandes",
@@ -218,7 +223,7 @@ const TAB_GROUPS: {
 }[] = [
   { id: "suivi", label: "Suivi & Analyse", icon: BarChart3, tabs: ["command", "ventes", "ventes_cloture", "reconciliation", "anti_fraude", "stock", "moteur_stock", "historique", "analyse_ia"] },
   { id: "logistique", label: "Logistique & Flux", icon: Truck, tabs: ["commandes", "logistique_avancee", "depotage"] },
-  { id: "config", label: "Configuration", icon: Settings2, tabs: ["stations", "perequation", "structure_prix", "proforma"] },
+  { id: "config", label: "Configuration", icon: Settings2, tabs: ["stations", "maintenance", "perequation", "structure_prix", "proforma"] },
   { id: "tiers", label: "Tiers", icon: Contact, tabs: ["clients", "b2b", "fuel_cards", "fournisseurs"] },
   { id: "support", label: "Support", icon: LifeBuoy, tabs: ["support"] },
   { id: "admin", label: "Administration", icon: ShieldCheck, tabs: ["exercices", "droits", "societe"] },
@@ -605,6 +610,9 @@ const Index = () => {
             {canAccessTab("chaine_appro") ? <SupplyWorkflowModule /> : <AccessDenied onGoBack={() => setActiveTab(allowedTabs[0] ?? "ventes")} />}
           </TabsContent>
 
+          <TabsContent value="maintenance" className="animate-fade-in">
+            {canAccessTab("maintenance") ? <AssetsMaintenanceModule /> : <AccessDenied onGoBack={() => setActiveTab(allowedTabs[0] ?? "ventes")} />}
+          </TabsContent>
           <TabsContent value="logistique_avancee" className="animate-fade-in">
             {canAccessTab("logistique_avancee") ? <LogisticsModule /> : <AccessDenied onGoBack={() => setActiveTab(allowedTabs[0] ?? "ventes")} />}
           </TabsContent>
