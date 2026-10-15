@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CommandB2B } from "./CommandB2B";
 import {
-  AlertTriangle, Banknote, ChevronRight, Droplets, Fuel, LifeBuoy, MapPin, Package, Truck, TrendingDown, TrendingUp, Activity, Scale,
+  AlertTriangle, ShieldAlert, Banknote, ChevronRight, Droplets, Fuel, LifeBuoy, MapPin, Package, Truck, TrendingDown, TrendingUp, Activity, Scale,
 } from "lucide-react";
 
 type Health = "green" | "orange" | "red";
@@ -65,7 +65,7 @@ export function CommandCenter() {
     queryFn: async () => {
       const sb = supabase as any;
       const base = (t: string, cols: string) => sb.from(t).select(cols).eq("tenant_id", tenantId).in("country_id", scope);
-      const [st, zn, pr, tk, pu, lv, cl, cs, ie, sp, ti, rc] = await Promise.all([
+      const [st, zn, pr, tk, pu, lv, cl, cs, ie, sp, ti, rc, hc] = await Promise.all([
         base("stations", "id,name,location,country_id,zone_id,status"),
         base("perequation_zones", "id,name"),
         base("petroleum_products", "id,name,code,color"),
@@ -80,14 +80,12 @@ export function CommandCenter() {
         base("reconciliations", "station_id,recon_date,result,workflow,value_variance").gte("recon_date", r.start).lte("recon_date", r.end),
         base("hse_nonconformities", "id,station_id,title,due_on,status").eq("severity", "critical").neq("status", "closed"),
       ]);
-      const hs = arguments.length >= 0 ? undefined : undefined;
-      void hs;
       const err = [st, zn, pr, tk, pu, lv, cl, cs, ie, sp].find((x) => x.error);
       if (err) throw err.error;
       return {
         stations: st.data as any[], zones: zn.data as any[], products: pr.data as any[], tanks: tk.data as any[], pumps: pu.data as any[],
         levels: lv.data as any[], closures: cl.data as any[], closureSales: cs.data as any[], entries: ie.data as any[],
-        supplies: sp.data as any[], tickets: ti.data as any[], recons: (rc.error ? [] : rc.data) as any[],
+        supplies: sp.data as any[], tickets: ti.data as any[], recons: (rc.error ? [] : rc.data) as any[], hse: (hc.error ? [] : hc.data) as any[],
       };
     },
   });
