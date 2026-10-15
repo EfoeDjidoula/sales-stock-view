@@ -78,7 +78,10 @@ export function CommandCenter() {
         base("supply_requests", "id,reference,station_id,status,qty_requested").in("status", OPEN_SUPPLY),
         base("support_tickets", "id,ticket_number,subject,priority,status,station_id").not("status", "in", "(resolved,closed)"),
         base("reconciliations", "station_id,recon_date,result,workflow,value_variance").gte("recon_date", r.start).lte("recon_date", r.end),
+        base("hse_nonconformities", "id,station_id,title,due_on,status").eq("severity", "critical").neq("status", "closed"),
       ]);
+      const hs = arguments.length >= 0 ? undefined : undefined;
+      void hs;
       const err = [st, zn, pr, tk, pu, lv, cl, cs, ie, sp].find((x) => x.error);
       if (err) throw err.error;
       return {
@@ -135,6 +138,7 @@ export function CommandCenter() {
     const supplies = d.supplies.filter((s) => ids.has(s.station_id));
 
     const recons = (d.recons ?? []).filter((x) => ids.has(x.station_id) && x.workflow !== "validated");
+    const hse = (d.hse ?? []).filter((x) => ids.has(x.station_id));
     const rows = stations.map((s) => {
       const lv = levels.filter((l) => l.station_id === s.id);
       const tk = tickets.filter((t) => t.station_id === s.id);
@@ -144,6 +148,7 @@ export function CommandCenter() {
       let h: Health = "green";
       if (lv.some((l) => l.alert_level === "rupture" || l.alert_level === "critique")) { h = "red"; reasons.push("Stock critique/rupture"); }
       if (tk.some((t) => t.priority === "critical")) { h = "red"; reasons.push("Incident critique"); }
+      if (hse.some((n) => n.station_id === s.id)) { h = "red"; reasons.push("Non-conformité HSE critique"); }
       const rs = recons.filter((x) => x.station_id === s.id);
       if (rs.some((x) => x.result === "critique")) { h = "red"; reasons.push("Réconciliation critique"); }
       if (h !== "red" && rs.some((x) => x.result === "anomalie" || x.result === "surveiller")) { h = "orange"; reasons.push("Écart de réconciliation"); }
@@ -160,7 +165,7 @@ export function CommandCenter() {
     const sum = (k: "amt" | "vol" | "amtToday" | "stock" | "variance") => rows.reduce((a, x) => a + (x[k] as number), 0);
     const ranked = [...rows].sort((a, b) => b.amt - a.amt);
     return {
-      rows, ranked, levels, tickets, supplies, recons,
+      rows, ranked, levels, tickets, supplies, recons, hse,
       kpi: {
         caToday: sum("amtToday"), caPeriod: sum("amt"), volume: sum("vol"), stock: sum("stock"), variance: sum("variance"),
         stations: rows.length, red: rows.filter((x) => x.health === "red").length, orange: rows.filter((x) => x.health === "orange").length,
@@ -310,6 +315,11 @@ export function CommandCenter() {
                      {!view.tickets.length && <p className="text-muted-foreground">{t("Aucun.")}</p>}
                   </CardContent></Card>
               </div>
+              <Card className={view.hse.length ? "border-destructive/50" : ""}><CardHeader><CardTitle className="text-base flex items-center gap-2"><ShieldAlert className="h-4 w-4 text-destructive" />{t("Non-conformités HSE critiques")} ({view.hse.length})</CardTitle></CardHeader>
+                <CardContent className="space-y-1 text-sm">
+                  {view.hse.slice(0, 10).map((n) => <div key={n.id} className="flex justify-between gap-2"><span className="truncate">{d!.stations.find((x) => x.id === n.station_id)?.name} · {n.title}</span><Badge variant="outline" className={n.due_on && n.due_on < today ? HEALTH_CLS.red : ""}>{n.due_on ?? "—"}</Badge></div>)}
+                  {!view.hse.length && <p className="text-muted-foreground">{t("Aucune.")}</p>}
+                </CardContent></Card>
             </>
           )}
         </>
