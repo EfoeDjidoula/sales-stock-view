@@ -99,8 +99,8 @@ const HseModule = () => {
   };
   const openHistory = async (title: string, id: string) => {
     const [h, f] = await Promise.all([
-      db.from("hse_history").select("*").eq("entity_id", id).order("created_at", { ascending: false }),
-      db.from("hse_attachments").select("*").eq("entity_id", id).order("created_at", { ascending: false }),
+      scopeQuery(db.from("hse_history").select("*").eq("entity_id", id)).order("created_at", { ascending: false }),
+      scopeQuery(db.from("hse_attachments").select("*").eq("entity_id", id)).order("created_at", { ascending: false }),
     ]);
     setHistory({ title, rows: h.data ?? [], files: f.data ?? [] });
   };
@@ -155,7 +155,7 @@ const HseModule = () => {
   // ---------- Inspection run ----------
   const openInspection = async (i: Row) => {
     setInspection(i);
-    const { data } = await db.from("hse_inspection_answers").select("*").eq("inspection_id", i.id);
+    const { data } = await scopeQuery(db.from("hse_inspection_answers").select("*").eq("inspection_id", i.id));
     setAnswers(Object.fromEntries((data ?? []).map((a: Row) => [a.item_id, a])));
   };
   const setAnswer = async (itemId: string, patch: Row) => {
