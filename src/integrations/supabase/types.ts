@@ -2110,6 +2110,69 @@ export type Database = {
           },
         ]
       }
+      hse_agents: {
+        Row: {
+          certification: string | null
+          certification_expires_on: string | null
+          country_id: string
+          created_at: string
+          email: string | null
+          full_name: string
+          id: string
+          job_title: string | null
+          phone: string | null
+          status: string
+          tenant_id: string
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          certification?: string | null
+          certification_expires_on?: string | null
+          country_id: string
+          created_at?: string
+          email?: string | null
+          full_name: string
+          id?: string
+          job_title?: string | null
+          phone?: string | null
+          status?: string
+          tenant_id: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          certification?: string | null
+          certification_expires_on?: string | null
+          country_id?: string
+          created_at?: string
+          email?: string | null
+          full_name?: string
+          id?: string
+          job_title?: string | null
+          phone?: string | null
+          status?: string
+          tenant_id?: string
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hse_agents_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "countries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hse_agents_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       hse_attachments: {
         Row: {
           country_id: string
@@ -2275,6 +2338,7 @@ export type Database = {
       }
       hse_events: {
         Row: {
+          agent_id: string | null
           country_id: string
           created_at: string
           created_by: string | null
@@ -2293,6 +2357,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          agent_id?: string | null
           country_id: string
           created_at?: string
           created_by?: string | null
@@ -2311,6 +2376,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          agent_id?: string | null
           country_id?: string
           created_at?: string
           created_by?: string | null
@@ -2329,6 +2395,13 @@ export type Database = {
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "hse_events_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "hse_agents"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "hse_events_country_id_fkey"
             columns: ["country_id"]
@@ -2458,6 +2531,7 @@ export type Database = {
       }
       hse_inspections: {
         Row: {
+          agent_id: string | null
           checklist_id: string
           country_id: string
           created_at: string
@@ -2477,6 +2551,7 @@ export type Database = {
           validated_by: string | null
         }
         Insert: {
+          agent_id?: string | null
           checklist_id: string
           country_id: string
           created_at?: string
@@ -2496,6 +2571,7 @@ export type Database = {
           validated_by?: string | null
         }
         Update: {
+          agent_id?: string | null
           checklist_id?: string
           country_id?: string
           created_at?: string
@@ -2515,6 +2591,13 @@ export type Database = {
           validated_by?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "hse_inspections_agent_id_fkey"
+            columns: ["agent_id"]
+            isOneToOne: false
+            referencedRelation: "hse_agents"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "hse_inspections_checklist_id_fkey"
             columns: ["checklist_id"]

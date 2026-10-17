@@ -253,6 +253,13 @@
       "when": 1792110916062,
       "tag": "0035_hse_country_integrity",
       "breakpoints": true
+    },
+    {
+      "idx": 36,
+      "version": "7",
+      "when": 1792201844005,
+      "tag": "0036_hse_agents",
+      "breakpoints": true
     }
   ]
 }
