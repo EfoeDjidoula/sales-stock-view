@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useScope } from "@/hooks/useScope";
+import { usePermissions } from "@/hooks/usePermissions";
 import { toast } from "sonner";
 import { ShieldCheck, Plus, Loader2, History, Paperclip, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -32,6 +33,8 @@ const daysBetween = (a: string, b: string) => Math.round((new Date(b).getTime() 
 
 const HseModule = () => {
   const { tenantId, countryId, scopeQuery, scopeRow } = useScope();
+  const { can } = usePermissions();
+  const canManageAgents = can("hse.manage");
   const [loading, setLoading] = useState(true);
   const [d, setD] = useState<Record<string, Row[]>>({});
   const [stationF, setStationF] = useState("all");
@@ -44,10 +47,11 @@ const HseModule = () => {
   const load = useCallback(async () => {
     if (!tenantId || !countryId) return;
     setLoading(true);
-    const tables = ["stations", "hse_checklists", "hse_checklist_items", "hse_inspections", "hse_events", "hse_safety_items", "hse_nonconformities"];
+    const tables = ["stations", "hse_checklists", "hse_checklist_items", "hse_inspections", "hse_events", "hse_safety_items", "hse_nonconformities", "hse_agents"];
     const res = await Promise.all(tables.map((t) => scopeQuery(db.from(t).select("*"))));
     const out: Record<string, Row[]> = {};
     tables.forEach((t, i) => (out[t] = res[i].data ?? []));
+    out.hse_agents.sort((a, b) => a.full_name.localeCompare(b.full_name));
     out.stations.sort((a, b) => a.name.localeCompare(b.name));
     out.hse_checklist_items.sort((a, b) => a.position - b.position);
     out.hse_inspections.sort((a, b) => b.inspected_on.localeCompare(a.inspected_on));
@@ -56,6 +60,7 @@ const HseModule = () => {
   }, [tenantId, countryId, scopeQuery]);
   useEffect(() => { load(); }, [load]);
 
+  const ag = (id?: string) => (id && d.hse_agents?.find((a) => a.id === id)?.full_name) || null;
   const st = (id: string) => d.stations?.find((s) => s.id === id)?.name ?? "—";
   const byStation = <T extends Row>(rows: T[] = []) => rows.filter((r) => stationF === "all" || r.station_id === stationF);
   const ncs = byStation(d.hse_nonconformities);
@@ -118,7 +123,7 @@ const HseModule = () => {
     };
     if (type === "event") {
       if (!f.station_id || !f.title) return toast.error("Station et intitulé obligatoires");
-      ok = await exec("hse_events", { station_id: f.station_id, kind: f.kind, occurred_at: f.occurred_at ? new Date(f.occurred_at).toISOString() : new Date().toISOString(), severity: f.severity, title: f.title, description: f.description || null, injuries: Number(f.injuries || 0), immediate_actions: f.immediate_actions || null, responsible: f.responsible || null, status: f.status ?? "open" });
+      ok = await exec("hse_events", { station_id: f.station_id, kind: f.kind, occurred_at: f.occurred_at ? new Date(f.occurred_at).toISOString() : new Date().toISOString(), severity: f.severity, title: f.title, description: f.description || null, injuries: Number(f.injuries || 0), immediate_actions: f.immediate_actions || null, responsible: f.responsible || null, status: f.status ?? "open", agent_id: f.agent_id || null });
     } else if (type === "safety") {
       if (!f.station_id || !f.label) return toast.error("Station et désignation obligatoires");
       ok = await exec("hse_safety_items", { station_id: f.station_id, kind: f.kind, label: f.label, reference: f.reference || null, quantity: Number(f.quantity ?? 1), last_check_on: f.last_check_on || null, next_check_on: f.next_check_on || null, expires_on: f.expires_on || null, status: f.status ?? "ok", notes: f.notes || null });
@@ -135,7 +140,10 @@ const HseModule = () => {
       ok = await exec("hse_checklist_items", { checklist_id: f.checklist_id, label: f.label, weight: Number(f.weight || 1), is_critical: !!f.is_critical, position: Number(f.position || 0), is_active: f.is_active ?? true });
     } else if (type === "inspection") {
       if (!f.station_id || !f.checklist_id) return toast.error("Station et checklist obligatoires");
-      ok = await exec("hse_inspections", { station_id: f.station_id, checklist_id: f.checklist_id, inspected_on: f.inspected_on || today(), inspector: f.inspector || null, notes: f.notes || null });
+      ok = await exec("hse_inspections", { station_id: f.station_id, checklist_id: f.checklist_id, inspected_on: f.inspected_on || today(), inspector: f.inspector || (ag(f.agent_id) ?? null), notes: f.notes || null, agent_id: f.agent_id || null });
+    } else if (type === "agent") {
+      if (!f.full_name?.trim()) return toast.error("Nom obligatoire");
+      ok = await exec("hse_agents", { full_name: f.full_name.trim(), job_title: f.job_title || null, phone: f.phone || null, email: f.email || null, certification: f.certification || null, certification_expires_on: f.certification_expires_on || null, status: f.status ?? "active" });
     } else if (type === "closure") {
       if (!f.proof?.trim()) return toast.error("Preuve de clôture obligatoire");
       const path = file ? await upload("nonconformity", f.id, file) : null;
@@ -184,6 +192,8 @@ const HseModule = () => {
     <div className="space-y-1"><Label>{label}</Label><Select value={f[k] ?? ""} onValueChange={(v) => setF(k, v)}><SelectTrigger><SelectValue placeholder="Choisir…" /></SelectTrigger>
       <SelectContent>{Object.entries(opts).map(([a, b]) => <SelectItem key={a} value={a}>{b}</SelectItem>)}</SelectContent></Select></div>
   );
+  const agentOpts = Object.fromEntries((d.hse_agents ?? []).filter((a) => a.status === "active" || a.id === f.agent_id).map((a) => [a.id, a.full_name]));
+  const agentSel = (d.hse_agents ?? []).length ? sel("agent_id", "Agent HSE", agentOpts) : <p className="text-xs text-muted-foreground">Aucun agent HSE : ajoutez-en dans l'onglet Agents HSE.</p>;
   const stationOpts = Object.fromEntries((d.stations ?? []).map((s) => [s.id, s.name]));
   const fileInput = (
     <div className="space-y-1"><Label>Pièce jointe (≤ 20 Mo)</Label><Input type="file" onChange={(e) => setF("_file", e.target.files?.[0])} /></div>
@@ -216,6 +226,7 @@ const HseModule = () => {
           <TabsTrigger value="nc">Non-conformités & actions ({ncs.filter((n) => n.status !== "closed").length})</TabsTrigger>
           <TabsTrigger value="safety">Extincteurs & EPI</TabsTrigger>
           <TabsTrigger value="checklists">Checklists</TabsTrigger>
+          <TabsTrigger value="agents">Agents HSE</TabsTrigger>
         </TabsList>
 
         <TabsContent value="scores">
@@ -237,7 +248,7 @@ const HseModule = () => {
               <TableRow key={i.id}>
                 <TableCell>{i.inspected_on}</TableCell><TableCell>{st(i.station_id)}</TableCell>
                 <TableCell>{d.hse_checklists.find((c) => c.id === i.checklist_id)?.name}</TableCell>
-                <TableCell>{i.inspector ?? "—"}</TableCell><TableCell>{i.score != null ? `${i.score} %` : "—"}</TableCell>
+                <TableCell>{ag(i.agent_id) ?? i.inspector ?? "—"}</TableCell><TableCell>{i.score != null ? `${i.score} %` : "—"}</TableCell>
                 <TableCell><Badge variant={i.status === "validated" ? "default" : "secondary"}>{INSP_STATUS[i.status]}</Badge></TableCell>
                 <TableCell className="text-right whitespace-nowrap">
                   <Button size="sm" variant="ghost" onClick={() => openInspection(i)}>{i.status === "draft" ? "Remplir" : "Voir"}</Button>
@@ -252,12 +263,12 @@ const HseModule = () => {
 
         <TabsContent value="events" className="space-y-3">
           <Button onClick={() => setDlg({ type: "event", row: { kind: "incident", severity: "low", station_id: stationF !== "all" ? stationF : undefined } })}><Plus className="h-4 w-4 mr-1" />Déclarer</Button>
-          <Table><TableHeader><TableRow><TableHead>Date</TableHead><TableHead>Type</TableHead><TableHead>Station</TableHead><TableHead>Intitulé</TableHead><TableHead>Gravité</TableHead><TableHead>Blessés</TableHead><TableHead>Responsable</TableHead><TableHead>Statut</TableHead><TableHead /></TableRow></TableHeader>
+          <Table><TableHeader><TableRow><TableHead>Date</TableHead><TableHead>Type</TableHead><TableHead>Station</TableHead><TableHead>Intitulé</TableHead><TableHead>Gravité</TableHead><TableHead>Blessés</TableHead><TableHead>Agent HSE</TableHead><TableHead>Responsable</TableHead><TableHead>Statut</TableHead><TableHead /></TableRow></TableHeader>
             <TableBody>{byStation(d.hse_events).map((e) => (
               <TableRow key={e.id}>
                 <TableCell>{e.occurred_at.slice(0, 10)}</TableCell><TableCell>{EVENT_KIND[e.kind]}</TableCell><TableCell>{st(e.station_id)}</TableCell>
                 <TableCell>{e.title}</TableCell><TableCell><Badge variant={e.severity === "critical" ? "destructive" : "outline"}>{SEVERITY[e.severity]}</Badge></TableCell>
-                <TableCell>{e.injuries}</TableCell><TableCell>{e.responsible ?? "—"}</TableCell><TableCell>{e.status === "open" ? "Ouvert" : "Clos"}</TableCell>
+                <TableCell>{e.injuries}</TableCell><TableCell>{ag(e.agent_id) ?? "—"}</TableCell><TableCell>{e.responsible ?? "—"}</TableCell><TableCell>{e.status === "open" ? "Ouvert" : "Clos"}</TableCell>
                 <TableCell className="text-right whitespace-nowrap">
                   <Button size="sm" variant="ghost" onClick={() => setDlg({ type: "event", row: { ...e, occurred_at: e.occurred_at.slice(0, 16) } })}>Modifier</Button>
                   <Button size="sm" variant="ghost" onClick={() => setDlg({ type: "nc", row: { station_id: e.station_id, event_id: e.id, severity: e.severity === "critical" ? "critical" : "major", title: e.title } })}>NC</Button>
@@ -320,14 +331,33 @@ const HseModule = () => {
                 </div>))}
             </CardContent></Card>))}
         </TabsContent>
+
+        <TabsContent value="agents" className="space-y-3">
+          {canManageAgents ? <Button onClick={() => setDlg({ type: "agent", row: { status: "active" } })}><Plus className="h-4 w-4 mr-1" />Agent HSE</Button>
+            : <p className="text-sm text-muted-foreground">Lecture seule : la gestion des agents nécessite la permission « Gérer les agents HSE ».</p>}
+          <Table><TableHeader><TableRow><TableHead>Nom</TableHead><TableHead>Fonction</TableHead><TableHead>Contact</TableHead><TableHead>Certification</TableHead><TableHead>Inspections</TableHead><TableHead>Incidents</TableHead><TableHead>Statut</TableHead><TableHead /></TableRow></TableHeader>
+            <TableBody>{(d.hse_agents ?? []).map((a) => {
+              const certLate = a.certification_expires_on && a.certification_expires_on < t0;
+              return (
+              <TableRow key={a.id} className={a.status === "inactive" ? "opacity-50" : ""}>
+                <TableCell className="font-medium">{a.full_name}</TableCell><TableCell>{a.job_title ?? "—"}</TableCell>
+                <TableCell className="text-xs">{[a.phone, a.email].filter(Boolean).join(" · ") || "—"}</TableCell>
+                <TableCell className={certLate ? "text-destructive font-medium" : ""}>{a.certification ?? "—"}{a.certification_expires_on ? ` (→ ${a.certification_expires_on})` : ""}{certLate && " expirée"}</TableCell>
+                <TableCell>{(d.hse_inspections ?? []).filter((i) => i.agent_id === a.id).length}</TableCell>
+                <TableCell>{(d.hse_events ?? []).filter((e) => e.agent_id === a.id).length}</TableCell>
+                <TableCell><Badge variant={a.status === "active" ? "default" : "secondary"}>{a.status === "active" ? "Actif" : "Inactif"}</Badge></TableCell>
+                <TableCell>{canManageAgents && <Button size="sm" variant="ghost" onClick={() => setDlg({ type: "agent", row: a })}>Modifier</Button>}</TableCell>
+              </TableRow>); })}</TableBody></Table>
+          <p className="text-xs text-muted-foreground">Seuls les agents actifs du pays sélectionné peuvent être affectés à une inspection ou un incident.</p>
+        </TabsContent>
       </Tabs>
 
       {/* Edit dialog */}
       <Dialog open={!!dlg} onOpenChange={(o) => !o && setDlg(null)}>
         <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>{{ event: "Événement HSE", safety: "Équipement de sécurité", nc: "Non-conformité", checklist: "Checklist", item: "Point de contrôle", inspection: "Nouvelle inspection", closure: "Preuve de clôture", comment: "Motif" }[dlg?.type ?? ""]}</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{{ event: "Événement HSE", safety: "Équipement de sécurité", nc: "Non-conformité", checklist: "Checklist", item: "Point de contrôle", inspection: "Nouvelle inspection", agent: "Agent HSE", closure: "Preuve de clôture", comment: "Motif" }[dlg?.type ?? ""]}</DialogTitle></DialogHeader>
           <div className="grid gap-3">
-            {dlg?.type === "event" && <>{sel("station_id", "Station", stationOpts)}{sel("kind", "Type", EVENT_KIND)}{sel("severity", "Gravité", SEVERITY)}
+            {dlg?.type === "event" && <>{sel("station_id", "Station", stationOpts)}{agentSel}{sel("kind", "Type", EVENT_KIND)}{sel("severity", "Gravité", SEVERITY)}
               {inp("title", "Intitulé")}{inp("occurred_at", "Date et heure", "datetime-local")}
               <div className="space-y-1"><Label>Description</Label><Textarea value={f.description ?? ""} onChange={(e) => setF("description", e.target.value)} /></div>
               {inp("injuries", "Blessés", "number")}
@@ -346,7 +376,10 @@ const HseModule = () => {
               <label className="flex items-center gap-2 text-sm"><Checkbox checked={!!f.is_critical} onCheckedChange={(v) => setF("is_critical", !!v)} />Point critique (NC critique si non conforme)</label>
               <label className="flex items-center gap-2 text-sm"><Checkbox checked={f.is_active ?? true} onCheckedChange={(v) => setF("is_active", !!v)} />Actif</label></>}
             {dlg?.type === "inspection" && <>{sel("station_id", "Station", stationOpts)}{sel("checklist_id", "Checklist", Object.fromEntries((d.hse_checklists ?? []).filter((c) => c.is_active).map((c) => [c.id, c.name])))}
-              {inp("inspected_on", "Date", "date")}{inp("inspector", "Inspecteur")}{fileInput}</>}
+              {agentSel}{inp("inspected_on", "Date", "date")}{inp("inspector", "Inspecteur externe (facultatif)")}{fileInput}</>}
+            {dlg?.type === "agent" && <>{inp("full_name", "Nom complet")}{inp("job_title", "Fonction")}{inp("phone", "Téléphone")}{inp("email", "Email", "email")}
+              {inp("certification", "Certification / habilitation")}{inp("certification_expires_on", "Expiration certification", "date")}
+              {sel("status", "Statut", { active: "Actif", inactive: "Inactif" })}</>}
             {dlg?.type === "closure" && <><div className="space-y-1"><Label>Preuve / description des travaux réalisés</Label><Textarea value={f.proof ?? ""} onChange={(e) => setF("proof", e.target.value)} /></div>{fileInput}</>}
             {dlg?.type === "comment" && <div className="space-y-1"><Label>Motif</Label><Textarea value={f.comment ?? ""} onChange={(e) => setF("comment", e.target.value)} /></div>}
           </div>
