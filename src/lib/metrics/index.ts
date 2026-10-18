@@ -81,8 +81,8 @@ export const buildSaleFacts = (d: Dataset, f: Pick<Filters, "start" | "end">): S
   d.entries.forEach((e) => {
     if (e.entry_date < f.start || e.entry_date > f.end || closed.has(`${e.entry_date}|${e.station_id}`)) return;
     const s = n(e.total_super_liters), g = n(e.total_gasoil_liters);
-    if (s) push(e.entry_date, e.station_id, "super", s, s * FUEL_PRICES.super);
-    if (g) push(e.entry_date, e.station_id, "gasoil", g, g * FUEL_PRICES.gasoil);
+    if (s) push(e.entry_date, e.station_id, "super", s, s * FUEL_PRICES.SUPER);
+    if (g) push(e.entry_date, e.station_id, "gasoil", g, g * FUEL_PRICES.GASOIL);
   });
   return [...out.values()];
 };
