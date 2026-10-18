@@ -20,6 +20,7 @@ import { LicenseBanner, LicenseBlockedScreen } from "@/components/license/Licens
 /** Onglets encore visibles en mode « accès limité » après expiration. */
 const LIMITED_TABS = ["ventes", "stock", "historique"];
 import { CommandCenter } from "@/components/command/CommandCenter";
+import { BiModule } from "@/components/bi/BiModule";
 import { SalesCard } from "@/components/dashboard/SalesCard";
 import { PeriodTabs } from "@/components/dashboard/PeriodTabs";
 import { SalesChart } from "@/components/dashboard/SalesChart";
@@ -98,6 +99,7 @@ import { useQueryClient } from "@tanstack/react-query";
 // Define tab access by role
 const TAB_PERMISSIONS: Record<string, AppRole[]> = {
   command: ["admin", "manager", "operator"],
+  bi: ["admin", "manager"],
   ventes: ["admin", "manager", "operator"],
   stock: ["admin", "manager", "operator"],
   moteur_stock: ["admin", "manager", "operator"],
@@ -131,6 +133,7 @@ const TAB_PERMISSIONS: Record<string, AppRole[]> = {
 // Metadata (label + icon) for each tab
 const TAB_META: Record<string, { label: string; icon: typeof TrendingUp }> = {
   command: { label: "Command Center", icon: LayoutDashboard },
+  bi: { label: "BI avancée", icon: BarChart3 },
   ventes: { label: "Ventes", icon: TrendingUp },
   stock: { label: "Stock", icon: Package },
   moteur_stock: { label: "Mouvements de stock", icon: Package },
@@ -163,6 +166,7 @@ const TAB_META: Record<string, { label: string; icon: typeof TrendingUp }> = {
 // Permission RBAC (au moins une) requise pour chaque onglet ; null = toujours visible
 const TAB_RBAC: Record<string, string[] | null> = {
   command: ["dashboard.view"],
+  bi: ["reports.view"],
   ventes: ["dashboard.view", "index_entries.view"],
   stock: ["stock.view", "dashboard.view"],
   moteur_stock: ["stock.view"],
@@ -226,7 +230,7 @@ const TAB_GROUPS: {
   icon: typeof TrendingUp;
   tabs: string[];
 }[] = [
-  { id: "suivi", label: "Suivi & Analyse", icon: BarChart3, tabs: ["command", "ventes", "ventes_cloture", "reconciliation", "anti_fraude", "stock", "moteur_stock", "historique", "analyse_ia"] },
+  { id: "suivi", label: "Suivi & Analyse", icon: BarChart3, tabs: ["command", "bi", "ventes", "ventes_cloture", "reconciliation", "anti_fraude", "stock", "moteur_stock", "historique", "analyse_ia"] },
   { id: "logistique", label: "Logistique & Flux", icon: Truck, tabs: ["commandes", "logistique_avancee", "depotage"] },
   { id: "config", label: "Configuration", icon: Settings2, tabs: ["stations", "maintenance", "hse", "perequation", "structure_prix", "proforma"] },
   { id: "tiers", label: "Tiers", icon: Contact, tabs: ["clients", "b2b", "fuel_cards", "fournisseurs"] },
@@ -485,6 +489,7 @@ const Index = () => {
           {/* Ventes Tab */}
           {canAccessTab("command") && (
             <TabsContent value="command" className="animate-fade-in"><CommandCenter /></TabsContent>
+            <TabsContent value="bi" className="animate-fade-in">{canAccessTab("bi") ? <BiModule /> : <AccessDenied onGoBack={() => setActiveTab("command")} />}</TabsContent>
           )}
           <TabsContent value="ventes" className="space-y-6 animate-fade-in">
             {isFetching ? (
