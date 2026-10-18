@@ -489,8 +489,8 @@ const Index = () => {
           {/* Ventes Tab */}
           {canAccessTab("command") && (
             <TabsContent value="command" className="animate-fade-in"><CommandCenter /></TabsContent>
-            <TabsContent value="bi" className="animate-fade-in">{canAccessTab("bi") ? <BiModule /> : <AccessDenied onGoBack={() => setActiveTab("command")} />}</TabsContent>
           )}
+          <TabsContent value="bi" className="animate-fade-in">{canAccessTab("bi") ? <BiModule /> : <AccessDenied onGoBack={() => setActiveTab("command")} />}</TabsContent>
           <TabsContent value="ventes" className="space-y-6 animate-fade-in">
             {isFetching ? (
               <>
