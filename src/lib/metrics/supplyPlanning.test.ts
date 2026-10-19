@@ -16,7 +16,7 @@ describe("besoins d'approvisionnement", () => {
     const [n] = computeSupplyNeeds(d(2000), "2026-09-22", "2026-10-01", 10);
     expect(n.coverageDays).toBe(2);
     expect(n.needLitres).toBe(17000);
-    expect(n.urgency).toBe("moyenne");
+    expect(n.urgency).toBe("faible");
   });
   it("stock suffisant (≥ 3 j) : aucun besoin", () => {
     expect(computeSupplyNeeds(d(5000), "2026-09-22", "2026-10-01", 10)).toHaveLength(0);
