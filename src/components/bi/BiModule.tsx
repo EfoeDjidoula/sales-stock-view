@@ -21,6 +21,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { ChevronRight, Download, X } from "lucide-react";
 import { toast } from "sonner";
+import { SupplyPlanAI } from "./SupplyPlanAI";
 
 const fmt = (v: number | null | undefined, d = 0) => (v == null ? "—" : v.toLocaleString("fr-FR", { maximumFractionDigits: d }));
 const PRESETS = { "7d": 6, "30d": 29, "90d": 89 } as const;
@@ -200,6 +201,7 @@ export function BiModule() {
               <TabsTrigger value="trend">{t("Tendances")}</TabsTrigger>
               <TabsTrigger value="canaux">{t("Canaux")}</TabsTrigger>
               <TabsTrigger value="b2b">{t("Clients B2B")}</TabsTrigger>
+              <TabsTrigger value="ia_appro">{t("IA appro & transports")}</TabsTrigger>
             </TabsList>
 
             <TabsContent value="stations">
@@ -273,6 +275,9 @@ export function BiModule() {
                     {!view.clients.length && <TableRow><TableCell colSpan={4} className="text-center text-muted-foreground">{t("Aucun client B2B actif")}</TableCell></TableRow>}
                   </TableBody></Table>
               </CardContent></Card>
+            </TabsContent>
+            <TabsContent value="ia_appro">
+              {d && tenantId && <SupplyPlanAI d={d} tenantId={tenantId} countryIds={scope} start={start} end={e} />}
             </TabsContent>
           </Tabs>
         </>
