@@ -80,7 +80,7 @@ export const buildSaleFacts = (d: Dataset, f: Pick<Filters, "start" | "end">): S
   closures.forEach((c) => closed.add(`${c.closure_date}|${c.station_id}`));
   d.entries.forEach((e) => {
     if (e.entry_date < f.start || e.entry_date > f.end || closed.has(`${e.entry_date}|${e.station_id}`)) return;
-    const s = n(e.total_super_liters), g = n(e.total_gasoil_liters);
+    const s = Math.max(0, n(e.total_super_liters)), g = Math.max(0, n(e.total_gasoil_liters)); // saisies négatives ignorées
     if (s) push(e.entry_date, e.station_id, "super", s, s * FUEL_PRICES.SUPER);
     if (g) push(e.entry_date, e.station_id, "gasoil", g, g * FUEL_PRICES.GASOIL);
   });
@@ -211,4 +211,4 @@ export const previousRange = (start: string, end: string) => {
 
 /** Performance station 0–100 : volume relatif (50), conformité (25), disponibilité stock (25). */
 export const stationPerformance = (volume: number, maxVolume: number, compliance: number | null, ruptures: number) =>
-  Math.round((maxVolume ? (volume / maxVolume) * 50 : 0) + ((compliance ?? 0) / 100) * 25 + (ruptures ? 0 : 25));
+  Math.round((maxVolume > 0 ? (Math.max(0, volume) / maxVolume) * 50 : 0) + ((compliance ?? 0) / 100) * 25 + (ruptures ? 0 : 25));
