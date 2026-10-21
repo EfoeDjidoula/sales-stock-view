@@ -22,6 +22,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { ChevronRight, Download, X } from "lucide-react";
 import { toast } from "sonner";
 import { SupplyPlanAI } from "./SupplyPlanAI";
+import { LumatekAssistant } from "./LumatekAssistant";
 
 const fmt = (v: number | null | undefined, d = 0) => (v == null ? "—" : v.toLocaleString("fr-FR", { maximumFractionDigits: d }));
 const PRESETS = { "7d": 6, "30d": 29, "90d": 89 } as const;
@@ -202,6 +203,7 @@ export function BiModule() {
               <TabsTrigger value="canaux">{t("Canaux")}</TabsTrigger>
               <TabsTrigger value="b2b">{t("Clients B2B")}</TabsTrigger>
               <TabsTrigger value="ia_appro">{t("IA appro & transports")}</TabsTrigger>
+              <TabsTrigger value="assistant">{t("Assistant IA")}</TabsTrigger>
             </TabsList>
 
             <TabsContent value="stations">
@@ -278,6 +280,9 @@ export function BiModule() {
             </TabsContent>
             <TabsContent value="ia_appro">
               {d && tenantId && <SupplyPlanAI d={d} tenantId={tenantId} countryIds={scope} start={start} end={e} />}
+            </TabsContent>
+            <TabsContent value="assistant">
+              {d && tenantId && <LumatekAssistant d={d as any} tenantId={tenantId} countryIds={scope} countryName={country !== "all" ? cname(country) : undefined} start={start} end={e} />}
             </TabsContent>
           </Tabs>
         </>
