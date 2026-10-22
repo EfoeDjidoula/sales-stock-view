@@ -30,7 +30,7 @@ describe("prévisions déterministes", () => {
   });
   it("exclut le jour incomplet, les dates futures et les index négatifs", () => {
     const d = data(); d.entries.push({ station_id: "s1", entry_date: "2026-10-22", total_gasoil_liters: 99999, total_super_liters: 0 });
-    d.entries.at(-2)!.total_gasoil_liters = -100;
+    const previous = d.entries.at(-2); if (previous) previous.total_gasoil_liters = -100;
     const [f] = computeForecasts(d, options); expect(f.daily).toBe(100); expect(f.observedDays).toBe(29);
   });
   it("stock absent : pas de date de rupture inventée", () => {
