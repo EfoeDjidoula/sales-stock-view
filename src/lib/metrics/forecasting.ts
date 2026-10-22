@@ -33,11 +33,13 @@ function observations(d: Dataset, stationId: string, kind: Kind, start: string, 
   const volumes = new Map<string, number>();
   buildSaleFacts(d, { start, end }).filter((f) => f.stationId === stationId && f.kind === kind)
     .forEach((f) => volumes.set(f.date, (volumes.get(f.date) ?? 0) + Math.max(0, f.volume)));
-  const closed = new Set(d.closures.filter((c) => c.station_id === stationId && c.status !== "rejected" && c.closure_date >= start && c.closure_date <= end).map((c) => c.closure_date));
-  const dates = new Set(closed);
+  const closures = d.closures.filter((c) => c.station_id === stationId && c.status !== "rejected" && c.closure_date >= start && c.closure_date <= end);
+  const closed = new Set(closures.map((c) => c.closure_date));
+  const products = new Map(d.products.map((p) => [p.id, productKind(p)]));
+  const dates = new Set(closures.filter((c) => d.closureSales.some((s) => s.closure_id === c.id && products.get(s.product_id ?? "") === kind && Number.isFinite(s.volume) && s.volume >= 0)).map((c) => c.closure_date));
   d.entries.filter((e) => e.station_id === stationId && e.entry_date >= start && e.entry_date <= end).forEach((e) => {
     const v = kind === "super" ? e.total_super_liters : e.total_gasoil_liters;
-    if (v != null && Number.isFinite(v) && v >= 0) dates.add(e.entry_date);
+    if (!closed.has(e.entry_date) && v != null && Number.isFinite(v) && v >= 0) dates.add(e.entry_date);
   });
   return [...dates].sort().map((date) => ({ date, volume: volumes.get(date) ?? 0 }));
 }

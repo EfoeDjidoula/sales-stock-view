@@ -23,6 +23,16 @@ describe("prévisions déterministes", () => {
     const [f] = computeForecasts({ ...data(), entries: [] }, options);
     expect(f.daily).toBeNull(); expect(f.confidence).toBe("insufficient"); expect(f.needLitres).toBeNull();
   });
+  it("une clôture sans vente produit ne devient pas une observation à zéro", () => {
+    const d = data(); d.closures = [{ id: "c1", station_id: "s1", closure_date: "2026-10-21", status: "draft" }];
+    const [f] = computeForecasts(d, options);
+    expect(f.observedDays).toBe(29); expect(f.daily).toBe(100);
+  });
+  it("les clôtures priment sur les index sans double comptage", () => {
+    const d = data(); d.closures = [{ id: "c1", station_id: "s1", closure_date: "2026-10-21", status: "validated" }];
+    d.closureSales = [{ closure_id: "c1", product_id: "p1", volume: 400, amount: 288000 }];
+    const [f] = computeForecasts(d, options); expect(f.daily).toBe(110); expect(f.observedDays).toBe(30);
+  });
   it("distingue jours absents et jours observés à zéro", () => {
     const d = data(); d.entries = d.entries.slice(-3); d.entries[0].total_gasoil_liters = 0;
     const [f] = computeForecasts(d, options);
