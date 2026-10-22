@@ -9,3 +9,5 @@
 - [x] Transactions Fuel Cards dans la réconciliation et le Fraud Center (comparées aux encaissements/ventes).
 - [x] Onglet B2B du Command Center : impayés, factures encaissées, échéances, volume B2B par station.
 - [x] Alertes Fraud Center Fuel Cards : hors plafond, hors horaires, hors restrictions.
+- [ ] Prévisions BI : ventes/consommation, stock projeté, rupture probable et besoin ; confiance, sources et comparaison au réalisé.
+- [ ] Vérifier les calculs et le parcours connecté des prévisions.
