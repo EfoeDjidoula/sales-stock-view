@@ -23,6 +23,7 @@ import { ChevronRight, Download, X } from "lucide-react";
 import { toast } from "sonner";
 import { SupplyPlanAI } from "./SupplyPlanAI";
 import { LumatekAssistant } from "./LumatekAssistant";
+import { ForecastTab } from "./ForecastTab";
 
 const fmt = (v: number | null | undefined, d = 0) => (v == null ? "—" : v.toLocaleString("fr-FR", { maximumFractionDigits: d }));
 const PRESETS = { "7d": 6, "30d": 29, "90d": 89 } as const;
@@ -204,6 +205,7 @@ export function BiModule() {
               <TabsTrigger value="b2b">{t("Clients B2B")}</TabsTrigger>
               <TabsTrigger value="ia_appro">{t("IA appro & transports")}</TabsTrigger>
               <TabsTrigger value="assistant">{t("Assistant IA")}</TabsTrigger>
+              <TabsTrigger value="forecasts">{t("Prévisions & alertes")}</TabsTrigger>
             </TabsList>
 
             <TabsContent value="stations">
@@ -283,6 +285,9 @@ export function BiModule() {
             </TabsContent>
             <TabsContent value="assistant">
               {d && tenantId && <LumatekAssistant d={d as any} tenantId={tenantId} countryIds={scope} countryName={country !== "all" ? cname(country) : undefined} start={start} end={e} />}
+            </TabsContent>
+            <TabsContent value="forecasts">
+              {tenantId && <ForecastTab tenantId={tenantId} countryIds={scope} filters={filters} today={today} />}
             </TabsContent>
           </Tabs>
         </>

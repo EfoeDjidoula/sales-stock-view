@@ -3,9 +3,9 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Dataset } from "./index";
 
 /** Charge le jeu de données BI, toujours borné au tenant actif et aux pays autorisés (RLS en plus côté serveur). */
-export const useBiDataset = (tenantId: string | null | undefined, countryIds: string[], start: string, end: string) =>
+export const useBiDataset = (tenantId: string | null | undefined, countryIds: string[], start: string, end: string, strict = false) =>
   useQuery({
-    queryKey: ["bi-dataset", tenantId, countryIds, start, end],
+    queryKey: ["bi-dataset", tenantId, countryIds, start, end, strict],
     enabled: !!tenantId && countryIds.length > 0,
     queryFn: async (): Promise<Dataset & { zones: any[]; clients: any[]; countries: string[] }> => {
       const sb = supabase as any;
@@ -33,6 +33,10 @@ export const useBiDataset = (tenantId: string | null | undefined, countryIds: st
       ]);
       const [st] = res;
       if (st.error) throw st.error;
+      if (strict) {
+        // Forecasts must not interpret a failed sales/stock query as zero activity.
+        for (const i of [1, 2, 3, 6, 7]) if (res[i].error) throw res[i].error;
+      }
       const v = (i: number) => (res[i].error ? [] : res[i].data ?? []);
       return {
         stations: v(0), products: v(1), closures: v(2), closureSales: v(3), closurePayments: v(4), paymentMethods: v(5),
