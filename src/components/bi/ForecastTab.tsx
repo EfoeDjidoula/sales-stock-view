@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { useBiDataset } from "@/lib/metrics/useBiDataset";
-import { computeForecasts, shiftDay } from "@/lib/metrics/forecasting";
+import { computeForecasts, shiftDay, autoModel, MODELS } from "@/lib/metrics/forecasting";
 import type { Filters } from "@/lib/metrics";
 import { useLanguage } from "@/hooks/useLanguage";
 import { usePermissions } from "@/hooks/usePermissions";
@@ -28,8 +28,11 @@ function ForecastContent({ tenantId, countryIds, filters, today }: { tenantId: s
   const [historyDays, setHistoryDays] = useState(30);
   const [horizon, setHorizon] = useState(7);
   const [selected, setSelected] = useState("");
+  const [modelId, setModelId] = useState("auto");
+  const modelNames: Record<string, string> = { auto: l("Auto (meilleur au réalisé)", "Auto (best vs actuals)"), "historical-mean-v1": l("Moyenne historique", "Historical mean"), "holt-winters-v1": l("Lissage exponentiel Holt-Winters", "Holt-Winters exponential smoothing"), "sarima-100-010-7-v1": "SARIMA(1,0,0)(0,1,0)[7]" };
+  const model = MODELS.find((m) => m.id === modelId) ?? autoModel;
   const q = useBiDataset(tenantId, countryIds, shiftDay(today, -historyDays - 7), shiftDay(today, -1), true);
-  const forecasts = useMemo(() => q.data ? computeForecasts(q.data, { asOf: today, historyDays, horizon, filters }) : [], [q.data, today, historyDays, horizon, filters.stationId, filters.zoneId, filters.kind]);
+  const forecasts = useMemo(() => q.data ? computeForecasts(q.data, { asOf: today, historyDays, horizon, filters, model }) : [], [model, q.data, today, historyDays, horizon, filters.stationId, filters.zoneId, filters.kind]);
   const current = forecasts.find((f) => `${f.stationId}|${f.kind}` === selected) ?? forecasts[0];
   const alerts = forecasts.filter((f) => f.daysToRupture != null && f.daysToRupture <= horizon);
   const confidence = { insufficient: l("Insuffisante", "Insufficient"), low: l("Faible", "Low"), medium: l("Modérée", "Moderate"), high: l("Élevée", "High") };
@@ -40,6 +43,8 @@ function ForecastContent({ tenantId, countryIds, filters, today }: { tenantId: s
       <div className="space-y-1"><h3 className="font-display text-xl font-semibold flex items-center gap-2"><TrendingUp className="h-5 w-5 text-primary" />{l("Prévisions & alertes", "Forecasts & alerts")}</h3>
         <p className="text-sm text-muted-foreground">{l("Estimations à partir du", "Estimates from")} {date(today)} · {l("sans réception future supposée", "no assumed future receipts")}</p></div>
       <div className="flex flex-wrap gap-3">
+        <label className="space-y-1 text-xs text-muted-foreground">{l("Modèle", "Model")}
+          <Select value={modelId} onValueChange={setModelId}><SelectTrigger className="w-56" aria-label={l("Modèle de prévision", "Forecast model")}><SelectValue /></SelectTrigger><SelectContent>{Object.entries(modelNames).map(([id, name]) => <SelectItem key={id} value={id}>{name}</SelectItem>)}</SelectContent></Select></label>
         <label className="space-y-1 text-xs text-muted-foreground">{l("Historique", "History")}
           <Select value={String(historyDays)} onValueChange={(v) => setHistoryDays(Number(v))}><SelectTrigger className="w-36" aria-label={l("Historique de prévision", "Forecast history")}><SelectValue /></SelectTrigger><SelectContent>{[7, 14, 30, 90].map((n) => <SelectItem key={n} value={String(n)}>{n} {l("jours", "days")}</SelectItem>)}</SelectContent></Select></label>
         <label className="space-y-1 text-xs text-muted-foreground">{l("Horizon", "Horizon")}
@@ -73,7 +78,8 @@ function ForecastContent({ tenantId, countryIds, filters, today }: { tenantId: s
           <div><dt className="text-muted-foreground">{l("Stock actuel", "Current stock")}</dt><dd>{fmt(current.stock)} L</dd></div>
           <div><dt className="text-muted-foreground">{l("Écart absolu moyen (test)", "Mean absolute error (test)")}</dt><dd>{fmt(current.mae, 1)} L/{l("jour", "day")}</dd></div>
         </dl>
-        <p className="text-xs text-muted-foreground">{l("Sources : clôtures non rejetées, sinon index non négatifs ; stock théorique du registre. Jours absents exclus, jour en cours exclu. Modèle : moyenne historique (v1). Confiance qualitative selon volume d’historique, couverture, récence et stabilité ; ce n’est pas une probabilité garantie.", "Sources: non-rejected closures, otherwise nonnegative indexes; theoretical ledger stock. Missing days and current day excluded. Model: historical mean (v1). Qualitative confidence based on history size, coverage, recency and stability; not a guaranteed probability.")}</p>
+        <p className="text-xs text-muted-foreground">{l("Sources : clôtures non rejetées, sinon index non négatifs ; stock théorique du registre. Jours absents exclus, jour en cours exclu. Modèle : " + (modelNames[current.modelId] ?? current.modelId) + ". Paramètres ajustés sur l’historique, modèle Auto choisi par écart au réalisé (7 derniers jours retenus). Confiance qualitative selon volume d’historique, couverture, récence et stabilité ; ce n’est pas une probabilité garantie.", "Sources: non-rejected closures, otherwise nonnegative indexes; theoretical ledger stock. Missing days and current day excluded. Model: " + (modelNames[current.modelId] ?? current.modelId) + ". Parameters fitted on history; Auto picks the model with the lowest error vs the last 7 held-out days. Qualitative confidence based on history size, coverage, recency and stability; not a guaranteed probability.")}</p>
+        {Object.keys(current.params).length > 0 && <div className="flex flex-wrap gap-2 text-xs" aria-label={l("Paramètres ajustés", "Fitted parameters")}>{Object.entries(current.params).map(([k, v]) => <Badge key={k} variant="outline">{k.startsWith("mae:") ? `${l("Écart", "MAE")} ${modelNames[k.slice(4)] ?? k.slice(4)}` : k === "selected" ? l("Retenu", "Selected") : k} : {k === "selected" ? modelNames[String(v)] ?? v : v}</Badge>)}</div>}
         <h5 className="text-sm font-medium">{l("Stock projeté en fin de journée", "Projected end-of-day stock")}</h5>
         {current.projections.length ? <div className="h-64 w-full"><ResponsiveContainer><LineChart data={current.projections}>
           <CartesianGrid stroke="hsl(var(--border))" strokeDasharray="3 3" /><XAxis dataKey="date" tickFormatter={(v) => v.slice(5)} stroke="hsl(var(--muted-foreground))" /><YAxis unit=" L" stroke="hsl(var(--muted-foreground))" /><Tooltip /><Legend />
