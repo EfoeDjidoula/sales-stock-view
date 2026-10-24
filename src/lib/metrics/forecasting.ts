@@ -14,7 +14,7 @@ export type Forecast = {
   confidence: "insufficient" | "low" | "medium" | "high";
   daily: number | null; stock: number | null; capacity: number; horizon: number;
   consumption: number | null; needLitres: number | null; daysToRupture: number | null; ruptureAt: string | null;
-  projections: Projection[]; backtest: Backtest[]; mae: number | null;
+  projections: Projection[]; backtest: Backtest[]; mae: number | null; params: Record<string, number | string>;
 };
 
 function observations(d: Dataset, stationId: string, kind: Kind, start: string, end: string): Observation[] {
@@ -35,7 +35,7 @@ function observations(d: Dataset, stationId: string, kind: Kind, start: string, 
 export function computeForecasts(d: Dataset, options: {
   asOf: string; historyDays: number; horizon: number; filters?: Pick<Filters, "stationId" | "zoneId" | "kind">; model?: ForecastModel;
 }): Forecast[] {
-  const { asOf, filters = {}, model = historicalMeanModel } = options;
+  const { asOf, filters = {}, model = autoModel } = options;
   const historyDays = Math.max(7, Math.min(90, Math.floor(options.historyDays)));
   const horizon = Math.max(1, Math.min(30, Math.floor(options.horizon)));
   const historyEnd = shiftDay(asOf, -1), historyStart = shiftDay(asOf, -historyDays);
@@ -46,7 +46,7 @@ export function computeForecasts(d: Dataset, options: {
     buildSaleFacts(d, { start: historyStart, end: historyEnd }).filter((f) => f.stationId === station.id && f.kind !== "other").forEach((f) => kinds.add(f.kind));
     return [...kinds].filter((k) => !filters.kind || k === filters.kind).map((kind): Forecast => {
       const history = observations(d, station.id, kind, historyStart, historyEnd);
-      const prediction = model.predict(history);
+      const prediction = model.predict(history, horizon);
       const levels = d.levels.filter((l) => l.station_id === station.id && products.get(l.product_id ?? "") === kind);
       const stock = levels.length && levels.every((l) => l.theoretical != null && Number.isFinite(l.theoretical)) ? levels.reduce((sum, l) => sum + Math.max(0, l.theoretical ?? 0), 0) : null;
       const capacity = levels.reduce((sum, l) => sum + Math.max(0, l.capacity ?? 0), 0);
@@ -55,26 +55,26 @@ export function computeForecasts(d: Dataset, options: {
       const coverage = history.length / historyDays;
       const stability = prediction && prediction.daily > 0 ? (prediction.high - prediction.daily) / (2 * prediction.daily) : Infinity;
       const confidence = !prediction ? "insufficient" : history.length >= 21 && coverage >= 0.8 && stability <= 0.5 && recent ? "high" : history.length >= 7 && coverage >= 0.5 && recent ? "medium" : "low";
-      const consumption = prediction ? prediction.daily * horizon : null;
+      const consumption = prediction ? prediction.path.reduce((a, b) => a + b, 0) : null;
       const daysToRupture = stock != null && prediction ? stock === 0 ? 0 : prediction.daily > 0 ? stock / prediction.daily : null : null;
       const ruptureAt = daysToRupture != null && daysToRupture <= 365 ? new Date(Date.parse(`${asOf}T00:00:00Z`) + daysToRupture * 86400000).toISOString() : null;
       const projections = prediction ? Array.from({ length: horizon }, (_, i) => ({
-        date: shiftDay(asOf, i), sales: prediction.daily, low: prediction.low, high: prediction.high,
-        stock: stock == null ? null : Math.max(0, stock - prediction.daily * (i + 1)),
+        date: shiftDay(asOf, i), sales: prediction.path[i], low: Math.max(0, prediction.path[i] - (prediction.daily - prediction.low)), high: prediction.path[i] + (prediction.high - prediction.daily),
+        stock: stock == null ? null : Math.max(0, stock - prediction.path.slice(0, i + 1).reduce((a, b) => a + b, 0)),
         stockLow: stock == null ? null : Math.max(0, stock - prediction.high * (i + 1)),
         stockHigh: stock == null ? null : Math.max(0, stock - prediction.low * (i + 1)),
       })) : [];
       // Holdout: each forecast is fitted ONLY to dates before the comparison period.
       const cutoff = shiftDay(asOf, -7);
       const training = observations(d, station.id, kind, shiftDay(cutoff, -historyDays), shiftDay(cutoff, -1));
-      const baseline = model.predict(training);
+      const baseline = model.predict(training, 7);
       const actuals = new Map(history.map((o) => [o.date, o.volume]));
       const backtest = baseline ? Array.from({ length: 7 }, (_, i) => {
         const date = shiftDay(cutoff, i), actual = actuals.get(date) ?? null;
-        return { date, predicted: baseline.daily, actual, error: actual == null ? null : actual - baseline.daily };
+        return { date, predicted: baseline.path[i], actual, error: actual == null ? null : actual - baseline.path[i] };
       }) : [];
       const errors = backtest.flatMap((b) => b.error == null ? [] : [Math.abs(b.error)]);
-      return { stationId: station.id, stationName: station.name, countryId: station.country_id, kind, modelId: model.id,
+      return { stationId: station.id, stationName: station.name, countryId: station.country_id, kind, modelId: String(prediction?.params.selected ?? model.id), params: prediction?.params ?? {},
         historyStart, historyEnd, observedDays: history.length, calendarDays: historyDays, lastObservation, confidence,
         daily: prediction?.daily ?? null, stock, capacity, horizon, consumption,
         needLitres: stock != null && consumption != null ? Math.max(0, consumption - stock) : null,
