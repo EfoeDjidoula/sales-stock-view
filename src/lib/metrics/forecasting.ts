@@ -1,23 +1,11 @@
 /** Read-only, replaceable forecast models; missing observations are never zero sales. */
-import { mean, sampleStandardDeviation } from "simple-statistics";
+import { mean } from "simple-statistics";
 import { buildSaleFacts, daysBetween, productKind, type Dataset, type Filters, type Kind } from "./index";
+import { autoModel, historicalMeanModel, type ForecastModel, type Observation } from "./forecastModels";
+export { autoModel, historicalMeanModel, holtWintersModel, sarimaModel, MODELS } from "./forecastModels";
+export type { ForecastModel, Observation } from "./forecastModels";
 
 export const shiftDay = (date: string, days: number) => new Date(Date.parse(`${date}T00:00:00Z`) + days * 86400000).toISOString().slice(0, 10);
-export type Observation = { date: string; volume: number };
-export type ForecastModel = {
-  id: string;
-  predict: (history: Observation[]) => { daily: number; low: number; high: number } | null;
-};
-/** Empirical dispersion band, not a calibrated probability interval. */
-export const historicalMeanModel: ForecastModel = {
-  id: "historical-mean-v1",
-  predict(history) {
-    if (history.length < 3) return null;
-    const values = history.map((x) => x.volume);
-    const daily = mean(values), spread = sampleStandardDeviation(values);
-    return { daily, low: Math.max(0, daily - 2 * spread), high: daily + 2 * spread };
-  },
-};
 export type Projection = { date: string; sales: number; low: number; high: number; stock: number | null; stockLow: number | null; stockHigh: number | null };
 export type Backtest = { date: string; predicted: number; actual: number | null; error: number | null };
 export type Forecast = {
