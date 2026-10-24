@@ -14,6 +14,140 @@ export type Database = {
   }
   public: {
     Tables: {
+      api_keys: {
+        Row: {
+          allowed_countries: string[]
+          created_at: string
+          created_by: string | null
+          expires_at: string | null
+          id: string
+          integration: string | null
+          key_hash: string
+          last_used_at: string | null
+          name: string
+          prefix: string
+          rate_limit_per_minute: number
+          revoke_reason: string | null
+          revoked_at: string | null
+          revoked_by: string | null
+          rotated_from: string | null
+          scopes: string[]
+          status: string
+          tenant_id: string
+        }
+        Insert: {
+          allowed_countries?: string[]
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          integration?: string | null
+          key_hash: string
+          last_used_at?: string | null
+          name: string
+          prefix: string
+          rate_limit_per_minute?: number
+          revoke_reason?: string | null
+          revoked_at?: string | null
+          revoked_by?: string | null
+          rotated_from?: string | null
+          scopes?: string[]
+          status?: string
+          tenant_id: string
+        }
+        Update: {
+          allowed_countries?: string[]
+          created_at?: string
+          created_by?: string | null
+          expires_at?: string | null
+          id?: string
+          integration?: string | null
+          key_hash?: string
+          last_used_at?: string | null
+          name?: string
+          prefix?: string
+          rate_limit_per_minute?: number
+          revoke_reason?: string | null
+          revoked_at?: string | null
+          revoked_by?: string | null
+          rotated_from?: string | null
+          scopes?: string[]
+          status?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "api_keys_rotated_from_fkey"
+            columns: ["rotated_from"]
+            isOneToOne: false
+            referencedRelation: "api_keys"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "api_keys_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      api_request_logs: {
+        Row: {
+          api_key_id: string | null
+          api_version: string
+          created_at: string
+          duration_ms: number | null
+          endpoint: string
+          error: string | null
+          id: number
+          ip: string | null
+          method: string
+          rows_returned: number | null
+          status_code: number
+          tenant_id: string | null
+          user_agent: string | null
+        }
+        Insert: {
+          api_key_id?: string | null
+          api_version?: string
+          created_at?: string
+          duration_ms?: number | null
+          endpoint: string
+          error?: string | null
+          id?: never
+          ip?: string | null
+          method: string
+          rows_returned?: number | null
+          status_code: number
+          tenant_id?: string | null
+          user_agent?: string | null
+        }
+        Update: {
+          api_key_id?: string | null
+          api_version?: string
+          created_at?: string
+          duration_ms?: number | null
+          endpoint?: string
+          error?: string | null
+          id?: never
+          ip?: string | null
+          method?: string
+          rows_returned?: number | null
+          status_code?: number
+          tenant_id?: string | null
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "api_request_logs_api_key_id_fkey"
+            columns: ["api_key_id"]
+            isOneToOne: false
+            referencedRelation: "api_keys"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_logs: {
         Row: {
           action: string
@@ -6958,6 +7092,109 @@ export type Database = {
         }
         Relationships: []
       }
+      webhook_deliveries: {
+        Row: {
+          attempts: number
+          country_id: string | null
+          created_at: string
+          delivered_at: string | null
+          endpoint_id: string
+          event: string
+          id: string
+          last_error: string | null
+          next_attempt_at: string
+          payload: Json
+          response_code: number | null
+          status: string
+          tenant_id: string
+        }
+        Insert: {
+          attempts?: number
+          country_id?: string | null
+          created_at?: string
+          delivered_at?: string | null
+          endpoint_id: string
+          event: string
+          id?: string
+          last_error?: string | null
+          next_attempt_at?: string
+          payload: Json
+          response_code?: number | null
+          status?: string
+          tenant_id: string
+        }
+        Update: {
+          attempts?: number
+          country_id?: string | null
+          created_at?: string
+          delivered_at?: string | null
+          endpoint_id?: string
+          event?: string
+          id?: string
+          last_error?: string | null
+          next_attempt_at?: string
+          payload?: Json
+          response_code?: number | null
+          status?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "webhook_deliveries_endpoint_id_fkey"
+            columns: ["endpoint_id"]
+            isOneToOne: false
+            referencedRelation: "webhook_endpoints"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      webhook_endpoints: {
+        Row: {
+          allowed_countries: string[]
+          created_at: string
+          created_by: string | null
+          events: string[]
+          id: string
+          name: string
+          secret: string
+          status: string
+          tenant_id: string
+          url: string
+        }
+        Insert: {
+          allowed_countries?: string[]
+          created_at?: string
+          created_by?: string | null
+          events?: string[]
+          id?: string
+          name: string
+          secret: string
+          status?: string
+          tenant_id: string
+          url: string
+        }
+        Update: {
+          allowed_countries?: string[]
+          created_at?: string
+          created_by?: string | null
+          events?: string[]
+          id?: string
+          name?: string
+          secret?: string
+          status?: string
+          tenant_id?: string
+          url?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "webhook_endpoints_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       logistics_alerts: {
@@ -7061,6 +7298,27 @@ export type Database = {
       }
     }
     Functions: {
+      api_key_create: {
+        Args: {
+          _countries: string[]
+          _expires: string
+          _integration: string
+          _name: string
+          _rate: number
+          _rotated_from?: string
+          _scopes: string[]
+          _tenant: string
+        }
+        Returns: Json
+      }
+      api_key_revoke: {
+        Args: { _id: string; _reason: string }
+        Returns: undefined
+      }
+      api_key_rotate: {
+        Args: { _grace_hours?: number; _id: string }
+        Returns: Json
+      }
       audit_business_event: {
         Args: {
           _action: string
@@ -7276,6 +7534,30 @@ export type Database = {
       }
       tenant_license_state: { Args: { _tenant_id: string }; Returns: Json }
       tenant_write_allowed: { Args: { _tenant_id: string }; Returns: boolean }
+      webhook_create: {
+        Args: {
+          _countries: string[]
+          _events: string[]
+          _name: string
+          _tenant: string
+          _url: string
+        }
+        Returns: Json
+      }
+      webhook_enqueue: {
+        Args: {
+          _country: string
+          _event: string
+          _payload: Json
+          _tenant: string
+        }
+        Returns: number
+      }
+      webhook_set_status: {
+        Args: { _id: string; _status: string }
+        Returns: undefined
+      }
+      webhook_test: { Args: { _id: string }; Returns: undefined }
     }
     Enums: {
       app_role: "admin" | "manager" | "operator"
