@@ -43,7 +43,9 @@ export const computeSupplyNeeds = (
     const avgDaily = (sales.get(k) ?? 0) / Math.max(1, days);
     // Prévision BI : quand le modèle a assez d'historique, le rythme prévu remplace la moyenne constatée.
     const fc = forecasts?.get(k);
-    const forecastDaily = fc && fc.confidence !== "insufficient" && fc.daily != null && Number.isFinite(fc.daily) && fc.daily >= 0 ? fc.daily : null;
+    // Seules les prévisions fiables (historique suffisant et récent) remplacent la moyenne constatée.
+    const reliable = fc && (fc.confidence === "medium" || fc.confidence === "high");
+    const forecastDaily = reliable && fc!.daily != null && Number.isFinite(fc!.daily) && fc!.daily! >= 0 ? fc!.daily! : null;
     const effectiveDaily = forecastDaily ?? avgDaily;
     const inTransit = transit.get(k) ?? 0;
     const coverageDays = effectiveDaily > 0 ? (a.stock + inTransit) / effectiveDaily : null;
