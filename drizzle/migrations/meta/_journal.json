@@ -309,6 +309,13 @@
       "when": 1793091303808,
       "tag": "0043_workflow_approvals",
       "breakpoints": true
+    },
+    {
+      "idx": 44,
+      "version": "7",
+      "when": 1793091611569,
+      "tag": "0044_workflow_auto_escalate",
+      "breakpoints": true
     }
   ]
 }

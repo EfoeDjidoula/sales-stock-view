@@ -8195,6 +8195,7 @@ export type Database = {
         Args: { _action: string; _comment: string; _id: string }
         Returns: string
       }
+      workflow_auto_escalate: { Args: never; Returns: number }
       workflow_can_decide: { Args: { _id: string }; Returns: boolean }
       workflow_create_request: {
         Args: {
