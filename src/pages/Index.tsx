@@ -129,6 +129,7 @@ const TAB_PERMISSIONS: Record<string, AppRole[]> = {
   exercices: ["admin"],
   droits: ["admin"],
   societe: ["admin"],
+  workflows: ["admin", "manager"],
 };
 
 // Metadata (label + icon) for each tab
