@@ -1,3 +1,4 @@
+import WorkflowModule from "@/components/workflow/WorkflowModule";
 import HseModule from "@/components/hse/HseModule";
 import AssetsMaintenanceModule from "@/components/maintenance/AssetsMaintenanceModule";
 import { useState, useMemo, useEffect, useRef } from "react";
@@ -161,6 +162,7 @@ const TAB_META: Record<string, { label: string; icon: typeof TrendingUp }> = {
   exercices: { label: "Exercices", icon: BookOpen },
   droits: { label: "Gestion des droits", icon: Users },
   societe: { label: "Paramètres client", icon: Building2 },
+  workflows: { label: "Workflows & approbations", icon: ShieldCheck },
 };
 
 // Permission RBAC (au moins une) requise pour chaque onglet ; null = toujours visible
@@ -194,6 +196,7 @@ const TAB_RBAC: Record<string, string[] | null> = {
   exercices: ["fiscal_years.view"],
   droits: ["users.view", "users.administer"],
   societe: ["settings.administer", "settings.edit"],
+  workflows: ["workflows.view", "workflows.manage"],
 };
 
 // Module (feature flag) requis pour chaque onglet
@@ -235,7 +238,7 @@ const TAB_GROUPS: {
   { id: "config", label: "Configuration", icon: Settings2, tabs: ["stations", "maintenance", "hse", "perequation", "structure_prix", "proforma"] },
   { id: "tiers", label: "Tiers", icon: Contact, tabs: ["clients", "b2b", "fuel_cards", "fournisseurs"] },
   { id: "support", label: "Support", icon: LifeBuoy, tabs: ["support"] },
-  { id: "admin", label: "Administration", icon: ShieldCheck, tabs: ["exercices", "droits", "societe"] },
+  { id: "admin", label: "Administration", icon: ShieldCheck, tabs: ["workflows", "exercices", "droits", "societe"] },
 ];
 
 
@@ -627,6 +630,9 @@ const Index = () => {
 
           <TabsContent value="maintenance" className="animate-fade-in">
             {canAccessTab("maintenance") ? <AssetsMaintenanceModule /> : <AccessDenied onGoBack={() => setActiveTab(allowedTabs[0] ?? "ventes")} />}
+          </TabsContent>
+          <TabsContent value="workflows" className="animate-fade-in">
+            {canAccessTab("workflows") ? <WorkflowModule /> : <AccessDenied onGoBack={() => setActiveTab(allowedTabs[0] ?? "ventes")} />}
           </TabsContent>
           <TabsContent value="hse" className="animate-fade-in">
             {canAccessTab("hse") ? <HseModule /> : <AccessDenied onGoBack={() => setActiveTab(allowedTabs[0] ?? "ventes")} />}
