@@ -82,7 +82,10 @@ export function SupplyPlanAI({ d, tenantId, countryIds, start, end }: { d: Datas
               {needs.map((n) => (
                 <TableRow key={n.stationId + n.kind}>
                   <TableCell className="font-medium">{n.stationName}</TableCell><TableCell>{n.kind === "gasoil" ? "Gasoil" : "Super"}</TableCell>
-                  <TableCell className="text-right">{fmt(n.stock)} / {fmt(n.capacity)}</TableCell><TableCell className="text-right">{fmt(n.avgDaily)}</TableCell>
+<TableCell className="text-right">{fmt(n.stock)} / {fmt(n.capacity)}</TableCell>
+                  <TableCell className="text-right" title={n.forecastDaily != null ? `${t("Prévision")} ${n.forecastModel} · ${t("confiance")} ${t(n.forecastConfidence ?? "low")} · ${t("constaté")} ${fmt(n.avgDaily)} L/j` : t("Moyenne des ventes constatées")}>
+                    {n.forecastDaily != null ? `${fmt(n.forecastDaily)} ⤳` : fmt(n.avgDaily)}
+                  </TableCell>
                   <TableCell className="text-right">{n.coverageDays == null ? t("sans ventes") : `${fmt(n.coverageDays, 1)} j`}</TableCell><TableCell className="text-right">{fmt(n.inTransit)}</TableCell>
                   <TableCell className="text-right font-semibold">{fmt(n.needLitres)}</TableCell>
                   <TableCell><Badge variant={n.urgency === "haute" ? "destructive" : n.urgency === "moyenne" ? "default" : "secondary"}>{t(n.urgency)}</Badge></TableCell>

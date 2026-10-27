@@ -24,4 +24,15 @@ describe("besoins d'approvisionnement", () => {
   it("les approvisionnements en cours sont déduits", () => {
     expect(computeSupplyNeeds(d(500, 5000), "2026-09-22", "2026-10-01", 10)).toHaveLength(0);
   });
+  it("la prévision BI remplace la moyenne constatée (stock OK historiquement, insuffisant au rythme prévu)", () => {
+    const forecasts = new Map([["s|super", { daily: 3000, confidence: "medium", daysToRupture: 1.7, modelId: "holt-winters" }]]);
+    const [n] = computeSupplyNeeds(d(5000), "2026-09-22", "2026-10-01", 10, forecasts);
+    expect(n.forecastDaily).toBe(3000);
+    expect(n.coverageDays).toBeCloseTo(5000 / 3000, 6);
+    expect(n.urgency).toBe("haute"); // rupture prévue ≤ 2 j
+  });
+  it("une prévision « insufficient » est ignorée : retour à la moyenne des ventes", () => {
+    const forecasts = new Map([["s|super", { daily: 9000, confidence: "insufficient", daysToRupture: 0.5, modelId: "auto" }]]);
+    expect(computeSupplyNeeds(d(5000), "2026-09-22", "2026-10-01", 10, forecasts)).toHaveLength(0);
+  });
 });
