@@ -3110,8 +3110,10 @@ export type Database = {
           last_success_at: string | null
           last_sync_at: string | null
           name: string
+          next_run_at: string | null
           provider: string
           status: string
+          sync_interval_minutes: number | null
           tenant_id: string
           updated_at: string
         }
@@ -3132,8 +3134,10 @@ export type Database = {
           last_success_at?: string | null
           last_sync_at?: string | null
           name: string
+          next_run_at?: string | null
           provider: string
           status?: string
+          sync_interval_minutes?: number | null
           tenant_id: string
           updated_at?: string
         }
@@ -3154,8 +3158,10 @@ export type Database = {
           last_success_at?: string | null
           last_sync_at?: string | null
           name?: string
+          next_run_at?: string | null
           provider?: string
           status?: string
+          sync_interval_minutes?: number | null
           tenant_id?: string
           updated_at?: string
         }
@@ -3248,6 +3254,24 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      integration_scheduler_config: {
+        Row: {
+          key: string
+          updated_at: string
+          value: string
+        }
+        Insert: {
+          key: string
+          updated_at?: string
+          value: string
+        }
+        Update: {
+          key?: string
+          updated_at?: string
+          value?: string
+        }
+        Relationships: []
       }
       integration_sync_jobs: {
         Row: {

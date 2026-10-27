@@ -11,7 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, KeyRound, Play, Plug, RefreshCw, RotateCw, Trash2 } from "lucide-react";
+import { Clock, Plus, KeyRound, Play, Plug, RefreshCw, RotateCw, Trash2 } from "lucide-react";
 
 export const CATEGORIES: Record<string, string> = {
   erp: "ERP / comptabilité", banking: "Banques", mobile_money: "Mobile Money", pos: "POS / TPE",
@@ -26,6 +26,7 @@ const SUGGESTED: Record<string, string[]> = {
 const STATUS_VARIANT: Record<string, string> = { active: "bg-emerald-500/15 text-emerald-300", error: "bg-destructive/20 text-destructive", paused: "bg-amber-500/15 text-amber-300", draft: "bg-muted text-muted-foreground", disabled: "bg-muted text-muted-foreground" };
 const db = supabase as any;
 const fmt = (d?: string | null) => (d ? new Date(d).toLocaleString("fr-FR") : "—");
+const INTERVAL_LABELS: Record<number, string> = { 60: "Toutes les heures", 120: "Toutes les 2 h", 240: "Toutes les 4 h", 360: "Toutes les 6 h", 720: "Toutes les 12 h", 1440: "Une fois par jour" };
 const errMsg = (e: any) => e?.message ?? String(e);
 
 function useData() {
@@ -99,9 +100,9 @@ export function LumatekIntegrations() {
       </Select>
       <Card><CardContent className="overflow-x-auto p-0">
         <Table>
-          <TableHeader><TableRow><TableHead>Connecteur</TableHead><TableHead>Catégorie</TableHead><TableHead>Client / pays</TableHead><TableHead>Statut</TableHead><TableHead>Identifiants</TableHead><TableHead>Dernière synchro</TableHead><TableHead>Erreur</TableHead><TableHead /></TableRow></TableHeader>
+          <TableHeader><TableRow><TableHead>Connecteur</TableHead><TableHead>Catégorie</TableHead><TableHead>Client / pays</TableHead><TableHead>Statut</TableHead><TableHead>Identifiants</TableHead><TableHead>Dernière synchro</TableHead><TableHead>Prochaine synchro</TableHead><TableHead>Erreur</TableHead><TableHead /></TableRow></TableHeader>
           <TableBody>
-            {list.length === 0 && <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground">Aucun connecteur</TableCell></TableRow>}
+            {list.length === 0 && <TableRow><TableCell colSpan={9} className="text-center text-muted-foreground">Aucun connecteur</TableCell></TableRow>}
             {list.map((c: any) => (
               <TableRow key={c.id} className="cursor-pointer" onClick={() => setSel(c.id)}>
                 <TableCell><div className="font-medium">{c.name}</div><div className="font-mono text-xs text-muted-foreground">{c.provider} · {c.environment}</div></TableCell>
@@ -110,6 +111,7 @@ export function LumatekIntegrations() {
                 <TableCell><Badge className={STATUS_VARIANT[c.status]}>{c.status}</Badge></TableCell>
                 <TableCell className="text-xs">{c.has_credentials ? c.credential_hint : <span className="text-muted-foreground">Non configurés</span>}</TableCell>
                 <TableCell className="text-xs">{fmt(c.last_sync_at)}</TableCell>
+                <TableCell className="text-xs">{c.sync_interval_minutes ? <><Clock className="mr-1 inline h-3 w-3 text-muted-foreground" />{fmt(c.next_run_at)}<div className="text-muted-foreground">{INTERVAL_LABELS[c.sync_interval_minutes]}</div></> : <span className="text-muted-foreground">Manuelle</span>}</TableCell>
                 <TableCell className="max-w-48 truncate text-xs text-destructive">{c.last_error ?? ""}</TableCell>
                 <TableCell onClick={(e) => e.stopPropagation()} className="flex gap-1">
                   <Button size="icon" variant="ghost" title="Identifiants" onClick={() => setCred(c.id)}><KeyRound className="h-4 w-4" /></Button>
@@ -202,6 +204,48 @@ function CredentialsDialog({ id, onClose, onSaved }: any) {
   );
 }
 
+function ScheduleSection({ c, act }: any) {
+  const [value, setValue] = useState<string>(c.sync_interval_minutes ? String(c.sync_interval_minutes) : "off");
+  const [busy, setBusy] = useState(false);
+  const save = async (v: string) => {
+    setBusy(true);
+    const r = await act("set_schedule", c.id, { interval_minutes: v === "off" ? null : Number(v) });
+    setBusy(false);
+    if (r) { setValue(v); toast.success(v === "off" ? "Planification désactivée" : `Synchronisation automatique : ${INTERVAL_LABELS[Number(v)]}`); }
+  };
+  const upcoming = c.sync_interval_minutes && c.next_run_at
+    ? Array.from({ length: 5 }, (_, i) => new Date(new Date(c.next_run_at).getTime() + i * c.sync_interval_minutes * 60000))
+    : [];
+  return (
+    <div className="space-y-2 rounded border border-border p-2">
+      <h4 className="flex items-center gap-1 text-sm font-semibold"><Clock className="h-4 w-4" />Planification automatique</h4>
+      <div className="flex gap-1">
+        <Select value={value} disabled={busy} onValueChange={save}>
+          <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="off">Désactivée (manuelle)</SelectItem>
+            {Object.entries(INTERVAL_LABELS).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      </div>
+      {c.sync_interval_minutes ? (
+        <>
+          <p className="text-xs text-muted-foreground">
+            Prochaine exécution : <b className="text-foreground">{fmt(c.next_run_at)}</b>
+            {c.status !== "active" && <span className="text-amber-400"> — le connecteur doit être actif pour qu'elle parte.</span>}
+          </p>
+          {upcoming.length > 0 && (
+            <div className="space-y-0.5">
+              <p className="text-xs font-medium text-muted-foreground">Prochaines exécutions prévues</p>
+              {upcoming.map((d, i) => <p key={i} className="font-mono text-xs text-muted-foreground">{d.toLocaleString("fr-FR")}</p>)}
+            </div>
+          )}
+        </>
+      ) : <p className="text-xs text-muted-foreground">Aucune exécution automatique. Utilisez « Synchroniser » pour lancer manuellement.</p>}
+    </div>
+  );
+}
+
 function ConnectorDetail({ c, data, act, onClose }: any) {
   const [m, setM] = useState({ entity: "product", external_value: "", internal_value: "" });
   const jobs = data.jobs.filter((j: any) => j.connector_id === c.id);
@@ -235,6 +279,7 @@ function ConnectorDetail({ c, data, act, onClose }: any) {
             </div>
           ))}
           {!maps.length && <p className="text-xs text-muted-foreground">Aucun mapping.</p>}
+          <ScheduleSection c={c} act={act} />
         </div>
         <div className="space-y-2">
           <h4 className="text-sm font-semibold">Jobs de synchronisation</h4>
