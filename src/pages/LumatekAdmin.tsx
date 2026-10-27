@@ -100,6 +100,8 @@ const LumatekAdmin = () => {
         return <SupportTickets mode="lumatek" />;
       case "api":
         return <LumatekApiHub />;
+      case "integrations":
+        return <LumatekIntegrations />;
       case "journal":
         return <LumatekAuditLog />;
       case "parametres":
