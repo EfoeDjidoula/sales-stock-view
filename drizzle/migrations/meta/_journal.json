@@ -288,6 +288,13 @@
       "when": 1793089976953,
       "tag": "0040_integration_sync_schedule",
       "breakpoints": true
+    },
+    {
+      "idx": 41,
+      "version": "7",
+      "when": 1793090035762,
+      "tag": "0041_integration_scheduler_config",
+      "breakpoints": true
     }
   ]
 }

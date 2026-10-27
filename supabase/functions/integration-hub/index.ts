@@ -98,7 +98,8 @@ Deno.serve(async (req) => {
 
   // Scheduled runner: invoked by the hourly database scheduler with a shared secret, no user session.
   if (body.action === "tick") {
-    if (req.headers.get("x-integration-cron-secret") !== Deno.env.get("INTEGRATIONS_CRON_SECRET")) return json(401, { error: "Non autorisé" });
+    const { data: cfg } = await db.from("integration_scheduler_config").select("value").eq("key", "cron_secret").maybeSingle();
+    if (!cfg?.value || req.headers.get("x-integration-cron-secret") !== cfg.value) return json(401, { error: "Non autorisé" });
     const now = new Date();
     const { data: due } = await db.from("integration_connectors").select("*")
       .eq("status", "active").not("sync_interval_minutes", "is", null).lte("next_run_at", now.toISOString()).limit(25);

@@ -3255,6 +3255,24 @@ export type Database = {
           },
         ]
       }
+      integration_scheduler_config: {
+        Row: {
+          key: string
+          updated_at: string
+          value: string
+        }
+        Insert: {
+          key: string
+          updated_at?: string
+          value: string
+        }
+        Update: {
+          key?: string
+          updated_at?: string
+          value?: string
+        }
+        Relationships: []
+      }
       integration_sync_jobs: {
         Row: {
           attempts: number
