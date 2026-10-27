@@ -62,7 +62,7 @@ const WorkflowModule = () => {
   useEffect(() => { load(); }, [load]);
 
   const roleName = (c?: string) => (c ? d.roles?.find((r) => r.code === c)?.name ?? c : "—");
-  const person = (id?: string) => (id ? d.profiles?.find((p) => p.user_id === id)?.full_name ?? "Utilisateur" : "—");
+  const person = (id?: string) => (id === "00000000-0000-0000-0000-000000000000" ? "Système" : id ? d.profiles?.find((p) => p.user_id === id)?.full_name ?? "Utilisateur" : "—");
 
   const run = async (p: Promise<{ error: { message: string } | null }>, ok: string) => {
     setBusy(true);
