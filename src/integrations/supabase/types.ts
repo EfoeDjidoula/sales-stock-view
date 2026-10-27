@@ -7483,6 +7483,336 @@ export type Database = {
           },
         ]
       }
+      workflow_definitions: {
+        Row: {
+          country_id: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          is_active: boolean
+          max_amount: number | null
+          max_volume: number | null
+          min_amount: number | null
+          min_volume: number | null
+          module: string
+          name: string
+          operation_type: string
+          requester_role_code: string | null
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          country_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          max_amount?: number | null
+          max_volume?: number | null
+          min_amount?: number | null
+          min_volume?: number | null
+          module: string
+          name: string
+          operation_type: string
+          requester_role_code?: string | null
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          country_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          is_active?: boolean
+          max_amount?: number | null
+          max_volume?: number | null
+          min_amount?: number | null
+          min_volume?: number | null
+          module?: string
+          name?: string
+          operation_type?: string
+          requester_role_code?: string | null
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workflow_definitions_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "countries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workflow_definitions_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workflow_delegations: {
+        Row: {
+          country_id: string | null
+          created_at: string
+          delegate_id: string
+          delegator_id: string
+          ends_at: string
+          id: string
+          module: string | null
+          reason: string
+          revoked_at: string | null
+          starts_at: string
+          tenant_id: string
+        }
+        Insert: {
+          country_id?: string | null
+          created_at?: string
+          delegate_id: string
+          delegator_id: string
+          ends_at: string
+          id?: string
+          module?: string | null
+          reason: string
+          revoked_at?: string | null
+          starts_at: string
+          tenant_id: string
+        }
+        Update: {
+          country_id?: string | null
+          created_at?: string
+          delegate_id?: string
+          delegator_id?: string
+          ends_at?: string
+          id?: string
+          module?: string | null
+          reason?: string
+          revoked_at?: string | null
+          starts_at?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workflow_delegations_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "countries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workflow_delegations_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workflow_events: {
+        Row: {
+          action: string
+          actor_id: string
+          comment: string | null
+          country_id: string
+          created_at: string
+          from_status: string | null
+          id: string
+          on_behalf_of: string | null
+          request_id: string
+          step_order: number | null
+          tenant_id: string
+          to_status: string | null
+        }
+        Insert: {
+          action: string
+          actor_id: string
+          comment?: string | null
+          country_id: string
+          created_at?: string
+          from_status?: string | null
+          id?: string
+          on_behalf_of?: string | null
+          request_id: string
+          step_order?: number | null
+          tenant_id: string
+          to_status?: string | null
+        }
+        Update: {
+          action?: string
+          actor_id?: string
+          comment?: string | null
+          country_id?: string
+          created_at?: string
+          from_status?: string | null
+          id?: string
+          on_behalf_of?: string | null
+          request_id?: string
+          step_order?: number | null
+          tenant_id?: string
+          to_status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workflow_events_request_id_fkey"
+            columns: ["request_id"]
+            isOneToOne: false
+            referencedRelation: "workflow_requests"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workflow_requests: {
+        Row: {
+          amount: number | null
+          country_id: string
+          created_at: string
+          current_role_code: string | null
+          current_step: number
+          decided_at: string | null
+          definition_id: string | null
+          description: string | null
+          entity_id: string | null
+          entity_type: string | null
+          id: string
+          module: string
+          operation_type: string
+          payload: Json
+          reference: string
+          requested_by: string
+          status: string
+          step_due_at: string | null
+          steps: Json
+          submitted_at: string | null
+          tenant_id: string
+          title: string
+          updated_at: string
+          volume: number | null
+        }
+        Insert: {
+          amount?: number | null
+          country_id: string
+          created_at?: string
+          current_role_code?: string | null
+          current_step?: number
+          decided_at?: string | null
+          definition_id?: string | null
+          description?: string | null
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          module: string
+          operation_type: string
+          payload?: Json
+          reference?: string
+          requested_by?: string
+          status?: string
+          step_due_at?: string | null
+          steps?: Json
+          submitted_at?: string | null
+          tenant_id: string
+          title: string
+          updated_at?: string
+          volume?: number | null
+        }
+        Update: {
+          amount?: number | null
+          country_id?: string
+          created_at?: string
+          current_role_code?: string | null
+          current_step?: number
+          decided_at?: string | null
+          definition_id?: string | null
+          description?: string | null
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          module?: string
+          operation_type?: string
+          payload?: Json
+          reference?: string
+          requested_by?: string
+          status?: string
+          step_due_at?: string | null
+          steps?: Json
+          submitted_at?: string | null
+          tenant_id?: string
+          title?: string
+          updated_at?: string
+          volume?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workflow_requests_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "countries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workflow_requests_definition_id_fkey"
+            columns: ["definition_id"]
+            isOneToOne: false
+            referencedRelation: "workflow_definitions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workflow_requests_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      workflow_steps: {
+        Row: {
+          definition_id: string
+          escalation_role_code: string | null
+          id: string
+          label: string
+          role_code: string
+          sla_hours: number | null
+          step_order: number
+          tenant_id: string
+        }
+        Insert: {
+          definition_id: string
+          escalation_role_code?: string | null
+          id?: string
+          label: string
+          role_code: string
+          sla_hours?: number | null
+          step_order: number
+          tenant_id: string
+        }
+        Update: {
+          definition_id?: string
+          escalation_role_code?: string | null
+          id?: string
+          label?: string
+          role_code?: string
+          sla_hours?: number | null
+          step_order?: number
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "workflow_steps_definition_id_fkey"
+            columns: ["definition_id"]
+            isOneToOne: false
+            referencedRelation: "workflow_definitions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "workflow_steps_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       logistics_alerts: {
@@ -7854,6 +8184,60 @@ export type Database = {
         Returns: undefined
       }
       webhook_test: { Args: { _id: string }; Returns: undefined }
+      workflow_acting_for: {
+        Args: {
+          _req: Database["public"]["Tables"]["workflow_requests"]["Row"]
+          _user: string
+        }
+        Returns: string
+      }
+      workflow_action: {
+        Args: { _action: string; _comment: string; _id: string }
+        Returns: string
+      }
+      workflow_can_decide: { Args: { _id: string }; Returns: boolean }
+      workflow_create_request: {
+        Args: {
+          _country: string
+          _data: Json
+          _module: string
+          _operation: string
+          _tenant: string
+          _title: string
+        }
+        Returns: string
+      }
+      workflow_delegate: {
+        Args: {
+          _country: string
+          _delegate: string
+          _ends: string
+          _module: string
+          _reason: string
+          _starts: string
+          _tenant: string
+        }
+        Returns: string
+      }
+      workflow_guard_scope: {
+        Args: { _country: string; _module: string; _tenant: string }
+        Returns: undefined
+      }
+      workflow_license_module: { Args: { _module: string }; Returns: string }
+      workflow_revoke_delegation: { Args: { _id: string }; Returns: undefined }
+      workflow_save_definition: {
+        Args: { _data: Json; _id: string; _steps: Json }
+        Returns: string
+      }
+      workflow_user_has_role: {
+        Args: {
+          _country: string
+          _role: string
+          _tenant: string
+          _user: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
       app_role: "admin" | "manager" | "operator"
