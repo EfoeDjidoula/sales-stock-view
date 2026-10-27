@@ -2,7 +2,8 @@ import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useLanguage } from "@/hooks/useLanguage";
-import { computeSupplyNeeds, TARGET_COVERAGE_DAYS, FILL_TARGET_PCT, type TruckCapacity } from "@/lib/metrics/supplyPlanning";
+import { computeSupplyNeeds, TARGET_COVERAGE_DAYS, FILL_TARGET_PCT, type TruckCapacity, type SupplyForecast } from "@/lib/metrics/supplyPlanning";
+import { computeForecasts } from "@/lib/metrics/forecasting";
 import { daysBetween, type Dataset } from "@/lib/metrics";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -37,13 +38,21 @@ export function SupplyPlanAI({ d, tenantId, countryIds, start, end }: { d: Datas
     },
   });
 
-  const needs = useMemo(() => fleet.data ? computeSupplyNeeds({ ...d, openSupplies: fleet.data.openSupplies }, start, end, daysBetween(start, end)) : [], [d, fleet.data, start, end]);
+  // Prévisions BI avancée (modèle Auto : moyenne / Holt-Winters / SARIMA, choisi sur backtest) pour projeter le rythme de vente.
+  const forecasts = useMemo(() => {
+    const map = new Map<string, SupplyForecast>();
+    computeForecasts(d, { asOf: end, historyDays: 30, horizon: 7 }).forEach((f) =>
+      map.set(`${f.stationId}|${f.kind}`, { daily: f.daily, confidence: f.confidence, daysToRupture: f.daysToRupture, modelId: f.modelId }));
+    return map;
+  }, [d, end]);
+
+  const needs = useMemo(() => fleet.data ? computeSupplyNeeds({ ...d, openSupplies: fleet.data.openSupplies }, start, end, daysBetween(start, end), forecasts) : [], [d, fleet.data, start, end, forecasts]);
 
   const run = async () => {
     setLoading(true); setError(null); setPlan(null);
     const { data, error: e } = await supabase.functions.invoke("suggest-supply-plan", {
       body: { today: new Date().toISOString().slice(0, 10), trucks: fleet.data?.trucks ?? [],
-        needs: needs.map((n) => ({ station: n.stationName, product: n.kind, stock: n.stock, capacity: n.capacity, avgDaily: n.avgDaily, coverageDays: n.coverageDays, inTransit: n.inTransit, needLitres: n.needLitres, urgency: n.urgency })) },
+        needs: needs.map((n) => ({ station: n.stationName, product: n.kind, stock: n.stock, capacity: n.capacity, avgDaily: n.avgDaily, forecastDaily: n.forecastDaily, forecastModel: n.forecastModel, forecastConfidence: n.forecastConfidence, daysToRupture: n.daysToRupture, coverageDays: n.coverageDays, inTransit: n.inTransit, needLitres: n.needLitres, urgency: n.urgency })) },
     });
     setLoading(false);
     if (e || (data as any)?.error) {
@@ -60,7 +69,7 @@ export function SupplyPlanAI({ d, tenantId, countryIds, start, end }: { d: Datas
         <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2">
           <div>
             <CardTitle className="text-base">{t("Besoins calculés")}</CardTitle>
-            <p className="text-xs text-muted-foreground">{t(`Règle : couverture (stock + en route) < ${TARGET_COVERAGE_DAYS} j de ventes moyennes ; besoin = ${FILL_TARGET_PCT} % de la capacité − stock − en route.`)}</p>
+            <p className="text-xs text-muted-foreground">{t(`Règle : couverture (stock + en route) < ${TARGET_COVERAGE_DAYS} j au rythme prévu (modèle BI Auto : moyenne / Holt-Winters / SARIMA, validé sur le réalisé, confiance moyenne ou haute ; sinon moyenne des ventes) ; besoin = ${FILL_TARGET_PCT} % de la capacité − stock − en route.`)}</p>
           </div>
           <Button onClick={run} disabled={loading || !needs.length || !fleet.data?.trucks.length} className="gap-2">
             {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}{t("Suggérer les transports")}
@@ -68,12 +77,15 @@ export function SupplyPlanAI({ d, tenantId, countryIds, start, end }: { d: Datas
         </CardHeader>
         <CardContent className="p-0 overflow-x-auto">
           <Table>
-            <TableHeader><TableRow><TableHead>Station</TableHead><TableHead>{t("Produit")}</TableHead><TableHead className="text-right">Stock (L)</TableHead><TableHead className="text-right">{t("Ventes/j")}</TableHead><TableHead className="text-right">{t("Couverture")}</TableHead><TableHead className="text-right">{t("En route")}</TableHead><TableHead className="text-right">{t("Besoin")} (L)</TableHead><TableHead>{t("Urgence")}</TableHead></TableRow></TableHeader>
+            <TableHeader><TableRow><TableHead>Station</TableHead><TableHead>{t("Produit")}</TableHead><TableHead className="text-right">Stock (L)</TableHead><TableHead className="text-right">{t("Rythme/j")}</TableHead><TableHead className="text-right">{t("Couverture")}</TableHead><TableHead className="text-right">{t("En route")}</TableHead><TableHead className="text-right">{t("Besoin")} (L)</TableHead><TableHead>{t("Urgence")}</TableHead></TableRow></TableHeader>
             <TableBody>
               {needs.map((n) => (
                 <TableRow key={n.stationId + n.kind}>
                   <TableCell className="font-medium">{n.stationName}</TableCell><TableCell>{n.kind === "gasoil" ? "Gasoil" : "Super"}</TableCell>
-                  <TableCell className="text-right">{fmt(n.stock)} / {fmt(n.capacity)}</TableCell><TableCell className="text-right">{fmt(n.avgDaily)}</TableCell>
+<TableCell className="text-right">{fmt(n.stock)} / {fmt(n.capacity)}</TableCell>
+                  <TableCell className="text-right" title={n.forecastDaily != null ? `${t("Prévision")} ${n.forecastModel} · ${t("confiance")} ${t(n.forecastConfidence ?? "low")} · ${t("constaté")} ${fmt(n.avgDaily)} L/j` : t("Moyenne des ventes constatées")}>
+                    {n.forecastDaily != null ? `${fmt(n.forecastDaily)} ⤳` : fmt(n.avgDaily)}
+                  </TableCell>
                   <TableCell className="text-right">{n.coverageDays == null ? t("sans ventes") : `${fmt(n.coverageDays, 1)} j`}</TableCell><TableCell className="text-right">{fmt(n.inTransit)}</TableCell>
                   <TableCell className="text-right font-semibold">{fmt(n.needLitres)}</TableCell>
                   <TableCell><Badge variant={n.urgency === "haute" ? "destructive" : n.urgency === "moyenne" ? "default" : "secondary"}>{t(n.urgency)}</Badge></TableCell>

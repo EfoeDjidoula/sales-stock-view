@@ -7,13 +7,16 @@ const OPEN_SUPPLY = ["submitted", "approved", "ordered", "loaded", "in_transit",
 
 export type SupplyNeed = {
   stationId: string; stationName: string; kind: Kind; stock: number; capacity: number;
-  avgDaily: number; coverageDays: number | null; inTransit: number; needLitres: number; urgency: "haute" | "moyenne" | "faible";
+  avgDaily: number; forecastDaily: number | null; forecastModel: string | null; forecastConfidence: string | null; daysToRupture: number | null;
+  coverageDays: number | null; inTransit: number; needLitres: number; urgency: "haute" | "moyenne" | "faible";
 };
 export type TruckCapacity = { id: string; registration: string; capacity: number; compartments: number[] };
+export type SupplyForecast = { daily: number | null; confidence: string; daysToRupture: number | null; modelId: string };
 
 export const computeSupplyNeeds = (
   d: Dataset & { openSupplies?: { station_id: string | null; product_id: string | null; status: string; qty_requested: number | null; qty_approved: number | null; qty_loaded: number | null }[] },
   start: string, end: string, days: number,
+  forecasts?: Map<string, SupplyForecast>, // clé `${stationId}|${kind}` — prévisions BI (computeForecasts)
 ): SupplyNeed[] => {
   const prod = new Map(d.products.map((p) => [p.id, p]));
   const kindOf = (pid: string | null) => productKind(pid ? prod.get(pid) : null);
@@ -38,13 +41,20 @@ export const computeSupplyNeeds = (
     const [stationId, kind] = k.split("|") as [string, Kind];
     if (!names.has(stationId) || a.capacity <= 0) return;
     const avgDaily = (sales.get(k) ?? 0) / Math.max(1, days);
+    // Prévision BI : quand le modèle a assez d'historique, le rythme prévu remplace la moyenne constatée.
+    const fc = forecasts?.get(k);
+    // Seules les prévisions fiables (historique suffisant et récent) remplacent la moyenne constatée.
+    const reliable = fc && (fc.confidence === "medium" || fc.confidence === "high");
+    const forecastDaily = reliable && fc!.daily != null && Number.isFinite(fc!.daily) && fc!.daily! >= 0 ? fc!.daily! : null;
+    const effectiveDaily = forecastDaily ?? avgDaily;
     const inTransit = transit.get(k) ?? 0;
-    const coverageDays = avgDaily > 0 ? (a.stock + inTransit) / avgDaily : null;
+    const coverageDays = effectiveDaily > 0 ? (a.stock + inTransit) / effectiveDaily : null;
     const room = Math.max(0, Math.floor((a.capacity * FILL_TARGET_PCT) / 100 - a.stock - inTransit));
     const low = coverageDays != null ? coverageDays < TARGET_COVERAGE_DAYS : (a.stock + inTransit) / a.capacity < 0.25;
     if (!low || room <= 0) return;
-    const urgency = coverageDays != null && coverageDays < 1 ? "haute" : (a.stock / a.capacity) < 0.1 ? "haute" : coverageDays != null && coverageDays < 2 ? "moyenne" : "faible";
-    out.push({ stationId, stationName: names.get(stationId)!, kind, stock: a.stock, capacity: a.capacity, avgDaily, coverageDays, inTransit, needLitres: room, urgency });
+    const rupture = forecastDaily != null ? fc!.daysToRupture : null;
+    const urgency = coverageDays != null && coverageDays < 1 ? "haute" : (a.stock / a.capacity) < 0.1 ? "haute" : rupture != null && rupture <= 2 ? "haute" : coverageDays != null && coverageDays < 2 ? "moyenne" : "faible";
+    out.push({ stationId, stationName: names.get(stationId)!, kind, stock: a.stock, capacity: a.capacity, avgDaily, forecastDaily, forecastModel: forecastDaily != null ? fc!.modelId : null, forecastConfidence: forecastDaily != null ? fc!.confidence : null, daysToRupture: rupture, coverageDays, inTransit, needLitres: room, urgency });
   });
   const rank = { haute: 0, moyenne: 1, faible: 2 };
   return out.sort((x, y) => rank[x.urgency] - rank[y.urgency] || (x.coverageDays ?? 99) - (y.coverageDays ?? 99));

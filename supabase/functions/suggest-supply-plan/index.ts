@@ -44,7 +44,7 @@ Deno.serve(async (req) => {
 
   const prompt = `Date : ${String(body.today ?? "").slice(0, 10)}
 BESOINS :
-${needs.map((n) => `- ${String(n.station).slice(0, 80)} | ${n.product === "gasoil" ? "Gasoil" : "Super"} | stock ${num(n.stock)}/${num(n.capacity)} L | ventes ${num(n.avgDaily)} L/j | couverture ${n.coverageDays == null ? "inconnue" : Number(n.coverageDays).toFixed(1) + " j"} | en route ${num(n.inTransit)} L | besoin ${num(n.needLitres)} L | urgence ${String(n.urgency).slice(0, 10)}`).join("\n")}
+${needs.map((n) => `- ${String(n.station).slice(0, 80)} | ${n.product === "gasoil" ? "Gasoil" : "Super"} | stock ${num(n.stock)}/${num(n.capacity)} L | rythme ${n.forecastDaily != null ? `prévu ${num(n.forecastDaily)} L/j (modèle ${String(n.forecastModel ?? "?")}, confiance ${String(n.forecastConfidence ?? "faible")}, ventes constatées ${num(n.avgDaily)} L/j)` : `ventes constatées ${num(n.avgDaily)} L/j`} | rupture estimée ${n.daysToRupture == null ? "inconnue" : Number(n.daysToRupture).toFixed(1) + " j"} | couverture ${n.coverageDays == null ? "inconnue" : Number(n.coverageDays).toFixed(1) + " j"} | en route ${num(n.inTransit)} L | besoin ${num(n.needLitres)} L | urgence ${String(n.urgency).slice(0, 10)}`).join("\n")}
 FLOTTE :
 ${trucks.map((t) => `- ${String(t.registration).slice(0, 30)} | ${num(t.capacity)} L | compartiments ${(Array.isArray(t.compartments) ? t.compartments : []).map((c: unknown, i: number) => `C${i + 1}=${num(c)} L`).join(", ")}`).join("\n")}`;
 
