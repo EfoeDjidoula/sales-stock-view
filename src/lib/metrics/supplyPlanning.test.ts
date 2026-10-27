@@ -35,4 +35,9 @@ describe("besoins d'approvisionnement", () => {
     const forecasts = new Map([["s|super", { daily: 9000, confidence: "insufficient", daysToRupture: 0.5, modelId: "auto" }]]);
     expect(computeSupplyNeeds(d(5000), "2026-09-22", "2026-10-01", 10, forecasts)).toHaveLength(0);
   });
+  it("une prévision de confiance « low » est ignorée : retour à la moyenne des ventes", () => {
+    const forecasts = new Map([["s|super", { daily: 0, confidence: "low", daysToRupture: null, modelId: "auto" }]]);
+    // moyenne constatée 1 000 L/j → couverture 5 j ≥ 3 j → aucun besoin malgré la prévision à 0
+    expect(computeSupplyNeeds(d(5000), "2026-09-22", "2026-10-01", 10, forecasts)).toHaveLength(0);
+  });
 });
