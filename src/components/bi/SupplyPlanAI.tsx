@@ -69,7 +69,7 @@ export function SupplyPlanAI({ d, tenantId, countryIds, start, end }: { d: Datas
         <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2">
           <div>
             <CardTitle className="text-base">{t("Besoins calculés")}</CardTitle>
-            <p className="text-xs text-muted-foreground">{t(`Règle : couverture (stock + en route) < ${TARGET_COVERAGE_DAYS} j au rythme prévu (modèle BI Auto : moyenne / Holt-Winters / SARIMA, validé sur le réalisé ; sinon moyenne des ventes) ; besoin = ${FILL_TARGET_PCT} % de la capacité − stock − en route.`)}</p>
+            <p className="text-xs text-muted-foreground">{t(`Règle : couverture (stock + en route) < ${TARGET_COVERAGE_DAYS} j au rythme prévu (modèle BI Auto : moyenne / Holt-Winters / SARIMA, validé sur le réalisé, confiance moyenne ou haute ; sinon moyenne des ventes) ; besoin = ${FILL_TARGET_PCT} % de la capacité − stock − en route.`)}</p>
           </div>
           <Button onClick={run} disabled={loading || !needs.length || !fleet.data?.trucks.length} className="gap-2">
             {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}{t("Suggérer les transports")}
