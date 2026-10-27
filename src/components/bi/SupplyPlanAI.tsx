@@ -2,7 +2,8 @@ import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useLanguage } from "@/hooks/useLanguage";
-import { computeSupplyNeeds, TARGET_COVERAGE_DAYS, FILL_TARGET_PCT, type TruckCapacity } from "@/lib/metrics/supplyPlanning";
+import { computeSupplyNeeds, TARGET_COVERAGE_DAYS, FILL_TARGET_PCT, type TruckCapacity, type SupplyForecast } from "@/lib/metrics/supplyPlanning";
+import { computeForecasts } from "@/lib/metrics/forecasting";
 import { daysBetween, type Dataset } from "@/lib/metrics";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -37,7 +38,15 @@ export function SupplyPlanAI({ d, tenantId, countryIds, start, end }: { d: Datas
     },
   });
 
-  const needs = useMemo(() => fleet.data ? computeSupplyNeeds({ ...d, openSupplies: fleet.data.openSupplies }, start, end, daysBetween(start, end)) : [], [d, fleet.data, start, end]);
+  // Prévisions BI avancée (modèle Auto : moyenne / Holt-Winters / SARIMA, choisi sur backtest) pour projeter le rythme de vente.
+  const forecasts = useMemo(() => {
+    const map = new Map<string, SupplyForecast>();
+    computeForecasts(d, { asOf: end, historyDays: 30, horizon: 7 }).forEach((f) =>
+      map.set(`${f.stationId}|${f.kind}`, { daily: f.daily, confidence: f.confidence, daysToRupture: f.daysToRupture, modelId: f.modelId }));
+    return map;
+  }, [d, end]);
+
+  const needs = useMemo(() => fleet.data ? computeSupplyNeeds({ ...d, openSupplies: fleet.data.openSupplies }, start, end, daysBetween(start, end), forecasts) : [], [d, fleet.data, start, end, forecasts]);
 
   const run = async () => {
     setLoading(true); setError(null); setPlan(null);
