@@ -3092,6 +3092,270 @@ export type Database = {
           },
         ]
       }
+      integration_connectors: {
+        Row: {
+          category: string
+          config: Json
+          consecutive_failures: number
+          country_id: string | null
+          created_at: string
+          created_by: string | null
+          credential_hint: string | null
+          credential_updated_at: string | null
+          direction: string
+          environment: string
+          has_credentials: boolean
+          id: string
+          last_error: string | null
+          last_success_at: string | null
+          last_sync_at: string | null
+          name: string
+          provider: string
+          status: string
+          tenant_id: string
+          updated_at: string
+        }
+        Insert: {
+          category: string
+          config?: Json
+          consecutive_failures?: number
+          country_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          credential_hint?: string | null
+          credential_updated_at?: string | null
+          direction?: string
+          environment?: string
+          has_credentials?: boolean
+          id?: string
+          last_error?: string | null
+          last_success_at?: string | null
+          last_sync_at?: string | null
+          name: string
+          provider: string
+          status?: string
+          tenant_id: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          config?: Json
+          consecutive_failures?: number
+          country_id?: string | null
+          created_at?: string
+          created_by?: string | null
+          credential_hint?: string | null
+          credential_updated_at?: string | null
+          direction?: string
+          environment?: string
+          has_credentials?: boolean
+          id?: string
+          last_error?: string | null
+          last_success_at?: string | null
+          last_sync_at?: string | null
+          name?: string
+          provider?: string
+          status?: string
+          tenant_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "integration_connectors_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "countries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "integration_connectors_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      integration_credentials: {
+        Row: {
+          ciphertext: string
+          connector_id: string
+          iv: string
+          key_version: number
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          ciphertext: string
+          connector_id: string
+          iv: string
+          key_version?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          ciphertext?: string
+          connector_id?: string
+          iv?: string
+          key_version?: number
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "integration_credentials_connector_id_fkey"
+            columns: ["connector_id"]
+            isOneToOne: true
+            referencedRelation: "integration_connectors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      integration_mappings: {
+        Row: {
+          connector_id: string
+          created_at: string
+          entity: string
+          external_value: string
+          id: string
+          internal_value: string
+          transform: Json
+        }
+        Insert: {
+          connector_id: string
+          created_at?: string
+          entity: string
+          external_value: string
+          id?: string
+          internal_value: string
+          transform?: Json
+        }
+        Update: {
+          connector_id?: string
+          created_at?: string
+          entity?: string
+          external_value?: string
+          id?: string
+          internal_value?: string
+          transform?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "integration_mappings_connector_id_fkey"
+            columns: ["connector_id"]
+            isOneToOne: false
+            referencedRelation: "integration_connectors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      integration_sync_jobs: {
+        Row: {
+          attempts: number
+          connector_id: string
+          created_at: string
+          finished_at: string | null
+          id: string
+          idempotency_key: string
+          job_type: string
+          last_error: string | null
+          max_attempts: number
+          next_attempt_at: string
+          params: Json
+          requested_by: string | null
+          result: Json | null
+          started_at: string | null
+          status: string
+        }
+        Insert: {
+          attempts?: number
+          connector_id: string
+          created_at?: string
+          finished_at?: string | null
+          id?: string
+          idempotency_key: string
+          job_type: string
+          last_error?: string | null
+          max_attempts?: number
+          next_attempt_at?: string
+          params?: Json
+          requested_by?: string | null
+          result?: Json | null
+          started_at?: string | null
+          status?: string
+        }
+        Update: {
+          attempts?: number
+          connector_id?: string
+          created_at?: string
+          finished_at?: string | null
+          id?: string
+          idempotency_key?: string
+          job_type?: string
+          last_error?: string | null
+          max_attempts?: number
+          next_attempt_at?: string
+          params?: Json
+          requested_by?: string | null
+          result?: Json | null
+          started_at?: string | null
+          status?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "integration_sync_jobs_connector_id_fkey"
+            columns: ["connector_id"]
+            isOneToOne: false
+            referencedRelation: "integration_connectors"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      integration_sync_logs: {
+        Row: {
+          connector_id: string
+          created_at: string
+          details: Json
+          id: number
+          job_id: string | null
+          level: string
+          message: string
+        }
+        Insert: {
+          connector_id: string
+          created_at?: string
+          details?: Json
+          id?: never
+          job_id?: string | null
+          level?: string
+          message: string
+        }
+        Update: {
+          connector_id?: string
+          created_at?: string
+          details?: Json
+          id?: never
+          job_id?: string | null
+          level?: string
+          message?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "integration_sync_logs_connector_id_fkey"
+            columns: ["connector_id"]
+            isOneToOne: false
+            referencedRelation: "integration_connectors"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "integration_sync_logs_job_id_fkey"
+            columns: ["job_id"]
+            isOneToOne: false
+            referencedRelation: "integration_sync_jobs"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       license_modules: {
         Row: {
           created_at: string
@@ -7446,6 +7710,14 @@ export type Database = {
           _id: string
         }
         Returns: string
+      }
+      integration_action: {
+        Args: { _action: string; _data: Json; _id: string }
+        Returns: Json
+      }
+      integration_can_manage: {
+        Args: { _country: string; _tenant: string }
+        Returns: boolean
       }
       is_module_enabled: {
         Args: { _country_id: string; _module_key: string; _tenant_id: string }

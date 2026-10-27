@@ -19,6 +19,7 @@ import { LumatekInvoices } from "@/components/lumatek/LumatekInvoices";
 import { SupportTickets } from "@/components/support/SupportTickets";
 import { LumatekAuditLog } from "@/components/lumatek/LumatekAuditLog";
 import { LumatekApiHub } from "@/components/lumatek/LumatekApiHub";
+import { LumatekIntegrations } from "@/components/lumatek/LumatekIntegrations";
 import { LumatekPlaceholder } from "@/components/lumatek/LumatekPlaceholder";
 import {
   LayoutDashboard,
@@ -35,6 +36,7 @@ import {
   ArrowLeft,
   ShieldAlert,
   Webhook,
+  Plug,
 } from "lucide-react";
 
 const MENU = [
@@ -47,7 +49,8 @@ const MENU = [
   { id: "contrats", label: "Contrats & Maintenance", icon: FileSignature },
   { id: "factures", label: "Factures clients", icon: Receipt },
   { id: "support", label: "Support · Tickets clients", icon: LifeBuoy },
-  { id: "api", label: "API Hub & Intégrations", icon: Webhook },
+  { id: "api", label: "API Hub & Webhooks", icon: Webhook },
+  { id: "integrations", label: "Intégrations Enterprise", icon: Plug },
   { id: "journal", label: "Journal système", icon: ScrollText },
   { id: "parametres", label: "Paramètres", icon: Settings },
 ] as const;

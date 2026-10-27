@@ -267,6 +267,20 @@
       "when": 1792843378712,
       "tag": "0037_api_hub",
       "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1793064340874,
+      "tag": "0038_enterprise_integrations",
+      "breakpoints": true
+    },
+    {
+      "idx": 39,
+      "version": "7",
+      "when": 1793064538768,
+      "tag": "0039_integration_action_audit_fix",
+      "breakpoints": true
     }
   ]
 }
