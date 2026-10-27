@@ -469,7 +469,7 @@ const Index = () => {
                         return (
                           <DropdownMenuItem
                             key={tab}
-                            onSelect={() => setActiveTab(tab)}
+                            onSelect={() => selectTab(tab)}
                             className={`gap-2 cursor-pointer ${
                               activeTab === tab ? "bg-accent text-accent-foreground" : ""
                             }`}
