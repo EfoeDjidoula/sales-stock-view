@@ -1,6 +1,6 @@
 import HseModule from "@/components/hse/HseModule";
 import AssetsMaintenanceModule from "@/components/maintenance/AssetsMaintenanceModule";
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { formatCurrency } from "@/data/stationsData";
 import { useUserRoles, AppRole } from "@/hooks/useUserRoles";
 import { useDashboardData, Period } from "@/hooks/useDashboardData";
