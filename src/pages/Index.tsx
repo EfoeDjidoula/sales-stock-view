@@ -285,21 +285,26 @@ const Index = () => {
   }, [currentUserRole, enabledMap, license.isLimited, permissions, isPlatformAdmin]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const [activeTab, setActiveTab] = useState(() => new URLSearchParams(window.location.search).get("tab") === "support" ? "support" : "command");
+  // Onglet par défaut (non choisi) : redirection silencieuse vers la première section autorisée
+  const tabIsDefault = useRef(true);
+  const selectTab = (tab: string) => { tabIsDefault.current = false; setActiveTab(tab); };
 
   const canAccessTab = (tab: string) => allowedTabs.includes(tab);
 
   // Un onglet devenu inaccessible (droits ou module désactivé) renvoie vers une section autorisée
   useEffect(() => {
-    if (modulesLoading) return;
+    if (modulesLoading || roleLoading || permsLoading || license.isLoading) return;
     if (canAccessTab(activeTab)) return;
-    toast({
-      variant: "destructive",
-      title: "Section indisponible",
-      description:
-        "Cette section n'est pas activée pour votre société / pays ou vous n'y avez pas accès.",
-    });
+    if (!tabIsDefault.current) {
+      toast({
+        variant: "destructive",
+        title: "Section indisponible",
+        description:
+          "Cette section n'est pas activée pour votre société / pays ou vous n'y avez pas accès.",
+      });
+    }
     if (allowedTabs.length > 0) setActiveTab(allowedTabs[0]);
-  }, [activeTab, allowedTabs, modulesLoading]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [activeTab, allowedTabs, modulesLoading, roleLoading, permsLoading, license.isLoading]); // eslint-disable-line react-hooks/exhaustive-deps
 
   if (license.isBlocked) return <LicenseBlockedScreen />;
 
