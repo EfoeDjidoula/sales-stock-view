@@ -3110,8 +3110,10 @@ export type Database = {
           last_success_at: string | null
           last_sync_at: string | null
           name: string
+          next_run_at: string | null
           provider: string
           status: string
+          sync_interval_minutes: number | null
           tenant_id: string
           updated_at: string
         }
@@ -3132,8 +3134,10 @@ export type Database = {
           last_success_at?: string | null
           last_sync_at?: string | null
           name: string
+          next_run_at?: string | null
           provider: string
           status?: string
+          sync_interval_minutes?: number | null
           tenant_id: string
           updated_at?: string
         }
@@ -3154,8 +3158,10 @@ export type Database = {
           last_success_at?: string | null
           last_sync_at?: string | null
           name?: string
+          next_run_at?: string | null
           provider?: string
           status?: string
+          sync_interval_minutes?: number | null
           tenant_id?: string
           updated_at?: string
         }
