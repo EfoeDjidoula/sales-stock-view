@@ -204,6 +204,48 @@ function CredentialsDialog({ id, onClose, onSaved }: any) {
   );
 }
 
+function ScheduleSection({ c, act }: any) {
+  const [value, setValue] = useState<string>(c.sync_interval_minutes ? String(c.sync_interval_minutes) : "off");
+  const [busy, setBusy] = useState(false);
+  const save = async (v: string) => {
+    setBusy(true);
+    const r = await act("set_schedule", c.id, { interval_minutes: v === "off" ? null : Number(v) });
+    setBusy(false);
+    if (r) { setValue(v); toast.success(v === "off" ? "Planification désactivée" : `Synchronisation automatique : ${INTERVAL_LABELS[Number(v)]}`); }
+  };
+  const upcoming = c.sync_interval_minutes && c.next_run_at
+    ? Array.from({ length: 5 }, (_, i) => new Date(new Date(c.next_run_at).getTime() + i * c.sync_interval_minutes * 60000))
+    : [];
+  return (
+    <div className="space-y-2 rounded border border-border p-2">
+      <h4 className="flex items-center gap-1 text-sm font-semibold"><Clock className="h-4 w-4" />Planification automatique</h4>
+      <div className="flex gap-1">
+        <Select value={value} disabled={busy} onValueChange={save}>
+          <SelectTrigger className="w-44"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="off">Désactivée (manuelle)</SelectItem>
+            {Object.entries(INTERVAL_LABELS).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}
+          </SelectContent>
+        </Select>
+      </div>
+      {c.sync_interval_minutes ? (
+        <>
+          <p className="text-xs text-muted-foreground">
+            Prochaine exécution : <b className="text-foreground">{fmt(c.next_run_at)}</b>
+            {c.status !== "active" && <span className="text-amber-400"> — le connecteur doit être actif pour qu'elle parte.</span>}
+          </p>
+          {upcoming.length > 0 && (
+            <div className="space-y-0.5">
+              <p className="text-xs font-medium text-muted-foreground">Prochaines exécutions prévues</p>
+              {upcoming.map((d, i) => <p key={i} className="font-mono text-xs text-muted-foreground">{d.toLocaleString("fr-FR")}</p>)}
+            </div>
+          )}
+        </>
+      ) : <p className="text-xs text-muted-foreground">Aucune exécution automatique. Utilisez « Synchroniser » pour lancer manuellement.</p>}
+    </div>
+  );
+}
+
 function ConnectorDetail({ c, data, act, onClose }: any) {
   const [m, setM] = useState({ entity: "product", external_value: "", internal_value: "" });
   const jobs = data.jobs.filter((j: any) => j.connector_id === c.id);
