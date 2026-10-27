@@ -246,7 +246,7 @@ const Index = () => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const { currentUserRole, loading: roleLoading } = useUserRoles();
   const { isPlatformAdmin } = usePlatformAdmin();
-  const { can, permissions } = usePermissions();
+  const { can, permissions, isLoading: permsLoading } = usePermissions();
   const canEnterIndex = can("index_entries", "create");
   const canExport = can("index_entries", "export") || can("reports", "export");
   const { tenant } = useTenant();
