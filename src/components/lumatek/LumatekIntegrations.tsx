@@ -11,7 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Plus, KeyRound, Play, Plug, RefreshCw, RotateCw, Trash2 } from "lucide-react";
+import { Clock, Plus, KeyRound, Play, Plug, RefreshCw, RotateCw, Trash2 } from "lucide-react";
 
 export const CATEGORIES: Record<string, string> = {
   erp: "ERP / comptabilité", banking: "Banques", mobile_money: "Mobile Money", pos: "POS / TPE",
@@ -99,7 +99,7 @@ export function LumatekIntegrations() {
       </Select>
       <Card><CardContent className="overflow-x-auto p-0">
         <Table>
-          <TableHeader><TableRow><TableHead>Connecteur</TableHead><TableHead>Catégorie</TableHead><TableHead>Client / pays</TableHead><TableHead>Statut</TableHead><TableHead>Identifiants</TableHead><TableHead>Dernière synchro</TableHead><TableHead>Erreur</TableHead><TableHead /></TableRow></TableHeader>
+          <TableHeader><TableRow><TableHead>Connecteur</TableHead><TableHead>Catégorie</TableHead><TableHead>Client / pays</TableHead><TableHead>Statut</TableHead><TableHead>Identifiants</TableHead><TableHead>Dernière synchro</TableHead><TableHead>Prochaine synchro</TableHead><TableHead>Erreur</TableHead><TableHead /></TableRow></TableHeader>
           <TableBody>
             {list.length === 0 && <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground">Aucun connecteur</TableCell></TableRow>}
             {list.map((c: any) => (
@@ -110,6 +110,7 @@ export function LumatekIntegrations() {
                 <TableCell><Badge className={STATUS_VARIANT[c.status]}>{c.status}</Badge></TableCell>
                 <TableCell className="text-xs">{c.has_credentials ? c.credential_hint : <span className="text-muted-foreground">Non configurés</span>}</TableCell>
                 <TableCell className="text-xs">{fmt(c.last_sync_at)}</TableCell>
+                <TableCell className="text-xs">{c.sync_interval_minutes ? <><Clock className="mr-1 inline h-3 w-3 text-muted-foreground" />{fmt(c.next_run_at)}<div className="text-muted-foreground">{INTERVAL_LABELS[c.sync_interval_minutes]}</div></> : <span className="text-muted-foreground">Manuelle</span>}</TableCell>
                 <TableCell className="max-w-48 truncate text-xs text-destructive">{c.last_error ?? ""}</TableCell>
                 <TableCell onClick={(e) => e.stopPropagation()} className="flex gap-1">
                   <Button size="icon" variant="ghost" title="Identifiants" onClick={() => setCred(c.id)}><KeyRound className="h-4 w-4" /></Button>
