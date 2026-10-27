@@ -26,6 +26,7 @@ const SUGGESTED: Record<string, string[]> = {
 const STATUS_VARIANT: Record<string, string> = { active: "bg-emerald-500/15 text-emerald-300", error: "bg-destructive/20 text-destructive", paused: "bg-amber-500/15 text-amber-300", draft: "bg-muted text-muted-foreground", disabled: "bg-muted text-muted-foreground" };
 const db = supabase as any;
 const fmt = (d?: string | null) => (d ? new Date(d).toLocaleString("fr-FR") : "—");
+const INTERVAL_LABELS: Record<number, string> = { 60: "Toutes les heures", 120: "Toutes les 2 h", 240: "Toutes les 4 h", 360: "Toutes les 6 h", 720: "Toutes les 12 h", 1440: "Une fois par jour" };
 const errMsg = (e: any) => e?.message ?? String(e);
 
 function useData() {
@@ -101,7 +102,7 @@ export function LumatekIntegrations() {
         <Table>
           <TableHeader><TableRow><TableHead>Connecteur</TableHead><TableHead>Catégorie</TableHead><TableHead>Client / pays</TableHead><TableHead>Statut</TableHead><TableHead>Identifiants</TableHead><TableHead>Dernière synchro</TableHead><TableHead>Prochaine synchro</TableHead><TableHead>Erreur</TableHead><TableHead /></TableRow></TableHeader>
           <TableBody>
-            {list.length === 0 && <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground">Aucun connecteur</TableCell></TableRow>}
+            {list.length === 0 && <TableRow><TableCell colSpan={9} className="text-center text-muted-foreground">Aucun connecteur</TableCell></TableRow>}
             {list.map((c: any) => (
               <TableRow key={c.id} className="cursor-pointer" onClick={() => setSel(c.id)}>
                 <TableCell><div className="font-medium">{c.name}</div><div className="font-mono text-xs text-muted-foreground">{c.provider} · {c.environment}</div></TableCell>
@@ -236,6 +237,7 @@ function ConnectorDetail({ c, data, act, onClose }: any) {
             </div>
           ))}
           {!maps.length && <p className="text-xs text-muted-foreground">Aucun mapping.</p>}
+          <ScheduleSection c={c} act={act} />
         </div>
         <div className="space-y-2">
           <h4 className="text-sm font-semibold">Jobs de synchronisation</h4>
