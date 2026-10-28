@@ -7674,6 +7674,8 @@ export type Database = {
           description: string | null
           entity_id: string | null
           entity_type: string | null
+          executed_at: string | null
+          execution_result: Json | null
           id: string
           module: string
           operation_type: string
@@ -7700,6 +7702,8 @@ export type Database = {
           description?: string | null
           entity_id?: string | null
           entity_type?: string | null
+          executed_at?: string | null
+          execution_result?: Json | null
           id?: string
           module: string
           operation_type: string
@@ -7726,6 +7730,8 @@ export type Database = {
           description?: string | null
           entity_id?: string | null
           entity_type?: string | null
+          executed_at?: string | null
+          execution_result?: Json | null
           id?: string
           module?: string
           operation_type?: string
@@ -8238,6 +8244,17 @@ export type Database = {
           _user: string
         }
         Returns: boolean
+      }
+      workflow_validate_payload: {
+        Args: {
+          _amount: number
+          _country: string
+          _op: string
+          _p: Json
+          _tenant: string
+          _volume: number
+        }
+        Returns: undefined
       }
     }
     Enums: {
