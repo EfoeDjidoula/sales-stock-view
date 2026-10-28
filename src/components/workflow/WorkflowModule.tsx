@@ -52,8 +52,12 @@ const WorkflowModule = () => {
       db.from("roles").select("code,name,tenant_id").or(`tenant_id.is.null,tenant_id.eq.${tenantId}`).order("position"),
       db.from("profiles").select("user_id,full_name,is_active").eq("tenant_id", tenantId),
     ]);
+    const [tanks, clients] = await Promise.all([
+      db.from("tanks").select("id,name,stations!inner(name,tenant_id,country_id)").eq("stations.tenant_id", tenantId).eq("stations.country_id", countryId).not("product_id", "is", null),
+      db.from("clients").select("id,name").eq("tenant_id", tenantId).eq("country_id", countryId).eq("is_active", true).order("name"),
+    ]);
     const requests: Row[] = req.data ?? [];
-    setD({ requests, defs: defs.data ?? [], steps: steps.data ?? [], dels: dels.data ?? [], roles: roles.data ?? [], profiles: profs.data ?? [] });
+    setD({ requests, defs: defs.data ?? [], steps: steps.data ?? [], dels: dels.data ?? [], roles: roles.data ?? [], profiles: profs.data ?? [], tanks: tanks.data ?? [], clients: clients.data ?? [] });
     const pending = requests.filter((r) => ["submitted", "escalated"].includes(r.status) && r.requested_by !== user?.id);
     const checks = await Promise.all(pending.map((r) => db.rpc("workflow_can_decide", { _id: r.id })));
     setDecidable(new Set(pending.filter((_, i) => checks[i].data === true).map((r) => r.id)));
@@ -119,7 +123,13 @@ const WorkflowModule = () => {
     setBusy(true);
     const { data: id, error } = await db.rpc("workflow_create_request", {
       _tenant: tenantId, _country: countryId, _module: newReq.module, _operation: newReq.operation_type, _title: newReq.title,
-      _data: { description: newReq.description, amount: newReq.amount, volume: newReq.volume },
+      _data: {
+        description: newReq.description, amount: newReq.amount, volume: newReq.volume,
+        payload: newReq.operation_type === "stock_adjustment" ? { tank_id: newReq.tank_id, direction: newReq.direction }
+          : newReq.operation_type === "credit_limit_increase" ? { client_id: newReq.client_id } : {},
+        entity_type: newReq.operation_type === "stock_adjustment" ? "tank" : newReq.operation_type === "credit_limit_increase" ? "client" : "",
+        entity_id: newReq.tank_id ?? newReq.client_id ?? "",
+      },
     });
     if (error) { setBusy(false); toast.error(error.message); return; }
     if (submit) {
@@ -223,6 +233,9 @@ const WorkflowModule = () => {
               <p>Demandeur : {person(detail.requested_by)} · Montant : {num(detail.amount)} F · Volume : {num(detail.volume)} L</p>
               {detail.description && <p className="text-muted-foreground whitespace-pre-wrap">{detail.description}</p>}
               {detail.step_due_at && <p className={overdue(detail) ? "text-destructive" : "text-muted-foreground"}>Échéance de l'étape : {fmt(detail.step_due_at)}</p>}
+              {detail.executed_at && <p className="text-primary">Opération exécutée le {fmt(detail.executed_at)} : {detail.execution_result?.kind === "stock_movement"
+                ? `${detail.execution_result.direction === "in" ? "entrée" : "sortie"} de ${num(detail.execution_result.quantity)} L enregistrée au stock`
+                : `plafond B2B passé de ${num(detail.execution_result?.previous_limit)} F à ${num(detail.execution_result?.new_limit)} F`}</p>}
             </div>
             <div className="flex flex-wrap gap-1">
               {(detail.steps ?? []).map((s: Row) => {
@@ -260,9 +273,20 @@ const WorkflowModule = () => {
           {newReq && <div className="space-y-3">
             <OpPicker value={newReq} onChange={setNewReq} />
             <div><Label>Objet</Label><Input value={newReq.title} onChange={(e) => setNewReq({ ...newReq, title: e.target.value })} /></div>
+            {newReq.operation_type === "stock_adjustment" && <div className="grid grid-cols-2 gap-2">
+              <div><Label>Cuve à ajuster</Label><Select value={newReq.tank_id ?? ""} onValueChange={(v) => setNewReq({ ...newReq, tank_id: v })}>
+                <SelectTrigger><SelectValue placeholder="Choisir" /></SelectTrigger>
+                <SelectContent>{(d.tanks ?? []).map((t) => <SelectItem key={t.id} value={t.id}>{t.stations?.name} — {t.name}</SelectItem>)}</SelectContent></Select></div>
+              <div><Label>Sens</Label><Select value={newReq.direction ?? ""} onValueChange={(v) => setNewReq({ ...newReq, direction: v })}>
+                <SelectTrigger><SelectValue placeholder="Choisir" /></SelectTrigger>
+                <SelectContent><SelectItem value="in">Entrée (+)</SelectItem><SelectItem value="out">Sortie (−)</SelectItem></SelectContent></Select></div>
+            </div>}
+            {newReq.operation_type === "credit_limit_increase" && <div><Label>Client B2B</Label><Select value={newReq.client_id ?? ""} onValueChange={(v) => setNewReq({ ...newReq, client_id: v })}>
+              <SelectTrigger><SelectValue placeholder="Choisir" /></SelectTrigger>
+              <SelectContent>{(d.clients ?? []).map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent></Select></div>}
             <div className="grid grid-cols-2 gap-2">
-              <div><Label>Montant (F)</Label><Input type="number" min={0} value={newReq.amount ?? ""} onChange={(e) => setNewReq({ ...newReq, amount: e.target.value })} /></div>
-              <div><Label>Volume (L)</Label><Input type="number" min={0} value={newReq.volume ?? ""} onChange={(e) => setNewReq({ ...newReq, volume: e.target.value })} /></div>
+              <div><Label>{newReq.operation_type === "credit_limit_increase" ? "Nouveau plafond (F)" : "Montant (F)"}</Label><Input type="number" min={0} value={newReq.amount ?? ""} onChange={(e) => setNewReq({ ...newReq, amount: e.target.value })} /></div>
+              <div><Label>{newReq.operation_type === "stock_adjustment" ? "Volume à ajuster (L)" : "Volume (L)"}</Label><Input type="number" min={0} value={newReq.volume ?? ""} onChange={(e) => setNewReq({ ...newReq, volume: e.target.value })} /></div>
             </div>
             <div><Label>Justification</Label><Textarea value={newReq.description ?? ""} onChange={(e) => setNewReq({ ...newReq, description: e.target.value })} /></div>
           </div>}
