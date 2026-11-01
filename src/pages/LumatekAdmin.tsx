@@ -20,7 +20,7 @@ import { SupportTickets } from "@/components/support/SupportTickets";
 import { LumatekAuditLog } from "@/components/lumatek/LumatekAuditLog";
 import { LumatekApiHub } from "@/components/lumatek/LumatekApiHub";
 import { LumatekIntegrations } from "@/components/lumatek/LumatekIntegrations";
-import { LumatekPlaceholder } from "@/components/lumatek/LumatekPlaceholder";
+import { LumatekSettings } from "@/components/lumatek/LumatekSettings";
 import {
   LayoutDashboard,
   Building2,
@@ -105,12 +105,7 @@ const LumatekAdmin = () => {
       case "journal":
         return <LumatekAuditLog />;
       case "parametres":
-        return (
-          <LumatekPlaceholder
-             title={t("Paramètres de la plateforme")}
-             description={t("Paramètres globaux LUMATEK : branding, notifications et intégrations.")}
-          />
-        );
+        return <LumatekSettings />;
     }
   };
 
