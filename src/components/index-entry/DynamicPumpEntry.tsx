@@ -46,20 +46,28 @@ export const DynamicPumpEntry = ({
 }: Props) => {
   // Group pumps by tank (or "no-tank" bucket)
   const groups = useMemo(() => {
+    // Ordre de saisie : SUPER d'abord, puis GASOIL ; pompes/cuves dédoublonnées par id
+    const rank = (p?: string) => (p === "super" ? 0 : p === "gasoil" ? 1 : 2);
     const byTank = new Map<string | "none", { tank: Tank | null; pumps: Pump[] }>();
-    for (const t of tanks) byTank.set(t.id, { tank: t, pumps: [] });
+    for (const t of tanks) if (!byTank.has(t.id)) byTank.set(t.id, { tank: t, pumps: [] });
+    const seen = new Set<string>();
     for (const p of pumps) {
+      if (seen.has(p.id)) continue;
+      seen.add(p.id);
       const key = p.tank_id || "none";
       if (!byTank.has(key)) byTank.set(key, { tank: null, pumps: [] });
       byTank.get(key)!.pumps.push(p);
     }
+    for (const g of byTank.values()) {
+      g.pumps.sort((a, b) => a.position - b.position || a.name.localeCompare(b.name, undefined, { numeric: true }));
+    }
     return Array.from(byTank.entries())
       .filter(([, g]) => g.pumps.length > 0)
       .sort(([, a], [, b]) => {
-        const ap = a.tank?.product_type ?? "zz";
-        const bp = b.tank?.product_type ?? "zz";
-        if (ap !== bp) return ap.localeCompare(bp);
-        return (a.tank?.name || "").localeCompare(b.tank?.name || "");
+        const ap = rank(a.tank?.product_type ?? a.pumps[0]?.product_type);
+        const bp = rank(b.tank?.product_type ?? b.pumps[0]?.product_type);
+        if (ap !== bp) return ap - bp;
+        return (a.tank?.name || "").localeCompare(b.tank?.name || "", undefined, { numeric: true });
       });
   }, [pumps, tanks]);
 
