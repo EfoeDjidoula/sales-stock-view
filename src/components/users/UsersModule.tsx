@@ -111,11 +111,11 @@ export const UsersModule = () => {
       return;
     }
 
-    if (newUserPassword.length < 8) {
+    if (newUserPassword.length < 6 || newUserPassword.length > 8) {
       toast({
         variant: "destructive",
         title: "Erreur",
-        description: "Le mot de passe doit contenir au moins 8 caractères.",
+        description: "Le mot de passe doit contenir entre 6 et 8 caractères maximum.",
       });
       return;
     }
@@ -545,7 +545,8 @@ export const UsersModule = () => {
               <Input
                 id="password"
                 type="password"
-                placeholder="Minimum 6 caractères"
+                placeholder="6 à 8 caractères"
+                maxLength={8}
                 value={newUserPassword}
                 onChange={(e) => setNewUserPassword(e.target.value)}
               />
