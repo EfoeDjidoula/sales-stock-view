@@ -96,8 +96,11 @@ export const SalesClosureModule = () => {
       const pumpMap = Object.fromEntries((pumps ?? []).map((p: Row) => [p.id, p]));
       setTanks(Object.fromEntries((tk ?? []).map((t: Row) => [t.id, t])));
       const price = ps?.[0];
-      const nozzles = (nz ?? []).map((n: Row) => ({ ...n, pump: pumpMap[n.pump_id] }))
-        .sort((a: Row, b: Row) => (a.pump?.position ?? 0) - (b.pump?.position ?? 0) || a.number - b.number);
+      const rank = (n: Row) => (isGasoil(products[n.product_id]) ? 1 : 0); // SUPER d'abord
+      const uniq = Array.from(new Map((nz ?? []).map((n: Row) => [n.id, n])).values()) as Row[];
+      const nozzles = uniq.map((n: Row) => ({ ...n, pump: pumpMap[n.pump_id] }))
+        .sort((a: Row, b: Row) => rank(a) - rank(b) || (a.pump?.position ?? 0) - (b.pump?.position ?? 0)
+          || String(a.pump?.name ?? "").localeCompare(String(b.pump?.name ?? ""), undefined, { numeric: true }) || a.number - b.number);
       const ids = nozzles.map((n: Row) => n.id);
 
       let existing: Row[] = [];
