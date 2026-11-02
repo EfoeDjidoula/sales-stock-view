@@ -330,6 +330,13 @@
       "when": 1793495472256,
       "tag": "0046_modules_catalog_complete",
       "breakpoints": true
+    },
+    {
+      "idx": 47,
+      "version": "7",
+      "when": 1793620000000,
+      "tag": "0047_security_hardening",
+      "breakpoints": true
     }
   ]
 }
