@@ -1,4 +1,3 @@
--- Hackathon sécurité : search_path figé et aucune fonction privilégiée exécutable sans connexion.
 DO $$
 DECLARE r record;
 BEGIN
@@ -17,3 +16,9 @@ BEGIN
     EXECUTE format('GRANT EXECUTE ON FUNCTION %s TO authenticated, service_role', r.sig);
   END LOOP;
 END $$;
+
+INSERT INTO public.license_modules(plan_id, module_key)
+SELECT DISTINCT lm.plan_id, m.child FROM public.license_modules lm
+JOIN (VALUES ('command_center','dashboard'),('bi','reporting'),('cloture','ventes'),('moteur_stock','stocks'),('reconciliation','ventes'),('logistique','livraisons'),('hse','stations'),('workflows','dashboard'),('proforma','commandes'),('exercices','dashboard'),('support','dashboard'),('api_hub','dashboard'),('integrations','dashboard')) m(child,parent)
+  ON lm.module_key = m.parent
+WHERE NOT EXISTS (SELECT 1 FROM public.license_modules x WHERE x.plan_id=lm.plan_id AND x.module_key=m.child);
