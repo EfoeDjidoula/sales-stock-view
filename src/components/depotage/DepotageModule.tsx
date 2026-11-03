@@ -3,7 +3,7 @@ import { useLanguage } from "@/hooks/useLanguage";
 import { useDepotages, DepotageInsert, ProductType } from "@/hooks/useDepotages";
 import { useStations } from "@/hooks/useStations";
 import { useTanks } from "@/hooks/useTanks";
-import { useTrucks } from "@/hooks/useTrucks";
+import { useFleetVehicles } from "@/hooks/useFleetVehicles";
 import { useTankLatestStock } from "@/hooks/useTankLatestStock";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -179,7 +179,7 @@ export const DepotageModule = () => {
   const { t } = useLanguage();
   const { depotages, loading, createDepotage, deleteDepotage } = useDepotages();
   const { stations, loading: stationsLoading } = useStations();
-  const { trucks } = useTrucks();
+  const { trucks } = useFleetVehicles();
   const [isOpen, setIsOpen] = useState(false);
   const [formData, setFormData] = useState<DepotageInsert>(emptyForm());
   const [errors, setErrors] = useState<string[]>([]);
