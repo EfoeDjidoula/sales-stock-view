@@ -227,6 +227,22 @@ const TAB_MODULE: Record<string, string> = {
   fournisseurs: "achats",
 };
 
+// Modules dédiés du catalogue SaaS : leur désactivation masque aussi l'onglet
+const TAB_EXTRA_MODULE: Record<string, string> = {
+  command: "command_center",
+  bi: "bi",
+  ventes_cloture: "cloture",
+  moteur_stock: "moteur_stock",
+  reconciliation: "reconciliation",
+  logistique_avancee: "logistique",
+  maintenance: "maintenance",
+  hse: "hse",
+  workflows: "workflows",
+  proforma: "proforma",
+  exercices: "exercices",
+  support: "support",
+};
+
 // Grouped navigation structure
 const TAB_GROUPS: {
   id: string;
@@ -283,8 +299,8 @@ const Index = () => {
           .map(([tab]) => tab);
     return base.filter((tab) => {
       if (license.isLimited && !LIMITED_TABS.includes(tab)) return false;
-      const moduleKey = TAB_MODULE[tab];
-      return !moduleKey || isModuleEnabled(moduleKey);
+      const keys = [TAB_MODULE[tab], TAB_EXTRA_MODULE[tab]].filter(Boolean) as string[];
+      return keys.every((k) => isModuleEnabled(k));
     });
   }, [currentUserRole, enabledMap, license.isLimited, permissions, isPlatformAdmin]); // eslint-disable-line react-hooks/exhaustive-deps
 
