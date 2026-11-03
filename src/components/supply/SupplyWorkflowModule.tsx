@@ -77,7 +77,7 @@ export const SupplyWorkflowModule = () => {
       scopeQuery(db.from("petroleum_products").select("id,code,name")),
       scopeQuery(db.from("depots").select("id,name")).order("name"),
       scopeQuery(db.from("suppliers").select("id,name")).order("name"),
-      scopeQuery(db.from("trucks").select("id,registration,driver_name")),
+      scopeQuery(db.from("logistics_vehicles").select("id,registration,capacity_litres,legacy_truck_id").neq("status", "inactive")),
       scopeQuery(db.from("tanks").select("id,name,station_id,product_id,capacity_liters")),
     ]);
     if (r.error) toast.error(errMsg(r.error));
@@ -292,7 +292,7 @@ const SupplyDetail = ({ request: r, onClose, onChanged, canWrite, canValidate, l
     db.from("supply_request_events").select("*").eq("request_id", r.id).order("created_at").then(({ data }: { data: Row[] }) => setEvents(data ?? []));
     setD({
       qty_approved: r.qty_approved ?? r.qty_requested, order_number: r.order_number ?? "", depot_id: r.depot_id ?? "", supplier_id: r.supplier_id ?? "",
-      qty_loaded: r.qty_approved ?? r.qty_requested, bl_number: r.bl_number ?? "", loaded_at: nowLocal(), truck_id: r.truck_id ?? "",
+      qty_loaded: r.qty_approved ?? r.qty_requested, bl_number: r.bl_number ?? "", loaded_at: nowLocal(), truck_id: r.vehicle_id ?? r.truck_id ?? "",
       vehicle_registration: r.vehicle_registration ?? "", driver_name: r.driver_name ?? "", seals: r.seals ?? "",
       departed_at: nowLocal(), qty_delivered: r.qty_loaded ?? "", delivered_at: nowLocal(), seals_intact: true,
       tank_id: r.tank_id ?? "", gauge_before: "", gauge_after: "", received_at: nowLocal(), observations: "",
@@ -348,7 +348,7 @@ const SupplyDetail = ({ request: r, onClose, onChanged, canWrite, canValidate, l
         {field("N° BL", <Input value={d.bl_number} onChange={set("bl_number")} />)}
         {field("Date/heure de chargement", <Input type="datetime-local" value={d.loaded_at} onChange={set("loaded_at")} />)}
         {field("Dépôt source", pick("depot_id", lookups.depots))}
-        {field("Camion", pick("truck_id", lookups.trucks, "registration", (t) => ({ vehicle_registration: t.registration, driver_name: t.driver_name ?? d.driver_name })))}
+        {field("Camion", pick("truck_id", lookups.trucks, "registration", (t) => ({ vehicle_registration: t.registration, driver_name: d.driver_name })))}
         {field("Immatriculation", <Input value={d.vehicle_registration} onChange={set("vehicle_registration")} />)}
         {field("Chauffeur", <Input value={d.driver_name} onChange={set("driver_name")} />)}
         {field("Scellés (n°)", <Input value={d.seals} onChange={set("seals")} placeholder={t("Optionnel")} />)}
