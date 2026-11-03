@@ -1330,6 +1330,7 @@ export type Database = {
           truck_registration: string
           updated_at: string
           user_id: string
+          vehicle_id: string | null
         }
         Insert: {
           country_id?: string | null
@@ -1357,6 +1358,7 @@ export type Database = {
           truck_registration: string
           updated_at?: string
           user_id: string
+          vehicle_id?: string | null
         }
         Update: {
           country_id?: string | null
@@ -1384,6 +1386,7 @@ export type Database = {
           truck_registration?: string
           updated_at?: string
           user_id?: string
+          vehicle_id?: string | null
         }
         Relationships: [
           {
@@ -1412,6 +1415,13 @@ export type Database = {
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "depotages_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "logistics_vehicles"
             referencedColumns: ["id"]
           },
         ]
@@ -6466,6 +6476,7 @@ export type Database = {
           transport_variance: number | null
           truck_id: string | null
           updated_at: string
+          vehicle_id: string | null
           vehicle_registration: string | null
         }
         Insert: {
@@ -6506,6 +6517,7 @@ export type Database = {
           transport_variance?: number | null
           truck_id?: string | null
           updated_at?: string
+          vehicle_id?: string | null
           vehicle_registration?: string | null
         }
         Update: {
@@ -6546,6 +6558,7 @@ export type Database = {
           transport_variance?: number | null
           truck_id?: string | null
           updated_at?: string
+          vehicle_id?: string | null
           vehicle_registration?: string | null
         }
         Relationships: [
@@ -6603,6 +6616,13 @@ export type Database = {
             columns: ["truck_id"]
             isOneToOne: false
             referencedRelation: "trucks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "supply_requests_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "logistics_vehicles"
             referencedColumns: ["id"]
           },
         ]

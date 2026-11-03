@@ -337,6 +337,13 @@
       "when": 1793621017043,
       "tag": "0047_security_hardening_and_module_licenses",
       "breakpoints": true
+    },
+    {
+      "idx": 48,
+      "version": "7",
+      "when": 1793695752499,
+      "tag": "0048_fleet_unification_and_module_lock",
+      "breakpoints": true
     }
   ]
 }
