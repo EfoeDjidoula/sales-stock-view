@@ -109,7 +109,7 @@ export default function ProSuiteModule() {
 
   const stName = (id: string) => d.stations?.find((s) => s.id === id)?.name ?? "—";
   const prName = (id: string) => d.products?.find((p) => p.id === id)?.name ?? "—";
-  const sub = `${brand?.name ?? ""} — période du ${from} au ${to}`;
+  const sub = `${brand?.companyName ?? ""} — période du ${from} au ${to}`;
 
   return (
     <div className="space-y-4">
@@ -136,7 +136,7 @@ export default function ProSuiteModule() {
 
         <TabsContent value="regl"><Regulatory d={d} stName={stName} prName={prName} sub={sub} /></TabsContent>
         <TabsContent value="compta"><Accounting d={d} stName={stName} sub={sub} /></TabsContent>
-        <TabsContent value="ecmr"><Ecmr d={d} stName={stName} prName={prName} brandName={brand?.name ?? ""} /></TabsContent>
+        <TabsContent value="ecmr"><Ecmr d={d} stName={stName} prName={prName} brandName={brand?.companyName ?? ""} /></TabsContent>
         <TabsContent value="thermo"><Thermal d={d} stName={stName} prName={prName} /></TabsContent>
         <TabsContent value="b2b"><Statements d={d} sub={sub} /></TabsContent>
         <TabsContent value="offline"><Offline d={d} stName={stName} prName={prName} scopeRow={scopeRow} /></TabsContent>
