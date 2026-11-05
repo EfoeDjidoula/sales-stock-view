@@ -11,3 +11,5 @@
 - [x] Alertes Fraud Center Fuel Cards : hors plafond, hors horaires, hors restrictions.
 - [x] Prévisions BI : ventes/consommation, stock projeté, rupture probable et besoin ; confiance, sources et comparaison au réalisé.
 - [x] Vérifier les calculs et le parcours connecté des prévisions (horizons 7/14 jours, historiques 30/90 jours, données YATT sans écriture).
+- [x] Suite Pro (6 axes) : états réglementaires, écritures SYSCOHADA, e-CMR QR, coulage thermique, relevés B2B, jaugeages hors-ligne.
+- [ ] Suite Pro : signatures e-CMR numériques, accès direct des clients B2B, application installable entièrement hors-ligne.
