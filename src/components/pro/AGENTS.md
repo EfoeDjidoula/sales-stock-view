@@ -1,0 +1,1 @@
+- Pro Suite: src/components/pro reads scoped data only and exports files; offline gauges queue locally and replay as normal stock_movements; why: no new write path bypassing validation.
