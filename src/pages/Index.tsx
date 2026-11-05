@@ -1,4 +1,5 @@
 import ProSuiteModule from "@/components/pro/ProSuiteModule";
+import PeriodicReportsModule from "@/components/reports/PeriodicReportsModule";
 import WorkflowModule from "@/components/workflow/WorkflowModule";
 import HseModule from "@/components/hse/HseModule";
 import AssetsMaintenanceModule from "@/components/maintenance/AssetsMaintenanceModule";
@@ -132,6 +133,7 @@ const TAB_PERMISSIONS: Record<string, AppRole[]> = {
   societe: ["admin"],
   workflows: ["admin", "manager"],
   suite_pro: ["admin", "manager"],
+  rapports: ["admin", "manager"],
 };
 
 // Metadata (label + icon) for each tab
@@ -167,6 +169,7 @@ const TAB_META: Record<string, { label: string; icon: typeof TrendingUp }> = {
   societe: { label: "Paramètres client", icon: Building2 },
   workflows: { label: "Workflows & approbations", icon: ShieldCheck },
   suite_pro: { label: "Suite Pro", icon: FileText },
+  rapports: { label: "Rapports périodiques", icon: FileText },
 };
 
 // Permission RBAC (au moins une) requise pour chaque onglet ; null = toujours visible
@@ -202,6 +205,7 @@ const TAB_RBAC: Record<string, string[] | null> = {
   societe: ["settings.administer", "settings.edit"],
   workflows: ["workflows.view", "workflows.manage"],
   suite_pro: ["reports.view"],
+  rapports: ["reports.view"],
 };
 
 // Module (feature flag) requis pour chaque onglet
@@ -254,7 +258,7 @@ const TAB_GROUPS: {
   icon: typeof TrendingUp;
   tabs: string[];
 }[] = [
-  { id: "suivi", label: "Suivi & Analyse", icon: BarChart3, tabs: ["command", "bi", "ventes", "ventes_cloture", "reconciliation", "anti_fraude", "stock", "moteur_stock", "historique", "analyse_ia", "suite_pro"] },
+  { id: "suivi", label: "Suivi & Analyse", icon: BarChart3, tabs: ["command", "bi", "ventes", "ventes_cloture", "reconciliation", "anti_fraude", "stock", "moteur_stock", "historique", "analyse_ia", "suite_pro", "rapports"] },
   { id: "logistique", label: "Logistique & Flux", icon: Truck, tabs: ["commandes", "logistique_avancee", "depotage"] },
   { id: "config", label: "Configuration", icon: Settings2, tabs: ["stations", "maintenance", "hse", "perequation", "structure_prix", "proforma"] },
   { id: "tiers", label: "Tiers", icon: Contact, tabs: ["clients", "b2b", "fuel_cards", "fournisseurs"] },
@@ -750,6 +754,9 @@ const Index = () => {
             )}
           </TabsContent>
 
+          <TabsContent value="rapports" className="animate-fade-in">
+            {canAccessTab("rapports") ? <PeriodicReportsModule /> : <AccessDenied onGoBack={() => setActiveTab("ventes")} />}
+          </TabsContent>
           <TabsContent value="suite_pro" className="animate-fade-in">
             {canAccessTab("suite_pro") ? <ProSuiteModule /> : <AccessDenied onGoBack={() => setActiveTab("ventes")} />}
           </TabsContent>
