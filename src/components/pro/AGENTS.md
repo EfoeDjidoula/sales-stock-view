@@ -1,1 +1,2 @@
 - Pro Suite: src/components/pro reads scoped data only and exports files; offline gauges queue locally and replay as normal stock_movements; why: no new write path bypassing validation.
+- Periodic reports: src/components/reports reads scoped data only and computes via pure functions in src/lib/reports.ts (tested); why: one reproducible calculation reused by screen and exports.
