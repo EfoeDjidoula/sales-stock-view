@@ -21,4 +21,4 @@
 - Integrations: scoped connectors via integration_action; credentials AES-GCM encrypted by integration-hub in a service-role-only table; idempotent jobs, backoff, immutable logs, driver registry; hourly pg_cron 'tick' scheduling via set_schedule; why: no hardcoded vendor or browser secret.
 - Workflows: requests change only via workflow_action (immutable events, delegations, scope/licence/role checks, no self-approval); final approval executes the operation once via DB trigger (stock movement / new b2b_terms); why: no RBAC bypass, atomic execution.
 - Login CAPTCHA: Turnstile token checked by `verify-turnstile` before sign-in; why: secret stays server-side.
-- PDF: use jsPDF from src/lib/pdf; why: it strips fr-FR thin spaces that render as "/".
+- PDF: use jsPDF from src/lib/pdf; why: it strips fr-FR spaces shown as "/".
