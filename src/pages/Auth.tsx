@@ -15,6 +15,8 @@ import { toast } from "sonner";
 import { Fuel, LogIn, Loader2 } from "lucide-react";
 import { useLanguage } from "@/hooks/useLanguage";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { TurnstileWidget } from "@/components/auth/TurnstileWidget";
+import { supabase } from "@/integrations/supabase/client";
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -25,15 +27,15 @@ const Auth = () => {
       ? nextParam
       : "/";
   const { signIn } = useAuth();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [isLoading, setIsLoading] = useState(false);
   const [loginEmail, setLoginEmail] = useState("");
   const [loginPassword, setLoginPassword] = useState("");
   const [showSplash, setShowSplash] = useState(true);
   const [splashLeaving, setSplashLeaving] = useState(false);
-  const newChallenge = () => ({ a: 1 + Math.floor(Math.random() * 9), b: 1 + Math.floor(Math.random() * 9) });
-  const [challenge, setChallenge] = useState(newChallenge);
-  const [captcha, setCaptcha] = useState("");
+  const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const [captchaReset, setCaptchaReset] = useState(0);
+  const [captchaLoadError, setCaptchaLoadError] = useState(false);
 
   const enter = () => {
     if (splashLeaving) return;
@@ -43,13 +45,24 @@ const Auth = () => {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (Number(captcha) !== challenge.a + challenge.b) {
-      toast.error(t("Vérification CAPTCHA incorrecte"));
-      setChallenge(newChallenge());
-      setCaptcha("");
+    if (!captchaToken) {
+      toast.error(t("Veuillez confirmer que vous n'êtes pas un robot"));
       return;
     }
     setIsLoading(true);
+
+    const { data: check, error: checkError } = await supabase.functions.invoke("verify-turnstile", {
+      body: { token: captchaToken },
+    });
+    // Un jeton Turnstile n'est utilisable qu'une seule fois : on le régénère.
+    setCaptchaReset((n) => n + 1);
+    if (checkError || !check?.success) {
+      toast.error(t("Vérification anti-robot échouée"), {
+        description: t("Veuillez réessayer la vérification."),
+      });
+      setIsLoading(false);
+      return;
+    }
 
     const { error } = await signIn(loginEmail, loginPassword);
     
@@ -136,22 +149,25 @@ const Auth = () => {
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="login-captcha">
-                  {t("Vérification")} : {challenge.a} + {challenge.b} = ?
-                </Label>
-                <Input
-                  id="login-captcha"
-                  inputMode="numeric"
-                  value={captcha}
-                  onChange={(e) => setCaptcha(e.target.value.replace(/\D/g, ""))}
-                  required
-                  className="bg-secondary border-border"
-                />
+                <Label>{t("Vérification anti-robot")}</Label>
+                {!showSplash && (
+                  <TurnstileWidget
+                    onToken={setCaptchaToken}
+                    resetKey={captchaReset}
+                    language={language}
+                    onLoadError={() => setCaptchaLoadError(true)}
+                  />
+                )}
+                {captchaLoadError && (
+                  <p className="text-xs text-destructive">
+                    {t("Impossible de charger la vérification. Vérifiez votre connexion puis rechargez la page.")}
+                  </p>
+                )}
               </div>
               <Button
                 type="submit"
                 className="w-full bg-primary hover:bg-primary/90"
-                disabled={isLoading}
+                disabled={isLoading || !captchaToken}
               >
                 {isLoading ? (
                   <>
