@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import ExcelJS from "exceljs";
-import jsPDF from "jspdf";
+import jsPDF from "@/lib/pdf";
 import { toast } from "sonner";
 import { Download, FileText, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";

@@ -1,4 +1,4 @@
-import { jsPDF } from "jspdf";
+import { jsPDF } from "@/lib/pdf";
 import { hslToRgb } from "@/lib/branding";
 
 export interface PreviewBrand {

@@ -1,5 +1,5 @@
 import { getActiveBrand, hslToRgb, documentFooter } from "@/lib/branding";
-import { jsPDF } from "jspdf";
+import { jsPDF } from "@/lib/pdf";
 import { formatNumber } from "@/data/stationsData";
 
 interface PdfExportData {

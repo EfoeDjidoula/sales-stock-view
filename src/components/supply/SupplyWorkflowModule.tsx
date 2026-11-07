@@ -7,7 +7,7 @@ import { usePermissions } from "@/hooks/usePermissions";
 import { usePlatformAdmin } from "@/hooks/usePlatformAdmin";
 import { toast } from "sonner";
 import { Loader2, Plus, Eye, Check, X, Ban, FileDown } from "lucide-react";
-import { jsPDF } from "jspdf";
+import { jsPDF } from "@/lib/pdf";
 import { fr } from "date-fns/locale";
 import { getActiveBrand, hslToRgb, documentFooter } from "@/lib/branding";
 import { Button } from "@/components/ui/button";
