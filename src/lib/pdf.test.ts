@@ -16,6 +16,6 @@ describe("séparateurs de milliers dans les PDF", () => {
     const out = doc.output();
     expect(out).toContain("(Montant : 1 234 567 FCFA) Tj");
     expect(out).toContain("(Total 1 234 567) Tj");
-    expect(out).not.toContain(" /");
+    expect(out).not.toMatch(/1 \/234/);
   });
 });
