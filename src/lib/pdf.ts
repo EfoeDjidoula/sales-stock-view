@@ -1,4 +1,4 @@
-import { jsPDF as BaseJsPDF } from "jspdf";
+import { jsPDF as BaseJsPDF, type jsPDFOptions } from "jspdf";
 
 /**
  * Les formats fr-FR utilisent des espaces insécables (U+202F, U+00A0) comme
@@ -17,8 +17,15 @@ export function pdfSafeText<T>(value: T): T {
 type AnyFn = (...args: any[]) => any;
 
 export class jsPDF extends BaseJsPDF {
-  constructor(...args: ConstructorParameters<typeof BaseJsPDF>) {
-    super(...args);
+  constructor(options?: jsPDFOptions);
+  constructor(
+    orientation?: jsPDFOptions["orientation"],
+    unit?: jsPDFOptions["unit"],
+    format?: jsPDFOptions["format"],
+    compressPdf?: boolean,
+  );
+  constructor(...args: any[]) {
+    super(...(args as [jsPDFOptions]));
     const self = this as unknown as Record<string, AnyFn>;
     for (const name of ["text", "getTextWidth", "splitTextToSize", "getStringUnitWidth"]) {
       const original = self[name];
