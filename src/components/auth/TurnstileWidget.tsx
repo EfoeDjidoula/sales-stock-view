@@ -2,10 +2,9 @@ import { useEffect, useRef } from "react";
 
 /**
  * Clé de site Cloudflare Turnstile (publique).
- * Valeur actuelle = clé de test officielle Cloudflare (toujours valide).
- * À remplacer par la clé du widget « LUMATEK Auth » une fois créée.
+ * Clé du widget « LUMATEK Auth ».
  */
-export const TURNSTILE_SITE_KEY = "1x00000000000000000000AA";
+export const TURNSTILE_SITE_KEY = "0x4AAAAAAF1_ZRyaKw8KVB0n";
 
 type TurnstileApi = {
   render: (el: HTMLElement, opts: Record<string, unknown>) => string;
