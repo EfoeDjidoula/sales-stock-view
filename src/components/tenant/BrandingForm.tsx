@@ -11,7 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Palette, Save, FileSearch, Download, Loader2 } from "lucide-react";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { buildBrandingPreviewPdf } from "@/lib/brandingPreviewPdf";
-import type { jsPDF } from "jspdf";
+import type { jsPDF } from "@/lib/pdf";
 import { toast } from "sonner";
 
 interface BrandingState {

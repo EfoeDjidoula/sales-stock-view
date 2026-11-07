@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import ExcelJS from "exceljs";
-import jsPDF from "jspdf";
+import jsPDF from "@/lib/pdf";
 import QRCode from "qrcode";
 import { toast } from "sonner";
 import { FileText, Download, WifiOff, Wifi, Thermometer, BookOpen, Truck, Users, Loader2 } from "lucide-react";

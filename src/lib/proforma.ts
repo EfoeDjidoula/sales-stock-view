@@ -1,4 +1,4 @@
-import { jsPDF } from "jspdf";
+import { jsPDF } from "@/lib/pdf";
 import { getActiveBrand, hslToRgb, currencyLabel } from "@/lib/branding";
 import type { PriceStructure, PriceElement } from "@/hooks/usePriceStructures";
 
