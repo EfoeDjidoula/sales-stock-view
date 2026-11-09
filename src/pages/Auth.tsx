@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -34,6 +34,8 @@ const Auth = () => {
   const [showSplash, setShowSplash] = useState(true);
   const [splashLeaving, setSplashLeaving] = useState(false);
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
+  const fieldsFilled = /^\S+@\S+\.\S+$/.test(loginEmail.trim()) && loginPassword.length > 0;
+  useEffect(() => { if (!fieldsFilled) setCaptchaToken(null); }, [fieldsFilled]);
   const [captchaReset, setCaptchaReset] = useState(0);
   const [captchaLoadError, setCaptchaLoadError] = useState(false);
 
@@ -150,7 +152,12 @@ const Auth = () => {
               </div>
               <div className="space-y-2">
                 <Label>{t("Vérification anti-robot")}</Label>
-                {!showSplash && (
+                {!showSplash && !fieldsFilled && (
+                  <p className="text-xs text-muted-foreground">
+                    {t("Renseignez votre email et votre mot de passe pour lancer la vérification.")}
+                  </p>
+                )}
+                {!showSplash && fieldsFilled && (
                   <TurnstileWidget
                     onToken={setCaptchaToken}
                     resetKey={captchaReset}
