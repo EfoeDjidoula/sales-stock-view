@@ -3,7 +3,7 @@ import ExcelJS from "exceljs";
 import jsPDF from "@/lib/pdf";
 import QRCode from "qrcode";
 import { toast } from "sonner";
-import { FileText, Download, WifiOff, Wifi, Thermometer, BookOpen, Truck, Users, Loader2 } from "lucide-react";
+import { FileText, Download, WifiOff, Wifi, Thermometer, BookOpen, Truck, Users, Loader2, PenLine } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useScope } from "@/hooks/useScope";
 import { useBranding } from "@/hooks/useBranding";
@@ -15,6 +15,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { EcmrSignDialog, ROLE_LABEL, DECISION_LABEL, type CmrSite } from "./EcmrSignDialog";
 import {
   closureEntries, customerStatement, journalBalanced, offlineQueue, productFamily, splitThermalLoss, type JournalLine, type OfflineItem,
 } from "@/lib/proSuite";
@@ -78,7 +79,7 @@ export default function ProSuiteModule() {
     if (!tenantId) return;
     setLoading(true);
     const q = (t: string, cols: string) => scopeQuery(db.from(t).select(cols));
-    const [stations, products, tanks, closures, payments, methods, pereq, trips, loads, supplies, clients, invoices, pays, moves] = await Promise.all([
+    const [stations, products, tanks, closures, payments, methods, pereq, trips, loads, supplies, clients, invoices, pays, moves, deliveries, sigs] = await Promise.all([
       q("stations", "id,name"),
       q("petroleum_products", "id,code,name"),
       q("tanks", "id,name,station_id,product_id,product_type"),
@@ -87,12 +88,14 @@ export default function ProSuiteModule() {
       q("payment_methods", "id,name"),
       q("perequation_entries", "station_id,zone_id,product_type,quantity_liters,delivery_date,bl_number,rate_per_liter,total_amount,status").gte("delivery_date", from).lte("delivery_date", to),
       q("logistics_trips", "id,reference,status,carrier_id,truck_id,driver_id,qty_loaded,qty_delivered,planned_departure,delivered_at").order("created_at", { ascending: false }).limit(100),
-      q("logistics_trip_loads", "trip_id,product_id,qty_litres,station_id,client_id,stop_order"),
+      q("logistics_trip_loads", "id,trip_id,product_id,qty_litres,station_id,client_id,stop_order,destination_type"),
       q("supply_requests", "id,reference,station_id,product_id,qty_loaded,qty_received,received_at,bl_number,status").not("qty_received", "is", null).order("received_at", { ascending: false }).limit(100),
       q("clients", "id,name"),
       q("b2b_invoices", "id,client_id,number,amount,period_end,due_on"),
       q("b2b_payments", "invoice_id,amount,reference,paid_on"),
       q("stock_movements", "station_id,product_id,movement_type,quantity,physical_level,movement_date,status").gte("movement_date", from).lte("movement_date", to + "T23:59:59"),
+      q("logistics_load_deliveries", "load_id,trip_id,qty_delivered,delivered_at"),
+      q("logistics_cmr_signatures", "id,trip_id,role,site_key,signer_name,signature_png,decision,reserves,receipt_number,signed_at"),
     ]);
     const err = [stations, closures, trips].find((r: Row) => r.error);
     if (err) toast.error(err.error.message);
@@ -100,7 +103,7 @@ export default function ProSuiteModule() {
       stations: stations.data ?? [], products: products.data ?? [], tanks: tanks.data ?? [], closures: closures.data ?? [],
       payments: payments.data ?? [], methods: methods.data ?? [], pereq: pereq.data ?? [], trips: trips.data ?? [],
       loads: loads.data ?? [], supplies: supplies.data ?? [], clients: clients.data ?? [], invoices: invoices.data ?? [],
-      pays: pays.data ?? [], moves: moves.data ?? [],
+      pays: pays.data ?? [], moves: moves.data ?? [], deliveries: deliveries.data ?? [], sigs: sigs.data ?? [],
     });
     setLoading(false);
   }, [tenantId, countryId, from, to, scopeQuery]);
@@ -136,7 +139,7 @@ export default function ProSuiteModule() {
 
         <TabsContent value="regl"><Regulatory d={d} stName={stName} prName={prName} sub={sub} /></TabsContent>
         <TabsContent value="compta"><Accounting d={d} stName={stName} sub={sub} /></TabsContent>
-        <TabsContent value="ecmr"><Ecmr d={d} stName={stName} prName={prName} brandName={brand?.companyName ?? ""} /></TabsContent>
+        <TabsContent value="ecmr"><Ecmr d={d} reload={load} stName={stName} prName={prName} brandName={brand?.companyName ?? ""} /></TabsContent>
         <TabsContent value="thermo"><Thermal d={d} stName={stName} prName={prName} /></TabsContent>
         <TabsContent value="b2b"><Statements d={d} sub={sub} /></TabsContent>
         <TabsContent value="offline"><Offline d={d} stName={stName} prName={prName} scopeRow={scopeRow} /></TabsContent>
@@ -226,11 +229,34 @@ function Accounting({ d, stName, sub }: { d: Record<string, Row[]>; stName: (id:
 }
 
 /* ---------- 3. e-CMR ---------- */
-function Ecmr({ d, stName, prName, brandName }: { d: Record<string, Row[]>; stName: (id: string) => string; prName: (id: string) => string; brandName: string }) {
+function Ecmr({ d, reload, stName, prName, brandName }: { d: Record<string, Row[]>; reload: () => void; stName: (id: string) => string; prName: (id: string) => string; brandName: string }) {
+  const [signTrip, setSignTrip] = useState<Row | null>(null);
   const cliName = (id: string) => d.clients?.find((c) => c.id === id)?.name ?? "—";
+  const siteKey = (l: Row) => `${l.destination_type}:${l.station_id ?? l.client_id}`;
+  const siteLabel = (l: Row) => (l.station_id ? stName(l.station_id) : cliName(l.client_id));
+  const sitesOf = (t: Row): CmrSite[] => {
+    const m = new Map<string, CmrSite>();
+    (d.loads ?? []).filter((l) => l.trip_id === t.id).sort((a, b) => (a.stop_order ?? 0) - (b.stop_order ?? 0)).forEach((l) => {
+      const k = siteKey(l); const done = (d.deliveries ?? []).some((x) => x.load_id === l.id);
+      const s = m.get(k) ?? { key: k, label: siteLabel(l), delivered: true };
+      if (!done) s.delivered = false; m.set(k, s);
+    });
+    return [...m.values()];
+  };
+  const sigsOf = (t: Row) => (d.sigs ?? []).filter((s) => s.trip_id === t.id);
+  const signBox = (doc: jsPDF, sig: Row | undefined, title: string, x: number, y: number) => {
+    doc.setFontSize(9); doc.rect(x, y, 58, 38); doc.text(title, x + 2, y + 5);
+    if (sig) {
+      try { doc.addImage(sig.signature_png, "PNG", x + 2, y + 7, 54, 17); } catch { /* ignore */ }
+      doc.setFontSize(7); doc.text(sig.signer_name.slice(0, 34), x + 2, y + 29);
+      doc.text(new Date(sig.signed_at).toLocaleString("fr-FR"), x + 2, y + 33);
+      if (sig.role === "consignee") doc.text(DECISION_LABEL[sig.decision], x + 2, y + 37);
+    }
+  };
   const make = async (t: Row) => {
     const loads = (d.loads ?? []).filter((l) => l.trip_id === t.id).sort((a, b) => (a.stop_order ?? 0) - (b.stop_order ?? 0));
-    const payload = JSON.stringify({ ref: t.reference, id: t.id, qty: t.qty_loaded, status: t.status });
+    const sigs = sigsOf(t);
+    const payload = JSON.stringify({ ref: t.reference, id: t.id, qty: t.qty_loaded, status: t.status, signatures: sigs.length });
     const qr = await QRCode.toDataURL(payload, { margin: 1, width: 220 });
     const doc = new jsPDF();
     doc.setFontSize(16); doc.text("Lettre de voiture électronique (e-CMR)", 14, 18);
@@ -243,24 +269,63 @@ function Ecmr({ d, stName, prName, brandName }: { d: Record<string, Row[]>; stNa
     let y = 62;
     doc.setFont("helvetica", "bold"); doc.text("Arrêt   Destination                    Produit           Litres", 14, y); y += 6;
     doc.setFont("helvetica", "normal");
-    loads.forEach((l) => { doc.text(`${l.stop_order ?? "-"}       ${(l.station_id ? stName(l.station_id) : cliName(l.client_id)).slice(0, 28).padEnd(30)} ${prName(l.product_id).slice(0, 16).padEnd(18)} ${fmt(l.qty_litres)}`, 14, y); y += 6; });
-    y += 12;
-    ["Expéditeur (dépôt)", "Transporteur / chauffeur", "Destinataire"].forEach((s, i) => { doc.rect(14 + i * 62, y, 58, 30); doc.text(s, 16 + i * 62, y + 5); });
-    doc.setFontSize(8); doc.text("Le QR code permet de vérifier la référence et les quantités du transport.", 14, y + 40);
+    loads.forEach((l) => { doc.text(`${l.stop_order ?? "-"}       ${siteLabel(l).slice(0, 28).padEnd(30)} ${prName(l.product_id).slice(0, 16).padEnd(18)} ${fmt(l.qty_litres)}`, 14, y); y += 6; });
+    y += 8;
+    signBox(doc, sigs.find((s) => s.role === "shipper"), ROLE_LABEL.shipper, 14, y);
+    signBox(doc, sigs.find((s) => s.role === "carrier"), ROLE_LABEL.carrier, 76, y);
+    y += 44;
+    const sites = sitesOf(t);
+    doc.setFontSize(10); doc.setFont("helvetica", "bold"); doc.text("Destinataires", 14, y); doc.setFont("helvetica", "normal"); y += 4;
+    sites.forEach((s, i) => {
+      const x = 14 + (i % 3) * 62; if (i > 0 && i % 3 === 0) y += 42; if (y > 245) { doc.addPage(); y = 15; }
+      signBox(doc, sigs.find((g) => g.role === "consignee" && g.site_key === s.key), s.label.slice(0, 30), x, y);
+    });
+    y += 46;
+    doc.setFontSize(8); doc.text("Signatures électroniques horodatées et non modifiables. Le QR code permet de vérifier la référence et les quantités.", 14, Math.min(y, 285));
     doc.save(`eCMR_${t.reference}.pdf`);
   };
+  const receipt = (t: Row, sig: Row) => {
+    const loads = (d.loads ?? []).filter((l) => l.trip_id === t.id && siteKey(l) === sig.site_key);
+    const doc = new jsPDF();
+    doc.setFontSize(16); doc.text("Accusé de réception de livraison", 14, 18);
+    doc.setFontSize(10);
+    doc.text(`N° ${sig.receipt_number}`, 14, 28);
+    doc.text(`Émetteur : ${brandName}`, 14, 34);
+    doc.text(`Transport : ${t.reference}`, 14, 40);
+    doc.text(`Destinataire : ${loads[0] ? siteLabel(loads[0]) : "—"}`, 14, 46);
+    doc.text(`Décision : ${DECISION_LABEL[sig.decision]}`, 14, 52);
+    let y = 64;
+    doc.setFont("helvetica", "bold"); doc.text("Produit                 Prévu (L)      Reçu (L)", 14, y); y += 6; doc.setFont("helvetica", "normal");
+    loads.forEach((l) => { const r = (d.deliveries ?? []).find((x) => x.load_id === l.id); doc.text(`${prName(l.product_id).slice(0, 20).padEnd(24)}${fmt(l.qty_litres).padEnd(15)}${fmt(r?.qty_delivered ?? 0)}`, 14, y); y += 6; });
+    if (sig.reserves) { y += 4; doc.setFont("helvetica", "bold"); doc.text("Réserves :", 14, y); doc.setFont("helvetica", "normal"); doc.text(doc.splitTextToSize(sig.reserves, 180), 14, y + 6); y += 18; }
+    y += 6; doc.rect(14, y, 90, 42); doc.text("Signature du destinataire", 16, y + 5);
+    try { doc.addImage(sig.signature_png, "PNG", 16, y + 8, 86, 22); } catch { /* ignore */ }
+    doc.setFontSize(8); doc.text(`${sig.signer_name} — ${new Date(sig.signed_at).toLocaleString("fr-FR")}`, 16, y + 38);
+    doc.save(`AR_${sig.receipt_number}.pdf`);
+  };
+  const onSaved = (r?: Row) => { reload(); if (r && signTrip) setTimeout(() => toast.info(`Téléchargez l'accusé ${r.receipt_number} depuis la ligne du transport.`), 300); };
   return (
-    <Card className="glass-card"><CardHeader><CardTitle>Lettres de voiture des transports</CardTitle></CardHeader>
+    <Card className="glass-card"><CardHeader><CardTitle>Lettres de voiture des transports</CardTitle>
+      <p className="text-sm text-muted-foreground">Expéditeur, chauffeur puis chaque destinataire signent à l'écran. Le destinataire accepte, émet des réserves ou refuse ; un accusé de réception est alors émis.</p></CardHeader>
       <CardContent>
-        <Table><TableHeader><TableRow><TableHead>Référence</TableHead><TableHead>Statut</TableHead><TableHead>Chargé (L)</TableHead><TableHead>Destinations</TableHead><TableHead /></TableRow></TableHeader>
+        <Table><TableHeader><TableRow><TableHead>Référence</TableHead><TableHead>Statut</TableHead><TableHead>Chargé (L)</TableHead><TableHead>Signatures</TableHead><TableHead>Accusés de réception</TableHead><TableHead /></TableRow></TableHeader>
           <TableBody>
-            {(d.trips ?? []).length === 0 && <TableRow><TableCell colSpan={5} className="text-muted-foreground">Aucun transport.</TableCell></TableRow>}
-            {(d.trips ?? []).map((t) => (
-              <TableRow key={t.id}><TableCell className="font-mono">{t.reference}</TableCell><TableCell><Badge variant="outline">{t.status}</Badge></TableCell>
-                <TableCell>{fmt(t.qty_loaded)}</TableCell><TableCell>{(d.loads ?? []).filter((l) => l.trip_id === t.id).length}</TableCell>
-                <TableCell><Button size="sm" variant="outline" onClick={() => make(t)}><Download className="h-4 w-4 mr-1" />e-CMR</Button></TableCell></TableRow>
-            ))}
+            {(d.trips ?? []).length === 0 && <TableRow><TableCell colSpan={6} className="text-muted-foreground">Aucun transport.</TableCell></TableRow>}
+            {(d.trips ?? []).map((t) => {
+              const sites = sitesOf(t); const sigs = sigsOf(t); const total = 2 + sites.length;
+              return (
+                <TableRow key={t.id}><TableCell className="font-mono">{t.reference}</TableCell><TableCell><Badge variant="outline">{t.status}</Badge></TableCell>
+                  <TableCell>{fmt(t.qty_loaded)}</TableCell>
+                  <TableCell><Badge variant={sigs.length >= total ? "outline" : "secondary"}>{sigs.length} / {total}</Badge></TableCell>
+                  <TableCell className="space-x-1">{sigs.filter((s) => s.role === "consignee").map((s) => (
+                    <Button key={s.id} size="sm" variant="ghost" onClick={() => receipt(t, s)} title={DECISION_LABEL[s.decision]}><FileText className="h-4 w-4 mr-1" />{s.receipt_number}</Button>))}</TableCell>
+                  <TableCell className="whitespace-nowrap space-x-1">
+                    <Button size="sm" onClick={() => setSignTrip(t)}><PenLine className="h-4 w-4 mr-1" />Signer</Button>
+                    <Button size="sm" variant="outline" onClick={() => make(t)}><Download className="h-4 w-4 mr-1" />e-CMR</Button></TableCell></TableRow>
+              );
+            })}
           </TableBody></Table>
+        <EcmrSignDialog trip={signTrip} sites={signTrip ? sitesOf(signTrip) : []} signatures={d.sigs ?? []} onClose={() => setSignTrip(null)} onSaved={onSaved} />
       </CardContent></Card>
   );
 }
