@@ -35,6 +35,7 @@ const Auth = () => {
   const [splashLeaving, setSplashLeaving] = useState(false);
   const [captchaToken, setCaptchaToken] = useState<string | null>(null);
   const fieldsFilled = /^\S+@\S+\.\S+$/.test(loginEmail.trim()) && loginPassword.length > 0;
+  useEffect(() => { if (!fieldsFilled) setCaptchaToken(null); }, [fieldsFilled]);
   const [captchaReset, setCaptchaReset] = useState(0);
   const [captchaLoadError, setCaptchaLoadError] = useState(false);
 
