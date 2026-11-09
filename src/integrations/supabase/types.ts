@@ -3606,6 +3606,76 @@ export type Database = {
           },
         ]
       }
+      logistics_cmr_signatures: {
+        Row: {
+          country_id: string
+          decision: string
+          id: string
+          receipt_number: string
+          reserves: string | null
+          role: string
+          signature_png: string
+          signed_at: string
+          signed_by: string
+          signer_name: string
+          site_key: string
+          tenant_id: string
+          trip_id: string
+        }
+        Insert: {
+          country_id: string
+          decision?: string
+          id?: string
+          receipt_number: string
+          reserves?: string | null
+          role: string
+          signature_png: string
+          signed_at?: string
+          signed_by: string
+          signer_name: string
+          site_key?: string
+          tenant_id: string
+          trip_id: string
+        }
+        Update: {
+          country_id?: string
+          decision?: string
+          id?: string
+          receipt_number?: string
+          reserves?: string | null
+          role?: string
+          signature_png?: string
+          signed_at?: string
+          signed_by?: string
+          signer_name?: string
+          site_key?: string
+          tenant_id?: string
+          trip_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "logistics_cmr_signatures_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "countries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "logistics_cmr_signatures_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "logistics_cmr_signatures_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "logistics_trips"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       logistics_compartments: {
         Row: {
           calibration_ref: string | null
@@ -8127,6 +8197,18 @@ export type Database = {
       logistics_set_loads: {
         Args: { _lines: Json; _mode: string; _trip: string }
         Returns: number
+      }
+      logistics_sign_cmr: {
+        Args: {
+          _decision: string
+          _name: string
+          _png: string
+          _reserves: string
+          _role: string
+          _site_key: string
+          _trip: string
+        }
+        Returns: Json
       }
       logistics_trip_action: {
         Args: { _action: string; _data?: Json; _id: string; _reason?: string }
