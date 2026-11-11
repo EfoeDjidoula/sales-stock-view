@@ -2971,12 +2971,17 @@ export type Database = {
       }
       index_entries: {
         Row: {
+          autoconso_montant: number
+          banque_nom: string | null
           bons_carburant_nombre: number
           bons_carburant_valeur: number
+          bons_clients_montant: number
           bons_entreprise_nombre: number
           bons_entreprise_valeur: number
+          cartes_montant: number
           country_id: string | null
           created_at: string
+          ecart_versement: number | null
           entry_date: string
           gasoil1_index_arrivee: number
           gasoil1_index_depart: number
@@ -2985,6 +2990,7 @@ export type Database = {
           gasoil2_index_depart: number
           gasoil2_jauge: number
           id: string
+          montant_a_verser: number | null
           station_id: string
           super1_index_arrivee: number
           super1_index_depart: number
@@ -2993,12 +2999,14 @@ export type Database = {
           super2_index_depart: number
           super2_jauge: number
           tenant_id: string | null
+          tickets_valeur_montant: number
           total_bons: number | null
           total_gasoil_liters: number | null
           total_super_liters: number | null
           total_versements: number | null
           updated_at: string
           user_id: string
+          vente_globale: number | null
           versement_banque: number
           versement_banque_ref: string | null
           versement_liquidite: number
@@ -3007,12 +3015,17 @@ export type Database = {
           versement_momo_ref: string | null
         }
         Insert: {
+          autoconso_montant?: number
+          banque_nom?: string | null
           bons_carburant_nombre?: number
           bons_carburant_valeur?: number
+          bons_clients_montant?: number
           bons_entreprise_nombre?: number
           bons_entreprise_valeur?: number
+          cartes_montant?: number
           country_id?: string | null
           created_at?: string
+          ecart_versement?: number | null
           entry_date: string
           gasoil1_index_arrivee?: number
           gasoil1_index_depart?: number
@@ -3021,6 +3034,7 @@ export type Database = {
           gasoil2_index_depart?: number
           gasoil2_jauge?: number
           id?: string
+          montant_a_verser?: number | null
           station_id: string
           super1_index_arrivee?: number
           super1_index_depart?: number
@@ -3029,12 +3043,14 @@ export type Database = {
           super2_index_depart?: number
           super2_jauge?: number
           tenant_id?: string | null
+          tickets_valeur_montant?: number
           total_bons?: number | null
           total_gasoil_liters?: number | null
           total_super_liters?: number | null
           total_versements?: number | null
           updated_at?: string
           user_id: string
+          vente_globale?: number | null
           versement_banque?: number
           versement_banque_ref?: string | null
           versement_liquidite?: number
@@ -3043,12 +3059,17 @@ export type Database = {
           versement_momo_ref?: string | null
         }
         Update: {
+          autoconso_montant?: number
+          banque_nom?: string | null
           bons_carburant_nombre?: number
           bons_carburant_valeur?: number
+          bons_clients_montant?: number
           bons_entreprise_nombre?: number
           bons_entreprise_valeur?: number
+          cartes_montant?: number
           country_id?: string | null
           created_at?: string
+          ecart_versement?: number | null
           entry_date?: string
           gasoil1_index_arrivee?: number
           gasoil1_index_depart?: number
@@ -3057,6 +3078,7 @@ export type Database = {
           gasoil2_index_depart?: number
           gasoil2_jauge?: number
           id?: string
+          montant_a_verser?: number | null
           station_id?: string
           super1_index_arrivee?: number
           super1_index_depart?: number
@@ -3065,12 +3087,14 @@ export type Database = {
           super2_index_depart?: number
           super2_jauge?: number
           tenant_id?: string | null
+          tickets_valeur_montant?: number
           total_bons?: number | null
           total_gasoil_liters?: number | null
           total_super_liters?: number | null
           total_versements?: number | null
           updated_at?: string
           user_id?: string
+          vente_globale?: number | null
           versement_banque?: number
           versement_banque_ref?: string | null
           versement_liquidite?: number
@@ -3098,6 +3122,91 @@ export type Database = {
             columns: ["tenant_id"]
             isOneToOne: false
             referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      index_tank_readings: {
+        Row: {
+          country_id: string | null
+          created_at: string
+          depotage: number
+          depotage_refs: string | null
+          ecart: number | null
+          entry_date: string
+          entry_id: string
+          id: string
+          jauge: number
+          product_type: string
+          sortie: number
+          station_id: string
+          stock_cloture: number | null
+          stock_ouverture: number
+          tank_id: string
+          tenant_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          country_id?: string | null
+          created_at?: string
+          depotage?: number
+          depotage_refs?: string | null
+          ecart?: number | null
+          entry_date: string
+          entry_id: string
+          id?: string
+          jauge?: number
+          product_type: string
+          sortie?: number
+          station_id: string
+          stock_cloture?: number | null
+          stock_ouverture?: number
+          tank_id: string
+          tenant_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          country_id?: string | null
+          created_at?: string
+          depotage?: number
+          depotage_refs?: string | null
+          ecart?: number | null
+          entry_date?: string
+          entry_id?: string
+          id?: string
+          jauge?: number
+          product_type?: string
+          sortie?: number
+          station_id?: string
+          stock_cloture?: number | null
+          stock_ouverture?: number
+          tank_id?: string
+          tenant_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "index_tank_readings_entry_id_fkey"
+            columns: ["entry_id"]
+            isOneToOne: false
+            referencedRelation: "index_entries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "index_tank_readings_station_id_fkey"
+            columns: ["station_id"]
+            isOneToOne: false
+            referencedRelation: "stations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "index_tank_readings_tank_id_fkey"
+            columns: ["tank_id"]
+            isOneToOne: false
+            referencedRelation: "tanks"
             referencedColumns: ["id"]
           },
         ]
@@ -5595,9 +5704,11 @@ export type Database = {
           id: string
           index_arrivee: number
           index_depart: number
+          liters_net: number | null
           liters_sold: number | null
           product_type: string
           pump_id: string
+          retour_cuve: number
           station_id: string
           tank_id: string | null
           tenant_id: string | null
@@ -5612,9 +5723,11 @@ export type Database = {
           id?: string
           index_arrivee?: number
           index_depart?: number
+          liters_net?: number | null
           liters_sold?: number | null
           product_type: string
           pump_id: string
+          retour_cuve?: number
           station_id: string
           tank_id?: string | null
           tenant_id?: string | null
@@ -5629,9 +5742,11 @@ export type Database = {
           id?: string
           index_arrivee?: number
           index_depart?: number
+          liters_net?: number | null
           liters_sold?: number | null
           product_type?: string
           pump_id?: string
+          retour_cuve?: number
           station_id?: string
           tank_id?: string | null
           tenant_id?: string | null
@@ -8160,6 +8275,15 @@ export type Database = {
           _id: string
         }
         Returns: string
+      }
+      index_entry_sales_value: {
+        Args: {
+          _country: string
+          _date: string
+          _entry_id: string
+          _tenant: string
+        }
+        Returns: number
       }
       integration_action: {
         Args: { _action: string; _data: Json; _id: string }

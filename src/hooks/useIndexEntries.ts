@@ -10,6 +10,25 @@ export interface PumpEntryInput {
   productType: "super" | "gasoil";
   indexDepart: number;
   indexArrivee: number;
+  /** Retour en cuve (L) sur ce pistolet. */
+  retour?: number;
+}
+
+export interface TankReadingInput {
+  tankId: string;
+  productType: "super" | "gasoil";
+  /** Utilisé seulement sans historique : le serveur reprend sinon la jauge de la veille. */
+  stockOuverture: number;
+  jauge: number;
+}
+
+export interface SalesDetailInput {
+  venteGlobale: number;
+  autoconso: number;
+  bonsClients: number;
+  ticketsValeur: number;
+  cartes: number;
+  banqueNom?: string;
 }
 
 export interface IndexEntryData {
@@ -21,6 +40,10 @@ export interface IndexEntryData {
   gasoil2: { indexDepart: number; indexArrivee: number; jauge: number };
   /** Optional dynamic pump-level rows (when station has pumps configured). */
   pumpEntries?: PumpEntryInput[];
+  /** Bilan cuve journalier (stock ouverture, jauge) — dépotages et sorties recalculés côté serveur. */
+  tankReadings?: TankReadingInput[];
+  /** Détail des ventes (modèle unifié). */
+  sales?: SalesDetailInput;
   versements: {
     momo: { montant: number; reference?: string };
     banque: { montant: number; reference?: string };
@@ -62,6 +85,14 @@ export interface IndexEntry {
   total_gasoil_liters: number;
   total_versements: number;
   total_bons: number;
+  autoconso_montant?: number;
+  bons_clients_montant?: number;
+  tickets_valeur_montant?: number;
+  cartes_montant?: number;
+  vente_globale?: number | null;
+  montant_a_verser?: number | null;
+  ecart_versement?: number | null;
+  banque_nom?: string | null;
   created_at: string;
   stations?: {
     id: string;
@@ -164,6 +195,16 @@ export const useSaveIndexEntry = () => {
         bons_carburant_valeur: data.bons.carburant.valeur,
         bons_entreprise_nombre: data.bons.entreprise.nombre,
         bons_entreprise_valeur: data.bons.entreprise.valeur,
+        ...(data.sales
+          ? {
+              vente_globale: data.sales.venteGlobale,
+              autoconso_montant: data.sales.autoconso,
+              bons_clients_montant: data.sales.bonsClients,
+              tickets_valeur_montant: data.sales.ticketsValeur,
+              cartes_montant: data.sales.cartes,
+              banque_nom: data.sales.banqueNom || null,
+            }
+          : {}),
       };
 
       const { data: result, error } = await supabase
@@ -195,12 +236,37 @@ export const useSaveIndexEntry = () => {
           product_type: p.productType,
           index_depart: p.indexDepart,
           index_arrivee: p.indexArrivee,
+          retour_cuve: p.retour || 0,
         }) as any);
         const { error: insErr } = await supabase.from("pump_index_entries").insert(rows);
         if (insErr) throw insErr;
       }
 
-      return result;
+      // Bilan cuve : le serveur recalcule ouverture (veille), dépotages validés et sorties pistolets
+      if (data.tankReadings && data.tankReadings.length > 0) {
+        const db = supabase as any;
+        const { error: delT } = await db.from("index_tank_readings").delete().eq("entry_id", result.id);
+        if (delT) throw delT;
+        const { error: insT } = await db.from("index_tank_readings").insert(
+          data.tankReadings.map((t) => scopeRow({
+            entry_id: result.id,
+            tank_id: t.tankId,
+            station_id: data.stationId,
+            user_id: user.id,
+            entry_date: data.entryDate,
+            product_type: t.productType,
+            stock_ouverture: t.stockOuverture,
+            jauge: t.jauge,
+          })),
+        );
+        if (insT) throw insT;
+      }
+
+      // Relire la saisie avec les montants recalculés côté serveur
+      const { data: fresh } = await supabase.from("index_entries").select("*").eq("id", result.id).maybeSingle();
+      const { data: readings } = await (supabase as any)
+        .from("index_tank_readings").select("*").eq("entry_id", result.id);
+      return { entry: (fresh || result) as any, readings: (readings || []) as any[] };
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["indexEntries"] });
@@ -210,6 +276,8 @@ export const useSaveIndexEntry = () => {
       queryClient.invalidateQueries({ queryKey: ["stock-jauges"] });
       queryClient.invalidateQueries({ queryKey: ["pump-index-entries"] });
       queryClient.invalidateQueries({ queryKey: ["previous-pump-index"] });
+      queryClient.invalidateQueries({ queryKey: ["tank-day-context"] });
+      queryClient.invalidateQueries({ queryKey: ["existing-day-entry"] });
       toast.success("Index enregistrés avec succès");
     },
     onError: (error: Error) => {

@@ -2,298 +2,195 @@ import { getActiveBrand, hslToRgb, documentFooter } from "@/lib/branding";
 import { jsPDF } from "@/lib/pdf";
 import { formatNumber } from "@/data/stationsData";
 
-interface PdfExportData {
-  stationName: string;
-  stationLocation: string;
-  date: string;
-  super: {
-    liters: number;
-    amount: number;
-  };
-  gasoil: {
-    liters: number;
-    amount: number;
-  };
-  versements: {
-    momo: number;
-    banque: number;
-    liquidite: number;
-    total: number;
-  };
-  bons: {
-    carburant: number;
-    entreprise: number;
-    total: number;
-  };
-  totalVentes: number;
-  totalRecettes: number;
+export interface DailyRecapTank {
+  name: string;
+  product: "super" | "gasoil";
+  ouverture: number;
+  depotage: number;
+  sortie: number;
+  cloture: number;
+  jauge: number;
   ecart: number;
 }
 
+export interface DailyRecapData {
+  stationName: string;
+  stationLocation: string;
+  date: string;
+  prices: { super: number; gasoil: number };
+  super: { brut: number; retour: number; liters: number; amount: number };
+  gasoil: { brut: number; retour: number; liters: number; amount: number };
+  venteGlobale: number;
+  autoconso: number;
+  bonsClients: number;
+  ticketsValeur: number;
+  cartes: number;
+  momo: number;
+  momoRef?: string;
+  montantAVerser: number;
+  versementBanque: number;
+  bordereau?: string;
+  banqueNom?: string;
+  ecartVersement: number;
+  tanks: DailyRecapTank[];
+}
+
+const signed = (v: number) => `${v > 0 ? "+" : ""}${formatNumber(v)}`;
+
 export const usePdfExport = () => {
-  const exportPdf = (data: PdfExportData) => {
+  const exportPdf = (data: DailyRecapData) => {
     const doc = new jsPDF();
-    const pageWidth = doc.internal.pageSize.getWidth();
-    
-    // Colors
+    const W = doc.internal.pageSize.getWidth();
+    const H = doc.internal.pageSize.getHeight();
     const brand = getActiveBrand();
-    const primaryColor: [number, number, number] = hslToRgb(brand.primaryColor);
-    const textColor: [number, number, number] = [31, 41, 55];
-    const mutedColor: [number, number, number] = [107, 114, 128];
-    const superColor: [number, number, number] = [34, 197, 94];
-    const gasoilColor: [number, number, number] = [59, 130, 246];
-    const successColor: [number, number, number] = [34, 197, 94];
-    const dangerColor: [number, number, number] = [239, 68, 68];
+    const primary: [number, number, number] = hslToRgb(brand.primaryColor);
+    const text: [number, number, number] = [31, 41, 55];
+    const muted: [number, number, number] = [107, 114, 128];
+    const ok: [number, number, number] = [22, 163, 74];
+    const bad: [number, number, number] = [220, 38, 38];
 
-    let y = 20;
-
-    // Header
-    doc.setFillColor(...primaryColor);
-    doc.rect(0, 0, pageWidth, 40, "F");
-    
+    doc.setFillColor(...primary);
+    doc.rect(0, 0, W, 34, "F");
     doc.setTextColor(255, 255, 255);
-    doc.setFontSize(20);
     doc.setFont("helvetica", "bold");
-    doc.text(brand.legalName, pageWidth / 2, 18, { align: "center" });
-    
-    doc.setFontSize(12);
+    doc.setFontSize(18);
+    doc.text(brand.legalName, W / 2, 15, { align: "center" });
     doc.setFont("helvetica", "normal");
-    doc.text("Récapitulatif Journalier", pageWidth / 2, 28, { align: "center" });
-    
-    y = 55;
-
-    // Station info
-    doc.setTextColor(...textColor);
-    doc.setFontSize(14);
-    doc.setFont("helvetica", "bold");
-    doc.text(data.stationName, 20, y);
-    
-    doc.setFontSize(10);
-    doc.setFont("helvetica", "normal");
-    doc.setTextColor(...mutedColor);
-    doc.text(data.stationLocation, 20, y + 6);
-    
-    // Date
-    const formattedDate = new Date(data.date).toLocaleDateString("fr-FR", {
-      weekday: "long",
-      year: "numeric",
-      month: "long",
-      day: "numeric",
-    });
-    doc.setTextColor(...primaryColor);
     doc.setFontSize(11);
-    doc.text(formattedDate, pageWidth - 20, y + 3, { align: "right" });
+    doc.text("Récapitulatif journalier des index", W / 2, 25, { align: "center" });
 
-    y += 20;
-
-    // Separator
-    doc.setDrawColor(229, 231, 235);
-    doc.setLineWidth(0.5);
-    doc.line(20, y, pageWidth - 20, y);
-    
-    y += 15;
-
-    // VENTES DE CARBURANT
-    doc.setTextColor(...textColor);
-    doc.setFontSize(12);
+    let y = 46;
+    doc.setTextColor(...text);
     doc.setFont("helvetica", "bold");
-    doc.text("VENTES DE CARBURANT", 20, y);
-    
-    y += 10;
-
-    // Super
-    doc.setFillColor(240, 253, 244);
-    doc.roundedRect(20, y, pageWidth / 2 - 25, 30, 3, 3, "F");
-    doc.setFontSize(10);
-    doc.setTextColor(...mutedColor);
-    doc.text("Super", 25, y + 8);
-    doc.setFontSize(14);
-    doc.setTextColor(...superColor);
-    doc.setFont("helvetica", "bold");
-    doc.text(`${formatNumber(data.super.liters)} L`, 25, y + 18);
-    doc.setFontSize(10);
+    doc.setFontSize(13);
+    doc.text(data.stationName, 15, y);
     doc.setFont("helvetica", "normal");
-    doc.setTextColor(...mutedColor);
-    doc.text(`${formatNumber(data.super.amount)} FCFA`, 25, y + 26);
-
-    // Gasoil
-    doc.setFillColor(239, 246, 255);
-    doc.roundedRect(pageWidth / 2 + 5, y, pageWidth / 2 - 25, 30, 3, 3, "F");
+    doc.setFontSize(9);
+    doc.setTextColor(...muted);
+    doc.text(data.stationLocation || "", 15, y + 5);
+    doc.setTextColor(...primary);
     doc.setFontSize(10);
-    doc.setTextColor(...mutedColor);
-    doc.text("Gasoil", pageWidth / 2 + 10, y + 8);
-    doc.setFontSize(14);
-    doc.setTextColor(...gasoilColor);
-    doc.setFont("helvetica", "bold");
-    doc.text(`${formatNumber(data.gasoil.liters)} L`, pageWidth / 2 + 10, y + 18);
-    doc.setFontSize(10);
-    doc.setFont("helvetica", "normal");
-    doc.setTextColor(...mutedColor);
-    doc.text(`${formatNumber(data.gasoil.amount)} FCFA`, pageWidth / 2 + 10, y + 26);
+    doc.text(
+      new Date(data.date).toLocaleDateString("fr-FR", { weekday: "long", year: "numeric", month: "long", day: "numeric" }),
+      W - 15,
+      y,
+      { align: "right" },
+    );
+    y += 14;
 
-    y += 40;
-
-    // Total Ventes
-    doc.setFillColor(255, 251, 235);
-    doc.roundedRect(20, y, pageWidth - 40, 20, 3, 3, "F");
-    doc.setFontSize(11);
-    doc.setTextColor(...textColor);
-    doc.setFont("helvetica", "normal");
-    doc.text("Total Ventes", 25, y + 13);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(...primaryColor);
-    doc.text(`${formatNumber(data.totalVentes)} FCFA`, pageWidth - 25, y + 13, { align: "right" });
-
-    y += 30;
-
-    // VERSEMENTS
-    if (data.versements.total > 0) {
-      doc.setTextColor(...textColor);
-      doc.setFontSize(12);
+    const section = (title: string) => {
+      if (y > H - 40) { doc.addPage(); y = 20; }
+      doc.setTextColor(...text);
       doc.setFont("helvetica", "bold");
-      doc.text("VERSEMENTS", 20, y);
-      
-      y += 10;
+      doc.setFontSize(11);
+      doc.text(title, 15, y);
+      y += 3;
+      doc.setDrawColor(229, 231, 235);
+      doc.line(15, y, W - 15, y);
+      y += 6;
+    };
 
-      const versementItems = [
-        { label: "Mobile Money (MOMO)", value: data.versements.momo, color: [249, 115, 22] as [number, number, number] },
-        { label: "Virement Bancaire", value: data.versements.banque, color: [59, 130, 246] as [number, number, number] },
-        { label: "Espèces", value: data.versements.liquidite, color: [34, 197, 94] as [number, number, number] },
-      ].filter(item => item.value > 0);
+    const table = (headers: string[], rows: string[][], widths: number[]) => {
+      const x0 = 15;
+      const drawRow = (cells: string[], bold: boolean, fill?: [number, number, number]) => {
+        if (y > H - 20) { doc.addPage(); y = 20; }
+        if (fill) { doc.setFillColor(...fill); doc.rect(x0, y - 4.5, W - 30, 6.5, "F"); }
+        doc.setFont("helvetica", bold ? "bold" : "normal");
+        doc.setFontSize(8.5);
+        doc.setTextColor(...text);
+        let x = x0;
+        cells.forEach((c, i) => {
+          if (i === 0) doc.text(c, x + 1.5, y);
+          else doc.text(c, x + widths[i] - 1.5, y, { align: "right" });
+          x += widths[i];
+        });
+        y += 6.5;
+      };
+      drawRow(headers, true, [243, 244, 246]);
+      rows.forEach((r, i) => drawRow(r, i === rows.length - 1 && r[0] === "TOTAL", i % 2 ? [249, 250, 251] : undefined));
+      y += 3;
+    };
 
-      versementItems.forEach((item, index) => {
-        doc.setFillColor(249, 250, 251);
-        doc.roundedRect(20, y, pageWidth - 40, 14, 2, 2, "F");
-        doc.setFontSize(10);
-        doc.setTextColor(...mutedColor);
-        doc.text(item.label, 25, y + 9);
-        doc.setTextColor(...item.color);
-        doc.setFont("helvetica", "bold");
-        doc.text(`${formatNumber(item.value)} FCFA`, pageWidth - 25, y + 9, { align: "right" });
-        doc.setFont("helvetica", "normal");
-        y += 16;
-      });
+    const line = (label: string, value: string, opts: { bold?: boolean; color?: [number, number, number]; fill?: [number, number, number] } = {}) => {
+      if (y > H - 20) { doc.addPage(); y = 20; }
+      if (opts.fill) { doc.setFillColor(...opts.fill); doc.roundedRect(15, y - 5, W - 30, 8, 1.5, 1.5, "F"); }
+      doc.setFontSize(9.5);
+      doc.setFont("helvetica", opts.bold ? "bold" : "normal");
+      doc.setTextColor(...text);
+      doc.text(label, 18, y);
+      doc.setTextColor(...(opts.color || text));
+      doc.text(value, W - 18, y, { align: "right" });
+      y += 8;
+    };
 
-      // Total Versements
-      doc.setFillColor(255, 251, 235);
-      doc.roundedRect(20, y, pageWidth - 40, 16, 3, 3, "F");
-      doc.setFontSize(10);
-      doc.setTextColor(...textColor);
-      doc.text("Total Versements", 25, y + 11);
-      doc.setFont("helvetica", "bold");
-      doc.setTextColor(...primaryColor);
-      doc.text(`${formatNumber(data.versements.total)} FCFA`, pageWidth - 25, y + 11, { align: "right" });
+    // 1. Index & sorties
+    section("1. SORTIES AUX PISTOLETS");
+    const tot = {
+      brut: data.super.brut + data.gasoil.brut,
+      retour: data.super.retour + data.gasoil.retour,
+      liters: data.super.liters + data.gasoil.liters,
+    };
+    table(
+      ["Produit", "Quantité (L)", "Retour cuve (L)", "Sortie réelle (L)", "P.U.", "Montant (FCFA)"],
+      [
+        ["Super", formatNumber(data.super.brut), formatNumber(data.super.retour), formatNumber(data.super.liters), formatNumber(data.prices.super), formatNumber(data.super.amount)],
+        ["Gasoil", formatNumber(data.gasoil.brut), formatNumber(data.gasoil.retour), formatNumber(data.gasoil.liters), formatNumber(data.prices.gasoil), formatNumber(data.gasoil.amount)],
+        ["TOTAL", formatNumber(tot.brut), formatNumber(tot.retour), formatNumber(tot.liters), "", formatNumber(data.venteGlobale)],
+      ],
+      [30, 28, 30, 32, 20, 40],
+    );
 
-      y += 26;
+    // 2. Détail des ventes
+    section("2. DÉTAIL DES VENTES & VERSEMENT");
+    line("Vente globale", `${formatNumber(data.venteGlobale)} FCFA`, { bold: true, color: primary, fill: [255, 251, 235] });
+    line("− Autoconsommation", `${formatNumber(data.autoconso)} FCFA`);
+    line("− Bons clients", `${formatNumber(data.bonsClients)} FCFA`);
+    line("− Tickets valeur", `${formatNumber(data.ticketsValeur)} FCFA`);
+    line("− Ventes par carte", `${formatNumber(data.cartes)} FCFA`);
+    line(`− Mobile Money${data.momoRef ? ` (réf. ${data.momoRef})` : ""}`, `${formatNumber(data.momo)} FCFA`);
+    line("= Montant à verser en banque", `${formatNumber(data.montantAVerser)} FCFA`, { bold: true, fill: [243, 244, 246] });
+    const bvInfo = [data.banqueNom, data.bordereau ? `BV ${data.bordereau}` : ""].filter(Boolean).join(" · ");
+    line(`Versement banque${bvInfo ? ` (${bvInfo})` : ""}`, `${formatNumber(data.versementBanque)} FCFA`);
+    const ecColor = data.ecartVersement < 0 ? bad : ok;
+    line(
+      data.ecartVersement < 0 ? "Écart sur versement (manquant)" : "Écart sur versement",
+      `${signed(data.ecartVersement)} FCFA`,
+      { bold: true, color: ecColor, fill: data.ecartVersement < 0 ? [254, 242, 242] : [240, 253, 244] },
+    );
+    y += 2;
+
+    // 3. Suivi stock
+    if (data.tanks.length) {
+      section("3. SUIVI STOCK PAR CUVE");
+      table(
+        ["Cuve", "Ouverture", "Dépotage", "Sortie", "Clôture théo.", "Jauge", "Écart"],
+        data.tanks.map((t) => [
+          `${t.name} (${t.product === "super" ? "Super" : "Gasoil"})`,
+          formatNumber(t.ouverture),
+          formatNumber(t.depotage),
+          formatNumber(t.sortie),
+          formatNumber(t.cloture),
+          formatNumber(t.jauge),
+          signed(t.ecart),
+        ]),
+        [44, 22, 22, 22, 26, 22, 22],
+      );
     }
 
-    // BONS DE VALEUR
-    if (data.bons.total > 0) {
-      doc.setTextColor(...textColor);
-      doc.setFontSize(12);
-      doc.setFont("helvetica", "bold");
-      doc.text("BONS DE VALEUR", 20, y);
-      
-      y += 10;
-
-      const bonItems = [
-        { label: "Bons Carburant", value: data.bons.carburant },
-        { label: "Bons Entreprise", value: data.bons.entreprise },
-      ].filter(item => item.value > 0);
-
-      bonItems.forEach((item) => {
-        doc.setFillColor(249, 250, 251);
-        doc.roundedRect(20, y, pageWidth - 40, 14, 2, 2, "F");
-        doc.setFontSize(10);
-        doc.setTextColor(...mutedColor);
-        doc.text(item.label, 25, y + 9);
-        doc.setFont("helvetica", "bold");
-        doc.text(`${formatNumber(item.value)} FCFA`, pageWidth - 25, y + 9, { align: "right" });
-        doc.setFont("helvetica", "normal");
-        y += 16;
-      });
-
-      // Total Bons
-      doc.setFillColor(255, 251, 235);
-      doc.roundedRect(20, y, pageWidth - 40, 16, 3, 3, "F");
-      doc.setFontSize(10);
-      doc.setTextColor(...textColor);
-      doc.text("Total Bons de Valeur", 25, y + 11);
-      doc.setFont("helvetica", "bold");
-      doc.setTextColor(...primaryColor);
-      doc.text(`${formatNumber(data.bons.total)} FCFA`, pageWidth - 25, y + 11, { align: "right" });
-
-      y += 26;
-    }
-
-    // RÉCAPITULATIF FINAL
-    doc.setDrawColor(229, 231, 235);
-    doc.line(20, y, pageWidth - 20, y);
-    y += 10;
-
-    doc.setTextColor(...textColor);
-    doc.setFontSize(12);
-    doc.setFont("helvetica", "bold");
-    doc.text("RÉCAPITULATIF FINAL", 20, y);
-    
-    y += 12;
-
-    // Total Recettes
-    doc.setFillColor(249, 250, 251);
-    doc.roundedRect(20, y, pageWidth - 40, 18, 3, 3, "F");
-    doc.setFontSize(11);
-    doc.setTextColor(...textColor);
-    doc.setFont("helvetica", "normal");
-    doc.text("Total Recettes (Versements + Bons)", 25, y + 12);
-    doc.setFont("helvetica", "bold");
-    doc.text(`${formatNumber(data.totalRecettes)} FCFA`, pageWidth - 25, y + 12, { align: "right" });
-
-    y += 22;
-
-    // Total Ventes Attendu
-    doc.setFillColor(249, 250, 251);
-    doc.roundedRect(20, y, pageWidth - 40, 18, 3, 3, "F");
-    doc.setFontSize(11);
-    doc.setTextColor(...textColor);
-    doc.setFont("helvetica", "normal");
-    doc.text("Total Ventes Attendu", 25, y + 12);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(...primaryColor);
-    doc.text(`${formatNumber(data.totalVentes)} FCFA`, pageWidth - 25, y + 12, { align: "right" });
-
-    y += 22;
-
-    // Écart
-    const ecartColor = data.ecart >= 0 ? successColor : dangerColor;
-    const ecartBgColor = data.ecart >= 0 ? [240, 253, 244] : [254, 242, 242];
-    doc.setFillColor(...(ecartBgColor as [number, number, number]));
-    doc.roundedRect(20, y, pageWidth - 40, 22, 3, 3, "F");
-    doc.setFontSize(11);
-    doc.setTextColor(...textColor);
-    doc.setFont("helvetica", "normal");
-    doc.text(data.ecart >= 0 ? "Excédent" : "Écart (Manquant)", 25, y + 14);
-    doc.setFontSize(14);
-    doc.setFont("helvetica", "bold");
-    doc.setTextColor(...ecartColor);
-    doc.text(`${data.ecart >= 0 ? "+" : ""}${formatNumber(data.ecart)} FCFA`, pageWidth - 25, y + 14, { align: "right" });
-
-    y += 35;
-
-    // Footer
+    y = Math.max(y + 4, H - 18);
+    if (y > H - 10) { doc.addPage(); y = H - 18; }
     doc.setFontSize(8);
-    doc.setTextColor(...mutedColor);
+    doc.setTextColor(...muted);
     doc.setFont("helvetica", "normal");
     doc.text(
       `Document généré le ${new Date().toLocaleDateString("fr-FR")} à ${new Date().toLocaleTimeString("fr-FR")}`,
-      pageWidth / 2,
+      W / 2,
       y,
-      { align: "center" }
+      { align: "center" },
     );
-    doc.text(documentFooter(brand), pageWidth / 2, y + 5, { align: "center" });
+    doc.text(documentFooter(brand), W / 2, y + 5, { align: "center" });
 
-    // Save
-    const fileName = `Recap_${data.stationName.replace(/\s+/g, "_")}_${data.date}.pdf`;
-    doc.save(fileName);
+    doc.save(`Recap_${data.stationName.replace(/\s+/g, "_")}_${data.date}.pdf`);
   };
 
   return { exportPdf };
