@@ -98,7 +98,19 @@ export default function PeriodicReportsModule() {
       q("stations", "id,name"),
       q("petroleum_products", "id,code,name"),
       q("daily_closures", "id,station_id,closure_date,status").gte("closure_date", start).lte("closure_date", to),
-      q("closure_sales", "closure_id,product_id,volume,amount"),
+      (async () => {
+        // Ventes limitées aux clôtures de la fenêtre, paginées (plafond 1000 lignes par requête)
+        const all: any[] = [];
+        for (let off = 0; ; off += 1000) {
+          const r = await scopeQuery(db.from("closure_sales").select("closure_id,product_id,volume,amount,daily_closures!inner(closure_date)"))
+            .gte("daily_closures.closure_date", start).lte("daily_closures.closure_date", to)
+            .order("id").range(off, off + 999);
+          if (r.error) return r;
+          all.push(...(r.data || []));
+          if ((r.data || []).length < 1000) break;
+        }
+        return { data: all, error: null };
+      })(),
       q("stock_levels", "station_id,tank_id,product_id,theoretical,physical,variance,capacity,alert_level"),
       q("reconciliations", "station_id,recon_date,result,volume_variance,value_variance").gte("recon_date", from).lte("recon_date", to),
       q("fraud_alerts", "station_id,alert_date,severity,workflow,title").gte("alert_date", from).lte("alert_date", to),

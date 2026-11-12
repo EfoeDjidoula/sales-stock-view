@@ -22,4 +22,4 @@
 - Workflows: requests change only via workflow_action (immutable events, delegations, scope/licence/role checks, no self-approval); final approval executes the operation once via DB trigger (stock movement / new b2b_terms); why: no RBAC bypass, atomic execution.
 - Login CAPTCHA: Turnstile token checked by `verify-turnstile` before sign-in; why: secret stays server-side.
 - PDF: jsPDF via src/lib/pdf; why: it strips fr-FR spaces shown as "/".
-- Index entry model: per-nozzle retour_cuve and daily index_tank_readings (opening = previous gauge, dépotage = validated receptions, sortie = nozzle net) are recomputed by DB triggers, and vente_globale/montant_a_verser/ecart_versement are server-derived; shared formulas live in src/lib/indexModel.ts; why: stations cannot alter cash or stock variances from the browser.
+- Index model: retour_cuve, index_tank_readings and sales/versement variances are recomputed by DB triggers; formulas in src/lib/indexModel.ts; why: no browser-side tampering.
