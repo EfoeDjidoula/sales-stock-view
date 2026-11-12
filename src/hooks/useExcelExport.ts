@@ -124,6 +124,27 @@ export const useExcelExport = () => {
 
           const productRows: (string | number)[][] = [];
 
+          // Modèle unifié : détail des ventes et versement banque (saisies récentes)
+          const e: any = entry;
+          const unified = e.vente_globale != null;
+          const venteRelle = unified
+            ? Number(e.vente_globale) - Number(e.autoconso_montant || 0) - Number(e.bons_clients_montant || 0)
+              - Number(e.tickets_valeur_montant || 0) - Number(e.cartes_montant || 0)
+            : totalAmount;
+          const salesCols = (row: (string | number)[]) => {
+            row[10] = (unified ? e.autoconso_montant : entry.bons_carburant_valeur) || "";
+            row[11] = (unified ? e.bons_clients_montant : entry.bons_entreprise_valeur) || "";
+            row[12] = unified ? e.tickets_valeur_montant || "" : "";
+            row[13] = unified ? e.cartes_montant || "" : "";
+            row[14] = dash(venteRelle);
+            row[15] = entry.versement_momo || "";
+            row[16] = (unified ? e.montant_a_verser : entry.versement_liquidite) || "";
+            row[17] = entry.versement_banque || "";
+            row[18] = unified ? e.ecart_versement ?? "" : "";
+            row[19] = unified ? e.banque_nom || "" : "";
+            row[20] = entry.versement_banque_ref || "";
+          };
+
           // Use configured tanks when available, otherwise fall back to legacy fixed layout.
           const useSuper = superTanks.length > 0
             ? superTanks.map((t, i) => ({ name: t.name, cap: Number(t.capacity_liters) || 0, legacy: superLegacy[i] }))
@@ -153,13 +174,8 @@ export const useExcelExport = () => {
               row[7] = dash(totalSuper);
               row[8] = 695;
               row[9] = dash(superAmount);
-              row[10] = entry.bons_carburant_valeur || "";
-              row[11] = entry.bons_entreprise_valeur || "";
-              row[14] = dash(totalAmount);
-              row[15] = entry.versement_momo || "";
-              row[16] = entry.versement_liquidite || "";
-              row[17] = entry.versement_banque || "";
-              row[20] = entry.versement_banque_ref || "";
+              row[7] = dash(totalSuper);
+              salesCols(row);
             }
             row[21] = cuveLabel(t.name, t.cap);
             row[27] = i === 0 ? dash(totalSuper) : "";
@@ -192,12 +208,7 @@ export const useExcelExport = () => {
           const totalRow = blankRow();
           totalRow[1] = "TOTAL";
           totalRow[9] = dash(totalAmount);
-          totalRow[10] = entry.bons_carburant_valeur || "";
-          totalRow[11] = entry.bons_entreprise_valeur || "";
-          totalRow[14] = dash(totalAmount);
-          totalRow[15] = entry.versement_momo || "";
-          totalRow[16] = entry.versement_liquidite || "";
-          totalRow[17] = entry.versement_banque || "";
+          salesCols(totalRow);
           productRows.push(totalRow);
 
           for (const row of productRows) {

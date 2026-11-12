@@ -15,6 +15,9 @@ import { usePumps } from "@/hooks/usePumps";
 import { useTanks } from "@/hooks/useTanks";
 import { usePumpIndexEntries, usePreviousPumpIndex } from "@/hooks/usePumpIndexEntries";
 import { DynamicPumpEntry, type PumpRow, type TankJauge } from "@/components/index-entry/DynamicPumpEntry";
+import { useDayPrices, useTankDayContext, useExistingDayEntry } from "@/hooks/useIndexDailyContext";
+import { nozzleOutput, num, salesCascade, tankBalance, venteGlobale } from "@/lib/indexModel";
+import type { DailyRecapData } from "@/hooks/usePdfExport";
 import {
   Fuel,
   Calendar,
@@ -31,6 +34,7 @@ import {
   FileDown,
   ClipboardCheck,
   X,
+  Gauge,
 } from "lucide-react";
 import { FUEL_PRICES } from "@/config/prices";
 import { usePdfExport } from "@/hooks/usePdfExport";
@@ -55,7 +59,7 @@ import {
 } from "@/components/ui/card";
 import { toast } from "sonner";
 
-// Schema for a single product entry
+// Schema for a single product entry (mode historique, stations sans pompes configurées)
 const productEntrySchema = z.object({
   indexArrivee: z
     .string()
@@ -76,47 +80,32 @@ const productEntrySchema = z.object({
     }),
 });
 
-// Versement schema
-const versementSchema = z.object({
-  montant: z
-    .string()
-    .refine((val) => val === "" || (!isNaN(parseFloat(val)) && parseFloat(val) >= 0), {
-      message: "Doit être un nombre positif",
-    }),
-  reference: z.string().optional(),
-});
+const amountSchema = z
+  .string()
+  .refine((val) => val === "" || (!isNaN(parseFloat(val)) && parseFloat(val) >= 0), {
+    message: "Doit être un nombre positif",
+  });
 
-// Bon de valeur schema
-const bonSchema = z.object({
-  nombre: z
-    .string()
-    .refine((val) => val === "" || (!isNaN(parseInt(val)) && parseInt(val) >= 0), {
-      message: "Doit être un nombre positif",
-    }),
-  valeurUnitaire: z
-    .string()
-    .refine((val) => val === "" || (!isNaN(parseFloat(val)) && parseFloat(val) >= 0), {
-      message: "Doit être un nombre positif",
-    }),
-});
-
-// Main form schema
+// Main form schema — détail des ventes selon le modèle unifié
 const indexEntrySchema = z.object({
   date: z.string().min(1, "Date requise"),
   super1: productEntrySchema,
   super2: productEntrySchema,
   gasoil1: productEntrySchema,
   gasoil2: productEntrySchema,
-  // Versements
-  versementMomo: versementSchema,
-  versementBanque: versementSchema,
-  versementLiquidite: versementSchema,
-  // Bons de valeur
-  bonsCarburant: bonSchema,
-  bonsEntreprise: bonSchema,
+  autoconso: amountSchema,
+  bonsClients: amountSchema,
+  ticketsValeur: amountSchema,
+  cartes: amountSchema,
+  momo: amountSchema,
+  momoRef: z.string().optional(),
+  banque: amountSchema,
+  bordereau: z.string().max(60).optional(),
+  banqueNom: z.string().max(60).optional(),
 });
 
 type IndexEntryForm = z.infer<typeof indexEntrySchema>;
+type AmountKey = "autoconso" | "bonsClients" | "ticketsValeur" | "cartes" | "momo" | "banque";
 
 const defaultValues: IndexEntryForm = {
   date: new Date().toISOString().split("T")[0],
@@ -124,12 +113,20 @@ const defaultValues: IndexEntryForm = {
   super2: { indexArrivee: "", indexDepart: "", jaugeDuJour: "" },
   gasoil1: { indexArrivee: "", indexDepart: "", jaugeDuJour: "" },
   gasoil2: { indexArrivee: "", indexDepart: "", jaugeDuJour: "" },
-  versementMomo: { montant: "", reference: "" },
-  versementBanque: { montant: "", reference: "" },
-  versementLiquidite: { montant: "", reference: "" },
-  bonsCarburant: { nombre: "", valeurUnitaire: "" },
-  bonsEntreprise: { nombre: "", valeurUnitaire: "" },
+  autoconso: "",
+  bonsClients: "",
+  ticketsValeur: "",
+  cartes: "",
+  momo: "",
+  momoRef: "",
+  banque: "",
+  bordereau: "",
+  banqueNom: "",
 };
+
+const signed = (v: number) => `${v > 0 ? "+" : ""}${formatNumber(v)}`;
+
+
 
 import { useModules } from "@/hooks/useModules";
 import { useLicenseState } from "@/hooks/useLicenseState";
@@ -147,21 +144,7 @@ const IndexEntry = () => {
   const license = useLicenseState();
   const [selectedStation, setSelectedStation] = useState<{ id: string; name: string; location: string } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [submissionSummary, setSubmissionSummary] = useState<{
-    stationName: string;
-    date: string;
-    superLiters: number;
-    gasoilLiters: number;
-    superAmount: number;
-    gasoilAmount: number;
-    momo: number;
-    banque: number;
-    liquidite: number;
-    totalVersements: number;
-    bonsCarburant: number;
-    bonsEntreprise: number;
-    totalBons: number;
-  } | null>(null);
+  const [submissionSummary, setSubmissionSummary] = useState<DailyRecapData | null>(null);
   const { exportPdf } = usePdfExport();
   const saveIndexEntry = useSaveIndexEntry();
 
@@ -176,6 +159,11 @@ const IndexEntry = () => {
   const { pumps } = usePumps(selectedStation?.id);
   const { tanks } = useTanks(selectedStation?.id);
   const hasDynamicConfig = pumps.length > 0;
+  /** Cuves effectivement alimentant au moins un pistolet : elles reçoivent un bilan journalier. */
+  const tanksWithPumps = useMemo(
+    () => tanks.filter((tk) => pumps.some((p) => p.tank_id === tk.id)),
+    [tanks, pumps],
+  );
 
   const [pumpRows, setPumpRows] = useState<Record<string, PumpRow>>({});
   const [tankJauges, setTankJauges] = useState<Record<string, TankJauge>>({});
@@ -191,8 +179,8 @@ const IndexEntry = () => {
           productType: p.product_type,
           indexDepart: "",
           indexArrivee: "",
+          retour: "",
         };
-        // Keep tank/product in sync with config
         next[p.id].tankId = p.tank_id;
         next[p.id].productType = p.product_type;
       }
@@ -200,12 +188,8 @@ const IndexEntry = () => {
     });
     setTankJauges((prev) => {
       const next: Record<string, TankJauge> = {};
-      for (const t of tanks) {
-        next[t.id] = prev[t.id] || {
-          tankId: t.id,
-          productType: t.product_type,
-          jauge: "",
-        };
+      for (const tk of tanks) {
+        next[tk.id] = prev[tk.id] || { tankId: tk.id, productType: tk.product_type, jauge: "", ouverture: "" };
       }
       return next;
     });
@@ -249,6 +233,7 @@ const IndexEntry = () => {
 
   // Auto-fill index départ from previous entry's index arrivée
   useEffect(() => {
+    if (hasDynamicConfig) return;
     if (previousEntry) {
       form.setValue("super1.indexDepart", String(previousEntry.super1_index_arrivee ?? 0));
       form.setValue("super2.indexDepart", String(previousEntry.super2_index_arrivee ?? 0));
@@ -260,31 +245,34 @@ const IndexEntry = () => {
       form.setValue("gasoil1.indexDepart", "");
       form.setValue("gasoil2.indexDepart", "");
     }
-  }, [previousEntry, form]);
+  }, [previousEntry, form, hasDynamicConfig]);
 
   const hasPreviousEntry = !!previousEntry;
 
   // Pump-level: previous index_arrivee per pump (for auto-fill in dynamic mode)
   const pumpIds = useMemo(() => pumps.map((p) => p.id), [pumps]);
-  const { data: previousPumpIndex = {} } = usePreviousPumpIndex(
-    selectedStation?.id,
-    pumpIds,
-    selectedDate,
-  );
+  const { data: previousPumpIndex = {} } = usePreviousPumpIndex(selectedStation?.id, pumpIds, selectedDate);
   const hasAnyPreviousPump = Object.keys(previousPumpIndex).length > 0;
 
-  // Pre-fill pump rows + tank jauges from existing entry on the same date (edit case)
+  // Prix du jour, stock d'ouverture + dépotages validés par cuve, saisie existante du jour
+  const { data: dayPrices } = useDayPrices(selectedDate);
+  const prices = dayPrices ?? { super: FUEL_PRICES.SUPER as number, gasoil: FUEL_PRICES.GASOIL as number, source: "Prix par défaut" };
+  const { data: tankContext = {} } = useTankDayContext(selectedStation?.id, selectedDate, tanksWithPumps);
+  const { data: existingDay } = useExistingDayEntry(selectedStation?.id, selectedDate);
+
+  // Pre-fill pump rows from existing entry on the same date (edit case)
   const { data: existingPumpEntries = [] } = usePumpIndexEntries(selectedStation?.id, selectedDate);
   useEffect(() => {
     if (!existingPumpEntries.length) return;
     setPumpRows((prev) => {
       const next = { ...prev };
-      for (const e of existingPumpEntries) {
+      for (const e of existingPumpEntries as any[]) {
         if (next[e.pump_id]) {
           next[e.pump_id] = {
             ...next[e.pump_id],
             indexDepart: String(e.index_depart),
             indexArrivee: String(e.index_arrivee),
+            retour: Number(e.retour_cuve) ? String(e.retour_cuve) : "",
           };
         }
       }
@@ -292,24 +280,146 @@ const IndexEntry = () => {
     });
   }, [existingPumpEntries]);
 
+  // Pre-fill sales detail + tank jauges from the existing entry of the same day
+  useEffect(() => {
+    const e = existingDay?.entry;
+    if (!e) return;
+    const str = (v: unknown) => (Number(v) ? String(v) : "");
+    form.setValue("autoconso", str(e.autoconso_montant));
+    form.setValue("bonsClients", str(e.bons_clients_montant));
+    form.setValue("ticketsValeur", str(e.tickets_valeur_montant));
+    form.setValue("cartes", str(e.cartes_montant));
+    form.setValue("momo", str(e.versement_momo));
+    form.setValue("momoRef", e.versement_momo_ref || "");
+    form.setValue("banque", str(e.versement_banque));
+    form.setValue("bordereau", e.versement_banque_ref || "");
+    form.setValue("banqueNom", e.banque_nom || "");
+    if (existingDay.readings.length) {
+      setTankJauges((prev) => {
+        const next = { ...prev };
+        for (const r of existingDay.readings) {
+          if (next[r.tank_id]) {
+            next[r.tank_id] = { ...next[r.tank_id], jauge: String(r.jauge ?? ""), ouverture: String(r.stock_ouverture ?? "") };
+          }
+        }
+        return next;
+      });
+    }
+  }, [existingDay, form]);
+
   const handlePumpChange = (pumpId: string, patch: Partial<PumpRow>) => {
-    setPumpRows((prev) => ({
-      ...prev,
-      [pumpId]: { ...prev[pumpId], ...patch },
-    }));
+    setPumpRows((prev) => ({ ...prev, [pumpId]: { ...prev[pumpId], ...patch } }));
   };
-  const handleJaugeChange = (tankId: string, value: string) => {
-    setTankJauges((prev) => ({
-      ...prev,
-      [tankId]: { ...prev[tankId], jauge: value },
-    }));
+  const handleJaugeChange = (tankId: string, patch: Partial<TankJauge>) => {
+    setTankJauges((prev) => ({ ...prev, [tankId]: { ...prev[tankId], ...patch } }));
   };
 
-  /** Aggregate dynamic pump rows + tank jauges into legacy super1/super2/gasoil1/gasoil2 slots
-   *  so existing dashboards/stocks (which read these columns) keep working seamlessly.
-   *  Strategy: sum all super pumps into super1, all gasoil pumps into gasoil1.
-   *  Jauges: first super tank → super1.jauge, second → super2.jauge (same for gasoil).
-   */
+  // ---------- Calculs en direct (modèle unifié) ----------
+  const watched = form.watch();
+  const productTotals = (product: "super" | "gasoil") => {
+    let brut = 0;
+    let retour = 0;
+    let net = 0;
+    let invalid = false;
+    if (hasDynamicConfig) {
+      for (const p of pumps.filter((x) => x.product_type === product)) {
+        const r = pumpRows[p.id];
+        const c = nozzleOutput(num(r?.indexDepart), num(r?.indexArrivee), num(r?.retour));
+        brut += c.brut;
+        retour += c.retour;
+        net += c.net;
+        invalid = invalid || c.retourInvalide || c.indexInvalide;
+      }
+    } else {
+      const keys = product === "super" ? (["super1", "super2"] as const) : (["gasoil1", "gasoil2"] as const);
+      for (const k of keys) {
+        const v = Math.max(0, num(watched[k]?.indexArrivee) - num(watched[k]?.indexDepart));
+        brut += v;
+        net += v;
+      }
+    }
+    return { brut, retour, net, invalid };
+  };
+  const sup = productTotals("super");
+  const gas = productTotals("gasoil");
+  const venteG = venteGlobale(sup.net, gas.net, prices.super, prices.gasoil);
+  const cascade = salesCascade(
+    venteG,
+    {
+      autoconso: num(watched.autoconso),
+      bonsClients: num(watched.bonsClients),
+      ticketsValeur: num(watched.ticketsValeur),
+      cartes: num(watched.cartes),
+      momo: num(watched.momo),
+    },
+    num(watched.banque),
+  );
+  const tankRows = tanksWithPumps.map((tk) => {
+    const ctx = tankContext[tk.id];
+    const tj = tankJauges[tk.id];
+    const ouvertureKnown = ctx?.stockOuverture != null;
+    const ouverture = ouvertureKnown ? (ctx!.stockOuverture as number) : num(tj?.ouverture);
+    const sortie = pumps
+      .filter((p) => p.tank_id === tk.id)
+      .reduce((a, p) => {
+        const r = pumpRows[p.id];
+        return a + nozzleOutput(num(r?.indexDepart), num(r?.indexArrivee), num(r?.retour)).net;
+      }, 0);
+    const bal = tankBalance(ouverture, ctx?.depotage ?? 0, sortie, num(tj?.jauge));
+    return { tank: tk, ctx, tj, ouvertureKnown, bal, jaugeFilled: !!tj?.jauge, ouvertureFilled: ouvertureKnown || !!tj?.ouverture };
+  });
+
+  const buildRecap = (
+    override?: { venteGlobale?: number; montantAVerser?: number; ecartVersement?: number; readings?: any[] },
+  ): DailyRecapData => {
+    const tanksRecap = override?.readings?.length
+      ? override.readings.map((r) => ({
+          name: tanks.find((tk) => tk.id === r.tank_id)?.name || "Cuve",
+          product: r.product_type as "super" | "gasoil",
+          ouverture: Number(r.stock_ouverture) || 0,
+          depotage: Number(r.depotage) || 0,
+          sortie: Number(r.sortie) || 0,
+          cloture: Number(r.stock_cloture) || 0,
+          jauge: Number(r.jauge) || 0,
+          ecart: Number(r.ecart) || 0,
+        }))
+      : tankRows.map((r) => ({
+          name: r.tank.name,
+          product: r.tank.product_type,
+          ouverture: r.bal.stockOuverture,
+          depotage: r.bal.depotage,
+          sortie: r.bal.sortie,
+          cloture: r.bal.stockCloture,
+          jauge: r.bal.jauge,
+          ecart: r.bal.ecart,
+        }));
+    tanksRecap.sort((a, b) => (a.product === b.product ? a.name.localeCompare(b.name, undefined, { numeric: true }) : a.product === "super" ? -1 : 1));
+    return {
+      stationName: selectedStation?.name || "",
+      stationLocation: selectedStation?.location || "",
+      date: watched.date,
+      prices: { super: prices.super, gasoil: prices.gasoil },
+      super: { brut: sup.brut, retour: sup.retour, liters: sup.net, amount: sup.net * prices.super },
+      gasoil: { brut: gas.brut, retour: gas.retour, liters: gas.net, amount: gas.net * prices.gasoil },
+      venteGlobale: override?.venteGlobale ?? cascade.venteGlobale,
+      autoconso: num(watched.autoconso),
+      bonsClients: num(watched.bonsClients),
+      ticketsValeur: num(watched.ticketsValeur),
+      cartes: num(watched.cartes),
+      momo: num(watched.momo),
+      momoRef: watched.momoRef || undefined,
+      montantAVerser: override?.montantAVerser ?? cascade.montantAVerser,
+      versementBanque: num(watched.banque),
+      bordereau: watched.bordereau || undefined,
+      banqueNom: watched.banqueNom || undefined,
+      ecartVersement: override?.ecartVersement ?? cascade.ecartVersement,
+      tanks: tanksRecap,
+    };
+  };
+
+  /** Agrège les pistolets dans les colonnes historiques super1/gasoil1 pour les tableaux de bord.
+   *  L'index d'arrivée agrégé est diminué du retour en cuve : le volume historique = sortie réelle.
+   *  Jauges : 1re cuve super → super1.jauge, 2e → super2.jauge (idem gasoil). */
   const buildLegacyFromDynamic = () => {
     const sumByProduct = (product: "super" | "gasoil") => {
       let depart = 0;
@@ -317,16 +427,16 @@ const IndexEntry = () => {
       for (const p of pumps.filter((x) => x.product_type === product)) {
         const r = pumpRows[p.id];
         if (!r) continue;
-        depart += parseFloat(r.indexDepart) || 0;
-        arrivee += parseFloat(r.indexArrivee) || 0;
+        const d = num(r.indexDepart);
+        const c = nozzleOutput(d, num(r.indexArrivee), num(r.retour));
+        depart += d;
+        arrivee += d + c.net;
       }
       return { depart, arrivee };
     };
-    const superTanks = tanks.filter((t) => t.product_type === "super");
-    const gasoilTanks = tanks.filter((t) => t.product_type === "gasoil");
-    const jaugeOf = (t?: { id: string }) =>
-      t ? parseFloat(tankJauges[t.id]?.jauge || "0") || 0 : 0;
-
+    const superTanks = tanks.filter((tk) => tk.product_type === "super");
+    const gasoilTanks = tanks.filter((tk) => tk.product_type === "gasoil");
+    const jaugeOf = (tk?: { id: string }) => (tk ? num(tankJauges[tk.id]?.jauge) : 0);
     const s = sumByProduct("super");
     const g = sumByProduct("gasoil");
     return {
@@ -344,141 +454,167 @@ const IndexEntry = () => {
         pumpId: p.id,
         tankId: p.tank_id,
         productType: p.product_type,
-        indexDepart: parseFloat(r?.indexDepart || "0") || 0,
-        indexArrivee: parseFloat(r?.indexArrivee || "0") || 0,
+        indexDepart: num(r?.indexDepart),
+        indexArrivee: num(r?.indexArrivee),
+        retour: num(r?.retour),
       };
     });
 
-  // In dynamic mode, satisfy legacy zod validation by setting placeholder "0" values.
-  useEffect(() => {
-    if (!hasDynamicConfig) return;
+  const applyDynamicPlaceholders = () => {
     (["super1", "super2", "gasoil1", "gasoil2"] as const).forEach((k) => {
       form.setValue(`${k}.indexArrivee`, "0");
       form.setValue(`${k}.indexDepart`, "0");
       form.setValue(`${k}.jaugeDuJour`, "0");
     });
+  };
+
+  // In dynamic mode, satisfy legacy zod validation by setting placeholder "0" values.
+  useEffect(() => {
+    if (!hasDynamicConfig) return;
+    applyDynamicPlaceholders();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hasDynamicConfig, form]);
 
-
+  const resetForm = () => {
+    form.reset({ ...defaultValues, date: form.getValues("date") });
+    if (hasDynamicConfig) applyDynamicPlaceholders();
+    setPumpRows((prev) => {
+      const next: Record<string, PumpRow> = {};
+      for (const id of Object.keys(prev)) next[id] = { ...prev[id], indexArrivee: "", retour: "" };
+      return next;
+    });
+    setTankJauges((prev) => {
+      const next: Record<string, TankJauge> = {};
+      for (const id of Object.keys(prev)) next[id] = { ...prev[id], jauge: "", ouverture: "" };
+      return next;
+    });
+  };
 
   const onSubmit = async (data: IndexEntryForm) => {
     if (!selectedStation) {
       toast.error("Veuillez sélectionner une station");
       return;
     }
+    if (hasDynamicConfig) {
+      if (sup.invalid || gas.invalid) {
+        toast.error("Index ou retour en cuve incohérent", {
+          description: "Corrigez les pistolets signalés en rouge avant d'enregistrer.",
+        });
+        return;
+      }
+      const missingJauge = tankRows.filter((r) => !r.jaugeFilled).map((r) => r.tank.name);
+      if (missingJauge.length) {
+        toast.error("Jauge du jour manquante", { description: `Cuve(s) : ${missingJauge.join(", ")}` });
+        return;
+      }
+      const missingOuv = tankRows.filter((r) => !r.ouvertureFilled).map((r) => r.tank.name);
+      if (missingOuv.length) {
+        toast.error("Stock d'ouverture manquant", { description: `Première saisie pour : ${missingOuv.join(", ")}` });
+        return;
+      }
+    }
 
     setIsSubmitting(true);
-
     try {
-      // In dynamic mode, override legacy values with aggregated pump data and pass pumpEntries
       const legacy = hasDynamicConfig
         ? buildLegacyFromDynamic()
         : {
-            super1: {
-              indexDepart: parseFloat(data.super1.indexDepart) || 0,
-              indexArrivee: parseFloat(data.super1.indexArrivee) || 0,
-              jauge: parseFloat(data.super1.jaugeDuJour) || 0,
-            },
-            super2: {
-              indexDepart: parseFloat(data.super2.indexDepart) || 0,
-              indexArrivee: parseFloat(data.super2.indexArrivee) || 0,
-              jauge: parseFloat(data.super2.jaugeDuJour) || 0,
-            },
-            gasoil1: {
-              indexDepart: parseFloat(data.gasoil1.indexDepart) || 0,
-              indexArrivee: parseFloat(data.gasoil1.indexArrivee) || 0,
-              jauge: parseFloat(data.gasoil1.jaugeDuJour) || 0,
-            },
-            gasoil2: {
-              indexDepart: parseFloat(data.gasoil2.indexDepart) || 0,
-              indexArrivee: parseFloat(data.gasoil2.indexArrivee) || 0,
-              jauge: parseFloat(data.gasoil2.jaugeDuJour) || 0,
-            },
+            super1: { indexDepart: num(data.super1.indexDepart), indexArrivee: num(data.super1.indexArrivee), jauge: num(data.super1.jaugeDuJour) },
+            super2: { indexDepart: num(data.super2.indexDepart), indexArrivee: num(data.super2.indexArrivee), jauge: num(data.super2.jaugeDuJour) },
+            gasoil1: { indexDepart: num(data.gasoil1.indexDepart), indexArrivee: num(data.gasoil1.indexArrivee), jauge: num(data.gasoil1.jaugeDuJour) },
+            gasoil2: { indexDepart: num(data.gasoil2.indexDepart), indexArrivee: num(data.gasoil2.indexArrivee), jauge: num(data.gasoil2.jaugeDuJour) },
           };
 
-      await saveIndexEntry.mutateAsync({
+      const saved = await saveIndexEntry.mutateAsync({
         stationId: selectedStation.id,
         entryDate: data.date,
         ...legacy,
         pumpEntries: hasDynamicConfig ? buildPumpEntries() : undefined,
+        tankReadings: hasDynamicConfig
+          ? tankRows.map((r) => ({
+              tankId: r.tank.id,
+              productType: r.tank.product_type,
+              stockOuverture: r.bal.stockOuverture,
+              jauge: r.bal.jauge,
+            }))
+          : undefined,
+        sales: {
+          venteGlobale: cascade.venteGlobale,
+          autoconso: num(data.autoconso),
+          bonsClients: num(data.bonsClients),
+          ticketsValeur: num(data.ticketsValeur),
+          cartes: num(data.cartes),
+          banqueNom: data.banqueNom,
+        },
         versements: {
-          momo: {
-            montant: parseFloat(data.versementMomo.montant) || 0,
-            reference: data.versementMomo.reference,
-          },
-          banque: {
-            montant: parseFloat(data.versementBanque.montant) || 0,
-            reference: data.versementBanque.reference,
-          },
-          liquidite: {
-            montant: parseFloat(data.versementLiquidite.montant) || 0,
-            note: data.versementLiquidite.reference,
-          },
+          momo: { montant: num(data.momo), reference: data.momoRef },
+          banque: { montant: num(data.banque), reference: data.bordereau },
+          liquidite: { montant: 0 },
         },
         bons: {
-          carburant: {
-            nombre: parseInt(data.bonsCarburant.nombre) || 0,
-            valeur: parseFloat(data.bonsCarburant.valeurUnitaire) || 0,
-          },
-          entreprise: {
-            nombre: parseInt(data.bonsEntreprise.nombre) || 0,
-            valeur: parseFloat(data.bonsEntreprise.valeurUnitaire) || 0,
-          },
+          carburant: { nombre: 0, valeur: 0 },
+          entreprise: { nombre: 0, valeur: 0 },
         },
       });
 
-      // Compute summary from the legacy values (which already reflect dynamic aggregation)
-      const s1 = legacy.super1.indexArrivee - legacy.super1.indexDepart;
-      const s2 = legacy.super2.indexArrivee - legacy.super2.indexDepart;
-      const g1 = legacy.gasoil1.indexArrivee - legacy.gasoil1.indexDepart;
-      const g2 = legacy.gasoil2.indexArrivee - legacy.gasoil2.indexDepart;
-      const superLiters = Math.max(0, s1) + Math.max(0, s2);
-      const gasoilLiters = Math.max(0, g1) + Math.max(0, g2);
-      const momo = parseFloat(data.versementMomo.montant) || 0;
-      const banque = parseFloat(data.versementBanque.montant) || 0;
-      const liquidite = parseFloat(data.versementLiquidite.montant) || 0;
-      const bonsCarb = (parseInt(data.bonsCarburant.nombre) || 0) * (parseFloat(data.bonsCarburant.valeurUnitaire) || 0);
-      const bonsEntr = (parseInt(data.bonsEntreprise.nombre) || 0) * (parseFloat(data.bonsEntreprise.valeurUnitaire) || 0);
-
-      setSubmissionSummary({
-        stationName: selectedStation!.name,
-        date: data.date,
-        superLiters,
-        gasoilLiters,
-        superAmount: superLiters * FUEL_PRICES.SUPER,
-        gasoilAmount: gasoilLiters * FUEL_PRICES.GASOIL,
-        momo,
-        banque,
-        liquidite,
-        totalVersements: momo + banque + liquidite,
-        bonsCarburant: bonsCarb,
-        bonsEntreprise: bonsEntr,
-        totalBons: bonsCarb + bonsEntr,
-      });
-
-      form.reset(defaultValues);
-      if (hasDynamicConfig) {
-        setPumpRows((prev) => {
-          const next: Record<string, PumpRow> = {};
-          for (const id of Object.keys(prev)) {
-            next[id] = { ...prev[id], indexDepart: "", indexArrivee: "" };
-          }
-          return next;
-        });
-        setTankJauges((prev) => {
-          const next: Record<string, TankJauge> = {};
-          for (const id of Object.keys(prev)) {
-            next[id] = { ...prev[id], jauge: "" };
-          }
-          return next;
-        });
-      }
+      const e = saved.entry || {};
+      setSubmissionSummary(
+        buildRecap({
+          venteGlobale: e.vente_globale != null ? Number(e.vente_globale) : undefined,
+          montantAVerser: e.montant_a_verser != null ? Number(e.montant_a_verser) : undefined,
+          ecartVersement: e.ecart_versement != null ? Number(e.ecart_versement) : undefined,
+          readings: saved.readings,
+        }),
+      );
+      resetForm();
     } catch (error) {
       // Error is handled by the mutation
     }
-
     setIsSubmitting(false);
   };
+
+  const renderAmount = (name: AmountKey, label: string, hint?: string) => (
+    <FormField
+      control={form.control}
+      name={name}
+      render={({ field }) => (
+        <FormItem>
+          <FormLabel className="text-xs text-muted-foreground">{label}</FormLabel>
+          <FormControl>
+            <Input
+              type="number"
+              step="1"
+              min="0"
+              placeholder="0"
+              className="bg-background border-border"
+              disabled={isFiscalYearClosed}
+              {...field}
+            />
+          </FormControl>
+          {hint && <p className="text-[11px] text-muted-foreground">{hint}</p>}
+          <FormMessage className="text-xs" />
+        </FormItem>
+      )}
+    />
+  );
+
+  const renderText = (name: "momoRef" | "bordereau" | "banqueNom", label: string, placeholder: string) => (
+    <FormField
+      control={form.control}
+      name={name}
+      render={({ field }) => (
+        <FormItem>
+          <FormLabel className="text-xs text-muted-foreground">{label}</FormLabel>
+          <FormControl>
+            <Input placeholder={placeholder} className="bg-background border-border" disabled={isFiscalYearClosed} {...field} />
+          </FormControl>
+          <FormMessage className="text-xs" />
+        </FormItem>
+      )}
+    />
+  );
+
+
 
   const ProductEntryCard = ({
     title,
@@ -773,6 +909,8 @@ const IndexEntry = () => {
                   hasPrevious={hasAnyPreviousPump}
                   onChangePump={handlePumpChange}
                   onChangeJauge={handleJaugeChange}
+                  tankContext={tankContext}
+                  prices={prices}
                   disabled={isFiscalYearClosed}
                 />
               </div>
@@ -824,609 +962,173 @@ const IndexEntry = () => {
               </>
             )}
 
-            {/* Versements Section */}
+            {/* Détail des ventes & versement banque */}
             <Card className="bg-card border-border">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Wallet className="w-5 h-5 text-primary" />
-                  Versements du Jour
-                </CardTitle>
-                <CardDescription>
-                  Saisissez les versements effectués par mode de paiement
-                </CardDescription>
+              <CardHeader className="flex flex-row items-start justify-between gap-3">
+                <div>
+                  <CardTitle className="flex items-center gap-2">
+                    <Wallet className="w-5 h-5 text-primary" />
+                    Détail des ventes & versement banque
+                  </CardTitle>
+                  <CardDescription>
+                    La vente globale est répartie par mode de règlement ; le reste est à verser en banque.
+                  </CardDescription>
+                </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="shrink-0 gap-2"
+                  disabled={!selectedStation || cascade.venteGlobale <= 0}
+                  onClick={() => exportPdf(buildRecap())}
+                >
+                  <FileDown className="w-4 h-4" />
+                  Export PDF
+                </Button>
               </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {/* MOMO */}
-                  <div className="space-y-3 p-4 rounded-lg bg-secondary/50 border border-border">
-                    <div className="flex items-center gap-2 text-orange-400">
-                      <Smartphone className="w-5 h-5" />
-                      <span className="font-semibold">Mobile Money</span>
+              <CardContent className="space-y-5">
+                {/* Vente globale */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                  <div className="p-3 rounded-lg bg-super/10 border border-super/30">
+                    <div className="flex items-center gap-2 mb-1 text-sm text-muted-foreground">
+                      <div className="w-2 h-2 rounded-full bg-super" /> Super — sortie réelle
                     </div>
-                    <FormField
-                      control={form.control}
-                      name="versementMomo.montant"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-xs text-muted-foreground">
-                            Montant (FCFA)
-                          </FormLabel>
-                          <FormControl>
-                            <Input
-                              type="number"
-                              step="1"
-                              min="0"
-                              placeholder="0"
-                              className="bg-background border-border"
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormMessage className="text-xs" />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="versementMomo.reference"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-xs text-muted-foreground">
-                            Référence
-                          </FormLabel>
-                          <FormControl>
-                            <Input
-                              placeholder="N° transaction"
-                              className="bg-background border-border"
-                              {...field}
-                            />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
+                    <div className="text-lg font-bold text-super">{formatNumber(sup.net)} L</div>
+                    <div className="text-xs text-muted-foreground">
+                      × {formatNumber(prices.super)} = {formatNumber(sup.net * prices.super)} FCFA
+                    </div>
                   </div>
-
-                  {/* Banque */}
-                  <div className="space-y-3 p-4 rounded-lg bg-secondary/50 border border-border">
-                    <div className="flex items-center gap-2 text-blue-400">
-                      <Building2 className="w-5 h-5" />
-                      <span className="font-semibold">Virement Bancaire</span>
+                  <div className="p-3 rounded-lg bg-gasoil/10 border border-gasoil/30">
+                    <div className="flex items-center gap-2 mb-1 text-sm text-muted-foreground">
+                      <div className="w-2 h-2 rounded-full bg-gasoil" /> Gasoil — sortie réelle
                     </div>
-                    <FormField
-                      control={form.control}
-                      name="versementBanque.montant"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-xs text-muted-foreground">
-                            Montant (FCFA)
-                          </FormLabel>
-                          <FormControl>
-                            <Input
-                              type="number"
-                              step="1"
-                              min="0"
-                              placeholder="0"
-                              className="bg-background border-border"
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormMessage className="text-xs" />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="versementBanque.reference"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-xs text-muted-foreground">
-                            Référence
-                          </FormLabel>
-                          <FormControl>
-                            <Input
-                              placeholder="N° virement"
-                              className="bg-background border-border"
-                              {...field}
-                            />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
+                    <div className="text-lg font-bold text-gasoil">{formatNumber(gas.net)} L</div>
+                    <div className="text-xs text-muted-foreground">
+                      × {formatNumber(prices.gasoil)} = {formatNumber(gas.net * prices.gasoil)} FCFA
+                    </div>
                   </div>
-
-                  {/* Liquidité */}
-                  <div className="space-y-3 p-4 rounded-lg bg-secondary/50 border border-border">
-                    <div className="flex items-center gap-2 text-green-400">
-                      <Banknote className="w-5 h-5" />
-                      <span className="font-semibold">Espèces</span>
-                    </div>
-                    <FormField
-                      control={form.control}
-                      name="versementLiquidite.montant"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-xs text-muted-foreground">
-                            Montant (FCFA)
-                          </FormLabel>
-                          <FormControl>
-                            <Input
-                              type="number"
-                              step="1"
-                              min="0"
-                              placeholder="0"
-                              className="bg-background border-border"
-                              {...field}
-                            />
-                          </FormControl>
-                          <FormMessage className="text-xs" />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="versementLiquidite.reference"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-xs text-muted-foreground">
-                            Note
-                          </FormLabel>
-                          <FormControl>
-                            <Input
-                              placeholder="Observation"
-                              className="bg-background border-border"
-                              {...field}
-                            />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
+                  <div className="p-3 rounded-lg bg-primary/10 border border-primary/30">
+                    <div className="text-sm text-muted-foreground mb-1">Vente globale</div>
+                    <div className="text-xl font-bold text-primary">{formatNumber(cascade.venteGlobale)} FCFA</div>
+                    <div className="text-[11px] text-muted-foreground">{prices.source}</div>
                   </div>
                 </div>
 
-                {/* Total Versements */}
-                {(() => {
-                  const momo = parseFloat(form.watch("versementMomo.montant") || "0");
-                  const banque = parseFloat(form.watch("versementBanque.montant") || "0");
-                  const liquidite = parseFloat(form.watch("versementLiquidite.montant") || "0");
-                  const total = momo + banque + liquidite;
-                  return total > 0 ? (
-                    <div className="mt-4 p-3 rounded-lg bg-primary/10 border border-primary/30 flex items-center justify-between">
-                      <span className="text-sm font-medium">Total Versements</span>
-                      <span className="text-lg font-bold text-primary">
-                        {formatNumber(total)} FCFA
-                      </span>
+                {/* Ventes hors espèces */}
+                <div className="space-y-2">
+                  <h4 className="text-sm font-semibold flex items-center gap-2">
+                    <Receipt className="w-4 h-4 text-primary" /> À déduire de la vente globale (FCFA)
+                  </h4>
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 p-4 rounded-lg bg-secondary/50 border border-border">
+                    {renderAmount("autoconso", "Autoconsommation", "Ex-bons YATT")}
+                    {renderAmount("bonsClients", "Bons clients")}
+                    {renderAmount("ticketsValeur", "Tickets valeur")}
+                    {renderAmount("cartes", "Ventes par carte")}
+                    <div className="space-y-2">
+                      {renderAmount("momo", "Mobile Money")}
+                      {renderText("momoRef", "Réf. Mobile Money", "N° transaction")}
                     </div>
-                  ) : null;
-                })()}
-              </CardContent>
-            </Card>
-
-            {/* Bons de Valeur Section */}
-            <Card className="bg-card border-border">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Receipt className="w-5 h-5 text-primary" />
-                  Bons de Valeur
-                </CardTitle>
-                <CardDescription>
-                  Saisissez les bons de carburant et bons entreprise acceptés
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Bons Carburant */}
-                  <div className="space-y-3 p-4 rounded-lg bg-secondary/50 border border-border">
-                    <div className="flex items-center gap-2 text-super">
-                      <Receipt className="w-5 h-5" />
-                      <span className="font-semibold">Bons Carburant</span>
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <FormField
-                        control={form.control}
-                        name="bonsCarburant.nombre"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-xs text-muted-foreground">
-                              Nombre
-                            </FormLabel>
-                            <FormControl>
-                              <Input
-                                type="number"
-                                step="1"
-                                min="0"
-                                placeholder="0"
-                                className="bg-background border-border"
-                                {...field}
-                              />
-                            </FormControl>
-                            <FormMessage className="text-xs" />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="bonsCarburant.valeurUnitaire"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-xs text-muted-foreground">
-                              Valeur unitaire (FCFA)
-                            </FormLabel>
-                            <FormControl>
-                              <Input
-                                type="number"
-                                step="1"
-                                min="0"
-                                placeholder="0"
-                                className="bg-background border-border"
-                                {...field}
-                              />
-                            </FormControl>
-                            <FormMessage className="text-xs" />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                    {(() => {
-                      const nombre = parseInt(form.watch("bonsCarburant.nombre") || "0");
-                      const valeur = parseFloat(form.watch("bonsCarburant.valeurUnitaire") || "0");
-                      const total = nombre * valeur;
-                      return total > 0 ? (
-                        <div className="text-sm text-right text-super font-medium">
-                          Total: {formatNumber(total)} FCFA
-                        </div>
-                      ) : null;
-                    })()}
-                  </div>
-
-                  {/* Bons Entreprise */}
-                  <div className="space-y-3 p-4 rounded-lg bg-secondary/50 border border-border">
-                    <div className="flex items-center gap-2 text-gasoil">
-                      <Receipt className="w-5 h-5" />
-                      <span className="font-semibold">Bons Entreprise</span>
-                    </div>
-                    <div className="grid grid-cols-2 gap-3">
-                      <FormField
-                        control={form.control}
-                        name="bonsEntreprise.nombre"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-xs text-muted-foreground">
-                              Nombre
-                            </FormLabel>
-                            <FormControl>
-                              <Input
-                                type="number"
-                                step="1"
-                                min="0"
-                                placeholder="0"
-                                className="bg-background border-border"
-                                {...field}
-                              />
-                            </FormControl>
-                            <FormMessage className="text-xs" />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="bonsEntreprise.valeurUnitaire"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel className="text-xs text-muted-foreground">
-                              Valeur unitaire (FCFA)
-                            </FormLabel>
-                            <FormControl>
-                              <Input
-                                type="number"
-                                step="1"
-                                min="0"
-                                placeholder="0"
-                                className="bg-background border-border"
-                                {...field}
-                              />
-                            </FormControl>
-                            <FormMessage className="text-xs" />
-                          </FormItem>
-                        )}
-                      />
-                    </div>
-                    {(() => {
-                      const nombre = parseInt(form.watch("bonsEntreprise.nombre") || "0");
-                      const valeur = parseFloat(form.watch("bonsEntreprise.valeurUnitaire") || "0");
-                      const total = nombre * valeur;
-                      return total > 0 ? (
-                        <div className="text-sm text-right text-gasoil font-medium">
-                          Total: {formatNumber(total)} FCFA
-                        </div>
-                      ) : null;
-                    })()}
                   </div>
                 </div>
 
-                {/* Total Bons */}
-                {(() => {
-                  const bonsCarburant = parseInt(form.watch("bonsCarburant.nombre") || "0") * parseFloat(form.watch("bonsCarburant.valeurUnitaire") || "0");
-                  const bonsEntreprise = parseInt(form.watch("bonsEntreprise.nombre") || "0") * parseFloat(form.watch("bonsEntreprise.valeurUnitaire") || "0");
-                  const total = bonsCarburant + bonsEntreprise;
-                  return total > 0 ? (
-                    <div className="mt-4 p-3 rounded-lg bg-primary/10 border border-primary/30 flex items-center justify-between">
-                      <span className="text-sm font-medium">Total Bons de Valeur</span>
-                      <span className="text-lg font-bold text-primary">
-                        {formatNumber(total)} FCFA
-                      </span>
+                {/* Montant à verser */}
+                <div className="flex items-center justify-between p-4 rounded-xl bg-secondary/60 border border-border">
+                  <div>
+                    <div className="font-semibold">Montant à verser en banque</div>
+                    <div className="text-xs text-muted-foreground">
+                      {formatNumber(cascade.venteGlobale)} − {formatNumber(cascade.totalDeductions)} FCFA
                     </div>
-                  ) : null;
-                })()}
+                  </div>
+                  <span className="text-xl font-bold">{formatNumber(cascade.montantAVerser)} FCFA</span>
+                </div>
+
+                {/* Versement banque */}
+                <div className="space-y-2">
+                  <h4 className="text-sm font-semibold flex items-center gap-2">
+                    <Building2 className="w-4 h-4 text-primary" /> Versement en banque
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-3 p-4 rounded-lg bg-secondary/50 border border-border">
+                    {renderAmount("banque", "Montant versé en banque (FCFA)")}
+                    {renderText("bordereau", "N° bordereau (BV)", "Ex. 288009")}
+                    {renderText("banqueNom", "Banque", "Ex. SGB")}
+                  </div>
+                </div>
+
+                {/* Écart sur versement */}
+                <div
+                  className={`flex items-center justify-between p-4 rounded-xl border ${
+                    cascade.ecartVersement < 0
+                      ? "bg-destructive/10 border-destructive/30"
+                      : "bg-success/10 border-success/30"
+                  }`}
+                >
+                  <div>
+                    <div className="font-semibold">
+                      Écart sur versement {cascade.ecartVersement < 0 ? "(manquant)" : cascade.ecartVersement > 0 ? "(excédent)" : ""}
+                    </div>
+                    <div className="text-xs text-muted-foreground">Montant versé − Montant à verser</div>
+                  </div>
+                  <span
+                    className={`text-xl font-bold ${cascade.ecartVersement < 0 ? "text-destructive" : "text-success"}`}
+                  >
+                    {signed(cascade.ecartVersement)} FCFA
+                  </span>
+                </div>
               </CardContent>
             </Card>
 
-            {/* Daily Summary */}
-            {(() => {
-              // Calculate fuel quantities
-              const super1Qty =
-                (parseFloat(form.watch("super1.indexArrivee") || "0") -
-                  parseFloat(form.watch("super1.indexDepart") || "0")) || 0;
-              const super2Qty =
-                (parseFloat(form.watch("super2.indexArrivee") || "0") -
-                  parseFloat(form.watch("super2.indexDepart") || "0")) || 0;
-              const gasoil1Qty =
-                (parseFloat(form.watch("gasoil1.indexArrivee") || "0") -
-                  parseFloat(form.watch("gasoil1.indexDepart") || "0")) || 0;
-              const gasoil2Qty =
-                (parseFloat(form.watch("gasoil2.indexArrivee") || "0") -
-                  parseFloat(form.watch("gasoil2.indexDepart") || "0")) || 0;
+            {/* Synthèse du suivi stock */}
+            {hasDynamicConfig && tankRows.length > 0 && (
+              <Card className="bg-card border-border">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Gauge className="w-5 h-5 text-primary" />
+                    Synthèse du suivi stock
+                  </CardTitle>
+                  <CardDescription>
+                    Stock clôture théorique = ouverture + dépotages validés − sorties réelles ; écart = jauge − stock théorique.
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="overflow-x-auto">
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="text-xs text-muted-foreground border-b border-border">
+                        <th className="text-left py-2">Cuve</th>
+                        <th className="text-right">Ouverture</th>
+                        <th className="text-right">Dépotage</th>
+                        <th className="text-right">Sortie</th>
+                        <th className="text-right">Clôture théo.</th>
+                        <th className="text-right">Jauge</th>
+                        <th className="text-right">Écart</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {tankRows.map((r) => (
+                        <tr key={r.tank.id} className="border-b border-border/50">
+                          <td className="py-2">
+                            <span className={`inline-block w-2 h-2 rounded-full mr-2 bg-${r.tank.product_type}`} />
+                            {r.tank.name}
+                          </td>
+                          <td className="text-right">{formatNumber(r.bal.stockOuverture)}</td>
+                          <td className="text-right">{formatNumber(r.bal.depotage)}</td>
+                          <td className="text-right">{formatNumber(r.bal.sortie)}</td>
+                          <td className="text-right font-medium">{formatNumber(r.bal.stockCloture)}</td>
+                          <td className="text-right">{r.jaugeFilled ? formatNumber(r.bal.jauge) : "—"}</td>
+                          <td
+                            className={`text-right font-bold ${
+                              !r.jaugeFilled ? "text-muted-foreground" : r.bal.ecart < 0 ? "text-destructive" : "text-success"
+                            }`}
+                          >
+                            {r.jaugeFilled ? signed(r.bal.ecart) : "—"}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </CardContent>
+              </Card>
+            )}
 
-              const totalSuperLiters = Math.max(0, super1Qty) + Math.max(0, super2Qty);
-              const totalGasoilLiters = Math.max(0, gasoil1Qty) + Math.max(0, gasoil2Qty);
-
-              // Fuel prices (FCFA per liter)
-              const prixSuper = 630;
-              const prixGasoil = 575;
-
-              const ventesSuper = totalSuperLiters * prixSuper;
-              const ventesGasoil = totalGasoilLiters * prixGasoil;
-              const totalVentes = ventesSuper + ventesGasoil;
-
-              // Calculate payments
-              const momo = parseFloat(form.watch("versementMomo.montant") || "0");
-              const banque = parseFloat(form.watch("versementBanque.montant") || "0");
-              const liquidite = parseFloat(form.watch("versementLiquidite.montant") || "0");
-              const totalVersements = momo + banque + liquidite;
-
-              // Calculate vouchers
-              const bonsCarburant =
-                parseInt(form.watch("bonsCarburant.nombre") || "0") *
-                parseFloat(form.watch("bonsCarburant.valeurUnitaire") || "0");
-              const bonsEntreprise =
-                parseInt(form.watch("bonsEntreprise.nombre") || "0") *
-                parseFloat(form.watch("bonsEntreprise.valeurUnitaire") || "0");
-              const totalBons = bonsCarburant + bonsEntreprise;
-
-              // Total recettes
-              const totalRecettes = totalVersements + totalBons;
-
-              // Difference
-              const ecart = totalRecettes - totalVentes;
-
-              const hasData = totalVentes > 0 || totalVersements > 0 || totalBons > 0;
-
-              return hasData ? (
-                <Card className="bg-gradient-to-br from-primary/10 via-card to-card border-primary/40">
-                  <CardHeader className="flex flex-row items-start justify-between">
-                    <div>
-                      <CardTitle className="flex items-center gap-2 text-xl">
-                        <CheckCircle2 className="w-6 h-6 text-primary" />
-                        Récapitulatif Journalier
-                      </CardTitle>
-                      <CardDescription>
-                        Synthèse des ventes, versements et bons de valeur
-                      </CardDescription>
-                    </div>
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="shrink-0 gap-2"
-                      onClick={() => {
-                        if (!selectedStation) return;
-                        exportPdf({
-                          stationName: selectedStation.name,
-                          stationLocation: selectedStation.location,
-                          date: form.watch("date"),
-                          super: {
-                            liters: totalSuperLiters,
-                            amount: ventesSuper,
-                          },
-                          gasoil: {
-                            liters: totalGasoilLiters,
-                            amount: ventesGasoil,
-                          },
-                          versements: {
-                            momo,
-                            banque,
-                            liquidite,
-                            total: totalVersements,
-                          },
-                          bons: {
-                            carburant: bonsCarburant,
-                            entreprise: bonsEntreprise,
-                            total: totalBons,
-                          },
-                          totalVentes,
-                          totalRecettes,
-                          ecart,
-                        });
-                      }}
-                    >
-                      <FileDown className="w-4 h-4" />
-                      Export PDF
-                    </Button>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                    {/* Ventes Section */}
-                    <div className="space-y-3">
-                      <h4 className="font-semibold text-foreground flex items-center gap-2">
-                        <Fuel className="w-4 h-4 text-primary" />
-                        Ventes de Carburant
-                      </h4>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
-                        <div className="p-3 rounded-lg bg-super/10 border border-super/30">
-                          <div className="flex items-center gap-2 mb-1">
-                            <div className="w-2 h-2 rounded-full bg-super" />
-                            <span className="text-sm text-muted-foreground">Super</span>
-                          </div>
-                          <div className="text-lg font-bold text-super">
-                            {formatNumber(totalSuperLiters)} L
-                          </div>
-                          <div className="text-sm text-muted-foreground">
-                            {formatNumber(ventesSuper)} FCFA
-                          </div>
-                        </div>
-                        <div className="p-3 rounded-lg bg-gasoil/10 border border-gasoil/30">
-                          <div className="flex items-center gap-2 mb-1">
-                            <div className="w-2 h-2 rounded-full bg-gasoil" />
-                            <span className="text-sm text-muted-foreground">Gasoil</span>
-                          </div>
-                          <div className="text-lg font-bold text-gasoil">
-                            {formatNumber(totalGasoilLiters)} L
-                          </div>
-                          <div className="text-sm text-muted-foreground">
-                            {formatNumber(ventesGasoil)} FCFA
-                          </div>
-                        </div>
-                        <div className="p-3 rounded-lg bg-primary/10 border border-primary/30">
-                          <div className="text-sm text-muted-foreground mb-1">Total Ventes</div>
-                          <div className="text-xl font-bold text-primary">
-                            {formatNumber(totalVentes)} FCFA
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Versements Section */}
-                    {totalVersements > 0 && (
-                      <div className="space-y-3">
-                        <h4 className="font-semibold text-foreground flex items-center gap-2">
-                          <Wallet className="w-4 h-4 text-primary" />
-                          Versements
-                        </h4>
-                        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                          {momo > 0 && (
-                            <div className="p-3 rounded-lg bg-orange-500/10 border border-orange-500/30">
-                              <div className="flex items-center gap-2 mb-1">
-                                <Smartphone className="w-4 h-4 text-orange-400" />
-                                <span className="text-xs text-muted-foreground">MOMO</span>
-                              </div>
-                              <div className="font-semibold text-orange-400">
-                                {formatNumber(momo)} FCFA
-                              </div>
-                            </div>
-                          )}
-                          {banque > 0 && (
-                            <div className="p-3 rounded-lg bg-blue-500/10 border border-blue-500/30">
-                              <div className="flex items-center gap-2 mb-1">
-                                <Building2 className="w-4 h-4 text-blue-400" />
-                                <span className="text-xs text-muted-foreground">Banque</span>
-                              </div>
-                              <div className="font-semibold text-blue-400">
-                                {formatNumber(banque)} FCFA
-                              </div>
-                            </div>
-                          )}
-                          {liquidite > 0 && (
-                            <div className="p-3 rounded-lg bg-green-500/10 border border-green-500/30">
-                              <div className="flex items-center gap-2 mb-1">
-                                <Banknote className="w-4 h-4 text-green-400" />
-                                <span className="text-xs text-muted-foreground">Espèces</span>
-                              </div>
-                              <div className="font-semibold text-green-400">
-                                {formatNumber(liquidite)} FCFA
-                              </div>
-                            </div>
-                          )}
-                          <div className="p-3 rounded-lg bg-primary/10 border border-primary/30">
-                            <div className="text-xs text-muted-foreground mb-1">Total Versements</div>
-                            <div className="font-bold text-primary">
-                              {formatNumber(totalVersements)} FCFA
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Bons de Valeur Section */}
-                    {totalBons > 0 && (
-                      <div className="space-y-3">
-                        <h4 className="font-semibold text-foreground flex items-center gap-2">
-                          <Receipt className="w-4 h-4 text-primary" />
-                          Bons de Valeur
-                        </h4>
-                        <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                          {bonsCarburant > 0 && (
-                            <div className="p-3 rounded-lg bg-super/10 border border-super/30">
-                              <div className="text-xs text-muted-foreground mb-1">Bons Carburant</div>
-                              <div className="font-semibold text-super">
-                                {formatNumber(bonsCarburant)} FCFA
-                              </div>
-                            </div>
-                          )}
-                          {bonsEntreprise > 0 && (
-                            <div className="p-3 rounded-lg bg-gasoil/10 border border-gasoil/30">
-                              <div className="text-xs text-muted-foreground mb-1">Bons Entreprise</div>
-                              <div className="font-semibold text-gasoil">
-                                {formatNumber(bonsEntreprise)} FCFA
-                              </div>
-                            </div>
-                          )}
-                          <div className="p-3 rounded-lg bg-primary/10 border border-primary/30">
-                            <div className="text-xs text-muted-foreground mb-1">Total Bons</div>
-                            <div className="font-bold text-primary">
-                              {formatNumber(totalBons)} FCFA
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Final Summary */}
-                    <div className="pt-4 border-t border-border space-y-3">
-                      <div className="flex items-center justify-between p-4 rounded-xl bg-secondary/50 border border-border">
-                        <span className="font-medium">Total Recettes (Versements + Bons)</span>
-                        <span className="text-xl font-bold">{formatNumber(totalRecettes)} FCFA</span>
-                      </div>
-                      <div className="flex items-center justify-between p-4 rounded-xl bg-secondary/50 border border-border">
-                        <span className="font-medium">Total Ventes Attendu</span>
-                        <span className="text-xl font-bold text-primary">{formatNumber(totalVentes)} FCFA</span>
-                      </div>
-                      <div
-                        className={`flex items-center justify-between p-4 rounded-xl border ${
-                          ecart === 0
-                            ? "bg-success/10 border-success/30"
-                            : ecart > 0
-                            ? "bg-success/10 border-success/30"
-                            : "bg-destructive/10 border-destructive/30"
-                        }`}
-                      >
-                        <span className="font-medium">
-                          {ecart >= 0 ? "Excédent" : "Écart (Manquant)"}
-                        </span>
-                        <span
-                          className={`text-xl font-bold ${
-                            ecart === 0
-                              ? "text-success"
-                              : ecart > 0
-                              ? "text-success"
-                              : "text-destructive"
-                          }`}
-                        >
-                          {ecart >= 0 ? "+" : ""}
-                          {formatNumber(ecart)} FCFA
-                        </span>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              ) : null;
-            })()}
 
             {/* Submit Button */}
             <div className="flex flex-col sm:flex-row gap-3 pt-4">
@@ -1452,7 +1154,7 @@ const IndexEntry = () => {
                 type="button"
                 variant="outline"
                 size="lg"
-                onClick={() => form.reset(defaultValues)}
+                onClick={resetForm}
                 className="border-border"
               >
                 Réinitialiser
@@ -1473,19 +1175,15 @@ const IndexEntry = () => {
 
       {/* Submission Summary Modal */}
       {submissionSummary && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm">
-          <Card className="w-full max-w-lg mx-4 shadow-xl border-primary/30">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-background/80 backdrop-blur-sm p-4">
+          <Card className="w-full max-w-lg shadow-xl border-primary/30 max-h-[90vh] overflow-y-auto">
             <CardHeader className="pb-4">
               <div className="flex items-center justify-between">
                 <CardTitle className="flex items-center gap-2 text-lg">
                   <ClipboardCheck className="w-5 h-5 text-success" />
-                  Récapitulatif de saisie
+                  Saisie enregistrée
                 </CardTitle>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => setSubmissionSummary(null)}
-                >
+                <Button variant="ghost" size="icon" onClick={() => setSubmissionSummary(null)}>
                   <X className="w-4 h-4" />
                 </Button>
               </div>
@@ -1500,123 +1198,77 @@ const IndexEntry = () => {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-5">
-              {/* Quantities */}
-              <div>
-                <h4 className="text-sm font-semibold text-muted-foreground mb-2 flex items-center gap-2">
-                  <Fuel className="w-4 h-4" /> Quantités vendues
-                </h4>
-                <div className="grid grid-cols-2 gap-3">
-                  <div className="rounded-lg bg-primary/5 border border-primary/20 p-3">
-                    <p className="text-xs text-muted-foreground">Super</p>
-                    <p className="text-lg font-bold">{formatNumber(submissionSummary.superLiters)} L</p>
-                    <p className="text-xs text-muted-foreground">{formatNumber(submissionSummary.superAmount)} FCFA</p>
-                  </div>
-                  <div className="rounded-lg bg-accent/50 border border-border p-3">
-                    <p className="text-xs text-muted-foreground">Gasoil</p>
-                    <p className="text-lg font-bold">{formatNumber(submissionSummary.gasoilLiters)} L</p>
-                    <p className="text-xs text-muted-foreground">{formatNumber(submissionSummary.gasoilAmount)} FCFA</p>
-                  </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="rounded-lg bg-super/10 border border-super/30 p-3">
+                  <p className="text-xs text-muted-foreground">Super — sortie réelle</p>
+                  <p className="text-lg font-bold">{formatNumber(submissionSummary.super.liters)} L</p>
+                  <p className="text-xs text-muted-foreground">Retour cuve {formatNumber(submissionSummary.super.retour)} L</p>
                 </div>
-                <div className="mt-2 text-right text-sm font-semibold">
-                  Total : {formatNumber(submissionSummary.superAmount + submissionSummary.gasoilAmount)} FCFA
+                <div className="rounded-lg bg-gasoil/10 border border-gasoil/30 p-3">
+                  <p className="text-xs text-muted-foreground">Gasoil — sortie réelle</p>
+                  <p className="text-lg font-bold">{formatNumber(submissionSummary.gasoil.liters)} L</p>
+                  <p className="text-xs text-muted-foreground">Retour cuve {formatNumber(submissionSummary.gasoil.retour)} L</p>
                 </div>
               </div>
 
-              {/* Versements */}
-              <div>
-                <h4 className="text-sm font-semibold text-muted-foreground mb-2 flex items-center gap-2">
-                  <Wallet className="w-4 h-4" /> Versements
-                </h4>
+              <div className="space-y-1.5 text-sm">
+                {[
+                  ["Vente globale", submissionSummary.venteGlobale],
+                  ["Autoconsommation", -submissionSummary.autoconso],
+                  ["Bons clients", -submissionSummary.bonsClients],
+                  ["Tickets valeur", -submissionSummary.ticketsValeur],
+                  ["Ventes par carte", -submissionSummary.cartes],
+                  ["Mobile Money", -submissionSummary.momo],
+                ].map(([label, v]) => (
+                  <div key={label as string} className="flex justify-between">
+                    <span className="text-muted-foreground">{label}</span>
+                    <span className="font-medium">{formatNumber(v as number)} FCFA</span>
+                  </div>
+                ))}
+                <div className="flex justify-between border-t border-border pt-1.5 font-semibold">
+                  <span>Montant à verser</span>
+                  <span>{formatNumber(submissionSummary.montantAVerser)} FCFA</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">
+                    Versé en banque{submissionSummary.bordereau ? ` (BV ${submissionSummary.bordereau})` : ""}
+                  </span>
+                  <span className="font-medium">{formatNumber(submissionSummary.versementBanque)} FCFA</span>
+                </div>
+                <div
+                  className={`flex justify-between font-bold ${
+                    submissionSummary.ecartVersement < 0 ? "text-destructive" : "text-success"
+                  }`}
+                >
+                  <span>Écart sur versement</span>
+                  <span>{signed(submissionSummary.ecartVersement)} FCFA</span>
+                </div>
+              </div>
+
+              {submissionSummary.tanks.length > 0 && (
                 <div className="space-y-1.5 text-sm">
-                  <div className="flex justify-between">
-                    <span className="flex items-center gap-1.5 text-muted-foreground">
-                      <Smartphone className="w-3.5 h-3.5" /> MOMO
-                    </span>
-                    <span className="font-medium">{formatNumber(submissionSummary.momo)} FCFA</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="flex items-center gap-1.5 text-muted-foreground">
-                      <Building2 className="w-3.5 h-3.5" /> Banque
-                    </span>
-                    <span className="font-medium">{formatNumber(submissionSummary.banque)} FCFA</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="flex items-center gap-1.5 text-muted-foreground">
-                      <Banknote className="w-3.5 h-3.5" /> Espèces
-                    </span>
-                    <span className="font-medium">{formatNumber(submissionSummary.liquidite)} FCFA</span>
-                  </div>
-                  <div className="flex justify-between border-t border-border pt-1.5 font-semibold">
-                    <span>Total versements</span>
-                    <span>{formatNumber(submissionSummary.totalVersements)} FCFA</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Bons */}
-              {submissionSummary.totalBons > 0 && (
-                <div>
-                  <h4 className="text-sm font-semibold text-muted-foreground mb-2 flex items-center gap-2">
-                    <Receipt className="w-4 h-4" /> Bons de valeur
+                  <h4 className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
+                    <Gauge className="w-4 h-4" /> Écart sur stock
                   </h4>
-                  <div className="space-y-1.5 text-sm">
-                    {submissionSummary.bonsCarburant > 0 && (
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Bons carburant</span>
-                        <span className="font-medium">{formatNumber(submissionSummary.bonsCarburant)} FCFA</span>
-                      </div>
-                    )}
-                    {submissionSummary.bonsEntreprise > 0 && (
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Bons entreprise</span>
-                        <span className="font-medium">{formatNumber(submissionSummary.bonsEntreprise)} FCFA</span>
-                      </div>
-                    )}
-                    <div className="flex justify-between border-t border-border pt-1.5 font-semibold">
-                      <span>Total bons</span>
-                      <span>{formatNumber(submissionSummary.totalBons)} FCFA</span>
+                  {submissionSummary.tanks.map((tk) => (
+                    <div key={tk.name} className="flex justify-between">
+                      <span className="text-muted-foreground">
+                        Cuve {tk.name} · théorique {formatNumber(tk.cloture)} L / jauge {formatNumber(tk.jauge)} L
+                      </span>
+                      <span className={`font-semibold ${tk.ecart < 0 ? "text-destructive" : "text-success"}`}>
+                        {signed(tk.ecart)} L
+                      </span>
                     </div>
-                  </div>
+                  ))}
                 </div>
               )}
 
               <div className="flex gap-3">
-                <Button
-                  variant="outline"
-                  className="flex-1"
-                  onClick={() => {
-                    const totalVentes = submissionSummary.superAmount + submissionSummary.gasoilAmount;
-                    const totalRecettes = submissionSummary.totalVersements + submissionSummary.totalBons;
-                    exportPdf({
-                      stationName: submissionSummary.stationName,
-                      stationLocation: selectedStation?.location || "",
-                      date: submissionSummary.date,
-                      super: { liters: submissionSummary.superLiters, amount: submissionSummary.superAmount },
-                      gasoil: { liters: submissionSummary.gasoilLiters, amount: submissionSummary.gasoilAmount },
-                      versements: {
-                        momo: submissionSummary.momo,
-                        banque: submissionSummary.banque,
-                        liquidite: submissionSummary.liquidite,
-                        total: submissionSummary.totalVersements,
-                      },
-                      bons: {
-                        carburant: submissionSummary.bonsCarburant,
-                        entreprise: submissionSummary.bonsEntreprise,
-                        total: submissionSummary.totalBons,
-                      },
-                      totalVentes,
-                      totalRecettes,
-                      ecart: totalRecettes - totalVentes,
-                    });
-                  }}
-                >
+                <Button variant="outline" className="flex-1" onClick={() => exportPdf(submissionSummary)}>
                   <FileDown className="w-4 h-4 mr-2" />
                   Exporter PDF
                 </Button>
-                <Button
-                  className="flex-1"
-                  onClick={() => setSubmissionSummary(null)}
-                >
+                <Button className="flex-1" onClick={() => setSubmissionSummary(null)}>
                   Fermer
                 </Button>
               </div>
@@ -1624,6 +1276,7 @@ const IndexEntry = () => {
           </Card>
         </div>
       )}
+
 
       {/* Footer */}
       <footer className="border-t border-border mt-8 py-6">
