@@ -17,10 +17,16 @@ import { toast } from "sonner";
 
 interface ExcelImportDialogProps {
   trigger?: React.ReactNode;
+  /** Ouverture pilotée depuis un menu (sans bouton déclencheur). */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
-export const ExcelImportDialog = ({ trigger }: ExcelImportDialogProps) => {
-  const [open, setOpen] = useState(false);
+export const ExcelImportDialog = ({ trigger, open: openProp, onOpenChange }: ExcelImportDialogProps) => {
+  const [innerOpen, setInnerOpen] = useState(false);
+  const controlled = openProp !== undefined;
+  const open = controlled ? openProp : innerOpen;
+  const setOpen = (o: boolean) => (controlled ? onOpenChange?.(o) : setInnerOpen(o));
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [preview, setPreview] = useState<ParsedIndexEntry[]>([]);
   const [importStatus, setImportStatus] = useState<"idle" | "preview" | "importing" | "done">("idle");
@@ -107,14 +113,16 @@ export const ExcelImportDialog = ({ trigger }: ExcelImportDialogProps) => {
 
   return (
     <Dialog open={open} onOpenChange={(o) => o ? setOpen(true) : handleClose()}>
-      <DialogTrigger asChild>
-        {trigger || (
-          <Button variant="outline" className="gap-2">
-            <Upload className="w-4 h-4" />
-            Importer Excel
-          </Button>
-        )}
-      </DialogTrigger>
+      {!controlled && (
+        <DialogTrigger asChild>
+          {trigger || (
+            <Button variant="outline" className="gap-2">
+              <Upload className="w-4 h-4" />
+              Importer Excel
+            </Button>
+          )}
+        </DialogTrigger>
+      )}
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">

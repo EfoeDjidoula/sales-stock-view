@@ -3,7 +3,7 @@ import PeriodicReportsModule from "@/components/reports/PeriodicReportsModule";
 import WorkflowModule from "@/components/workflow/WorkflowModule";
 import HseModule from "@/components/hse/HseModule";
 import AssetsMaintenanceModule from "@/components/maintenance/AssetsMaintenanceModule";
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useMemo, useEffect, useRef, type CSSProperties } from "react";
 import { formatCurrency } from "@/data/stationsData";
 import { useUserRoles, AppRole } from "@/hooks/useUserRoles";
 import { useDashboardData, Period } from "@/hooks/useDashboardData";
@@ -86,6 +86,11 @@ import { SupportTickets } from "@/components/support/SupportTickets";
 import { LifeBuoy } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
+import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import { AppSidebar } from "@/components/layout/AppSidebar";
+import { findPoleOfTab, formatBadge } from "@/lib/navigation";
+import { useNavBadges, CRITICAL_BADGES } from "@/hooks/useNavBadges";
+import { Bell, MoreHorizontal } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -251,23 +256,6 @@ const TAB_EXTRA_MODULE: Record<string, string> = {
   support: "support",
 };
 
-// Grouped navigation structure
-const TAB_GROUPS: {
-  id: string;
-  label: string;
-  icon: typeof TrendingUp;
-  tabs: string[];
-}[] = [
-  { id: "suivi", label: "Suivi & Analyse", icon: BarChart3, tabs: ["command", "bi", "ventes", "ventes_cloture", "reconciliation", "anti_fraude", "stock", "moteur_stock", "historique", "analyse_ia", "suite_pro", "rapports"] },
-  { id: "logistique", label: "Logistique & Flux", icon: Truck, tabs: ["commandes", "logistique_avancee", "depotage"] },
-  { id: "config", label: "Configuration", icon: Settings2, tabs: ["stations", "maintenance", "hse", "perequation", "structure_prix", "proforma"] },
-  { id: "tiers", label: "Tiers", icon: Contact, tabs: ["clients", "b2b", "fuel_cards", "fournisseurs"] },
-  { id: "support", label: "Support", icon: LifeBuoy, tabs: ["support"] },
-  { id: "admin", label: "Administration", icon: ShieldCheck, tabs: ["workflows", "exercices", "droits", "societe"] },
-];
-
-
-
 const Index = () => {
   const [selectedStation, setSelectedStation] = useState<DbStation | null>(null);
   const [period, setPeriod] = useState<Period>("day");
@@ -312,12 +300,26 @@ const Index = () => {
     });
   }, [currentUserRole, enabledMap, license.isLimited, permissions, isPlatformAdmin]); // eslint-disable-line react-hooks/exhaustive-deps
 
-  const [activeTab, setActiveTab] = useState(() => new URLSearchParams(window.location.search).get("tab") === "support" ? "support" : "command");
+  const [activeTab, setActiveTab] = useState(() => {
+    const fromUrl = new URLSearchParams(window.location.search).get("tab");
+    return fromUrl && fromUrl in TAB_META ? fromUrl : "command";
+  });
+  const [importOpen, setImportOpen] = useState(false);
+  const [exportOpen, setExportOpen] = useState(false);
   // Onglet par défaut (non choisi) : redirection silencieuse vers la première section autorisée
   const tabIsDefault = useRef(true);
   const selectTab = (tab: string) => { tabIsDefault.current = false; setActiveTab(tab); };
 
+  // La section active est reflétée dans l'adresse (?tab=) pour le partage et le retour arrière
+  useEffect(() => {
+    const url = new URL(window.location.href);
+    if (url.searchParams.get("tab") === activeTab) return;
+    url.searchParams.set("tab", activeTab);
+    window.history.replaceState(window.history.state, "", url.toString());
+  }, [activeTab]);
+
   const canAccessTab = (tab: string) => allowedTabs.includes(tab);
+  const { data: badges = {} } = useNavBadges(canAccessTab);
 
   // Un onglet devenu inaccessible (droits ou module désactivé) renvoie vers une section autorisée
   useEffect(() => {
@@ -336,188 +338,156 @@ const Index = () => {
 
   if (license.isBlocked) return <LicenseBlockedScreen />;
 
+  const currentPole = findPoleOfTab(activeTab);
+  const currentMeta = TAB_META[activeTab];
+  const alertEntries = Object.entries(badges).filter(([tab, n]) => n > 0 && canAccessTab(tab));
+  const alertTotal = alertEntries.reduce((sum, [, n]) => sum + n, 0);
+
+  const refreshAll = async () => {
+    setIsRefreshing(true);
+    for (const key of ["dashboard-entries", "dashboard-chart", "latest-jauge", "db-stations", "stock-jauges", "indexEntries", "orders", "supplies", "stations", "nav-badges"]) {
+      await queryClient.invalidateQueries({ queryKey: [key] });
+    }
+    setIsRefreshing(false);
+    toast({ title: t("Données actualisées"), description: t("Toutes les données ont été rafraîchies.") });
+  };
+
   return (
-    <div className="min-h-screen bg-background">
-      {/* Header */}
-      <header className="sticky top-0 z-50 border-b border-border bg-background/80 backdrop-blur-xl">
-        <div className="container mx-auto px-4 py-4">
-           <div className="flex flex-col gap-3">
-             <div className="flex flex-wrap items-center gap-3">
-              <div className="p-2.5 rounded-xl bg-primary/10 glow-primary overflow-hidden">
-                {tenant?.logo_url ? (
-                  <img
-                    src={tenant.logo_url}
-                    alt={`Logo ${tenant.trade_name || tenant.name}`}
-                    className="w-7 h-7 object-contain"
-                    loading="lazy"
-                  />
-                ) : (
-                  <Fuel className="w-7 h-7 text-primary" />
-                )}
-              </div>
-              <div>
-                <h1 className="text-xl md:text-2xl font-display font-bold">
-                  {brand.companyName}
-                </h1>
-                <p className="text-sm text-muted-foreground">
-                   {t("Tableau de bord - Gestion 2026")}
+    <SidebarProvider
+      defaultOpen={!document.cookie.includes("sidebar:state=false")}
+      style={{ "--sidebar-width": "17.5rem" } as CSSProperties}
+    >
+      <div className="min-h-screen flex w-full bg-background">
+        <AppSidebar
+          tabMeta={TAB_META}
+          canAccessTab={canAccessTab}
+          activeTab={activeTab}
+          onSelect={selectTab}
+          badges={badges}
+        />
+
+        <div className="flex-1 min-w-0 flex flex-col">
+          {/* En-tête épuré : fil d'Ariane, contexte, actions */}
+          <header className="sticky top-0 z-40 border-b border-border bg-background/80 backdrop-blur-xl">
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-2 px-3 md:px-6 py-2.5">
+              <SidebarTrigger className="shrink-0" aria-label={t("Afficher / masquer le menu")} />
+              <div className="hidden sm:block h-6 w-px bg-border" />
+              <nav aria-label="Fil d'Ariane" className="min-w-[10rem] flex-1">
+                <p className="truncate text-[11px] uppercase tracking-wider text-muted-foreground">
+                  {currentPole ? `${currentPole.number ? `${currentPole.number} · ` : ""}${t(currentPole.label)}` : brand.companyName}
                 </p>
-              </div>
-              <div className="hidden md:block h-8 w-px bg-border mx-1" />
-              <div className="hidden md:block">
-                <CountrySwitcher />
-              </div>
-            </div>
+                <h1 className="truncate font-display text-base md:text-lg font-semibold leading-tight">
+                  {currentMeta ? t(currentMeta.label) : brand.companyName}
+                </h1>
+              </nav>
 
-            <div className="flex flex-wrap items-center gap-3">
-              {isPlatformAdmin && (
-                <Button
-                  asChild
-                  variant="outline"
-                  className="gap-2 border-indigo-500/50 text-indigo-400 hover:text-indigo-300"
-                >
-                  <Link to="/lumatek">
-                    <ShieldAlert className="w-4 h-4" />
-                    LUMATEK SaaS
-                  </Link>
-                </Button>
-              )}
-              <div className="md:hidden">
+              <div className="order-last flex w-full flex-wrap items-center gap-2 2xl:order-none 2xl:w-auto">
                 <CountrySwitcher />
+                <TenantSelector />
+                <DbStationSelector selectedStation={selectedStation} onSelect={setSelectedStation} />
+                <div className="hidden 2xl:flex items-center gap-2 text-sm text-muted-foreground bg-secondary px-3 py-2 rounded-lg">
+                  <Calendar className="w-4 h-4" />
+                  <span>
+                    {new Date().toLocaleDateString(language === "en" ? "en-GB" : "fr-FR", {
+                      weekday: "short",
+                      day: "numeric",
+                      month: "short",
+                      year: "numeric",
+                    })}
+                  </span>
+                </div>
               </div>
-              <TenantSelector />
-              {canEnterIndex && (
-                <ExcelImportDialog
-                  trigger={
-                    <Button variant="outline" className="gap-2">
-                      <Upload className="w-4 h-4" />
-                       {t("Importer")}
-                    </Button>
-                  }
-                />
-              )}
-              {canExport && (
-                <ExcelExportDialog
-                  trigger={
-                    <Button variant="outline" className="gap-2">
-                      <Download className="w-4 h-4" />
-                       {t("Exporter")}
-                    </Button>
-                  }
-                />
-              )}
-              {canEnterIndex && (
-                <Link to="/saisie">
-                  <Button className="bg-primary hover:bg-primary/90 text-primary-foreground gap-2">
-                    <PenLine className="w-4 h-4" />
-                     {t("Saisie Index")}
+
+              <div className="ml-auto flex items-center gap-1.5">
+                {isPlatformAdmin && (
+                  <Button asChild variant="outline" size="sm" className="gap-2 border-primary/40 text-primary hover:text-primary">
+                    <Link to="/lumatek" title="LUMATEK SaaS">
+                      <ShieldAlert className="w-4 h-4" />
+                      <span className="hidden lg:inline">LUMATEK SaaS</span>
+                    </Link>
                   </Button>
-                </Link>
-              )}
-              <Button
-                variant="outline"
-                className="gap-2"
-                disabled={isRefreshing}
-                onClick={async () => {
-                  setIsRefreshing(true);
-                  await queryClient.invalidateQueries({ queryKey: ["dashboard-entries"] });
-                  await queryClient.invalidateQueries({ queryKey: ["dashboard-chart"] });
-                  await queryClient.invalidateQueries({ queryKey: ["latest-jauge"] });
-                  await queryClient.invalidateQueries({ queryKey: ["db-stations"] });
-                  await queryClient.invalidateQueries({ queryKey: ["stock-jauges"] });
-                  await queryClient.invalidateQueries({ queryKey: ["indexEntries"] });
-                  await queryClient.invalidateQueries({ queryKey: ["orders"] });
-                  await queryClient.invalidateQueries({ queryKey: ["supplies"] });
-                  await queryClient.invalidateQueries({ queryKey: ["stations"] });
-                  setIsRefreshing(false);
-                   toast({ title: t("Données actualisées"), description: t("Toutes les données ont été rafraîchies.") });
-                }}
-              >
-                <RefreshCw className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`} />
-                 {t("Actualiser")}
-              </Button>
-              <DbStationSelector
-                selectedStation={selectedStation}
-                onSelect={setSelectedStation}
-              />
-              <div className="flex items-center gap-2 text-sm text-muted-foreground bg-secondary px-3 py-2 rounded-lg">
-                <Calendar className="w-4 h-4" />
-                <span>
-                   {new Date().toLocaleDateString(language === "en" ? "en-GB" : "fr-FR", {
-                    weekday: "long",
-                    day: "numeric",
-                    month: "long",
-                    year: "numeric",
-                  })}
-                </span>
-              </div>
-              <ProfileMenu />
-            </div>
-          </div>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="container mx-auto px-4 py-6">
-        <LicenseBanner />
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div className="flex flex-wrap gap-2 bg-secondary rounded-lg p-1">
-              {TAB_GROUPS.map((group) => {
-                const visibleTabs = group.tabs.filter(canAccessTab);
-                if (visibleTabs.length === 0) return null;
-                const isGroupActive = visibleTabs.includes(activeTab);
-                const activeMeta = isGroupActive ? TAB_META[activeTab] : null;
-                const GroupIcon = group.icon;
-                return (
-                  <DropdownMenu key={group.id}>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        className={`gap-2 px-4 py-2 h-auto ${
-                          isGroupActive
-                            ? "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground"
-                            : "hover:bg-background/60"
-                        }`}
-                      >
-                        <GroupIcon className="w-4 h-4" />
-                         <span>{t(group.label)}</span>
-                        {activeMeta && (
-                           <span className="opacity-80">· {t(activeMeta.label)}</span>
-                        )}
-                        <ChevronDown className="w-3.5 h-3.5 opacity-70" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="start" className="w-56">
-                       <DropdownMenuLabel>{t(group.label)}</DropdownMenuLabel>
-                      <DropdownMenuSeparator />
-                      {visibleTabs.map((tab) => {
+                )}
+                {canEnterIndex && (
+                  <Button asChild size="sm" className="gap-2">
+                    <Link to="/saisie">
+                      <PenLine className="w-4 h-4" />
+                      <span className="hidden sm:inline">{t("Saisie Index")}</span>
+                    </Link>
+                  </Button>
+                )}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" size="sm" className="gap-1.5">
+                      <MoreHorizontal className="w-4 h-4" />
+                      <span className="hidden md:inline">{t("Actions")}</span>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-48">
+                    {canEnterIndex && (
+                      <DropdownMenuItem className="gap-2 cursor-pointer" onSelect={() => setImportOpen(true)}>
+                        <Upload className="w-4 h-4" /> {t("Importer")}
+                      </DropdownMenuItem>
+                    )}
+                    {canExport && (
+                      <DropdownMenuItem className="gap-2 cursor-pointer" onSelect={() => setExportOpen(true)}>
+                        <Download className="w-4 h-4" /> {t("Exporter")}
+                      </DropdownMenuItem>
+                    )}
+                    {(canEnterIndex || canExport) && <DropdownMenuSeparator />}
+                    <DropdownMenuItem className="gap-2 cursor-pointer" disabled={isRefreshing} onSelect={() => void refreshAll()}>
+                      <RefreshCw className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`} /> {t("Actualiser")}
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="relative h-9 w-9" aria-label={t("Alertes en attente")}>
+                      <Bell className="w-4 h-4" />
+                      {alertTotal > 0 && (
+                        <span className="absolute -top-0.5 -right-0.5 min-w-4 h-4 px-1 rounded-full bg-destructive text-destructive-foreground text-[10px] font-semibold leading-4 text-center">
+                          {formatBadge(alertTotal)}
+                        </span>
+                      )}
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-64">
+                    <DropdownMenuLabel>{t("Alertes en attente")}</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    {alertEntries.length === 0 ? (
+                      <div className="px-2 py-3 text-sm text-muted-foreground">{t("Aucune alerte en attente")}</div>
+                    ) : (
+                      alertEntries.map(([tab, n]) => {
                         const meta = TAB_META[tab];
-                        const ItemIcon = meta.icon;
+                        const Icon = meta.icon;
                         return (
-                          <DropdownMenuItem
-                            key={tab}
-                            onSelect={() => selectTab(tab)}
-                            className={`gap-2 cursor-pointer ${
-                              activeTab === tab ? "bg-accent text-accent-foreground" : ""
-                            }`}
-                          >
-                            <ItemIcon className="w-4 h-4" />
-                             {t(meta.label)}
+                          <DropdownMenuItem key={tab} className="gap-2 cursor-pointer" onSelect={() => selectTab(tab)}>
+                            <Icon className="w-4 h-4" />
+                            <span className="flex-1">{t(meta.label)}</span>
+                            <span className={`rounded-full px-1.5 text-[10px] font-semibold ${CRITICAL_BADGES.has(tab) ? "bg-destructive text-destructive-foreground" : "bg-primary/20 text-primary"}`}>
+                              {formatBadge(n)}
+                            </span>
                           </DropdownMenuItem>
                         );
-                      })}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                );
-              })}
+                      })
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+                <ProfileMenu />
+              </div>
             </div>
+          </header>
+          {canEnterIndex && <ExcelImportDialog open={importOpen} onOpenChange={setImportOpen} />}
+          {canExport && <ExcelExportDialog open={exportOpen} onOpenChange={setExportOpen} />}
 
-
-            {activeTab === "ventes" && (
-              <PeriodTabs selected={period} onSelect={setPeriod} />
-            )}
-          </div>
+          {/* Main Content */}
+          <main className="flex-1 w-full max-w-[1600px] mx-auto px-3 md:px-6 py-6">
+            <LicenseBanner />
+            <Tabs value={activeTab} onValueChange={selectTab} className="space-y-6">
+              {activeTab === "ventes" && (
+                <div className="flex justify-end">
+                  <PeriodTabs selected={period} onSelect={setPeriod} />
+                </div>
+              )}
 
           {/* Ventes Tab */}
           {canAccessTab("command") && (
@@ -797,22 +767,20 @@ const Index = () => {
             )}
           </TabsContent>
         </Tabs>
+          </main>
 
-      </main>
-
-      {/* Footer */}
-      <footer className="border-t border-border mt-8 py-6">
-        <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
-          <p>
-            © {new Date().getFullYear()} {brand.legalName}
-            {brand.footerNote ? ` · ${brand.footerNote}` : ""}
-          </p>
-          {brand.poweredBy && (
-            <p className="mt-1 text-xs opacity-70">{brand.poweredBy}</p>
-          )}
+          {/* Footer */}
+          <footer className="border-t border-border py-4">
+            <div className="px-3 md:px-6 text-center text-xs text-muted-foreground">
+              <p>
+                © {new Date().getFullYear()} {brand.legalName}
+                {brand.footerNote ? ` · ${brand.footerNote}` : ""}
+              </p>
+            </div>
+          </footer>
         </div>
-      </footer>
-    </div>
+      </div>
+    </SidebarProvider>
   );
 };
 

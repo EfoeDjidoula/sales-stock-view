@@ -25,11 +25,17 @@ const MONTHS = [
 
 interface ExcelExportDialogProps {
   trigger?: React.ReactNode;
+  /** Ouverture pilotée depuis un menu (sans bouton déclencheur). */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
-export const ExcelExportDialog = ({ trigger }: ExcelExportDialogProps) => {
+export const ExcelExportDialog = ({ trigger, open: openProp, onOpenChange }: ExcelExportDialogProps) => {
   const now = new Date();
-  const [open, setOpen] = useState(false);
+  const [innerOpen, setInnerOpen] = useState(false);
+  const controlled = openProp !== undefined;
+  const open = controlled ? openProp : innerOpen;
+  const setOpen = (o: boolean) => (controlled ? onOpenChange?.(o) : setInnerOpen(o));
   const [month, setMonth] = useState(now.getMonth() + 1);
   const [year, setYear] = useState(now.getFullYear());
   const { exportToExcel, isExporting } = useExcelExport();
@@ -43,14 +49,16 @@ export const ExcelExportDialog = ({ trigger }: ExcelExportDialogProps) => {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        {trigger || (
-          <Button variant="outline" className="gap-2">
-            <Download className="w-4 h-4" />
-            Exporter
-          </Button>
-        )}
-      </DialogTrigger>
+      {!controlled && (
+        <DialogTrigger asChild>
+          {trigger || (
+            <Button variant="outline" className="gap-2">
+              <Download className="w-4 h-4" />
+              Exporter
+            </Button>
+          )}
+        </DialogTrigger>
+      )}
       <DialogContent className="max-w-sm">
         <DialogHeader>
           <DialogTitle>Exporter en Excel</DialogTitle>

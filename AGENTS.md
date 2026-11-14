@@ -23,3 +23,4 @@
 - Login CAPTCHA: Turnstile token checked by `verify-turnstile` before sign-in; why: secret stays server-side.
 - PDF: jsPDF via src/lib/pdf; why: it strips fr-FR spaces shown as "/".
 - Index model: retour_cuve, index_tank_readings and sales/versement variances are recomputed by DB triggers; formulas in src/lib/indexModel.ts; why: no browser-side tampering.
+- Navigation: dashboard sections are grouped only in src/lib/navigation.ts (6 business poles + admin/support) and rendered by components/layout/AppSidebar; sidebar badges are read-only scoped counts from useNavBadges; why: one menu definition, no extra data access.

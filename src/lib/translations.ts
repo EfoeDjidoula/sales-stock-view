@@ -1,5 +1,15 @@
 /** French is the source language. Keep domain data (names, references, IDs) untranslated. */
 export const translations: Record<string, string> = {
+  "Pilotage & Direction": "Steering & management",
+  "Exploitation & Stations": "Operations & stations",
+  "Stocks & Logistique": "Stock & logistics",
+  "Audit, Contrôle & Finance": "Audit, control & finance",
+  "Clients, B2B & Cartes": "Customers, B2B & cards",
+  "Conformité, Actifs & Reporting": "Compliance, assets & reporting",
+  "Gestion du réseau": "Network management",
+  "Alertes en attente": "Pending alerts",
+  "Aucune alerte en attente": "No pending alerts",
+  "Afficher / masquer le menu": "Show / hide menu",
   "Gestion des stations-service": "Service station management",
   "Connectez-vous pour accéder à votre espace": "Sign in to access your workspace",
   "Connexion": "Sign in",
