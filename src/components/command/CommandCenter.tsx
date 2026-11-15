@@ -13,6 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CommandB2B } from "./CommandB2B";
+import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, CartesianGrid } from "recharts";
 import {
   AlertTriangle, ShieldAlert, Banknote, ChevronRight, Droplets, Fuel, LifeBuoy, MapPin, Package, Truck, TrendingDown, TrendingUp, Activity, Scale,
 } from "lucide-react";
@@ -108,8 +109,10 @@ export function CommandCenter() {
 
     // Ventes : clôtures (hors rejetées) puis saisies d'index pour les jours sans clôture
     const agg = new Map<string, { amt: number; vol: number; amtToday: number }>();
+    const byDay = new Map<string, { amt: number; vol: number }>();
     const add = (sid: string, date: string, amt: number, vol: number) => {
       if (!ids.has(sid)) return;
+      const dd = byDay.get(date) ?? { amt: 0, vol: 0 }; dd.amt += amt; dd.vol += vol; byDay.set(date, dd);
       const a = agg.get(sid) ?? { amt: 0, vol: 0, amtToday: 0 };
       a.amt += amt; a.vol += vol; if (date === today) a.amtToday += amt;
       agg.set(sid, a);
@@ -162,8 +165,9 @@ export function CommandCenter() {
 
     const sum = (k: "amt" | "vol" | "amtToday" | "stock" | "variance") => rows.reduce((a, x) => a + (x[k] as number), 0);
     const ranked = [...rows].sort((a, b) => b.amt - a.amt);
+    const trend = [...byDay.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([date, v]) => ({ date: date.slice(5).split("-").reverse().join("/"), amt: Math.round(v.amt), vol: Math.round(v.vol) }));
     return {
-      rows, ranked, levels, tickets, supplies, recons, hse,
+      trend, rows, ranked, levels, tickets, supplies, recons, hse,
       kpi: {
         caToday: sum("amtToday"), caPeriod: sum("amt"), volume: sum("vol"), stock: sum("stock"), variance: sum("variance"),
         stations: rows.length, red: rows.filter((x) => x.health === "red").length, orange: rows.filter((x) => x.health === "orange").length,
@@ -242,11 +246,52 @@ export function CommandCenter() {
          <p className="text-destructive">{t("Impossible de charger les indicateurs.")}</p>
       ) : (
         <>
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-             <Kpi icon={Banknote} label={t("CA du jour")} value={`${fmt(view.kpi.caToday)} F`} />
-             <Kpi icon={TrendingUp} label={t("CA de la période")} value={`${fmt(view.kpi.caPeriod)} F`} />
-             <Kpi icon={Fuel} label={t("Volume vendu")} value={`${fmt(view.kpi.volume)} L`} />
-             <Kpi icon={Package} label={t("Stock disponible")} value={`${fmt(view.kpi.stock)} L`} />
+          {/* Bandeau synthèse réseau */}
+          <div className="relative overflow-hidden rounded-xl border border-primary/20 bg-gradient-to-br from-primary/15 via-card to-card p-5">
+            <div className="pointer-events-none absolute -right-16 -top-16 h-48 w-48 rounded-full bg-primary/20 blur-3xl" />
+            <div className="relative flex flex-wrap items-end justify-between gap-4">
+              <div>
+                <div className="text-xs uppercase tracking-widest text-muted-foreground">{t("Synthèse réseau")} · {tenantName}</div>
+                <div className="mt-1 font-display text-3xl font-bold text-foreground">{fmt(view.kpi.caPeriod)} <span className="text-lg text-primary">FCFA</span></div>
+                <div className="text-sm text-muted-foreground">{fmt(view.kpi.volume)} L {t("vendus")} · {fmt(view.kpi.stations)} {t("stations")}</div>
+              </div>
+              <div className="flex gap-2">
+                {(["green", "orange", "red"] as Health[]).map((h) => (
+                  <div key={h} className={`min-w-20 rounded-lg border px-3 py-2 text-center ${HEALTH_CLS[h]}`}>
+                    <div className="font-display text-xl font-bold">{view.rows.filter((x) => x.health === h).length}</div>
+                    <div className="text-[10px] uppercase tracking-wide">{t(HEALTH_LABEL[h])}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
+             <Kpi big icon={Banknote} label={t("CA du jour")} value={`${fmt(view.kpi.caToday)} F`} />
+             <Kpi big icon={TrendingUp} label={t("CA de la période")} value={`${fmt(view.kpi.caPeriod)} F`} />
+             <Kpi big icon={Fuel} label={t("Volume vendu")} value={`${fmt(view.kpi.volume)} L`} />
+             <Kpi big icon={Package} label={t("Stock disponible")} value={`${fmt(view.kpi.stock)} L`} />
+          </div>
+
+          {view.trend.length > 1 && (
+            <Card>
+              <CardHeader className="pb-2"><CardTitle className="text-base">{t("Évolution des ventes")}</CardTitle></CardHeader>
+              <CardContent className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <AreaChart data={view.trend} margin={{ left: 0, right: 8, top: 8 }}>
+                    <defs><linearGradient id="ccAmt" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.5} /><stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0} /></linearGradient></defs>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+                    <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" fontSize={11} tickLine={false} axisLine={false} />
+                    <YAxis stroke="hsl(var(--muted-foreground))" fontSize={11} tickLine={false} axisLine={false} width={56} tickFormatter={(v) => v >= 1e6 ? `${(v / 1e6).toFixed(1)}M` : v >= 1e3 ? `${Math.round(v / 1e3)}k` : String(v)} />
+                    <Tooltip contentStyle={{ background: "hsl(var(--popover))", border: "1px solid hsl(var(--border))", borderRadius: 8 }} formatter={(v: number, n) => [n === "amt" ? `${fmt(v)} F` : `${fmt(v)} L`, n === "amt" ? t("CA") : t("Volume")]} />
+                    <Area type="monotone" dataKey="amt" stroke="hsl(var(--primary))" strokeWidth={2} fill="url(#ccAmt)" />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+          )}
+
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
              <Kpi icon={MapPin} label={t("Stations")} value={fmt(view.kpi.stations)} />
              <Kpi icon={AlertTriangle} label={t("Critiques / surveillance")} value={`${view.kpi.red} / ${view.kpi.orange}`} tone={view.kpi.red ? "red" : view.kpi.orange ? "orange" : undefined} />
              <Kpi icon={Droplets} label={t("Écarts de stock (abs.)")} value={`${fmt(view.kpi.variance)} L`} />
@@ -328,12 +373,14 @@ export function CommandCenter() {
   );
 }
 
-function Kpi({ icon: Icon, label, value, tone }: { icon: any; label: string; value: string; tone?: Health }) {
+function Kpi({ icon: Icon, label, value, tone, big }: { icon: any; label: string; value: string; tone?: Health; big?: boolean }) {
   return (
-    <Card className={tone ? HEALTH_CLS[tone] : ""}>
-      <CardContent className="p-4">
-        <div className="flex items-center gap-2 text-xs text-muted-foreground"><Icon className="h-4 w-4" />{label}</div>
-        <div className="mt-2 font-display text-xl font-bold text-foreground">{value}</div>
+    <Card className={`transition hover:border-primary/40 ${tone ? HEALTH_CLS[tone] : ""}`}>
+      <CardContent className={big ? "p-5" : "p-3"}>
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <span className={`flex items-center justify-center rounded-md bg-primary/10 text-primary ${big ? "h-8 w-8" : "h-6 w-6"}`}><Icon className={big ? "h-4 w-4" : "h-3.5 w-3.5"} /></span>{label}
+        </div>
+        <div className={`mt-2 font-display font-bold text-foreground ${big ? "text-2xl" : "text-lg"}`}>{value}</div>
       </CardContent>
     </Card>
   );

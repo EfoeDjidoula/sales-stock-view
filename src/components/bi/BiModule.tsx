@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { format, subDays, startOfMonth, startOfYear } from "date-fns";
 import ExcelJS from "exceljs";
-import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, BarChart, Bar, Legend } from "recharts";
+import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, BarChart, Bar, Legend, AreaChart, Area, PieChart, Pie, Cell } from "recharts";
 import { useTenant } from "@/hooks/useTenant";
 import { useCountry } from "@/hooks/useCountry";
 import { useLanguage } from "@/hooks/useLanguage";
@@ -108,9 +108,9 @@ export function BiModule() {
   const Kpi = ({ label, value, unit, cur, prv, hint }: { label: string; value: string; unit?: string; cur?: number; prv?: number; hint?: string }) => {
     const dp = cur != null && prv != null ? deltaPct(cur, prv) : null;
     return (
-      <Card className="glass-card"><CardContent className="p-4 space-y-1">
-        <p className="text-xs text-muted-foreground">{t(label)}</p>
-        <p className="text-xl font-semibold">{value}{unit && <span className="text-sm text-muted-foreground"> {unit}</span>}</p>
+      <Card className="glass-card transition hover:border-primary/40"><CardContent className="p-4 space-y-1">
+        <p className="text-[11px] uppercase tracking-wide text-muted-foreground">{t(label)}</p>
+        <p className="font-display text-xl font-bold text-foreground">{value}{unit && <span className="text-sm text-muted-foreground"> {unit}</span>}</p>
         {dp != null && <p className={`text-xs ${dp >= 0 ? "text-success" : "text-destructive"}`}>{dp >= 0 ? "▲" : "▼"} {fmt(Math.abs(dp), 1)} % {t("vs période précédente")}</p>}
         {hint && <p className="text-xs text-muted-foreground">{t(hint)}</p>}
       </CardContent></Card>
@@ -194,6 +194,32 @@ export function BiModule() {
             <Kpi label="Disponibilité équipements" value={fmt(view.k.availability, 1)} unit="%" hint={`Coût maintenance ${fmt(view.k.maintenanceCost)} F`} />
             <Kpi label="Conformité HSE" value={fmt(view.k.compliance)} unit={view.k.compliance == null ? undefined : "%"} hint={`${view.k.openCriticalNc} NC critique(s) ouverte(s)`} />
             <Kpi label="Stations" value={String(view.k.stations)} />
+          </div>
+
+          <div className="grid gap-4 lg:grid-cols-3">
+            <Card className="glass-card lg:col-span-2"><CardHeader className="pb-2"><CardTitle className="text-base">{t("Évolution du chiffre d'affaires")}</CardTitle></CardHeader>
+              <CardContent className="h-64">
+                {view.trend.length < 2 ? <p className="text-sm text-muted-foreground">{t("Pas assez de données sur la période")}</p> : (
+                <ResponsiveContainer width="100%" height="100%"><AreaChart data={view.trend.map((r) => ({ date: r.key.slice(5).split("-").reverse().join("/"), CA: Math.round(r.amount) }))} margin={{ left: 0, right: 8, top: 8 }}>
+                  <defs><linearGradient id="biCa" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stopColor="hsl(var(--primary))" stopOpacity={0.5} /><stop offset="100%" stopColor="hsl(var(--primary))" stopOpacity={0} /></linearGradient></defs>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" vertical={false} />
+                  <XAxis dataKey="date" stroke="hsl(var(--muted-foreground))" fontSize={11} tickLine={false} axisLine={false} />
+                  <YAxis stroke="hsl(var(--muted-foreground))" fontSize={11} tickLine={false} axisLine={false} width={56} tickFormatter={(v) => v >= 1e6 ? `${(v / 1e6).toFixed(1)}M` : v >= 1e3 ? `${Math.round(v / 1e3)}k` : String(v)} />
+                  <Tooltip contentStyle={{ background: "hsl(var(--popover))", border: "1px solid hsl(var(--border))", borderRadius: 8 }} formatter={(v: number) => [`${fmt(v)} F`, "CA"]} />
+                  <Area type="monotone" dataKey="CA" stroke="hsl(var(--primary))" strokeWidth={2} fill="url(#biCa)" />
+                </AreaChart></ResponsiveContainer>)}
+              </CardContent></Card>
+            <Card className="glass-card"><CardHeader className="pb-2"><CardTitle className="text-base">{t("Répartition par canal")}</CardTitle></CardHeader>
+              <CardContent className="h-64">
+                {view.channels.length === 0 ? <p className="text-sm text-muted-foreground">{t("Aucun encaissement sur la période")}</p> : (
+                <ResponsiveContainer width="100%" height="100%"><PieChart>
+                  <Pie data={view.channels.map((c) => ({ name: t(CHANNEL_LABELS[c.channel]), value: Math.round(c.amount) }))} dataKey="value" nameKey="name" innerRadius="55%" outerRadius="85%" paddingAngle={2} stroke="hsl(var(--card))">
+                    {view.channels.map((c, i) => <Cell key={c.channel} fill={`hsl(var(--chart-${(i % 5) + 1}))`} />)}
+                  </Pie>
+                  <Tooltip contentStyle={{ background: "hsl(var(--popover))", border: "1px solid hsl(var(--border))", borderRadius: 8 }} formatter={(v: number) => `${fmt(v)} F`} />
+                  <Legend wrapperStyle={{ fontSize: 11 }} />
+                </PieChart></ResponsiveContainer>)}
+              </CardContent></Card>
           </div>
 
           <Tabs defaultValue="stations">
