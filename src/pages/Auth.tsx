@@ -93,7 +93,7 @@ const Auth = () => {
         >
           <img src="/email/lumatek-logo.png" alt="LUMATEK TECHNOLOGY" className="h-24 w-24 object-contain" />
           <h1 className="font-display text-3xl font-bold tracking-wide text-primary sm:text-5xl">LUMATEK TECHNOLOGY</h1>
-          <p className="max-w-xl text-lg italic text-muted-foreground sm:text-xl">COMMITED TO A DATA DRIVEN DECISION MAKING !!!</p>
+          <p className="max-w-xl text-lg font-bold italic text-muted-foreground sm:text-xl">Commited To a Data Driven Decision Making.</p>
         </div>
       )}
       <div className={`w-full max-w-md space-y-6 transition-opacity duration-700 ${showSplash && !splashLeaving ? "opacity-0" : "opacity-100"}`}>
