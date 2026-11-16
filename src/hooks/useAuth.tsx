@@ -56,6 +56,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // Force clear local state regardless of API response
     setSession(null);
     setUser(null);
+    // Retour à l'écran d'accueil LUMATEK (page vierge sans paramètres de société/pays)
+    window.location.replace("/auth");
   };
 
   return (

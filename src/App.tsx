@@ -23,6 +23,10 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
   const { isLoading: countryLoading, needsSelection } = useCountry();
 
+  if (!loading && !user) {
+    return <Navigate to="/auth" replace />;
+  }
+
   if (loading || countryLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
