@@ -24,3 +24,5 @@
 - PDF: jsPDF via src/lib/pdf; why: it strips fr-FR spaces shown as "/".
 - Index model: retour_cuve, index_tank_readings and sales/versement variances are recomputed by DB triggers; formulas in src/lib/indexModel.ts; why: no browser-side tampering.
 - Navigation: sections grouped only in src/lib/navigation.ts, rendered by AppSidebar; badges = read-only scoped counts (useNavBadges); why: one menu definition.
+- File & export safety: stored files open via authenticated download (src/lib/storageFiles.ts), never signed URLs; CSV cells go through src/lib/csv.ts; integration-hub outbound calls pass netguard.ts (public HTTPS only, no redirects); why: no bearer links, formula injection or internal-network access.
+- Identity helpers (has_role, get_user_role, get_user_tenant) only answer for self, same-tenant admins/colleagues or platform admins; internal-only helpers have EXECUTE revoked from app roles; why: no cross-user/tenant lookups.

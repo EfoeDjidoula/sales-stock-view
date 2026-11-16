@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { openStoredFile } from "@/lib/storageFiles";
 import { useScope } from "@/hooks/useScope";
 import { usePermissions } from "@/hooks/usePermissions";
 import { toast } from "sonner";
@@ -99,8 +100,8 @@ const HseModule = () => {
     return path;
   };
   const openFile = async (path: string) => {
-    const { data } = await supabase.storage.from("support-attachments").createSignedUrl(path, 300);
-    if (data?.signedUrl) window.open(data.signedUrl, "_blank");
+    const ok = await openStoredFile("support-attachments", path);
+    if (!ok) toast.error("Impossible d'ouvrir la pièce jointe");
   };
   const openHistory = async (title: string, id: string) => {
     const [h, f] = await Promise.all([

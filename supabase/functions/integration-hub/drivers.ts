@@ -1,4 +1,5 @@
 // Provider-agnostic driver registry. Add a provider by registering a driver; no core change needed.
+import { assertPublicHttpsUrl } from "./netguard.ts";
 export type Ctx = { config: Record<string, unknown>; credentials: Record<string, string>; params: Record<string, unknown> };
 export type Mapping = { entity: string; external_value: string; internal_value: string };
 export type DriverResult = { ok: boolean; records?: number; detail?: unknown; error?: string; retryable?: boolean };
@@ -17,11 +18,12 @@ function headers(c: Ctx): Record<string, string> {
 async function call(c: Ctx, path: unknown, method = "GET", body?: unknown): Promise<{ res: Response; data: unknown }> {
   const base = String(c.config.base_url ?? "");
   if (!/^https:\/\//.test(base)) throw Object.assign(new Error("base_url HTTPS requise dans la configuration"), { retryable: false });
+  const url = await assertPublicHttpsUrl(base, base.replace(/\/$/, "") + String(path ?? "/"));
   const ctrl = new AbortController();
   const t = setTimeout(() => ctrl.abort(), Number(c.config.timeout_ms ?? 15000));
   try {
-    const res = await fetch(base.replace(/\/$/, "") + String(path ?? "/"), {
-      method, signal: ctrl.signal, headers: { ...headers(c), ...(body ? { "Content-Type": "application/json" } : {}) },
+    const res = await fetch(url, {
+      method, signal: ctrl.signal, redirect: "manual", headers: { ...headers(c), ...(body ? { "Content-Type": "application/json" } : {}) },
       body: body ? JSON.stringify(body) : undefined,
     });
     const text = await res.text();
@@ -31,7 +33,9 @@ async function call(c: Ctx, path: unknown, method = "GET", body?: unknown): Prom
   } finally { clearTimeout(t); }
 }
 
-const fail = (res: Response): DriverResult => ({ ok: false, error: `HTTP ${res.status}`, retryable: res.status >= 500 || res.status === 429 });
+const fail = (res: Response): DriverResult => (res.status >= 300 && res.status < 400
+  ? { ok: false, error: `Redirection HTTP ${res.status} refusée`, retryable: false }
+  : { ok: false, error: `HTTP ${res.status}`, retryable: res.status >= 500 || res.status === 429 });
 
 /** Applies field/value mappings: renames external fields and translates codes. */
 export function applyMappings(row: Record<string, unknown>, m: Mapping[]) {

@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { csvRow } from "@/lib/csv";
 import ExcelJS from "exceljs";
 import jsPDF from "@/lib/pdf";
 import QRCode from "qrcode";
@@ -207,7 +208,7 @@ function Accounting({ d, stName, sub }: { d: Record<string, Row[]>; stName: (id:
   const R = lines.map((l) => [l.date, l.journal, l.account, l.label, l.ref, l.debit || "", l.credit || ""]);
   const td = lines.reduce((s, l) => s + l.debit, 0);
   const csv = () => {
-    const txt = [H.join(";"), ...lines.map((l) => [l.date, l.journal, l.account, l.label, l.ref, l.debit, l.credit].join(";"))].join("\n");
+    const txt = [csvRow(H), ...lines.map((l) => csvRow([l.date, l.journal, l.account, l.label, l.ref, l.debit, l.credit]))].join("\n");
     const a = document.createElement("a");
     a.href = URL.createObjectURL(new Blob([txt], { type: "text/csv" }));
     a.download = "ecritures_ohada.csv"; a.click();

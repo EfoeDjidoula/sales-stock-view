@@ -1,5 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { openStoredFile } from "@/lib/storageFiles";
 
 const BUCKET = "contract-documents";
 
@@ -12,11 +13,9 @@ export const uploadContractDocument = async (tenantId: string, file: File) => {
   return path;
 };
 
-/** Ouvre un document : lien externe tel quel, fichier stocké via lien signé temporaire. */
+/** Ouvre un document : lien externe tel quel, fichier stocké lu avec la session (aucun lien signé). */
 export const openContractDocument = async (value: string) => {
   if (/^https?:\/\//i.test(value)) { window.open(value, "_blank", "noopener"); return; }
-  const w = window.open("", "_blank");
-  const { data, error } = await supabase.storage.from(BUCKET).createSignedUrl(value, 600);
-  if (error || !data) { w?.close(); toast.error("Impossible d'ouvrir le document"); return; }
-  if (w) w.location.href = data.signedUrl; else window.open(data.signedUrl, "_blank");
+  const ok = await openStoredFile(BUCKET, value);
+  if (!ok) toast.error("Impossible d'ouvrir le document");
 };

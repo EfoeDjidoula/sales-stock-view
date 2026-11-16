@@ -1,5 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { openStoredFile } from "@/lib/storageFiles";
 import { toast } from "sonner";
 
 export const TICKET_CATEGORIES = {
@@ -54,9 +55,8 @@ export const uploadAttachments = async (tenantId: string, files: File[]): Promis
   return out;
 };
 export const openAttachment = async (a: Attachment) => {
-  const { data, error } = await supabase.storage.from(BUCKET).createSignedUrl(a.path, 600);
-  if (error || !data) return toast.error("Impossible d'ouvrir la pièce jointe");
-  window.open(data.signedUrl, "_blank", "noopener");
+  const ok = await openStoredFile(BUCKET, a.path, a.name);
+  if (!ok) toast.error("Impossible d'ouvrir la pièce jointe");
 };
 
 /** SLA : dépassé si pas de résolution avant l'échéance. */
