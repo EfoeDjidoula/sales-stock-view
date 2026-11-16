@@ -149,7 +149,7 @@ export const DynamicPumpEntry = ({
             </CardHeader>
             <CardContent className="space-y-4">
               {/* Pistolets */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 {g.pumps.map((p, i) => {
                   const row = pumpRows[p.id] || {
                     pumpId: p.id,
@@ -179,6 +179,7 @@ export const DynamicPumpEntry = ({
                           </Label>
                           <Input
                             type="number"
+                            inputMode="decimal"
                             step="0.01"
                             min="0"
                             placeholder="0.00"
@@ -186,33 +187,35 @@ export const DynamicPumpEntry = ({
                             readOnly={hasPrevious}
                             disabled={disabled}
                             onChange={(e) => onChangePump(p.id, { indexDepart: e.target.value })}
-                            className={`h-9 ${hasPrevious ? "bg-muted text-muted-foreground cursor-not-allowed" : "bg-background"}`}
+                            className={`h-11 md:h-12 text-base tabular-nums ${hasPrevious ? "bg-muted text-muted-foreground cursor-not-allowed" : "bg-background"}`}
                           />
                         </div>
                         <div className="space-y-1">
                           <Label className="text-xs text-muted-foreground">Index arrivée</Label>
                           <Input
                             type="number"
+                            inputMode="decimal"
                             step="0.01"
                             min="0"
                             placeholder="0.00"
                             value={row.indexArrivee}
                             disabled={disabled}
                             onChange={(e) => onChangePump(p.id, { indexArrivee: e.target.value })}
-                            className={`h-9 bg-background ${c.indexInvalide ? "border-destructive" : ""}`}
+                            className={`h-11 md:h-12 text-base tabular-nums bg-background ${c.indexInvalide ? "border-destructive" : ""}`}
                           />
                         </div>
                         <div className="space-y-1">
                           <Label className="text-xs text-muted-foreground">Retour en cuve (L)</Label>
                           <Input
                             type="number"
+                            inputMode="decimal"
                             step="0.01"
                             min="0"
                             placeholder="0"
                             value={row.retour}
                             disabled={disabled}
                             onChange={(e) => onChangePump(p.id, { retour: e.target.value })}
-                            className={`h-9 bg-background ${c.retourInvalide ? "border-destructive" : ""}`}
+                            className={`h-11 md:h-12 text-base tabular-nums bg-background ${c.retourInvalide ? "border-destructive" : ""}`}
                           />
                         </div>
                       </div>
@@ -294,7 +297,7 @@ export const DynamicPumpEntry = ({
                     <div className="space-y-1">
                       <Label className="text-xs text-muted-foreground">Écart sur stock (L)</Label>
                       <div
-                        className={`h-9 rounded-md px-3 flex items-center font-bold ${
+                        className={`h-11 md:h-12 text-base tabular-nums rounded-md px-3 flex items-center font-bold ${
                           !jaugeFilled
                             ? "bg-muted text-muted-foreground"
                             : bal.ecart < 0

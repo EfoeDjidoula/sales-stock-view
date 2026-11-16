@@ -585,8 +585,9 @@ const IndexEntry = () => {
               type="number"
               step="1"
               min="0"
+              inputMode="numeric"
               placeholder="0"
-              className="bg-background border-border"
+              className="bg-background border-border h-11 md:h-12 text-base tabular-nums"
               disabled={isFiscalYearClosed}
               {...field}
             />
@@ -606,7 +607,7 @@ const IndexEntry = () => {
         <FormItem>
           <FormLabel className="text-xs text-muted-foreground">{label}</FormLabel>
           <FormControl>
-            <Input placeholder={placeholder} className="bg-background border-border" disabled={isFiscalYearClosed} {...field} />
+            <Input placeholder={placeholder} className="bg-background border-border h-11 md:h-12 text-base" disabled={isFiscalYearClosed} {...field} />
           </FormControl>
           <FormMessage className="text-xs" />
         </FormItem>
