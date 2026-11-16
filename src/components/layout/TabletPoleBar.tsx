@@ -16,11 +16,11 @@ interface Props {
   badges: Record<string, number>;
 }
 
-/** Barre des pôles en haut de l'écran, affichée uniquement sur tablette (768–1279 px). */
+/** Barre des pôles en haut de l'écran, affichée sur tablette et smartphone (< 1280 px). */
 export function TabletPoleBar({ tabMeta, canAccessTab, activeTab, onSelect, badges }: Props) {
   const { t } = useLanguage();
   return (
-    <nav aria-label={t("Pôles métiers")} className="hidden md:flex xl:hidden gap-1.5 overflow-x-auto px-3 md:px-6 pb-2 scrollbar-none">
+    <nav aria-label={t("Pôles métiers")} className="flex xl:hidden gap-1.5 overflow-x-auto px-3 md:px-6 pb-2 scrollbar-none">
       {ALL_NAV_GROUPS.map((pole) => {
         const tabs = pole.tabs.filter((tab) => tabMeta[tab] && canAccessTab(tab));
         if (!tabs.length) return null;
