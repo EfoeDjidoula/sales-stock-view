@@ -17,6 +17,9 @@ import { useLanguage } from "@/hooks/useLanguage";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { TurnstileWidget } from "@/components/auth/TurnstileWidget";
 import { supabase } from "@/integrations/supabase/client";
+import { isCaptchaRequired } from "@/lib/captcha";
+
+const CAPTCHA_ON = isCaptchaRequired();
 
 const Auth = () => {
   const navigate = useNavigate();
@@ -47,17 +50,17 @@ const Auth = () => {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!captchaToken) {
+    if (CAPTCHA_ON && !captchaToken) {
       toast.error(t("Veuillez confirmer que vous n'êtes pas un robot"));
       return;
     }
     setIsLoading(true);
 
-    const { data: check, error: checkError } = await supabase.functions.invoke("verify-turnstile", {
-      body: { token: captchaToken },
-    });
+    const { data: check, error: checkError } = CAPTCHA_ON
+      ? await supabase.functions.invoke("verify-turnstile", { body: { token: captchaToken } })
+      : { data: { success: true }, error: null };
     // Un jeton Turnstile n'est utilisable qu'une seule fois : on le régénère.
-    setCaptchaReset((n) => n + 1);
+    if (CAPTCHA_ON) setCaptchaReset((n) => n + 1);
     if (checkError || !check?.success) {
       toast.error(t("Vérification anti-robot échouée"), {
         description: t("Veuillez réessayer la vérification."),
@@ -150,7 +153,7 @@ const Auth = () => {
                   className="bg-secondary border-border"
                 />
               </div>
-              <div className="space-y-2">
+              {CAPTCHA_ON && (<div className="space-y-2">
                 <Label>{t("Vérification anti-robot")}</Label>
                 {!showSplash && !fieldsFilled && (
                   <p className="text-xs text-muted-foreground">
@@ -170,11 +173,11 @@ const Auth = () => {
                     {t("Impossible de charger la vérification. Vérifiez votre connexion puis rechargez la page.")}
                   </p>
                 )}
-              </div>
+              </div>)}
               <Button
                 type="submit"
                 className="w-full bg-primary hover:bg-primary/90"
-                disabled={isLoading || !captchaToken}
+                disabled={isLoading || (CAPTCHA_ON && !captchaToken)}
               >
                 {isLoading ? (
                   <>
