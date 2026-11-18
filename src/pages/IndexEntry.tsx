@@ -263,7 +263,8 @@ const IndexEntry = () => {
 
   // Pump-level: previous index_arrivee per pump (for auto-fill in dynamic mode)
   const pumpIds = useMemo(() => pumps.map((p) => p.id), [pumps]);
-  const { data: previousPumpIndex = {} } = usePreviousPumpIndex(selectedStation?.id, pumpIds, selectedDate);
+  const { data: previousPumpIndexData } = usePreviousPumpIndex(selectedStation?.id, pumpIds, selectedDate);
+  const previousPumpIndex = useMemo(() => previousPumpIndexData ?? {}, [previousPumpIndexData]);
   const hasAnyPreviousPump = Object.keys(previousPumpIndex).length > 0;
 
   // Prix du jour, stock d'ouverture + dépotages validés par cuve, saisie existante du jour
@@ -282,7 +283,8 @@ const IndexEntry = () => {
         if (next[e.pump_id]) {
           next[e.pump_id] = {
             ...next[e.pump_id],
-            indexDepart: String(e.index_depart),
+            // Continuité : l'index de départ = dernier index d'arrivée réel antérieur (jamais 0 si un historique existe)
+            indexDepart: previousPumpIndex[e.pump_id] != null ? String(previousPumpIndex[e.pump_id]) : String(e.index_depart),
             indexArrivee: String(e.index_arrivee),
             retour: Number(e.retour_cuve) ? String(e.retour_cuve) : "",
           };
@@ -290,7 +292,7 @@ const IndexEntry = () => {
       }
       return next;
     });
-  }, [existingPumpEntries]);
+  }, [existingPumpEntries, previousPumpIndex]);
 
   // Pre-fill sales detail + tank jauges from the existing entry of the same day
   useEffect(() => {

@@ -56,6 +56,7 @@ export const usePreviousPumpIndex = (
         .eq("station_id", stationId)
         .in("pump_id", pumpIds)
         .lt("entry_date", beforeDate)
+        .gt("index_arrivee", 0)
         .order("entry_date", { ascending: false });
       if (error) throw error;
       for (const row of data || []) {
