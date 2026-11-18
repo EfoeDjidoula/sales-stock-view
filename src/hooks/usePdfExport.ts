@@ -13,6 +13,14 @@ export interface DailyRecapTank {
   ecart: number;
 }
 
+export interface DailyRecapNozzle {
+  name: string;
+  product: "super" | "gasoil";
+  depart: number;
+  arrivee: number;
+  retour: number;
+}
+
 export interface DailyRecapData {
   stationName: string;
   stationLocation: string;
@@ -33,6 +41,8 @@ export interface DailyRecapData {
   banqueNom?: string;
   ecartVersement: number;
   tanks: DailyRecapTank[];
+  /** Index par pistolet (départ, arrivée, retour en cuve). */
+  nozzles?: DailyRecapNozzle[];
   /** Statut de validation N+1 (absent = saisie en cours). */
   validation?: { status?: string; by?: string | null; at?: string | null; reason?: string | null };
 }
@@ -140,8 +150,22 @@ export const usePdfExport = () => {
       y += 8;
     };
 
-    // 1. Index & sorties
-    section("1. SORTIES AUX PISTOLETS");
+    // 1. Index par pistolet
+    const nz = [...(data.nozzles ?? [])].sort((a, b) => (a.product === b.product ? a.name.localeCompare(b.name, undefined, { numeric: true }) : a.product === "super" ? -1 : 1));
+    if (nz.length) {
+      section("1. RÉSUMÉ DES INDEX PAR PISTOLET");
+      const rows = nz.map((r) => {
+        const brut = Math.max(r.arrivee - r.depart, 0);
+        return [r.name, r.product === "super" ? "Super" : "Gasoil", formatNumber(r.depart), formatNumber(r.arrivee), formatNumber(brut), formatNumber(r.retour), formatNumber(Math.max(brut - r.retour, 0))];
+      });
+      const tb = nz.reduce((s, r) => s + Math.max(r.arrivee - r.depart, 0), 0);
+      const tr = nz.reduce((s, r) => s + r.retour, 0);
+      rows.push(["TOTAL", "", "", "", formatNumber(tb), formatNumber(tr), formatNumber(Math.max(tb - tr, 0))]);
+      table(["Pistolet", "Produit", "Index départ", "Index arrivée", "Brut (L)", "Retour (L)", "Net (L)"], rows, [34, 20, 28, 28, 24, 22, 24]);
+    }
+
+    // 2. Sorties par produit
+    section(`${nz.length ? 2 : 1}. SORTIES PAR PRODUIT`);
     const tot = {
       brut: data.super.brut + data.gasoil.brut,
       retour: data.super.retour + data.gasoil.retour,
@@ -158,7 +182,7 @@ export const usePdfExport = () => {
     );
 
     // 2. Détail des ventes
-    section("2. DÉTAIL DES VENTES & VERSEMENT");
+    section(`${nz.length ? 3 : 2}. DÉTAIL DES VENTES & VERSEMENT`);
     line("Vente globale", `${formatNumber(data.venteGlobale)} FCFA`, { bold: true, color: primary, fill: [255, 251, 235] });
     line("- Autoconsommation", `${formatNumber(data.autoconso)} FCFA`);
     line("- Bons clients", `${formatNumber(data.bonsClients)} FCFA`);
@@ -178,7 +202,7 @@ export const usePdfExport = () => {
 
     // 3. Suivi stock
     if (data.tanks.length) {
-      section("3. SUIVI STOCK PAR CUVE");
+      section(`${nz.length ? 4 : 3}. SUIVI STOCK PAR CUVE`);
       table(
         ["Cuve", "Ouverture", "Dépotage", "Sortie", "Clôture théo.", "Jauge", "Écart"],
         data.tanks.map((t) => [

@@ -440,6 +440,15 @@ const IndexEntry = () => {
       banqueNom: watched.banqueNom || undefined,
       ecartVersement: override?.ecartVersement ?? cascade.ecartVersement,
       tanks: tanksRecap,
+      nozzles: Object.values(pumpRows)
+        .filter((r) => r.indexDepart !== "" || r.indexArrivee !== "")
+        .map((r) => ({
+          name: pumps.find((pp: any) => pp.id === r.pumpId)?.name || "Pistolet",
+          product: r.productType,
+          depart: num(r.indexDepart),
+          arrivee: num(r.indexArrivee),
+          retour: num(r.retour),
+        })),
       validation: { status: override?.readings?.length ? "pre_enregistre" : "brouillon" },
     };
   };

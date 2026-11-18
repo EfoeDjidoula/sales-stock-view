@@ -50,7 +50,7 @@ export const IndexValidationDialog = ({ entry, open, onOpenChange, readOnly }: P
     enabled: open && !!entry,
     queryFn: async () => {
       const [pumps, tanks, closure, prior] = await Promise.all([
-        db.from("pump_index_entries").select("pump_id, product_type, liters_net, liters_sold, retour_cuve, pumps(name)").eq("entry_id", entry!.id),
+        db.from("pump_index_entries").select("pump_id, product_type, index_depart, index_arrivee, liters_net, liters_sold, retour_cuve, pumps(name)").eq("entry_id", entry!.id),
         db.from("index_tank_readings").select("tank_id, product_type, stock_ouverture, depotage, sortie, stock_cloture, jauge, ecart, tanks(name)").eq("entry_id", entry!.id),
         db.from("daily_closures").select("id, status, source").eq("station_id", entry!.station_id).eq("closure_date", entry!.entry_date).maybeSingle(),
         db.from("index_entries").select("id", { count: "exact", head: true }).eq("station_id", entry!.station_id).lt("entry_date", entry!.entry_date).neq("status", "valide"),
@@ -128,6 +128,10 @@ export const IndexValidationDialog = ({ entry, open, onOpenChange, readOnly }: P
       banqueNom: entry.banque_nom || undefined,
       ecartVersement: verse - aVerser,
       tanks,
+      nozzles: (detail?.pumps ?? []).map((r: any) => ({
+        name: r.pumps?.name ?? "Pistolet", product: r.product_type,
+        depart: n(r.index_depart), arrivee: n(r.index_arrivee), retour: n(r.retour_cuve),
+      })),
       validation: {
         status: entry.status,
         by: entry.status === "rejete" ? entry.rejected_by_name : entry.validated_by_name,
