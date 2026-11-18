@@ -461,7 +461,7 @@ const ClosureHistory = ({ stations, onOpen }: { stations: Row[]; onOpen: (statio
             {rows.map((r) => (
               <tr key={r.id} className="border-t border-border">
                 <td className="p-2">{r.closure_date}</td><td className="p-2">{name(r.station_id)}</td>
-                 <td className="p-2"><Badge variant={CLOSURE_STATUS[r.status]?.variant}>{t(CLOSURE_STATUS[r.status]?.label ?? "")}</Badge></td>
+                 <td className="p-2"><Badge variant={CLOSURE_STATUS[r.status]?.variant}>{t(CLOSURE_STATUS[r.status]?.label ?? "")}</Badge>{r.source === "index" && <Badge variant="outline" className="ml-1 border-primary/40 text-primary">{t("Saisie index")}</Badge>}</td>
                 <td className="p-2 text-right">{fmt(r.total_volume)} L</td><td className="p-2 text-right">{fmt(r.total_amount)}</td><td className="p-2 text-right">{fmt(r.total_collected)}</td>
                 <td className={`p-2 text-right ${Number(r.cash_variance) < 0 ? "text-destructive" : ""}`}>{fmt(r.cash_variance)}</td>
                  <td className="p-1"><Button size="sm" variant="ghost" onClick={() => onOpen(r.station_id, r.closure_date)}>{t("Ouvrir")}</Button></td>

@@ -372,6 +372,13 @@
       "when": 1795008190363,
       "tag": "0052_index_validation_n1_and_ecmr_fix",
       "breakpoints": true
+    },
+    {
+      "idx": 53,
+      "version": "7",
+      "when": 1795012191584,
+      "tag": "0053_index_reject_and_auto_closure",
+      "breakpoints": true
     }
   ]
 }

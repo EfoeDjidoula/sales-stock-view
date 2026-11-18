@@ -4,6 +4,7 @@ import { useStations } from "@/hooks/useIndexEntries";
 import { formatCurrency } from "@/data/stationsData";
 import { FUEL_PRICES } from "@/config/prices";
 import { EditEntryDialog } from "./EditEntryDialog";
+import { IndexValidationDialog } from "./IndexValidationDialog";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { Calendar as CalendarIcon, Search, Pencil, Trash2, Loader2, ShieldCheck, ChevronDown, ChevronRight } from "lucide-react";
@@ -42,7 +43,7 @@ export const HistoryModule = () => {
   const { isPlatformAdmin } = usePlatformAdmin();
   const { user } = useAuth();
   const canValidate = isPlatformAdmin || can("index_entries", "validate");
-  const [validating, setValidating] = useState<string | null>(null);
+  const [decisionEntry, setDecisionEntry] = useState<IndexEntry | null>(null);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [pumpDetail, setPumpDetail] = useState<Record<string, any[]>>({});
 
@@ -56,16 +57,6 @@ export const HistoryModule = () => {
     }
   };
 
-  const handleValidate = async (entry: IndexEntry) => {
-    setValidating(entry.id);
-    const { data, error } = await (supabase as any).rpc("validate_index_entry", { _id: entry.id, _comment: null });
-    setValidating(null);
-    if (error) return toast.error("Validation impossible", { description: error.message });
-    const warns: string[] = data?.warnings ?? [];
-    if (warns.length) toast.warning("Saisie validée, avec réserves sur le stock", { description: warns.join(" · ") });
-    else toast.success("Saisie validée : stock mis à jour");
-    queryClient.invalidateQueries();
-  };
 
   const startStr = startDate ? format(startDate, "yyyy-MM-dd") : undefined;
   const endStr = endDate ? format(endDate, "yyyy-MM-dd") : undefined;
@@ -295,6 +286,7 @@ export const HistoryModule = () => {
                     const gasoilL = entry.total_gasoil_liters ?? legacy.gasoilL;
                     const amount = entry.vente_globale ?? superL * FUEL_PRICES.SUPER + gasoilL * FUEL_PRICES.GASOIL;
                     const validated = entry.status === "valide";
+                    const rejected = entry.status === "rejete";
                     const versements = computeVersements(entry);
                     const bons = entry.bons_carburant_valeur + entry.bons_entreprise_valeur;
                     return (
@@ -317,14 +309,16 @@ export const HistoryModule = () => {
                         <TableCell>
                           {validated ? (
                             <Badge variant="outline" className="border-success/40 text-success whitespace-nowrap" title={entry.validated_by_name ? `Validé par ${entry.validated_by_name}` : undefined}>Validé N+1</Badge>
+                          ) : rejected ? (
+                            <Badge variant="outline" className="border-destructive/40 text-destructive whitespace-nowrap" title={entry.rejection_reason ?? undefined}>Rejeté N+1</Badge>
                           ) : (
                             <Badge variant="outline" className="border-warning/40 text-warning whitespace-nowrap">Pré-enregistré</Badge>
                           )}
                         </TableCell>
                         <TableCell className="text-center whitespace-nowrap">
-                          {!validated && canValidate && (isPlatformAdmin || entry.user_id !== user?.id) && (
-                            <Button variant="ghost" size="icon" onClick={() => handleValidate(entry)} disabled={validating === entry.id} title="Valider (N+1)" className="text-success">
-                              {validating === entry.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
+                          {!validated && !rejected && canValidate && (isPlatformAdmin || entry.user_id !== user?.id) && (
+                            <Button variant="ghost" size="icon" onClick={() => setDecisionEntry(entry)} title="Valider ou rejeter (N+1)" className="text-success">
+                              <ShieldCheck className="w-4 h-4" />
                             </Button>
                           )}
                           {!validated && (
@@ -354,6 +348,12 @@ export const HistoryModule = () => {
                                 ))}
                               </div>
                             )}
+                            {rejected && (
+                              <p className="mt-2 text-xs text-destructive">
+                                Rejetée par {entry.rejected_by_name ?? "le N+1"}{entry.rejected_at ? ` le ${new Date(entry.rejected_at).toLocaleDateString(locale)}` : ""} : {entry.rejection_reason}
+                              </p>
+                            )}
+                            {validated && entry.closure_id && <p className="mt-2 text-xs text-success">Clôture du jour générée dans « Ventes & Clôtures ».</p>}
                             {!!entry.sync_warnings?.length && <p className="mt-2 text-xs text-warning">{entry.sync_warnings.join(" · ")}</p>}
                           </TableCell>
                         </TableRow>
@@ -367,6 +367,8 @@ export const HistoryModule = () => {
           )}
         </CardContent>
       </Card>
+
+      <IndexValidationDialog entry={decisionEntry} open={!!decisionEntry} onOpenChange={(o) => { if (!o) setDecisionEntry(null); }} />
 
       <EditEntryDialog entry={editEntry} open={!!editEntry} onOpenChange={open => { if (!open) setEditEntry(null); }} />
 

@@ -16,7 +16,7 @@ import { usePumps } from "@/hooks/usePumps";
 import { useTanks } from "@/hooks/useTanks";
 import { usePumpIndexEntries, usePreviousPumpIndex } from "@/hooks/usePumpIndexEntries";
 import { DynamicPumpEntry, type PumpRow, type TankJauge } from "@/components/index-entry/DynamicPumpEntry";
-import { useDayPrices, useTankDayContext, useExistingDayEntry } from "@/hooks/useIndexDailyContext";
+import { useDayPrices, useTankDayContext, useExistingDayEntry, useDayCardTotals } from "@/hooks/useIndexDailyContext";
 import { nozzleOutput, num, salesCascade, tankBalance, venteGlobale } from "@/lib/indexModel";
 import type { DailyRecapData } from "@/hooks/usePdfExport";
 import {
@@ -318,6 +318,20 @@ const IndexEntry = () => {
     }
   }, [existingDay, form]);
 
+  // Nouvelle saisie : « Ventes par carte » et « Bons clients » pré-remplis depuis les transactions réelles du jour
+  const { data: cardTotals } = useDayCardTotals(selectedStation?.id, selectedDate);
+  useEffect(() => {
+    if (!existingDay || existingDay.entry || !cardTotals) return;
+    if (cardTotals.fuelCards > 0 && !form.getValues("cartes")) form.setValue("cartes", String(Math.round(cardTotals.fuelCards)));
+    if (cardTotals.b2b > 0 && !form.getValues("bonsClients")) form.setValue("bonsClients", String(Math.round(cardTotals.b2b)));
+  }, [existingDay, cardTotals, form]);
+  const realHint = (declared: string | undefined, real: number, count: number, source: string) => {
+    if (!cardTotals || count === 0) return undefined;
+    const diff = Math.round((Number(declared) || 0) - real);
+    const base = `${source} : ${formatNumber(real)} FCFA (${count})`;
+    return { text: diff === 0 ? base : `${base} · écart ${diff > 0 ? "+" : ""}${formatNumber(diff)}`, warn: diff !== 0 };
+  };
+
   const handlePumpChange = (pumpId: string, patch: Partial<PumpRow>) => {
     setPumpRows((prev) => ({ ...prev, [pumpId]: { ...prev[pumpId], ...patch } }));
   };
@@ -584,7 +598,7 @@ const IndexEntry = () => {
     setIsSubmitting(false);
   };
 
-  const renderAmount = (name: AmountKey, label: string, hint?: string) => (
+  const renderAmount = (name: AmountKey, label: string, hint?: string, warn?: boolean) => (
     <FormField
       control={form.control}
       name={name}
@@ -603,7 +617,7 @@ const IndexEntry = () => {
               {...field}
             />
           </FormControl>
-          {hint && <p className="text-[11px] text-muted-foreground">{hint}</p>}
+          {hint && <p className={`text-[11px] ${warn ? "text-warning" : "text-muted-foreground"}`}>{hint}</p>}
           <FormMessage className="text-xs" />
         </FormItem>
       )}
@@ -919,6 +933,18 @@ const IndexEntry = () => {
                       : `Index de départ repris de la saisie validée du ${new Date(previousEntry.entry_date).toLocaleDateString("fr-FR")}.`}
                   </div>
                 )}
+                {existingDay?.entry?.status === "rejete" && (
+                  <div className="text-xs rounded-md border border-destructive/40 bg-destructive/10 text-destructive px-3 py-2">
+                    Saisie rejetée par {existingDay.entry.rejected_by_name || "le N+1"}
+                    {existingDay.entry.rejected_at ? ` le ${new Date(existingDay.entry.rejected_at).toLocaleDateString("fr-FR")}` : ""} :{" "}
+                    <strong>{existingDay.entry.rejection_reason}</strong>. Corrigez puis enregistrez : elle repartira en validation.
+                  </div>
+                )}
+                {existingDay?.entry?.status === "valide" && (
+                  <div className="text-xs rounded-md border border-success/40 bg-success/10 text-success px-3 py-2">
+                    Saisie du jour validée par {existingDay.entry.validated_by_name || "le N+1"} : lecture seule. La clôture du jour figure dans « Ventes & Clôtures ».
+                  </div>
+                )}
                 {configLoading ? (
                   <div className="space-y-3">{[0, 1, 2].map((i) => <Skeleton key={i} className="h-32 w-full" />)}</div>
                 ) : (
@@ -1044,9 +1070,9 @@ const IndexEntry = () => {
                   </h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 p-4 rounded-lg bg-secondary/50 border border-border">
                     {renderAmount("autoconso", "Autoconsommation", "Ex-bons YATT")}
-                    {renderAmount("bonsClients", "Bons clients")}
+                    {(() => { const h = realHint(watched.bonsClients, cardTotals?.b2b ?? 0, cardTotals?.b2bCount ?? 0, "Consommations B2B"); return renderAmount("bonsClients", "Bons clients", h?.text, h?.warn); })()}
                     {renderAmount("ticketsValeur", "Tickets valeur")}
-                    {renderAmount("cartes", "Ventes par carte")}
+                    {(() => { const h = realHint(watched.cartes, cardTotals?.fuelCards ?? 0, cardTotals?.fuelCardCount ?? 0, "Transactions Fuel Cards"); return renderAmount("cartes", "Ventes par carte", h?.text, h?.warn); })()}
                     <div className="space-y-2">
                       {renderAmount("momo", "Mobile Money")}
                       {renderText("momoRef", "Réf. Mobile Money", "N° transaction")}

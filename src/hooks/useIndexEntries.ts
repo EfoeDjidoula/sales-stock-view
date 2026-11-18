@@ -97,6 +97,10 @@ export interface IndexEntry {
   validated_by_name?: string | null;
   validated_at?: string | null;
   sync_warnings?: string[] | null;
+  rejected_by_name?: string | null;
+  rejected_at?: string | null;
+  rejection_reason?: string | null;
+  closure_id?: string | null;
   user_id?: string;
   created_at: string;
   stations?: {

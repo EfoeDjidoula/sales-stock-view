@@ -160,3 +160,49 @@ export const useExistingDayEntry = (stationId?: string, date?: string) => {
     enabled: !!user && !!stationId && !!date,
   });
 };
+
+export interface DayCardTotals {
+  /** Achats Fuel Cards encaissés à la station ce jour (fuseau du pays). */
+  fuelCards: number;
+  fuelCardCount: number;
+  /** Consommations B2B enregistrées à la station ce jour. */
+  b2b: number;
+  b2bCount: number;
+}
+
+/** Transactions réelles du jour servant à pré-remplir « Ventes par carte » et « Bons clients ». */
+export const useDayCardTotals = (stationId?: string, date?: string) => {
+  const { user } = useAuth();
+  const { scopeQuery, tenantId, countryId } = useScope();
+  const { country } = useCountry();
+  const tz = country?.timezone || "Africa/Porto-Novo";
+  return useQuery({
+    queryKey: ["day-card-totals", stationId, date, tenantId, countryId, tz],
+    queryFn: async (): Promise<DayCardTotals> => {
+      const from = new Date(new Date(`${date}T00:00:00Z`).getTime() - 36 * 3600_000).toISOString();
+      const to = new Date(new Date(`${date}T00:00:00Z`).getTime() + 60 * 3600_000).toISOString();
+      const [cards, b2b] = await Promise.all([
+        scopeQuery(db.from("fuel_card_transactions").select("amount, occurred_at"))
+          .eq("station_id", stationId)
+          .eq("kind", "purchase")
+          .gte("occurred_at", from)
+          .lte("occurred_at", to),
+        scopeQuery(db.from("b2b_consumptions").select("amount"))
+          .eq("station_id", stationId)
+          .eq("consumed_on", date),
+      ]);
+      if (cards.error) throw cards.error;
+      if (b2b.error) throw b2b.error;
+      const dayCards = (cards.data || []).filter(
+        (r: any) => new Date(r.occurred_at).toLocaleDateString("en-CA", { timeZone: tz }) === date,
+      );
+      return {
+        fuelCards: dayCards.reduce((s: number, r: any) => s + (Number(r.amount) || 0), 0),
+        fuelCardCount: dayCards.length,
+        b2b: (b2b.data || []).reduce((s: number, r: any) => s + (Number(r.amount) || 0), 0),
+        b2bCount: (b2b.data || []).length,
+      };
+    },
+    enabled: !!user && !!stationId && !!date,
+  });
+};

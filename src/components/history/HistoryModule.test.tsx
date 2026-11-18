@@ -2,6 +2,14 @@ import { describe, it, expect, vi } from "vitest";
 import { render, screen, fireEvent, waitFor } from "@testing-library/react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
+vi.mock("@/hooks/useLanguage", () => ({
+  useLanguage: () => ({ language: "fr", t: (s: string) => s }),
+}));
+
+vi.mock("@/hooks/usePermissions", () => ({ usePermissions: () => ({ can: () => false }) }));
+vi.mock("@/hooks/usePlatformAdmin", () => ({ usePlatformAdmin: () => ({ isPlatformAdmin: false }) }));
+vi.mock("./IndexValidationDialog", () => ({ IndexValidationDialog: () => null }));
+
 vi.mock("@/hooks/useAuth", () => ({
   useAuth: () => ({ user: { id: "u1" } }),
 }));

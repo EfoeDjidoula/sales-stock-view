@@ -1143,12 +1143,14 @@ export type Database = {
           created_at: string
           created_by: string | null
           id: string
+          index_entry_id: string | null
           last_reason: string | null
           notes: string | null
           rejected_at: string | null
           rejected_by: string | null
           reopened_at: string | null
           reopened_by: string | null
+          source: string
           station_id: string
           status: string
           submitted_at: string | null
@@ -1168,12 +1170,14 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           id?: string
+          index_entry_id?: string | null
           last_reason?: string | null
           notes?: string | null
           rejected_at?: string | null
           rejected_by?: string | null
           reopened_at?: string | null
           reopened_by?: string | null
+          source?: string
           station_id: string
           status?: string
           submitted_at?: string | null
@@ -1193,12 +1197,14 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           id?: string
+          index_entry_id?: string | null
           last_reason?: string | null
           notes?: string | null
           rejected_at?: string | null
           rejected_by?: string | null
           reopened_at?: string | null
           reopened_by?: string | null
+          source?: string
           station_id?: string
           status?: string
           submitted_at?: string | null
@@ -2979,6 +2985,7 @@ export type Database = {
           bons_entreprise_nombre: number
           bons_entreprise_valeur: number
           cartes_montant: number
+          closure_id: string | null
           country_id: string | null
           created_at: string
           ecart_versement: number | null
@@ -2991,6 +2998,10 @@ export type Database = {
           gasoil2_jauge: number
           id: string
           montant_a_verser: number | null
+          rejected_at: string | null
+          rejected_by: string | null
+          rejected_by_name: string | null
+          rejection_reason: string | null
           station_id: string
           status: string
           super1_index_arrivee: number
@@ -3029,6 +3040,7 @@ export type Database = {
           bons_entreprise_nombre?: number
           bons_entreprise_valeur?: number
           cartes_montant?: number
+          closure_id?: string | null
           country_id?: string | null
           created_at?: string
           ecart_versement?: number | null
@@ -3041,6 +3053,10 @@ export type Database = {
           gasoil2_jauge?: number
           id?: string
           montant_a_verser?: number | null
+          rejected_at?: string | null
+          rejected_by?: string | null
+          rejected_by_name?: string | null
+          rejection_reason?: string | null
           station_id: string
           status?: string
           super1_index_arrivee?: number
@@ -3079,6 +3095,7 @@ export type Database = {
           bons_entreprise_nombre?: number
           bons_entreprise_valeur?: number
           cartes_montant?: number
+          closure_id?: string | null
           country_id?: string | null
           created_at?: string
           ecart_versement?: number | null
@@ -3091,6 +3108,10 @@ export type Database = {
           gasoil2_jauge?: number
           id?: string
           montant_a_verser?: number | null
+          rejected_at?: string | null
+          rejected_by?: string | null
+          rejected_by_name?: string | null
+          rejection_reason?: string | null
           station_id?: string
           status?: string
           super1_index_arrivee?: number
@@ -3143,6 +3164,48 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      index_entry_events: {
+        Row: {
+          action: string
+          author_id: string | null
+          author_name: string | null
+          country_id: string | null
+          created_at: string
+          entry_date: string | null
+          entry_id: string
+          id: string
+          reason: string | null
+          station_id: string | null
+          tenant_id: string | null
+        }
+        Insert: {
+          action: string
+          author_id?: string | null
+          author_name?: string | null
+          country_id?: string | null
+          created_at?: string
+          entry_date?: string | null
+          entry_id: string
+          id?: string
+          reason?: string | null
+          station_id?: string | null
+          tenant_id?: string | null
+        }
+        Update: {
+          action?: string
+          author_id?: string | null
+          author_name?: string | null
+          country_id?: string | null
+          created_at?: string
+          entry_date?: string | null
+          entry_id?: string
+          id?: string
+          reason?: string | null
+          station_id?: string | null
+          tenant_id?: string | null
+        }
+        Relationships: []
       }
       index_tank_readings: {
         Row: {
@@ -8370,6 +8433,10 @@ export type Database = {
       }
       reconciliation_action: {
         Args: { _action: string; _comment: string; _id: string }
+        Returns: string
+      }
+      reject_index_entry: {
+        Args: { _id: string; _reason: string }
         Returns: string
       }
       run_fraud_scan: {

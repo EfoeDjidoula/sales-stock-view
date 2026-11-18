@@ -15,8 +15,9 @@
 - [x] Signatures e-CMR numériques + validation destinataire + accusé de réception.
 - [ ] Suite Pro : accès direct des clients B2B, application installable entièrement hors-ligne, rapports par email.
 - [x] Corriger les séparateurs de milliers dans tous les rapports PDF.
-- [ ] Validation N+1 d'un index → création automatique de la clôture dans « Ventes & Clôtures ».
-- [ ] Pré-remplir cartes / bons / Mobile Money de la saisie index depuis les transactions Fuel Cards et B2B réelles.
-- [ ] Fusionner l'ancien écran « Dépotages » avec la réception Logistique (une seule source).
-- [ ] Rejet / contestation d'une saisie par le N+1 et dialogue de validation enrichi (écarts, versement, dépotages).
+- [x] Validation N+1 d'un index → création automatique de la clôture dans « Ventes & Clôtures ».
+- [x] Pré-remplir cartes / bons de la saisie index depuis les transactions Fuel Cards et B2B réelles.
+- [x] Fusionner l'ancien écran « Dépotages » avec la réception Logistique (une seule source).
+- [x] Rejet / contestation d'une saisie par le N+1 et dialogue de validation enrichi (écarts, versement, dépotages).
 - [ ] Tester en réel : validation N+1, enregistrement d'un dépotage, signature e-CMR.
+- [ ] Pré-remplir Mobile Money : aucune source de transactions MoMo connectée.

@@ -319,6 +319,13 @@ const Index = () => {
     window.history.replaceState(window.history.state, "", url.toString());
   }, [activeTab]);
 
+  // Navigation demandée par un module (ex. Dépotages → Logistique, réception)
+  useEffect(() => {
+    const onOpen = (e: Event) => { const tab = (e as CustomEvent<string>).detail; if (tab && tab in TAB_META) selectTab(tab); };
+    window.addEventListener("lumatek:open-tab", onOpen);
+    return () => window.removeEventListener("lumatek:open-tab", onOpen);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
   const canAccessTab = (tab: string) => allowedTabs.includes(tab);
   const { data: badges = {} } = useNavBadges(canAccessTab);
 
