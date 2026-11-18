@@ -379,6 +379,13 @@
       "when": 1795012191584,
       "tag": "0053_index_reject_and_auto_closure",
       "breakpoints": true
+    },
+    {
+      "idx": 54,
+      "version": "7",
+      "when": 1795017854789,
+      "tag": "0054_b2b_client_portal",
+      "breakpoints": true
     }
   ]
 }

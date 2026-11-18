@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { useScope } from "@/hooks/useScope";
+import { isNetworkError, offlineOps } from "@/lib/offlineQueue";
 
 export interface PumpEntryInput {
   pumpId: string;
@@ -169,115 +170,146 @@ export const useStations = () => {
   });
 };
 
+export type SaveIndexResult =
+  | { queued: true; entry: null; readings: any[] }
+  | { queued: false; entry: any; readings: any[] };
+
+/** Writes one day's entry (header, nozzles, tanks). Idempotent: safe to replay from the offline queue. */
+export const persistIndexEntry = async (data: IndexEntryData, userId: string, scope: Record<string, string>) => {
+  const scopeRow = <T extends Record<string, unknown>>(row: T) => ({ ...row, ...scope });
+  const entry = {
+    user_id: userId,
+    station_id: data.stationId,
+    entry_date: data.entryDate,
+    super1_index_depart: data.super1.indexDepart,
+    super1_index_arrivee: data.super1.indexArrivee,
+    super1_jauge: data.super1.jauge,
+    super2_index_depart: data.super2.indexDepart,
+    super2_index_arrivee: data.super2.indexArrivee,
+    super2_jauge: data.super2.jauge,
+    gasoil1_index_depart: data.gasoil1.indexDepart,
+    gasoil1_index_arrivee: data.gasoil1.indexArrivee,
+    gasoil1_jauge: data.gasoil1.jauge,
+    gasoil2_index_depart: data.gasoil2.indexDepart,
+    gasoil2_index_arrivee: data.gasoil2.indexArrivee,
+    gasoil2_jauge: data.gasoil2.jauge,
+    versement_momo: data.versements.momo.montant,
+    versement_momo_ref: data.versements.momo.reference || null,
+    versement_banque: data.versements.banque.montant,
+    versement_banque_ref: data.versements.banque.reference || null,
+    versement_liquidite: data.versements.liquidite.montant,
+    versement_liquidite_note: data.versements.liquidite.note || null,
+    bons_carburant_nombre: data.bons.carburant.nombre,
+    bons_carburant_valeur: data.bons.carburant.valeur,
+    bons_entreprise_nombre: data.bons.entreprise.nombre,
+    bons_entreprise_valeur: data.bons.entreprise.valeur,
+    ...(data.sales
+      ? {
+          vente_globale: data.sales.venteGlobale,
+          autoconso_montant: data.sales.autoconso,
+          bons_clients_montant: data.sales.bonsClients,
+          tickets_valeur_montant: data.sales.ticketsValeur,
+          cartes_montant: data.sales.cartes,
+          banque_nom: data.sales.banqueNom || null,
+        }
+      : {}),
+  };
+
+  const { data: result, error } = await supabase
+    .from("index_entries")
+    .upsert(scopeRow(entry) as any, {
+      onConflict: "user_id,station_id,entry_date",
+    })
+    .select()
+    .single();
+
+  if (error) throw error;
+
+  // Persist pump-level rows if provided
+  if (data.pumpEntries && data.pumpEntries.length > 0) {
+    // Wipe out previous pump rows for this entry to avoid stale lines (pump removed/relinked)
+    const { error: delErr } = await supabase
+      .from("pump_index_entries")
+      .delete()
+      .eq("entry_id", result.id);
+    if (delErr) throw delErr;
+
+    const rows = data.pumpEntries.map((p) => scopeRow({
+      entry_id: result.id,
+      pump_id: p.pumpId,
+      tank_id: p.tankId,
+      station_id: data.stationId,
+      user_id: userId,
+      entry_date: data.entryDate,
+      product_type: p.productType,
+      index_depart: p.indexDepart,
+      index_arrivee: p.indexArrivee,
+      retour_cuve: p.retour || 0,
+    }) as any);
+    const { error: insErr } = await supabase.from("pump_index_entries").insert(rows);
+    if (insErr) throw insErr;
+  }
+
+  // Bilan cuve : le serveur recalcule ouverture (veille), dépotages validés et sorties pistolets
+  if (data.tankReadings && data.tankReadings.length > 0) {
+    const db = supabase as any;
+    const { error: delT } = await db.from("index_tank_readings").delete().eq("entry_id", result.id);
+    if (delT) throw delT;
+    const { error: insT } = await db.from("index_tank_readings").insert(
+      data.tankReadings.map((t) => scopeRow({
+        entry_id: result.id,
+        tank_id: t.tankId,
+        station_id: data.stationId,
+        user_id: userId,
+        entry_date: data.entryDate,
+        product_type: t.productType,
+        stock_ouverture: t.stockOuverture,
+        jauge: t.jauge,
+      })),
+    );
+    if (insT) throw insT;
+  }
+
+  // Relire la saisie avec les montants recalculés côté serveur
+  const { data: fresh } = await supabase.from("index_entries").select("*").eq("id", result.id).maybeSingle();
+  const { data: readings } = await (supabase as any)
+    .from("index_tank_readings").select("*").eq("entry_id", result.id);
+  return { entry: (fresh || result) as any, readings: (readings || []) as any[] };
+};
+
 export const useSaveIndexEntry = () => {
   const queryClient = useQueryClient();
   const { user } = useAuth();
   const { scopeRow } = useScope();
 
   return useMutation({
-    mutationFn: async (data: IndexEntryData) => {
+    // Runs even without network so the entry can be kept on the device.
+    networkMode: "always",
+    mutationFn: async (data: IndexEntryData): Promise<SaveIndexResult> => {
       if (!user) throw new Error("User not authenticated");
-
-      const entry = {
-        user_id: user.id,
-        station_id: data.stationId,
-        entry_date: data.entryDate,
-        super1_index_depart: data.super1.indexDepart,
-        super1_index_arrivee: data.super1.indexArrivee,
-        super1_jauge: data.super1.jauge,
-        super2_index_depart: data.super2.indexDepart,
-        super2_index_arrivee: data.super2.indexArrivee,
-        super2_jauge: data.super2.jauge,
-        gasoil1_index_depart: data.gasoil1.indexDepart,
-        gasoil1_index_arrivee: data.gasoil1.indexArrivee,
-        gasoil1_jauge: data.gasoil1.jauge,
-        gasoil2_index_depart: data.gasoil2.indexDepart,
-        gasoil2_index_arrivee: data.gasoil2.indexArrivee,
-        gasoil2_jauge: data.gasoil2.jauge,
-        versement_momo: data.versements.momo.montant,
-        versement_momo_ref: data.versements.momo.reference || null,
-        versement_banque: data.versements.banque.montant,
-        versement_banque_ref: data.versements.banque.reference || null,
-        versement_liquidite: data.versements.liquidite.montant,
-        versement_liquidite_note: data.versements.liquidite.note || null,
-        bons_carburant_nombre: data.bons.carburant.nombre,
-        bons_carburant_valeur: data.bons.carburant.valeur,
-        bons_entreprise_nombre: data.bons.entreprise.nombre,
-        bons_entreprise_valeur: data.bons.entreprise.valeur,
-        ...(data.sales
-          ? {
-              vente_globale: data.sales.venteGlobale,
-              autoconso_montant: data.sales.autoconso,
-              bons_clients_montant: data.sales.bonsClients,
-              tickets_valeur_montant: data.sales.ticketsValeur,
-              cartes_montant: data.sales.cartes,
-              banque_nom: data.sales.banqueNom || null,
-            }
-          : {}),
-      };
-
-      const { data: result, error } = await supabase
-        .from("index_entries")
-        .upsert(scopeRow(entry) as any, {
-          onConflict: "user_id,station_id,entry_date",
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-
-      // Persist pump-level rows if provided
-      if (data.pumpEntries && data.pumpEntries.length > 0) {
-        // Wipe out previous pump rows for this entry to avoid stale lines (pump removed/relinked)
-        const { error: delErr } = await supabase
-          .from("pump_index_entries")
-          .delete()
-          .eq("entry_id", result.id);
-        if (delErr) throw delErr;
-
-        const rows = data.pumpEntries.map((p) => scopeRow({
-          entry_id: result.id,
-          pump_id: p.pumpId,
-          tank_id: p.tankId,
-          station_id: data.stationId,
-          user_id: user.id,
-          entry_date: data.entryDate,
-          product_type: p.productType,
-          index_depart: p.indexDepart,
-          index_arrivee: p.indexArrivee,
-          retour_cuve: p.retour || 0,
-        }) as any);
-        const { error: insErr } = await supabase.from("pump_index_entries").insert(rows);
-        if (insErr) throw insErr;
-      }
-
-      // Bilan cuve : le serveur recalcule ouverture (veille), dépotages validés et sorties pistolets
-      if (data.tankReadings && data.tankReadings.length > 0) {
-        const db = supabase as any;
-        const { error: delT } = await db.from("index_tank_readings").delete().eq("entry_id", result.id);
-        if (delT) throw delT;
-        const { error: insT } = await db.from("index_tank_readings").insert(
-          data.tankReadings.map((t) => scopeRow({
-            entry_id: result.id,
-            tank_id: t.tankId,
-            station_id: data.stationId,
-            user_id: user.id,
-            entry_date: data.entryDate,
-            product_type: t.productType,
-            stock_ouverture: t.stockOuverture,
-            jauge: t.jauge,
-          })),
+      const scope = scopeRow({}) as Record<string, string>;
+      const queue = () => {
+        offlineOps.add(
+          { kind: "index_entry", label: `Index ${data.entryDate}`, userId: user.id, payload: { data, scope } },
+          `${data.stationId}:${data.entryDate}`,
         );
-        if (insT) throw insT;
+        return { queued: true as const, entry: null, readings: [] as any[] };
+      };
+      if (typeof navigator !== "undefined" && navigator.onLine === false) return queue();
+      try {
+        return { queued: false as const, ...(await persistIndexEntry(data, user.id, scope)) };
+      } catch (e) {
+        if (isNetworkError(e)) return queue();
+        throw e;
       }
-
-      // Relire la saisie avec les montants recalculés côté serveur
-      const { data: fresh } = await supabase.from("index_entries").select("*").eq("id", result.id).maybeSingle();
-      const { data: readings } = await (supabase as any)
-        .from("index_tank_readings").select("*").eq("entry_id", result.id);
-      return { entry: (fresh || result) as any, readings: (readings || []) as any[] };
     },
-    onSuccess: () => {
+    onSuccess: (res) => {
+      if (res.queued) {
+        toast.success("Saisie gardée sur l'appareil", {
+          description: "Pas de réseau : elle sera envoyée automatiquement dès le retour de la connexion.",
+        });
+        return;
+      }
       queryClient.invalidateQueries({ queryKey: ["indexEntries"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard-entries"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard-chart"] });

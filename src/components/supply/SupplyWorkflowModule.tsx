@@ -5,6 +5,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useScope } from "@/hooks/useScope";
 import { usePermissions } from "@/hooks/usePermissions";
 import { usePlatformAdmin } from "@/hooks/usePlatformAdmin";
+import { useAuth } from "@/hooks/useAuth";
+import { isNetworkError, offlineOps } from "@/lib/offlineQueue";
 import { toast } from "sonner";
 import { Loader2, Plus, Eye, Check, X, Ban, FileDown } from "lucide-react";
 import { jsPDF } from "@/lib/pdf";
@@ -282,6 +284,7 @@ interface DetailProps {
 
 const SupplyDetail = ({ request: r, onClose, onChanged, canWrite, canValidate, lookups, name }: DetailProps) => {
   const { t } = useLanguage();
+  const { user } = useAuth();
   const [events, setEvents] = useState<Row[]>([]);
   const [d, setD] = useState<Row>({});
   const [reason, setReason] = useState("");
@@ -303,7 +306,17 @@ const SupplyDetail = ({ request: r, onClose, onChanged, canWrite, canValidate, l
     setBusy(true);
     const clean = Object.fromEntries(Object.entries({ ...payload, observations: d.observations }).filter(([, v]) => v !== "" && v !== undefined && v !== null)
       .map(([k, v]) => [k, /_at$/.test(k) ? new Date(v as string).toISOString() : v]));
-    const { error } = await db.rpc("supply_transition", { _id: r.id, _action: action, _reason: why ?? null, _data: clean });
+    const args = { _id: r.id, _action: action, _reason: why ?? null, _data: clean };
+    const keepOffline = () => {
+      offlineOps.add({ kind: "supply_receive", label: `Réception ${r.reference ?? ""}`.trim(), userId: user?.id ?? "", payload: args }, r.id);
+      setBusy(false);
+      toast.success(t("Réception gardée sur l'appareil"), { description: t("Pas de réseau : elle sera envoyée automatiquement dès le retour de la connexion.") });
+      onClose();
+    };
+    // Only the station reception (gauges) can be captured offline; other steps need live checks.
+    if (action === "receive" && user && navigator.onLine === false) return keepOffline();
+    const { error } = await db.rpc("supply_transition", args);
+    if (action === "receive" && user && error && isNetworkError(error)) return keepOffline();
     setBusy(false);
     if (error) return toast.error(errMsg(error));
     toast.success(ACTION_LABEL[action]);

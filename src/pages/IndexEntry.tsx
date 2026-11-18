@@ -582,6 +582,11 @@ const IndexEntry = () => {
         },
       });
 
+      if (saved.queued) {
+        resetForm();
+        setIsSubmitting(false);
+        return;
+      }
       const e = saved.entry || {};
       setSubmissionSummary(
         buildRecap({

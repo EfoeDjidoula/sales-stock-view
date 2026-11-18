@@ -2,6 +2,23 @@ import { useState, useEffect, createContext, useContext, ReactNode } from "react
 import { supabase } from "@/integrations/supabase/client";
 import { User, Session } from "@supabase/supabase-js";
 import { logAudit } from "@/lib/audit";
+import { clearOfflineCache } from "@/lib/offlineCache";
+
+/**
+ * Without network an expired access token cannot be refreshed, so the auth client
+ * reports no session. Keep the last signed-in user on screen (cached data + device
+ * queue only); every server call still needs a valid token once back online.
+ */
+const storedOfflineUser = (): User | null => {
+  if (typeof navigator === "undefined" || navigator.onLine) return null;
+  try {
+    const ref = import.meta.env.VITE_SUPABASE_PROJECT_ID;
+    const raw = localStorage.getItem(`sb-${ref}-auth-token`);
+    return raw ? (JSON.parse(raw)?.user ?? null) : null;
+  } catch {
+    return null;
+  }
+};
 
 interface AuthContextType {
   user: User | null;
@@ -20,16 +37,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_event, session) => {
+      (event, session) => {
         setSession(session);
-        setUser(session?.user ?? null);
+        setUser(session?.user ?? (event === "SIGNED_OUT" ? null : storedOfflineUser()));
         setLoading(false);
       }
     );
 
     supabase.auth.getSession().then(({ data: { session } }) => {
       setSession(session);
-      setUser(session?.user ?? null);
+      setUser(session?.user ?? storedOfflineUser());
       setLoading(false);
     });
 
@@ -37,6 +54,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const signIn = async (email: string, password: string) => {
+    await clearOfflineCache();
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
@@ -53,6 +71,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       // Even if signOut fails (e.g. session already expired), clear local state
       console.warn("Sign out error (clearing local state):", error);
     }
+    await clearOfflineCache();
     // Force clear local state regardless of API response
     setSession(null);
     setUser(null);

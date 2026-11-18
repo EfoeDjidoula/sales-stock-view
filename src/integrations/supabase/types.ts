@@ -532,6 +532,159 @@ export type Database = {
           },
         ]
       }
+      b2b_portal_requests: {
+        Row: {
+          amount: number | null
+          card_id: string | null
+          client_id: string
+          country_id: string
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          decided_by_name: string | null
+          decision_comment: string | null
+          id: string
+          kind: string
+          message: string
+          reference: string
+          requested_by: string
+          requester_name: string | null
+          status: string
+          tenant_id: string
+        }
+        Insert: {
+          amount?: number | null
+          card_id?: string | null
+          client_id: string
+          country_id: string
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          decided_by_name?: string | null
+          decision_comment?: string | null
+          id?: string
+          kind: string
+          message: string
+          reference?: string
+          requested_by: string
+          requester_name?: string | null
+          status?: string
+          tenant_id: string
+        }
+        Update: {
+          amount?: number | null
+          card_id?: string | null
+          client_id?: string
+          country_id?: string
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          decided_by_name?: string | null
+          decision_comment?: string | null
+          id?: string
+          kind?: string
+          message?: string
+          reference?: string
+          requested_by?: string
+          requester_name?: string | null
+          status?: string
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "b2b_portal_requests_card_id_fkey"
+            columns: ["card_id"]
+            isOneToOne: false
+            referencedRelation: "fuel_cards"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "b2b_portal_requests_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "b2b_portal_requests_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "countries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "b2b_portal_requests_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      b2b_portal_users: {
+        Row: {
+          active: boolean
+          can_manage: boolean
+          client_id: string
+          country_id: string
+          created_at: string
+          created_by: string | null
+          email: string
+          full_name: string
+          tenant_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          active?: boolean
+          can_manage?: boolean
+          client_id: string
+          country_id: string
+          created_at?: string
+          created_by?: string | null
+          email: string
+          full_name: string
+          tenant_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          active?: boolean
+          can_manage?: boolean
+          client_id?: string
+          country_id?: string
+          created_at?: string
+          created_by?: string | null
+          email?: string
+          full_name?: string
+          tenant_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "b2b_portal_users_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "b2b_portal_users_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "countries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "b2b_portal_users_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       b2b_terms: {
         Row: {
           actor_id: string
@@ -8260,6 +8413,62 @@ export type Database = {
           _tenant: string
         }
         Returns: undefined
+      }
+      b2b_portal_action: {
+        Args: { _action: string; _data?: Json }
+        Returns: Json
+      }
+      b2b_portal_me: {
+        Args: never
+        Returns: {
+          active: boolean
+          can_manage: boolean
+          client_id: string
+          country_id: string
+          created_at: string
+          created_by: string | null
+          email: string
+          full_name: string
+          tenant_id: string
+          updated_at: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "b2b_portal_users"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      b2b_portal_overview: { Args: { _since?: string }; Returns: Json }
+      b2b_portal_staff_action: {
+        Args: { _action: string; _data: Json }
+        Returns: Json
+      }
+      b2b_portal_staff_guard: {
+        Args: { _client: string }
+        Returns: {
+          address: string | null
+          contact_name: string | null
+          country_id: string | null
+          created_at: string
+          email: string | null
+          id: string
+          is_active: boolean
+          name: string
+          notes: string | null
+          phone: string | null
+          tax_id: string | null
+          tenant_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "clients"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
       can_access_tenant: {
         Args: { _tenant_id: string; _user_id: string }
