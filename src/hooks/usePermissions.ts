@@ -31,7 +31,10 @@ export const usePermissions = () => {
     staleTime: 60_000,
   });
 
-  const codes = query.data ?? new Set<string>();
+  // Garde-fou : un cache restauré pourrait rendre autre chose qu'un Set.
+  const raw = query.data as unknown;
+  const codes: Set<string> =
+    raw instanceof Set ? (raw as Set<string>) : new Set(Array.isArray(raw) ? (raw as string[]) : []);
 
   /** `can("clients", "create")` ou `can("clients.create")` */
   const can = (module: string, action?: PermissionAction) =>
