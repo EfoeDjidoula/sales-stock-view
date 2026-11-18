@@ -1,5 +1,5 @@
 - [x] Ajouter un choix Français / English visible à côté du profil, conservé par utilisateur et initialisé selon la langue du client.
-- [ ] Traduire les parcours visibles : connexion, choix de pays, navigation, tableau de bord, saisie et administration. Les libellés principaux sont traduits ; les écrans métier et messages secondaires restent partiellement en français.
+- [x] Traduire les parcours visibles : connexion, choix de pays, navigation, tableau de bord, saisie et administration.
 - [x] Vérifier le changement de langue et sa conservation dans l'application.
 - [x] Créer Fuel Cards prépayées/postpayées : comptes, cartes, véhicules, conducteurs, transactions, blocage, remplacement, expiration et facturation ; isolation par client.
 - [ ] Appliquer allocations et plafonds, restrictions configurables, journal des modifications de plafond, validation serveur et alertes d'anomalies ; vérifier les flux bout en bout. Les règles et écrans sont livrés ; une transaction réelle attend un compte et une carte du client (aucun compte existant au 1er octobre 2026).
@@ -24,7 +24,7 @@
 - [x] Remettre en attente de validation N+1 les saisies FIDJROSSÈ 16/11 et 18/11 (17/11 : aucune saisie réelle).
 - [x] Logo et favicon client (création/modification SaaS) : glisser-déposer ou choix d'un fichier local si aucun lien.
 - [x] Supprimer les 3 640 lignes d'index vides importées de l'ancien fichier Excel (10 lignes chiffrées conservées).
-- [ ] Traduction anglaise complète des écrans métier.
+- [x] Traduction anglaise complète des écrans métier (dictionnaire de ~2 400 libellés appliqué automatiquement).
 - [ ] Espace en ligne pour les clients B2B (portail client).
 - [ ] Envoi des rapports périodiques par email (domaine d'envoi à revalider).
 - [ ] Application entièrement utilisable sans internet (au-delà des jaugeages).

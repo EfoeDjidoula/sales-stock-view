@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useMemo, useState, type ReactNode
 import { useAuth } from "@/hooks/useAuth";
 import { useTenant } from "@/hooks/useTenant";
 import { translations } from "@/lib/translations";
+import { buildLookup, createDomTranslator } from "@/lib/domTranslator";
 
 export type Language = "fr" | "en";
 const normalize = (value?: string | null): Language => value?.toLowerCase().startsWith("en") ? "en" : "fr";
@@ -20,6 +21,16 @@ export const LanguageProvider = ({ children }: { children: ReactNode }) => {
     setChoice({ key, value });
   };
   useEffect(() => { document.documentElement.lang = language; }, [language]);
+  // Screens written with French text are translated in place when English is active.
+  useEffect(() => {
+    if (language !== "en" || typeof document === "undefined") return;
+    const translator = createDomTranslator(document.body);
+    let cancelled = false;
+    import("@/lib/translations.generated").then(({ default: generated }) => {
+      if (!cancelled) translator.start(buildLookup({ ...generated, ...translations }));
+    });
+    return () => { cancelled = true; translator.stop(); };
+  }, [language]);
   const context = useMemo(() => ({ language, setLanguage, t: (text: string) => language === "en" ? translations[text] ?? text : text }), [language, key]);
   return <LanguageContext.Provider value={context}>{children}</LanguageContext.Provider>;
 };
