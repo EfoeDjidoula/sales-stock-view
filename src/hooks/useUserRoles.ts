@@ -81,7 +81,7 @@ export const useUserRoles = () => {
       setUsers(usersData);
     } catch (error: any) {
       console.error(error);
-      toast.error("Erreur lors du chargement des utilisateurs");
+      if (navigator.onLine) toast.error("Erreur lors du chargement des utilisateurs");
     } finally {
       setLoading(false);
     }

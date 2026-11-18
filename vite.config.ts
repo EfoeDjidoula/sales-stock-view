@@ -43,8 +43,8 @@ export default defineConfig(({ mode }) => ({
         ],
       },
       workbox: {
-        // Hashed build assets are precached; HTML is never served cache-first.
-        globPatterns: ["**/*.{js,css,ico,png,svg,woff2}"],
+        // Hashed build assets are precached; HTML is never served cache-first (index.html is only an offline fallback).
+        globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
         maximumFileSizeToCacheInBytes: 8 * 1024 * 1024,
         navigateFallback: null,
         cleanupOutdatedCaches: true,
@@ -52,7 +52,8 @@ export default defineConfig(({ mode }) => ({
           {
             urlPattern: ({ request, url }) => request.mode === "navigate" && !url.pathname.startsWith("/~oauth"),
             handler: "NetworkFirst",
-            options: { cacheName: "pages", networkTimeoutSeconds: 4, expiration: { maxEntries: 10 } },
+            // Network first; the precached shell is used only when the network fails (offline).
+            options: { cacheName: "pages", networkTimeoutSeconds: 4, expiration: { maxEntries: 10 }, precacheFallback: { fallbackURL: "/index.html" } },
           },
           {
             urlPattern: ({ url }) => url.origin === "https://fonts.googleapis.com" || url.origin === "https://fonts.gstatic.com",

@@ -83,7 +83,8 @@ const ClientPortal = () => {
     },
   });
   const o = q.data;
-  const cur = o?.tenant?.currency || "FCFA";
+  // XOF is shown as FCFA, as everywhere else in the app.
+  const cur = !o?.tenant?.currency || o.tenant.currency === "XOF" ? "FCFA" : o.tenant.currency;
   const money = (n: number) => formatMoney(n, cur);
   const credit = creditSummary(o?.terms?.credit_limit, o?.exposure ?? 0);
   const canManage = !!o?.me.can_manage;
@@ -204,7 +205,7 @@ const ClientPortal = () => {
           </Card>
           <Card><CardHeader className="pb-2"><CardTitle className="flex items-center gap-2 text-sm text-muted-foreground"><Receipt className="h-4 w-4" />Reste à payer</CardTitle></CardHeader>
             <CardContent><div className="font-display text-2xl font-semibold tabular-nums">{money(unpaid)}</div>
-              <div className={`text-xs ${overdue.length ? "text-destructive" : "text-muted-foreground"}`}>{overdue.length ? `${overdue.length} facture(s) en retard` : "Aucun retard"}</div></CardContent></Card>
+              <div className={`text-xs ${overdue.length ? "font-medium text-destructive" : "text-muted-foreground"}`}>{overdue.length ? `${overdue.length} facture(s) en retard` : "Aucun retard"}</div></CardContent></Card>
           <Card><CardHeader className="pb-2"><CardTitle className="flex items-center gap-2 text-sm text-muted-foreground"><Fuel className="h-4 w-4" />Consommé ({period} j)</CardTitle></CardHeader>
             <CardContent><div className="font-display text-2xl font-semibold tabular-nums">{num(totals.litres)} L</div>
               <div className="text-xs text-muted-foreground">{money(totals.amount)} · {activeCards} carte(s) active(s)</div></CardContent></Card>

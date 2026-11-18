@@ -13,7 +13,7 @@
 - [x] Vérifier les calculs et le parcours connecté des prévisions (horizons 7/14 jours, historiques 30/90 jours, données YATT sans écriture).
 - [x] Suite Pro (6 axes) : états réglementaires, écritures SYSCOHADA, e-CMR QR, coulage thermique, relevés B2B, jaugeages hors-ligne.
 - [x] Signatures e-CMR numériques + validation destinataire + accusé de réception.
-- [ ] Suite Pro : accès direct des clients B2B, application installable entièrement hors-ligne, rapports par email.
+- [x] Suite Pro : accès direct des clients B2B, application installable hors-ligne, rapports par email (voir ci-dessous).
 - [x] Corriger les séparateurs de milliers dans tous les rapports PDF.
 - [x] Validation N+1 d'un index → création automatique de la clôture dans « Ventes & Clôtures ».
 - [x] Pré-remplir cartes / bons de la saisie index depuis les transactions Fuel Cards et B2B réelles.
@@ -25,6 +25,8 @@
 - [x] Logo et favicon client (création/modification SaaS) : glisser-déposer ou choix d'un fichier local si aucun lien.
 - [x] Supprimer les 3 640 lignes d'index vides importées de l'ancien fichier Excel (10 lignes chiffrées conservées).
 - [x] Traduction anglaise complète des écrans métier (dictionnaire de ~2 400 libellés appliqué automatiquement).
-- [ ] Espace en ligne pour les clients B2B (portail client).
-- [ ] Envoi des rapports périodiques par email (domaine d'envoi à revalider).
-- [ ] Application entièrement utilisable sans internet (au-delà des jaugeages).
+- [x] Espace en ligne pour les clients B2B (portail client).
+- [x] Envoi à la demande des rapports périodiques par email (bouton « Recevoir par e-mail »).
+- [ ] Envois partent seulement après revalidation du domaine d'expédition — bloqué : l'utilisateur doit refaire la configuration du domaine e-mail.
+- [ ] Abonnements programmés aux rapports par email — non faisable avec les e-mails de l'application (envois groupés programmés interdits) ; attend un choix de l'utilisateur.
+- [x] Application installable et utilisable sans internet : écrans déjà consultés, saisie des index et réception logistique gardées sur l'appareil puis envoyées au retour du réseau.

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useTenant } from "@/hooks/useTenant";
 import { useCountry } from "@/hooks/useCountry";
@@ -14,33 +14,21 @@ export interface Pump {
   updated_at: string;
 }
 
+/** Cached (and kept on the device) so the index entry screen also works without network. */
 export const usePumps = (stationId?: string) => {
-  const [pumps, setPumps] = useState<Pump[]>([]);
-  const [loading, setLoading] = useState(true);
   const { tenantId } = useTenant();
   const { countryId } = useCountry();
-
-  const fetchPumps = async () => {
-    if (!tenantId) return;
-    setLoading(true);
-    try {
-      let q = supabase.from("pumps").select("*").eq("tenant_id", tenantId).order("position").order("name");
-      if (countryId) q = q.eq("country_id", countryId);
-      if (stationId) q = q.eq("station_id", stationId);
-      const { data, error } = await q;
+  const q = useQuery({
+    queryKey: ["pumps", tenantId, countryId ?? null, stationId ?? null],
+    enabled: !!tenantId,
+    queryFn: async () => {
+      let query = supabase.from("pumps").select("*").eq("tenant_id", tenantId!).order("position").order("name");
+      if (countryId) query = query.eq("country_id", countryId);
+      if (stationId) query = query.eq("station_id", stationId);
+      const { data, error } = await query;
       if (error) throw error;
-      setPumps((data || []) as Pump[]);
-    } catch (e) {
-      console.error("Error fetching pumps:", e);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchPumps();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [stationId, tenantId, countryId]);
-
-  return { pumps, loading, refetch: fetchPumps };
+      return (data || []) as Pump[];
+    },
+  });
+  return { pumps: q.data ?? [], loading: q.isPending, refetch: async () => { await q.refetch(); } };
 };

@@ -386,6 +386,13 @@
       "when": 1795017854789,
       "tag": "0054_b2b_client_portal",
       "breakpoints": true
+    },
+    {
+      "idx": 55,
+      "version": "7",
+      "when": 1795018618905,
+      "tag": "0055_b2b_portal_revoke_direct_writes",
+      "breakpoints": true
     }
   ]
 }

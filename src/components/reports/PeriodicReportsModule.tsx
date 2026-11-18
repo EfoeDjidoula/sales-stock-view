@@ -2,7 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import ExcelJS from "exceljs";
 import jsPDF from "@/lib/pdf";
 import { toast } from "sonner";
-import { Download, FileText, Loader2 } from "lucide-react";
+import { Download, FileText, Loader2, Mail } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useScope } from "@/hooks/useScope";
 import { useBranding } from "@/hooks/useBranding";
@@ -208,6 +208,21 @@ export default function PeriodicReportsModule() {
   }, [d, key, from, to]);
 
   const sub = `${brand?.companyName ?? ""} — période du ${from} au ${to}`;
+  const [mailing, setMailing] = useState(false);
+  // Sends the displayed report to the signed-in user's own e-mail address.
+  const toMail = async (r: Report) => {
+    setMailing(true);
+    const { data, error } = await supabase.functions.invoke("send-report-email", {
+      body: { report_key: key, title: r.title, from, to, company: brand?.companyName ?? "", headers: r.headers, rows: r.rows.map((x) => x.map(String)), note: r.note },
+    });
+    setMailing(false);
+    let msg = error?.message;
+    const ctx = (error as { context?: Response } | null)?.context;
+    if (ctx && typeof ctx.json === "function") { try { msg = (await ctx.json())?.error ?? msg; } catch { /* ignore */ } }
+    if (error) return toast.error("E-mail non envoyé", { description: msg });
+    if (!data?.sent) return toast.error("E-mail non envoyé", { description: data?.reason });
+    toast.success("Rapport envoyé", { description: `Vérifiez la boîte ${data.to}.` });
+  };
 
   return (
     <div className="space-y-4">
@@ -228,6 +243,7 @@ export default function PeriodicReportsModule() {
           <div><Label>Au</Label><Input type="date" value={to} max={today} onChange={(e) => setTo(e.target.value)} /></div>
           <Button variant="outline" disabled={!report || loading} onClick={() => report && toPdf(report, sub)}><FileText className="h-4 w-4 mr-1" />PDF</Button>
           <Button variant="outline" disabled={!report || loading} onClick={() => report && toXlsx(report, sub)}><Download className="h-4 w-4 mr-1" />Excel</Button>
+          <Button variant="outline" disabled={!report || loading || mailing} onClick={() => report && toMail(report)}>{mailing ? <Loader2 className="h-4 w-4 mr-1 animate-spin" /> : <Mail className="h-4 w-4 mr-1" />}Recevoir par e-mail</Button>
           {loading && <Loader2 className="h-5 w-5 animate-spin text-primary" />}
         </CardContent>
       </Card>

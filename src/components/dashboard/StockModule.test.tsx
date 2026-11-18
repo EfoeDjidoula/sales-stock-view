@@ -15,6 +15,10 @@ vi.mock("@/hooks/useCountry", () => ({
   useCountry: () => ({ countryId: "c1", country: null, countries: [], isLoading: false, needsSelection: false, setCountryId: () => {} }),
 }));
 
+vi.mock("@/hooks/useLanguage", () => ({
+  useLanguage: () => ({ language: "fr", setLanguage: () => {}, t: (s: string) => s }),
+}));
+
 vi.mock("@tanstack/react-query", async () => {
   const actual = await vi.importActual<typeof import("@tanstack/react-query")>("@tanstack/react-query");
   return {
