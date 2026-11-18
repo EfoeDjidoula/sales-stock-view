@@ -21,3 +21,5 @@
 - [x] Rejet / contestation d'une saisie par le N+1 et dialogue de validation enrichi (écarts, versement, dépotages).
 - [ ] Tester en réel : validation N+1, enregistrement d'un dépotage, signature e-CMR.
 - [ ] Pré-remplir Mobile Money : aucune source de transactions MoMo connectée.
+- [x] Remettre en attente de validation N+1 les saisies FIDJROSSÈ 16/11 et 18/11 (17/11 : aucune saisie réelle).
+- [x] Logo et favicon client (création/modification SaaS) : glisser-déposer ou choix d'un fichier local si aucun lien.

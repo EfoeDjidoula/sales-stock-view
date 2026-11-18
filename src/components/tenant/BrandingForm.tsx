@@ -13,6 +13,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { buildBrandingPreviewPdf } from "@/lib/brandingPreviewPdf";
 import type { jsPDF } from "@/lib/pdf";
 import { toast } from "sonner";
+import { BrandImageField } from "@/components/tenant/BrandImageField";
 
 interface BrandingState {
   logo_url: string;
@@ -163,24 +164,10 @@ export const BrandingForm = ({ tenantId }: { tenantId: string }) => {
         </CardDescription>
       </CardHeader>
       <CardContent className="grid gap-4 md:grid-cols-2">
-        <div className="space-y-2">
-          <Label htmlFor="brand-logo">URL du logo</Label>
-          <div className="flex items-center gap-2">
-            <Input id="brand-logo" value={form.logo_url} onChange={set("logo_url")} placeholder="https://..." />
-            {form.logo_url ? (
-              <img src={form.logo_url} alt="Aperçu du logo" className="h-9 w-9 object-contain rounded-md border border-border" />
-            ) : null}
-          </div>
-        </div>
-        <div className="space-y-2">
-          <Label htmlFor="brand-favicon">URL du favicon</Label>
-          <div className="flex items-center gap-2">
-            <Input id="brand-favicon" value={form.favicon_url} onChange={set("favicon_url")} placeholder="https://..." />
-            {form.favicon_url ? (
-              <img src={form.favicon_url} alt="Aperçu du favicon" className="h-9 w-9 object-contain rounded-md border border-border" />
-            ) : null}
-          </div>
-        </div>
+        <BrandImageField id="brand-logo" label="Logo" kind="logo" value={form.logo_url}
+          onChange={(v) => setForm((f) => ({ ...f, logo_url: v }))} />
+        <BrandImageField id="brand-favicon" label="Favicon" kind="favicon" value={form.favicon_url}
+          onChange={(v) => setForm((f) => ({ ...f, favicon_url: v }))} />
 
         <div className="space-y-2">
           <Label htmlFor="brand-primary">Couleur principale (HSL)</Label>

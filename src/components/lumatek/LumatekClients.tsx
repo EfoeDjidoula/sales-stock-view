@@ -35,6 +35,7 @@ import { useLumatekTenants, TenantStatus, TenantInput } from "@/hooks/useLumatek
 import { LumatekClientCountries } from "./LumatekClientCountries";
 import { LumatekClientModules } from "./LumatekClientModules";
 import { BrandingForm } from "@/components/tenant/BrandingForm";
+import { BrandImageField } from "@/components/tenant/BrandImageField";
 import { Plus, Pencil, Eye, PauseCircle, PlayCircle, Archive, Globe2, Blocks, Palette } from "lucide-react";
 import { useLicenses } from "@/hooks/useLicenses";
 import { useMaintenanceContracts, contractEffectiveStatus } from "@/hooks/useMaintenanceContracts";
@@ -58,6 +59,8 @@ const emptyForm: TenantInput = {
   default_currency: "XOF",
   default_language: "fr",
   status: "active",
+  logo_url: "",
+  favicon_url: "",
 };
 
 export const LumatekClients = () => {
@@ -98,6 +101,8 @@ export const LumatekClients = () => {
       default_currency: t.default_currency,
       default_language: t.default_language,
       status: t.status as TenantStatus,
+      logo_url: t.logo_url || "",
+      favicon_url: t.favicon_url || "",
     });
     setFormOpen(true);
   };
@@ -235,7 +240,7 @@ export const LumatekClients = () => {
 
       {/* Création / modification */}
       <Dialog open={formOpen} onOpenChange={setFormOpen}>
-        <DialogContent className="max-w-2xl">
+        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>{editingId ? "Modifier le client" : "Nouveau client"}</DialogTitle>
             <DialogDescription>
@@ -253,6 +258,10 @@ export const LumatekClients = () => {
             {field("address", "Adresse")}
             {field("default_currency", "Devise")}
             {field("default_language", "Langue")}
+            <BrandImageField id="client-logo" label="Logo" kind="logo" value={form.logo_url ?? ""}
+              onChange={(v) => setForm((f) => ({ ...f, logo_url: v }))} />
+            <BrandImageField id="client-favicon" label="Favicon" kind="favicon" value={form.favicon_url ?? ""}
+              onChange={(v) => setForm((f) => ({ ...f, favicon_url: v }))} />
           </div>
           <DialogFooter>
             <Button variant="outline" onClick={() => setFormOpen(false)}>

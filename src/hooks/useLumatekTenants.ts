@@ -17,6 +17,8 @@ export interface TenantInput {
   default_currency?: string;
   default_language?: string;
   status?: TenantStatus;
+  logo_url?: string | null;
+  favicon_url?: string | null;
 }
 
 const slugify = (value: string) =>
@@ -63,6 +65,8 @@ export const useLumatekTenants = () => {
         default_currency: input.default_currency || "XOF",
         default_language: input.default_language || "fr",
         status: input.status || "active",
+        logo_url: input.logo_url?.trim() || null,
+        favicon_url: input.favicon_url?.trim() || null,
       });
       if (error) throw error;
     },
@@ -75,7 +79,10 @@ export const useLumatekTenants = () => {
 
   const updateTenant = useMutation({
     mutationFn: async ({ id, input }: { id: string; input: Partial<TenantInput> }) => {
-      const { error } = await supabase.from("tenants").update(input).eq("id", id);
+      const patch = { ...input };
+      if ("logo_url" in patch) patch.logo_url = patch.logo_url?.trim() || null;
+      if ("favicon_url" in patch) patch.favicon_url = patch.favicon_url?.trim() || null;
+      const { error } = await supabase.from("tenants").update(patch).eq("id", id);
       if (error) throw error;
     },
     onSuccess: () => {
