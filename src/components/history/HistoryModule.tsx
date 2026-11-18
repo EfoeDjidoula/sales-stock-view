@@ -7,7 +7,7 @@ import { EditEntryDialog } from "./EditEntryDialog";
 import { IndexValidationDialog } from "./IndexValidationDialog";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
-import { Calendar as CalendarIcon, Search, Pencil, Trash2, Loader2, ShieldCheck, ChevronDown, ChevronRight } from "lucide-react";
+import { Calendar as CalendarIcon, Search, Pencil, Trash2, Loader2, ShieldCheck, ChevronDown, ChevronRight, FileDown } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { usePermissions } from "@/hooks/usePermissions";
 import { usePlatformAdmin } from "@/hooks/usePlatformAdmin";
@@ -44,6 +44,7 @@ export const HistoryModule = () => {
   const { user } = useAuth();
   const canValidate = isPlatformAdmin || can("index_entries", "validate");
   const [decisionEntry, setDecisionEntry] = useState<IndexEntry | null>(null);
+  const [recapEntry, setRecapEntry] = useState<IndexEntry | null>(null);
   const [expanded, setExpanded] = useState<string | null>(null);
   const [pumpDetail, setPumpDetail] = useState<Record<string, any[]>>({});
 
@@ -316,6 +317,9 @@ export const HistoryModule = () => {
                           )}
                         </TableCell>
                         <TableCell className="text-center whitespace-nowrap">
+                          <Button variant="ghost" size="icon" onClick={() => setRecapEntry(entry)} title="Récap PDF">
+                            <FileDown className="w-4 h-4" />
+                          </Button>
                           {!validated && !rejected && canValidate && (isPlatformAdmin || entry.user_id !== user?.id) && (
                             <Button variant="ghost" size="icon" onClick={() => setDecisionEntry(entry)} title="Valider ou rejeter (N+1)" className="text-success">
                               <ShieldCheck className="w-4 h-4" />
@@ -369,6 +373,8 @@ export const HistoryModule = () => {
       </Card>
 
       <IndexValidationDialog entry={decisionEntry} open={!!decisionEntry} onOpenChange={(o) => { if (!o) setDecisionEntry(null); }} />
+
+      <IndexValidationDialog readOnly entry={recapEntry} open={!!recapEntry} onOpenChange={(o) => { if (!o) setRecapEntry(null); }} />
 
       <EditEntryDialog entry={editEntry} open={!!editEntry} onOpenChange={open => { if (!open) setEditEntry(null); }} />
 

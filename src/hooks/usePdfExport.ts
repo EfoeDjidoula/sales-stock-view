@@ -160,11 +160,11 @@ export const usePdfExport = () => {
     // 2. Détail des ventes
     section("2. DÉTAIL DES VENTES & VERSEMENT");
     line("Vente globale", `${formatNumber(data.venteGlobale)} FCFA`, { bold: true, color: primary, fill: [255, 251, 235] });
-    line("− Autoconsommation", `${formatNumber(data.autoconso)} FCFA`);
-    line("− Bons clients", `${formatNumber(data.bonsClients)} FCFA`);
-    line("− Tickets valeur", `${formatNumber(data.ticketsValeur)} FCFA`);
-    line("− Ventes par carte", `${formatNumber(data.cartes)} FCFA`);
-    line(`− Mobile Money${data.momoRef ? ` (réf. ${data.momoRef})` : ""}`, `${formatNumber(data.momo)} FCFA`);
+    line("- Autoconsommation", `${formatNumber(data.autoconso)} FCFA`);
+    line("- Bons clients", `${formatNumber(data.bonsClients)} FCFA`);
+    line("- Tickets valeur", `${formatNumber(data.ticketsValeur)} FCFA`);
+    line("- Ventes par carte", `${formatNumber(data.cartes)} FCFA`);
+    line(`- Mobile Money${data.momoRef ? ` (réf. ${data.momoRef})` : ""}`, `${formatNumber(data.momo)} FCFA`);
     line("= Montant à verser en banque", `${formatNumber(data.montantAVerser)} FCFA`, { bold: true, fill: [243, 244, 246] });
     const bvInfo = [data.banqueNom, data.bordereau ? `BV ${data.bordereau}` : ""].filter(Boolean).join(" · ");
     line(`Versement banque${bvInfo ? ` (${bvInfo})` : ""}`, `${formatNumber(data.versementBanque)} FCFA`);

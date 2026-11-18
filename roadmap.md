@@ -30,3 +30,4 @@
 - [ ] Envois partent seulement après revalidation du domaine d'expédition — bloqué : l'utilisateur doit refaire la configuration du domaine e-mail.
 - [ ] Abonnements programmés aux rapports par email — non faisable avec les e-mails de l'application (envois groupés programmés interdits) ; attend un choix de l'utilisateur.
 - [x] Application installable et utilisable sans internet : écrans déjà consultés, saisie des index et réception logistique gardées sur l'appareil puis envoyées au retour du réseau.
+- [x] Récap PDF : prix de vente = structure de prix en vigueur à la date

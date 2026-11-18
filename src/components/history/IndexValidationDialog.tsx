@@ -13,7 +13,7 @@ import { AlertTriangle, CheckCircle2, FileDown, Loader2, ShieldCheck, XCircle } 
 import { toast } from "sonner";
 import { buildValidationChecks } from "@/lib/indexValidationChecks";
 import { usePdfExport } from "@/hooks/usePdfExport";
-import { FUEL_PRICES } from "@/config/prices";
+import { useDayPrices } from "@/hooks/useIndexDailyContext";
 
 const db = supabase as any;
 
@@ -21,6 +21,8 @@ interface Props {
   entry: IndexEntry | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  /** Consultation seule (récap PDF), sans décision. */
+  readOnly?: boolean;
 }
 
 const Row = ({ label, value, strong, tone }: { label: string; value: string; strong?: boolean; tone?: "warn" | "ok" }) => (
@@ -31,12 +33,13 @@ const Row = ({ label, value, strong, tone }: { label: string; value: string; str
 );
 
 /** Fenêtre de décision N+1 : synthèse ventes / règlements / cuves, contrôles, validation ou rejet motivé. */
-export const IndexValidationDialog = ({ entry, open, onOpenChange }: Props) => {
+export const IndexValidationDialog = ({ entry, open, onOpenChange, readOnly }: Props) => {
   const queryClient = useQueryClient();
   const [mode, setMode] = useState<"validate" | "reject">("validate");
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
   const { exportPdf } = usePdfExport();
+  const { data: dayPrices, isLoading: pricesLoading } = useDayPrices(open ? entry?.entry_date : undefined);
 
   useEffect(() => {
     if (open) { setMode("validate"); setText(""); }
@@ -94,7 +97,12 @@ export const IndexValidationDialog = ({ entry, open, onOpenChange }: Props) => {
       return { brut: net + retour, retour, liters: net };
     };
     const su = agg("super"), ga = agg("gasoil");
-    const priceS = FUEL_PRICES.SUPER, priceG = FUEL_PRICES.GASOIL;
+    // Prix de vente = structure de prix en vigueur à la date (obligatoire).
+    if (!dayPrices || dayPrices.source === "Prix par défaut") {
+      toast.error("Aucune structure de prix en vigueur à cette date", { description: "Créez ou activez la structure de prix applicable avant d'éditer le récapitulatif." });
+      return;
+    }
+    const priceS = dayPrices.super, priceG = dayPrices.gasoil;
     const tanks = (detail?.tanks ?? []).map((t: any) => ({
       name: t.tanks?.name ?? "Cuve", product: t.product_type,
       ouverture: n(t.stock_ouverture), depotage: n(t.depotage), sortie: n(t.sortie),
@@ -151,7 +159,7 @@ export const IndexValidationDialog = ({ entry, open, onOpenChange }: Props) => {
     <Dialog open={open} onOpenChange={(o) => !busy && onOpenChange(o)}>
       <DialogContent className="sm:max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2"><ShieldCheck className="w-5 h-5 text-primary" /> Décision N+1</DialogTitle>
+          <DialogTitle className="flex items-center gap-2"><ShieldCheck className="w-5 h-5 text-primary" /> {readOnly ? "Récapitulatif journalier" : "Décision N+1"}</DialogTitle>
           <DialogDescription>
             {entry.stations?.name ?? "Station"} · {new Date(entry.entry_date).toLocaleDateString(locale, { day: "2-digit", month: "long", year: "numeric" })}
           </DialogDescription>
@@ -214,7 +222,7 @@ export const IndexValidationDialog = ({ entry, open, onOpenChange }: Props) => {
               {detail?.closure && <Badge variant="outline" className="mt-1">Clôture existante : {detail.closure.status}{detail.closure.source === "index" ? " (saisie index)" : " (saisie manuelle)"}</Badge>}
             </div>
 
-            <div className="space-y-2">
+            {!readOnly && <div className="space-y-2">
               <div className="flex gap-2">
                 <Button type="button" size="sm" variant={mode === "validate" ? "default" : "outline"} onClick={() => setMode("validate")}>Valider</Button>
                 <Button type="button" size="sm" variant={mode === "reject" ? "destructive" : "outline"} onClick={() => setMode("reject")}>Rejeter</Button>
@@ -226,14 +234,14 @@ export const IndexValidationDialog = ({ entry, open, onOpenChange }: Props) => {
                 maxLength={500}
                 rows={3}
               />
-            </div>
+            </div>}
           </div>
         )}
 
         <DialogFooter>
-          <Button variant="outline" onClick={downloadRecap} disabled={busy || isLoading} className="gap-2 sm:mr-auto"><FileDown className="h-4 w-4" /> Récap PDF</Button>
-          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={busy}>Annuler</Button>
-          {mode === "validate" ? (
+          <Button variant="outline" onClick={downloadRecap} disabled={busy || isLoading || pricesLoading} className="gap-2 sm:mr-auto"><FileDown className="h-4 w-4" /> Récap PDF</Button>
+          <Button variant="outline" onClick={() => onOpenChange(false)} disabled={busy}>{readOnly ? "Fermer" : "Annuler"}</Button>
+          {readOnly ? null : mode === "validate" ? (
             <Button onClick={submit} disabled={busy || isLoading || blocking} className="gap-2">
               {busy ? <Loader2 className="h-4 w-4 animate-spin" /> : <ShieldCheck className="h-4 w-4" />} Valider la saisie
             </Button>
