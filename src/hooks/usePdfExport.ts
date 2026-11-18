@@ -49,46 +49,56 @@ export interface DailyRecapData {
 
 const signed = (v: number) => `${v > 0 ? "+" : ""}${formatNumber(v)}`;
 
+type RGB = [number, number, number];
+interface Cell { t: string; color?: RGB; bold?: boolean }
+type Row = { cells: (string | Cell)[]; total?: boolean; fill?: RGB };
+
+/** Récapitulatif journalier tenu sur une seule page A4 : chaque section est un tableau. */
 export const usePdfExport = () => {
   const exportPdf = (data: DailyRecapData) => {
-    const doc = new jsPDF();
+    const doc = new jsPDF({ format: "a4", unit: "mm" });
     const W = doc.internal.pageSize.getWidth();
     const H = doc.internal.pageSize.getHeight();
+    const M = 12;
+    const TW = W - 2 * M;
     const brand = getActiveBrand();
-    const primary: [number, number, number] = hslToRgb(brand.primaryColor);
-    const text: [number, number, number] = [31, 41, 55];
-    const muted: [number, number, number] = [107, 114, 128];
-    const ok: [number, number, number] = [22, 163, 74];
-    const bad: [number, number, number] = [220, 38, 38];
+    const primary: RGB = hslToRgb(brand.primaryColor);
+    const text: RGB = [31, 41, 55];
+    const muted: RGB = [107, 114, 128];
+    const ok: RGB = [22, 163, 74];
+    const bad: RGB = [220, 38, 38];
+    const grid: RGB = [209, 213, 219];
+    const fmt = formatNumber;
 
+    const nz = [...(data.nozzles ?? [])].sort((a, b) => (a.product === b.product ? a.name.localeCompare(b.name, undefined, { numeric: true }) : a.product === "super" ? -1 : 1));
+    const sections = (nz.length ? 1 : 0) + 3 + (data.tanks.length ? 1 : 0);
+    // Lignes de tableau (en-têtes compris) pour calibrer la hauteur et tenir sur une page.
+    const rowCount = (nz.length ? nz.length + 2 : 0) + 4 + 10 + (data.tanks.length ? data.tanks.length + 1 : 0) + 3;
+    const fixed = 22 + 10 + 9 + sections * 7.5 + 26 + 12; // en-tête, station, statut, titres, visas, pied
+    const rh = Math.min(5.6, Math.max(3.4, (H - 2 * 6 - fixed) / rowCount));
+    const fs = Math.min(8.5, Math.max(6, rh * 1.5));
+
+    // En-tête
     doc.setFillColor(...primary);
-    doc.rect(0, 0, W, 34, "F");
+    doc.rect(0, 0, W, 22, "F");
     doc.setTextColor(255, 255, 255);
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(18);
-    doc.text(brand.legalName, W / 2, 15, { align: "center" });
+    doc.setFontSize(15);
+    doc.text(brand.legalName, W / 2, 10, { align: "center" });
     doc.setFont("helvetica", "normal");
-    doc.setFontSize(11);
-    doc.text("Récapitulatif journalier des index", W / 2, 25, { align: "center" });
+    doc.setFontSize(9.5);
+    doc.text("Récapitulatif journalier des index et des ventes", W / 2, 17, { align: "center" });
 
-    let y = 46;
+    let y = 29;
     doc.setTextColor(...text);
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(13);
-    doc.text(data.stationName, 15, y);
+    doc.setFontSize(11);
+    doc.text(data.stationName + (data.stationLocation ? `  ·  ${data.stationLocation}` : ""), M, y);
     doc.setFont("helvetica", "normal");
     doc.setFontSize(9);
-    doc.setTextColor(...muted);
-    doc.text(data.stationLocation || "", 15, y + 5);
     doc.setTextColor(...primary);
-    doc.setFontSize(10);
-    doc.text(
-      new Date(data.date).toLocaleDateString("fr-FR", { weekday: "long", year: "numeric", month: "long", day: "numeric" }),
-      W - 15,
-      y,
-      { align: "right" },
-    );
-    y += 14;
+    doc.text(new Date(data.date).toLocaleDateString("fr-FR", { weekday: "long", year: "numeric", month: "long", day: "numeric" }), W - M, y, { align: "right" });
+    y += 6;
 
     const v = data.validation;
     const st = v?.status ?? "brouillon";
@@ -96,154 +106,141 @@ export const usePdfExport = () => {
       : st === "rejete" ? `REJETÉ N+1${v?.by ? ` par ${v.by}` : ""}${v?.reason ? ` · Motif : ${v.reason}` : ""}`
       : st === "pre_enregistre" ? "PRÉ-ENREGISTRÉ · en attente de validation N+1 (chiffres provisoires)"
       : "BROUILLON · saisie non enregistrée (chiffres provisoires)";
-    const tone: [number, number, number] = st === "valide" ? [22, 163, 74] : st === "rejete" ? [220, 38, 38] : [217, 119, 6];
+    const tone: RGB = st === "valide" ? ok : st === "rejete" ? bad : [217, 119, 6];
     doc.setFillColor(...tone);
-    doc.roundedRect(15, y - 5, W - 30, 8, 1.5, 1.5, "F");
+    doc.roundedRect(M, y, TW, 6.5, 1.2, 1.2, "F");
     doc.setTextColor(255, 255, 255);
     doc.setFont("helvetica", "bold");
-    doc.setFontSize(9);
-    doc.text(doc.splitTextToSize(label, W - 36)[0], W / 2, y, { align: "center" });
-    y += 12;
+    doc.setFontSize(8);
+    doc.text(doc.splitTextToSize(label, TW - 6)[0], W / 2, y + 4.4, { align: "center" });
+    y += 11;
 
     const section = (title: string) => {
-      if (y > H - 40) { doc.addPage(); y = 20; }
-      doc.setTextColor(...text);
+      doc.setTextColor(...primary);
       doc.setFont("helvetica", "bold");
-      doc.setFontSize(11);
-      doc.text(title, 15, y);
-      y += 3;
-      doc.setDrawColor(229, 231, 235);
-      doc.line(15, y, W - 15, y);
-      y += 6;
+      doc.setFontSize(9.5);
+      doc.text(title, M, y + 3);
+      y += 5.5;
     };
 
-    const table = (headers: string[], rows: string[][], widths: number[]) => {
-      const x0 = 15;
-      const drawRow = (cells: string[], bold: boolean, fill?: [number, number, number]) => {
-        if (y > H - 20) { doc.addPage(); y = 20; }
-        if (fill) { doc.setFillColor(...fill); doc.rect(x0, y - 4.5, W - 30, 6.5, "F"); }
-        doc.setFont("helvetica", bold ? "bold" : "normal");
-        doc.setFontSize(8.5);
-        doc.setTextColor(...text);
-        let x = x0;
+    /** Tableau quadrillé : en-tête couleur marque, 1re colonne à gauche, autres à droite. */
+    const table = (headers: string[], rows: Row[], ratios: number[], align?: ("l" | "r")[]) => {
+      const sum = ratios.reduce((a, b) => a + b, 0);
+      const widths = ratios.map((r) => (r / sum) * TW);
+      const al = (i: number) => align?.[i] ?? (i === 0 ? "l" : "r");
+      const draw = (cells: (string | Cell)[], kind: "head" | "row" | "total", fill?: RGB) => {
+        if (kind === "head") doc.setFillColor(...primary);
+        else if (fill) doc.setFillColor(...fill);
+        if (kind === "head" || fill) doc.rect(M, y, TW, rh, "F");
+        doc.setDrawColor(...grid);
+        doc.setLineWidth(0.15);
+        let x = M;
+        widths.forEach((w) => { doc.rect(x, y, w, rh); x += w; });
+        x = M;
+        doc.setFontSize(kind === "head" ? fs - 0.3 : fs);
         cells.forEach((c, i) => {
-          if (i === 0) doc.text(c, x + 1.5, y);
-          else doc.text(c, x + widths[i] - 1.5, y, { align: "right" });
+          const cell: Cell = typeof c === "string" ? { t: c } : c;
+          doc.setFont("helvetica", kind !== "row" || cell.bold ? "bold" : "normal");
+          doc.setTextColor(...(kind === "head" ? ([255, 255, 255] as RGB) : cell.color ?? text));
+          const ty = y + rh / 2 + fs * 0.12;
+          const txt = doc.splitTextToSize(cell.t, widths[i] - 2.4)[0] ?? "";
+          if (al(i) === "l") doc.text(txt, x + 1.2, ty);
+          else doc.text(txt, x + widths[i] - 1.2, ty, { align: "right" });
           x += widths[i];
         });
-        y += 6.5;
+        y += rh;
       };
-      drawRow(headers, true, [243, 244, 246]);
-      rows.forEach((r, i) => drawRow(r, i === rows.length - 1 && r[0] === "TOTAL", i % 2 ? [249, 250, 251] : undefined));
+      draw(headers, "head");
+      rows.forEach((r, i) => draw(r.cells, r.total ? "total" : "row", r.total ? [243, 244, 246] : r.fill ?? (i % 2 ? [249, 250, 251] : undefined)));
       y += 3;
     };
 
-    const line = (label: string, value: string, opts: { bold?: boolean; color?: [number, number, number]; fill?: [number, number, number] } = {}) => {
-      if (y > H - 20) { doc.addPage(); y = 20; }
-      if (opts.fill) { doc.setFillColor(...opts.fill); doc.roundedRect(15, y - 5, W - 30, 8, 1.5, 1.5, "F"); }
-      doc.setFontSize(9.5);
-      doc.setFont("helvetica", opts.bold ? "bold" : "normal");
-      doc.setTextColor(...text);
-      doc.text(label, 18, y);
-      doc.setTextColor(...(opts.color || text));
-      doc.text(value, W - 18, y, { align: "right" });
-      y += 8;
-    };
-
+    let n = 0;
     // 1. Index par pistolet
-    const nz = [...(data.nozzles ?? [])].sort((a, b) => (a.product === b.product ? a.name.localeCompare(b.name, undefined, { numeric: true }) : a.product === "super" ? -1 : 1));
     if (nz.length) {
-      section("1. RÉSUMÉ DES INDEX PAR PISTOLET");
-      const rows = nz.map((r) => {
+      section(`${++n}. RÉSUMÉ DES INDEX PAR PISTOLET`);
+      const rows: Row[] = nz.map((r) => {
         const brut = Math.max(r.arrivee - r.depart, 0);
-        return [r.name, r.product === "super" ? "Super" : "Gasoil", formatNumber(r.depart), formatNumber(r.arrivee), formatNumber(brut), formatNumber(r.retour), formatNumber(Math.max(brut - r.retour, 0))];
+        return { cells: [r.name, r.product === "super" ? "Super" : "Gasoil", fmt(r.depart), fmt(r.arrivee), fmt(brut), fmt(r.retour), fmt(Math.max(brut - r.retour, 0))] };
       });
       const tb = nz.reduce((s, r) => s + Math.max(r.arrivee - r.depart, 0), 0);
       const tr = nz.reduce((s, r) => s + r.retour, 0);
-      rows.push(["TOTAL", "", "", "", formatNumber(tb), formatNumber(tr), formatNumber(Math.max(tb - tr, 0))]);
-      table(["Pistolet", "Produit", "Index départ", "Index arrivée", "Brut (L)", "Retour (L)", "Net (L)"], rows, [34, 20, 28, 28, 24, 22, 24]);
+      rows.push({ total: true, cells: ["TOTAL", "", "", "", fmt(tb), fmt(tr), fmt(Math.max(tb - tr, 0))] });
+      table(["Pistolet", "Produit", "Index départ", "Index arrivée", "Brut (L)", "Retour cuve (L)", "Net (L)"], rows, [20, 14, 22, 22, 17, 18, 17], ["l", "l"]);
     }
 
     // 2. Sorties par produit
-    section(`${nz.length ? 2 : 1}. SORTIES PAR PRODUIT`);
-    const tot = {
-      brut: data.super.brut + data.gasoil.brut,
-      retour: data.super.retour + data.gasoil.retour,
-      liters: data.super.liters + data.gasoil.liters,
-    };
+    section(`${++n}. SORTIES ET VENTES PAR PRODUIT`);
+    const tot = { brut: data.super.brut + data.gasoil.brut, retour: data.super.retour + data.gasoil.retour, liters: data.super.liters + data.gasoil.liters };
     table(
-      ["Produit", "Quantité (L)", "Retour cuve (L)", "Sortie réelle (L)", "P.U.", "Montant (FCFA)"],
+      ["Produit", "Quantité brute (L)", "Retour cuve (L)", "Sortie réelle (L)", "Prix structure (FCFA/L)", "Montant (FCFA)"],
       [
-        ["Super", formatNumber(data.super.brut), formatNumber(data.super.retour), formatNumber(data.super.liters), formatNumber(data.prices.super), formatNumber(data.super.amount)],
-        ["Gasoil", formatNumber(data.gasoil.brut), formatNumber(data.gasoil.retour), formatNumber(data.gasoil.liters), formatNumber(data.prices.gasoil), formatNumber(data.gasoil.amount)],
-        ["TOTAL", formatNumber(tot.brut), formatNumber(tot.retour), formatNumber(tot.liters), "", formatNumber(data.venteGlobale)],
+        { cells: ["Super", fmt(data.super.brut), fmt(data.super.retour), fmt(data.super.liters), fmt(data.prices.super), fmt(data.super.amount)] },
+        { cells: ["Gasoil", fmt(data.gasoil.brut), fmt(data.gasoil.retour), fmt(data.gasoil.liters), fmt(data.prices.gasoil), fmt(data.gasoil.amount)] },
+        { total: true, cells: ["TOTAL", fmt(tot.brut), fmt(tot.retour), fmt(tot.liters), "", fmt(data.venteGlobale)] },
       ],
-      [30, 28, 30, 32, 20, 40],
+      [16, 20, 18, 20, 22, 22],
     );
 
-    // 2. Détail des ventes
-    section(`${nz.length ? 3 : 2}. DÉTAIL DES VENTES & VERSEMENT`);
-    line("Vente globale", `${formatNumber(data.venteGlobale)} FCFA`, { bold: true, color: primary, fill: [255, 251, 235] });
-    line("- Autoconsommation", `${formatNumber(data.autoconso)} FCFA`);
-    line("- Bons clients", `${formatNumber(data.bonsClients)} FCFA`);
-    line("- Tickets valeur", `${formatNumber(data.ticketsValeur)} FCFA`);
-    line("- Ventes par carte", `${formatNumber(data.cartes)} FCFA`);
-    line(`- Mobile Money${data.momoRef ? ` (réf. ${data.momoRef})` : ""}`, `${formatNumber(data.momo)} FCFA`);
-    line("= Montant à verser en banque", `${formatNumber(data.montantAVerser)} FCFA`, { bold: true, fill: [243, 244, 246] });
+    // 3. Ventes & versement
+    section(`${++n}. DÉTAIL DES VENTES ET VERSEMENT BANQUE`);
     const bvInfo = [data.banqueNom, data.bordereau ? `BV ${data.bordereau}` : ""].filter(Boolean).join(" · ");
-    line(`Versement banque${bvInfo ? ` (${bvInfo})` : ""}`, `${formatNumber(data.versementBanque)} FCFA`);
     const ecColor = data.ecartVersement < 0 ? bad : ok;
-    line(
-      data.ecartVersement < 0 ? "Écart sur versement (manquant)" : "Écart sur versement",
-      `${signed(data.ecartVersement)} FCFA`,
-      { bold: true, color: ecColor, fill: data.ecartVersement < 0 ? [254, 242, 242] : [240, 253, 244] },
+    table(
+      ["Rubrique", "Référence", "Montant (FCFA)"],
+      [
+        { fill: [255, 251, 235], cells: [{ t: "Vente globale", bold: true }, "", { t: fmt(data.venteGlobale), bold: true, color: primary }] },
+        { cells: ["- Autoconsommation", "", fmt(data.autoconso)] },
+        { cells: ["- Bons clients", "", fmt(data.bonsClients)] },
+        { cells: ["- Tickets valeur", "", fmt(data.ticketsValeur)] },
+        { cells: ["- Ventes par carte", "", fmt(data.cartes)] },
+        { cells: ["- Mobile Money", data.momoRef ?? "", fmt(data.momo)] },
+        { total: true, cells: ["= Montant à verser en banque", "", fmt(data.montantAVerser)] },
+        { cells: ["Versement banque déclaré", bvInfo, fmt(data.versementBanque)] },
+        {
+          fill: data.ecartVersement < 0 ? [254, 242, 242] : [240, 253, 244],
+          cells: [{ t: data.ecartVersement < 0 ? "Écart sur versement (manquant)" : "Écart sur versement", bold: true }, "", { t: signed(data.ecartVersement), bold: true, color: ecColor }],
+        },
+      ],
+      [50, 30, 25],
+      ["l", "l", "r"],
     );
-    y += 2;
 
-    // 3. Suivi stock
+    // 4. Suivi stock
     if (data.tanks.length) {
-      section(`${nz.length ? 4 : 3}. SUIVI STOCK PAR CUVE`);
+      section(`${++n}. SUIVI STOCK PAR CUVE (L)`);
       table(
         ["Cuve", "Ouverture", "Dépotage", "Sortie", "Clôture théo.", "Jauge", "Écart"],
-        data.tanks.map((t) => [
-          `${t.name} (${t.product === "super" ? "Super" : "Gasoil"})`,
-          formatNumber(t.ouverture),
-          formatNumber(t.depotage),
-          formatNumber(t.sortie),
-          formatNumber(t.cloture),
-          formatNumber(t.jauge),
-          signed(t.ecart),
-        ]),
-        [44, 22, 22, 22, 26, 22, 22],
+        data.tanks.map((t) => ({
+          cells: [
+            `${t.name} (${t.product === "super" ? "Super" : "Gasoil"})`,
+            fmt(t.ouverture), fmt(t.depotage), fmt(t.sortie), fmt(t.cloture), fmt(t.jauge),
+            { t: signed(t.ecart), bold: true, color: t.ecart < 0 ? bad : t.ecart > 0 ? ok : text },
+          ],
+        })),
+        [30, 16, 16, 16, 18, 16, 16],
       );
     }
 
-    // Visas
-    if (y > H - 50) { doc.addPage(); y = 20; }
-    y += 4;
-    doc.setDrawColor(209, 213, 219);
-    doc.setFont("helvetica", "bold"); doc.setFontSize(9); doc.setTextColor(...text);
-    const half = (W - 40) / 2;
-    doc.text("Visa gérant", 15, y);
-    doc.text("Visa N+1", 25 + half, y);
-    doc.setFont("helvetica", "normal"); doc.setFontSize(8); doc.setTextColor(...muted);
-    if (st === "valide" && v?.by) doc.text(`${v.by}${v.at ? ` · ${new Date(v.at).toLocaleDateString("fr-FR")}` : ""}`, 25 + half, y + 5);
-    doc.rect(15, y + 8, half, 18);
-    doc.rect(25 + half, y + 8, half, 18);
-    y += 30;
+    // Visas (tableau à deux cases)
+    if (y > H - 38) { doc.addPage(); y = 20; }
+    const half = TW / 2;
+    doc.setFillColor(...primary);
+    doc.rect(M, y, TW, rh, "F");
+    doc.setFont("helvetica", "bold"); doc.setFontSize(fs); doc.setTextColor(255, 255, 255);
+    doc.text("Visa gérant", M + 1.2, y + rh / 2 + fs * 0.12);
+    doc.text("Visa N+1", M + half + 1.2, y + rh / 2 + fs * 0.12);
+    doc.setDrawColor(...grid);
+    doc.rect(M, y, half, rh + 18); doc.rect(M + half, y, half, rh + 18);
+    if (st === "valide" && v?.by) {
+      doc.setFont("helvetica", "normal"); doc.setFontSize(7.5); doc.setTextColor(...muted);
+      doc.text(`${v.by}${v.at ? ` · ${new Date(v.at).toLocaleDateString("fr-FR")}` : ""}`, M + half + 1.2, y + rh + 4);
+    }
 
-    y = Math.max(y + 4, H - 18);
-    if (y > H - 10) { doc.addPage(); y = H - 18; }
-    doc.setFontSize(8);
+    doc.setFontSize(7);
     doc.setTextColor(...muted);
     doc.setFont("helvetica", "normal");
-    doc.text(
-      `Document généré le ${new Date().toLocaleDateString("fr-FR")} à ${new Date().toLocaleTimeString("fr-FR")}`,
-      W / 2,
-      y,
-      { align: "center" },
-    );
-    doc.text(documentFooter(brand), W / 2, y + 5, { align: "center" });
+    doc.text(`Document généré le ${new Date().toLocaleDateString("fr-FR")} à ${new Date().toLocaleTimeString("fr-FR")}  ·  ${documentFooter(brand)}`, W / 2, H - 6, { align: "center" });
 
     doc.save(`Recap_${data.stationName.replace(/\s+/g, "_")}_${data.date}.pdf`);
   };
