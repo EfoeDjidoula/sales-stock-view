@@ -30,5 +30,5 @@
 - Dépotages: the only source is validated logistics receptions (supply_requests 'received'); the legacy depotages table is read-only history; why: index entry and stock read one reception record.
 - Tenant logo/favicon: local files (drag-drop or picker) are signature-checked and redrawn as compact PNG data URLs by src/lib/brandImage.ts and stored in tenants.logo_url/favicon_url (links still accepted); why: the workspace blocks public buckets and redrawing strips active content such as SVG scripts.
 - B2B portal: b2b_portal_users rows make get_user_tenant NULL; clients use only b2b_portal_overview/b2b_portal_action RPCs; why: client logins never reach tenant data.
-- Offline: PWA registered only via src/lib/pwa.ts; offline writes replay through src/lib/offlineQueue.ts; the query cache is stored in IndexedDB as-is (no JSON) by src/lib/offlineCache.ts; why: server rules stay authoritative and Set/Map query data survives reloads.
+- Offline: PWA only via src/lib/pwa.ts; offline writes replay via src/lib/offlineQueue.ts; query cache kept in IndexedDB without JSON (offlineCache.ts); why: server stays authoritative, Set/Map data survives reloads.
 - Report e-mails go only to the caller's own address (send-report-email); why: app emails are one-recipient, user-triggered.
