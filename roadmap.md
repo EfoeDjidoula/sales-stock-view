@@ -24,3 +24,7 @@
 - [x] Remettre en attente de validation N+1 les saisies FIDJROSSÈ 16/11 et 18/11 (17/11 : aucune saisie réelle).
 - [x] Logo et favicon client (création/modification SaaS) : glisser-déposer ou choix d'un fichier local si aucun lien.
 - [x] Supprimer les 3 640 lignes d'index vides importées de l'ancien fichier Excel (10 lignes chiffrées conservées).
+- [ ] Traduction anglaise complète des écrans métier.
+- [ ] Espace en ligne pour les clients B2B (portail client).
+- [ ] Envoi des rapports périodiques par email (domaine d'envoi à revalider).
+- [ ] Application entièrement utilisable sans internet (au-delà des jaugeages).
