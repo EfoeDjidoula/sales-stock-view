@@ -1,3 +1,4 @@
+import { format, subDays } from "date-fns";
 import { useState, useEffect, useMemo } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useForm } from "react-hook-form";
@@ -109,7 +110,7 @@ type IndexEntryForm = z.infer<typeof indexEntrySchema>;
 type AmountKey = "autoconso" | "bonsClients" | "ticketsValeur" | "cartes" | "momo" | "banque";
 
 const defaultValues: IndexEntryForm = {
-  date: new Date().toISOString().split("T")[0],
+  date: format(subDays(new Date(), 1), "yyyy-MM-dd"),
   super1: { indexArrivee: "", indexDepart: "", jaugeDuJour: "" },
   super2: { indexArrivee: "", indexDepart: "", jaugeDuJour: "" },
   gasoil1: { indexArrivee: "", indexDepart: "", jaugeDuJour: "" },

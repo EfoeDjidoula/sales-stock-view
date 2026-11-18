@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { format } from "date-fns";
+import { format, subDays } from "date-fns";
 import { supabase } from "@/integrations/supabase/client";
 import { useScope } from "@/hooks/useScope";
 import { usePermissions } from "@/hooks/usePermissions";
@@ -48,7 +48,7 @@ export const SalesClosureModule = () => {
   const [stations, setStations] = useState<Row[]>([]);
   const [products, setProducts] = useState<Record<string, Row>>({});
   const [stationId, setStationId] = useState("");
-  const [date, setDate] = useState(today);
+  const [date, setDate] = useState(format(subDays(new Date(), 1), "yyyy-MM-dd"));
   const [closure, setClosure] = useState<Row | null>(null);
   const [lines, setLines] = useState<Line[]>([]);
   const [methods, setMethods] = useState<Row[]>([]);
