@@ -9,9 +9,11 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { AlertTriangle, CheckCircle2, Loader2, ShieldCheck, XCircle } from "lucide-react";
+import { AlertTriangle, CheckCircle2, FileDown, Loader2, ShieldCheck, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import { buildValidationChecks } from "@/lib/indexValidationChecks";
+import { usePdfExport } from "@/hooks/usePdfExport";
+import { FUEL_PRICES } from "@/config/prices";
 
 const db = supabase as any;
 
@@ -34,6 +36,7 @@ export const IndexValidationDialog = ({ entry, open, onOpenChange }: Props) => {
   const [mode, setMode] = useState<"validate" | "reject">("validate");
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
+  const { exportPdf } = usePdfExport();
 
   useEffect(() => {
     if (open) { setMode("validate"); setText(""); }
@@ -44,7 +47,7 @@ export const IndexValidationDialog = ({ entry, open, onOpenChange }: Props) => {
     enabled: open && !!entry,
     queryFn: async () => {
       const [pumps, tanks, closure, prior] = await Promise.all([
-        db.from("pump_index_entries").select("pump_id, product_type, liters_net, liters_sold, pumps(name)").eq("entry_id", entry!.id),
+        db.from("pump_index_entries").select("pump_id, product_type, liters_net, liters_sold, retour_cuve, pumps(name)").eq("entry_id", entry!.id),
         db.from("index_tank_readings").select("tank_id, product_type, stock_ouverture, depotage, sortie, stock_cloture, jauge, ecart, tanks(name)").eq("entry_id", entry!.id),
         db.from("daily_closures").select("id, status, source").eq("station_id", entry!.station_id).eq("closure_date", entry!.entry_date).maybeSingle(),
         db.from("index_entries").select("id", { count: "exact", head: true }).eq("station_id", entry!.station_id).lt("entry_date", entry!.entry_date).neq("status", "valide"),
@@ -82,6 +85,49 @@ export const IndexValidationDialog = ({ entry, open, onOpenChange }: Props) => {
   });
   const blocking = checks.some((c) => c.level === "block");
   const locale = "fr-FR";
+
+  const downloadRecap = () => {
+    const agg = (p: string) => {
+      const rows = (detail?.pumps ?? []).filter((r: any) => r.product_type === p);
+      const retour = rows.reduce((s: number, r: any) => s + n(r.retour_cuve), 0);
+      const net = rows.reduce((s: number, r: any) => s + n(r.liters_net ?? r.liters_sold), 0);
+      return { brut: net + retour, retour, liters: net };
+    };
+    const su = agg("super"), ga = agg("gasoil");
+    const priceS = FUEL_PRICES.SUPER, priceG = FUEL_PRICES.GASOIL;
+    const tanks = (detail?.tanks ?? []).map((t: any) => ({
+      name: t.tanks?.name ?? "Cuve", product: t.product_type,
+      ouverture: n(t.stock_ouverture), depotage: n(t.depotage), sortie: n(t.sortie),
+      cloture: n(t.stock_cloture), jauge: n(t.jauge), ecart: n(t.ecart),
+    })).sort((a: any, b: any) => (a.product === b.product ? a.name.localeCompare(b.name, undefined, { numeric: true }) : a.product === "super" ? -1 : 1));
+    exportPdf({
+      stationName: entry.stations?.name ?? "Station",
+      stationLocation: entry.stations?.location ?? "",
+      date: entry.entry_date,
+      prices: { super: priceS, gasoil: priceG },
+      super: { ...su, amount: su.liters * priceS },
+      gasoil: { ...ga, amount: ga.liters * priceG },
+      venteGlobale: vente,
+      autoconso: n(entry.autoconso_montant),
+      bonsClients: n(entry.bons_clients_montant),
+      ticketsValeur: n(entry.tickets_valeur_montant),
+      cartes: n(entry.cartes_montant),
+      momo: n(entry.versement_momo),
+      momoRef: entry.versement_momo_ref || undefined,
+      montantAVerser: aVerser,
+      versementBanque: verse,
+      bordereau: entry.versement_banque_ref || undefined,
+      banqueNom: entry.banque_nom || undefined,
+      ecartVersement: verse - aVerser,
+      tanks,
+      validation: {
+        status: entry.status,
+        by: entry.status === "rejete" ? entry.rejected_by_name : entry.validated_by_name,
+        at: entry.status === "rejete" ? entry.rejected_at : entry.validated_at,
+        reason: entry.rejection_reason,
+      },
+    });
+  };
 
   const submit = async () => {
     if (mode === "reject" && !text.trim()) return toast.error("Indiquez le motif du rejet");
@@ -185,6 +231,7 @@ export const IndexValidationDialog = ({ entry, open, onOpenChange }: Props) => {
         )}
 
         <DialogFooter>
+          <Button variant="outline" onClick={downloadRecap} disabled={busy || isLoading} className="gap-2 sm:mr-auto"><FileDown className="h-4 w-4" /> Récap PDF</Button>
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={busy}>Annuler</Button>
           {mode === "validate" ? (
             <Button onClick={submit} disabled={busy || isLoading || blocking} className="gap-2">

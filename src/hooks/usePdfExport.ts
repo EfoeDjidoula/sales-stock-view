@@ -33,6 +33,8 @@ export interface DailyRecapData {
   banqueNom?: string;
   ecartVersement: number;
   tanks: DailyRecapTank[];
+  /** Statut de validation N+1 (absent = saisie en cours). */
+  validation?: { status?: string; by?: string | null; at?: string | null; reason?: string | null };
 }
 
 const signed = (v: number) => `${v > 0 ? "+" : ""}${formatNumber(v)}`;
@@ -77,6 +79,21 @@ export const usePdfExport = () => {
       { align: "right" },
     );
     y += 14;
+
+    const v = data.validation;
+    const st = v?.status ?? "brouillon";
+    const label = st === "valide" ? `VALIDÉ N+1${v?.by ? ` par ${v.by}` : ""}${v?.at ? ` le ${new Date(v.at).toLocaleString("fr-FR")}` : ""}`
+      : st === "rejete" ? `REJETÉ N+1${v?.by ? ` par ${v.by}` : ""}${v?.reason ? ` · Motif : ${v.reason}` : ""}`
+      : st === "pre_enregistre" ? "PRÉ-ENREGISTRÉ · en attente de validation N+1 (chiffres provisoires)"
+      : "BROUILLON · saisie non enregistrée (chiffres provisoires)";
+    const tone: [number, number, number] = st === "valide" ? [22, 163, 74] : st === "rejete" ? [220, 38, 38] : [217, 119, 6];
+    doc.setFillColor(...tone);
+    doc.roundedRect(15, y - 5, W - 30, 8, 1.5, 1.5, "F");
+    doc.setTextColor(255, 255, 255);
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(9);
+    doc.text(doc.splitTextToSize(label, W - 36)[0], W / 2, y, { align: "center" });
+    y += 12;
 
     const section = (title: string) => {
       if (y > H - 40) { doc.addPage(); y = 20; }
@@ -176,6 +193,20 @@ export const usePdfExport = () => {
         [44, 22, 22, 22, 26, 22, 22],
       );
     }
+
+    // Visas
+    if (y > H - 50) { doc.addPage(); y = 20; }
+    y += 4;
+    doc.setDrawColor(209, 213, 219);
+    doc.setFont("helvetica", "bold"); doc.setFontSize(9); doc.setTextColor(...text);
+    const half = (W - 40) / 2;
+    doc.text("Visa gérant", 15, y);
+    doc.text("Visa N+1", 25 + half, y);
+    doc.setFont("helvetica", "normal"); doc.setFontSize(8); doc.setTextColor(...muted);
+    if (st === "valide" && v?.by) doc.text(`${v.by}${v.at ? ` · ${new Date(v.at).toLocaleDateString("fr-FR")}` : ""}`, 25 + half, y + 5);
+    doc.rect(15, y + 8, half, 18);
+    doc.rect(25 + half, y + 8, half, 18);
+    y += 30;
 
     y = Math.max(y + 4, H - 18);
     if (y > H - 10) { doc.addPage(); y = H - 18; }

@@ -439,6 +439,7 @@ const IndexEntry = () => {
       banqueNom: watched.banqueNom || undefined,
       ecartVersement: override?.ecartVersement ?? cascade.ecartVersement,
       tanks: tanksRecap,
+      validation: { status: override?.readings?.length ? "pre_enregistre" : "brouillon" },
     };
   };
 
