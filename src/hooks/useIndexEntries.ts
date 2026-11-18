@@ -93,6 +93,11 @@ export interface IndexEntry {
   montant_a_verser?: number | null;
   ecart_versement?: number | null;
   banque_nom?: string | null;
+  status?: string;
+  validated_by_name?: string | null;
+  validated_at?: string | null;
+  sync_warnings?: string[] | null;
+  user_id?: string;
   created_at: string;
   stations?: {
     id: string;
@@ -129,9 +134,9 @@ export const useIndexEntries = (stationId?: string, startDate?: string, endDate?
         query = query.gte("entry_date", startDate);
       }
 
-      if (endDate) {
-        query = query.lte("entry_date", endDate);
-      }
+      // Jamais de dates futures (imports de test) dans l'historique
+      const today = new Date().toLocaleDateString("en-CA");
+      query = query.lte("entry_date", endDate && endDate < today ? endDate : today);
 
       const { data, error } = await query;
 

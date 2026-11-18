@@ -2992,12 +2992,14 @@ export type Database = {
           id: string
           montant_a_verser: number | null
           station_id: string
+          status: string
           super1_index_arrivee: number
           super1_index_depart: number
           super1_jauge: number
           super2_index_arrivee: number
           super2_index_depart: number
           super2_jauge: number
+          sync_warnings: Json
           tenant_id: string | null
           tickets_valeur_montant: number
           total_bons: number | null
@@ -3006,6 +3008,10 @@ export type Database = {
           total_versements: number | null
           updated_at: string
           user_id: string
+          validated_at: string | null
+          validated_by: string | null
+          validated_by_name: string | null
+          validation_comment: string | null
           vente_globale: number | null
           versement_banque: number
           versement_banque_ref: string | null
@@ -3036,12 +3042,14 @@ export type Database = {
           id?: string
           montant_a_verser?: number | null
           station_id: string
+          status?: string
           super1_index_arrivee?: number
           super1_index_depart?: number
           super1_jauge?: number
           super2_index_arrivee?: number
           super2_index_depart?: number
           super2_jauge?: number
+          sync_warnings?: Json
           tenant_id?: string | null
           tickets_valeur_montant?: number
           total_bons?: number | null
@@ -3050,6 +3058,10 @@ export type Database = {
           total_versements?: number | null
           updated_at?: string
           user_id: string
+          validated_at?: string | null
+          validated_by?: string | null
+          validated_by_name?: string | null
+          validation_comment?: string | null
           vente_globale?: number | null
           versement_banque?: number
           versement_banque_ref?: string | null
@@ -3080,12 +3092,14 @@ export type Database = {
           id?: string
           montant_a_verser?: number | null
           station_id?: string
+          status?: string
           super1_index_arrivee?: number
           super1_index_depart?: number
           super1_jauge?: number
           super2_index_arrivee?: number
           super2_index_depart?: number
           super2_jauge?: number
+          sync_warnings?: Json
           tenant_id?: string | null
           tickets_valeur_montant?: number
           total_bons?: number | null
@@ -3094,6 +3108,10 @@ export type Database = {
           total_versements?: number | null
           updated_at?: string
           user_id?: string
+          validated_at?: string | null
+          validated_by?: string | null
+          validated_by_name?: string | null
+          validation_comment?: string | null
           vente_globale?: number | null
           versement_banque?: number
           versement_banque_ref?: string | null
@@ -8392,6 +8410,10 @@ export type Database = {
       }
       tenant_license_state: { Args: { _tenant_id: string }; Returns: Json }
       tenant_write_allowed: { Args: { _tenant_id: string }; Returns: boolean }
+      validate_index_entry: {
+        Args: { _comment?: string; _id: string }
+        Returns: Json
+      }
       webhook_create: {
         Args: {
           _countries: string[]

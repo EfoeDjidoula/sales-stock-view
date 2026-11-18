@@ -92,7 +92,8 @@ export const useDepotages = () => {
     try {
       const { data, error } = await supabase
         .from("depotages")
-        .insert(scopeRow({ ...depotage, user_id: user.id }) as any)
+        // ecart / stock_theoretical / depotage_ecart sont calculés par la base (colonnes générées)
+        .insert(scopeRow((({ ecart, stock_theoretical, depotage_ecart, ...rest }: any) => ({ ...rest, user_id: user.id }))(depotage)) as any)
         .select()
         .single();
 

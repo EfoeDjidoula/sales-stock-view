@@ -6,7 +6,12 @@ import { FUEL_PRICES } from "@/config/prices";
 import { EditEntryDialog } from "./EditEntryDialog";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
-import { Calendar as CalendarIcon, Search, Pencil, Trash2, Loader2 } from "lucide-react";
+import { Calendar as CalendarIcon, Search, Pencil, Trash2, Loader2, ShieldCheck, ChevronDown, ChevronRight } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { usePermissions } from "@/hooks/usePermissions";
+import { usePlatformAdmin } from "@/hooks/usePlatformAdmin";
+import { useAuth } from "@/hooks/useAuth";
+import { Fragment } from "react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Skeleton } from "@/components/ui/skeleton";
 import { supabase } from "@/integrations/supabase/client";
@@ -33,6 +38,34 @@ export const HistoryModule = () => {
   const [deleting, setDeleting] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const queryClient = useQueryClient();
+  const { can } = usePermissions();
+  const { isPlatformAdmin } = usePlatformAdmin();
+  const { user } = useAuth();
+  const canValidate = isPlatformAdmin || can("index_entries", "validate");
+  const [validating, setValidating] = useState<string | null>(null);
+  const [expanded, setExpanded] = useState<string | null>(null);
+  const [pumpDetail, setPumpDetail] = useState<Record<string, any[]>>({});
+
+  const toggleDetail = async (id: string) => {
+    if (expanded === id) return setExpanded(null);
+    setExpanded(id);
+    if (!pumpDetail[id]) {
+      const { data } = await (supabase as any).from("pump_index_entries")
+        .select("pump_id, product_type, index_depart, index_arrivee, retour_cuve, liters_net, pumps(name)").eq("entry_id", id);
+      setPumpDetail((m) => ({ ...m, [id]: (data ?? []).sort((a: any, b: any) => (a.product_type === b.product_type ? String(a.pumps?.name).localeCompare(String(b.pumps?.name)) : a.product_type === "super" ? -1 : 1)) }));
+    }
+  };
+
+  const handleValidate = async (entry: IndexEntry) => {
+    setValidating(entry.id);
+    const { data, error } = await (supabase as any).rpc("validate_index_entry", { _id: entry.id, _comment: null });
+    setValidating(null);
+    if (error) return toast.error("Validation impossible", { description: error.message });
+    const warns: string[] = data?.warnings ?? [];
+    if (warns.length) toast.warning("Saisie validée, avec réserves sur le stock", { description: warns.join(" · ") });
+    else toast.success("Saisie validée : stock mis à jour");
+    queryClient.invalidateQueries();
+  };
 
   const startStr = startDate ? format(startDate, "yyyy-MM-dd") : undefined;
   const endStr = endDate ? format(endDate, "yyyy-MM-dd") : undefined;
@@ -204,6 +237,7 @@ export const HistoryModule = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-8" />
                     <TableHead>Date</TableHead>
                     <TableHead>Station</TableHead>
                     <TableHead className="text-right">Super (L)</TableHead>
@@ -211,13 +245,16 @@ export const HistoryModule = () => {
                      <TableHead className="text-right">{t("Montant")}</TableHead>
                      <TableHead className="text-right">{t("Versements")}</TableHead>
                      <TableHead className="text-right">{t("Bons")}</TableHead>
+                     <TableHead>Statut</TableHead>
                      <TableHead className="text-center">{t("Actions")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {Array.from({ length: 5 }).map((_, i) => (
                     <TableRow key={i}>
+                      <TableCell />
                       <TableCell><Skeleton className="h-4 w-20" /></TableCell>
+                      <TableCell><Skeleton className="h-4 w-16" /></TableCell>
                       <TableCell><Skeleton className="h-4 w-28" /></TableCell>
                       <TableCell className="text-right"><Skeleton className="h-4 w-16 ml-auto" /></TableCell>
                       <TableCell className="text-right"><Skeleton className="h-4 w-16 ml-auto" /></TableCell>
@@ -239,6 +276,7 @@ export const HistoryModule = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-8" />
                     <TableHead>Date</TableHead>
                     <TableHead>Station</TableHead>
                     <TableHead className="text-right">Super (L)</TableHead>
@@ -246,17 +284,27 @@ export const HistoryModule = () => {
                      <TableHead className="text-right">{t("Montant")}</TableHead>
                      <TableHead className="text-right">{t("Versements")}</TableHead>
                      <TableHead className="text-right">{t("Bons")}</TableHead>
+                     <TableHead>Statut</TableHead>
                      <TableHead className="text-center">{t("Actions")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {entries.map(entry => {
-                    const { superL, gasoilL } = computeLiters(entry);
-                    const amount = superL * FUEL_PRICES.SUPER + gasoilL * FUEL_PRICES.GASOIL;
+                    const legacy = computeLiters(entry);
+                    const superL = entry.total_super_liters ?? legacy.superL;
+                    const gasoilL = entry.total_gasoil_liters ?? legacy.gasoilL;
+                    const amount = entry.vente_globale ?? superL * FUEL_PRICES.SUPER + gasoilL * FUEL_PRICES.GASOIL;
+                    const validated = entry.status === "valide";
                     const versements = computeVersements(entry);
                     const bons = entry.bons_carburant_valeur + entry.bons_entreprise_valeur;
                     return (
-                      <TableRow key={entry.id}>
+                      <Fragment key={entry.id}>
+                      <TableRow>
+                        <TableCell>
+                          <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => toggleDetail(entry.id)} title="Détail par pistolet">
+                            {expanded === entry.id ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
+                          </Button>
+                        </TableCell>
                         <TableCell className="whitespace-nowrap">
                            {new Date(entry.entry_date).toLocaleDateString(locale, { day: "2-digit", month: "short", year: "numeric" })}
                         </TableCell>
@@ -266,15 +314,51 @@ export const HistoryModule = () => {
                         <TableCell className="text-right">{formatCurrency(amount)}</TableCell>
                         <TableCell className="text-right">{formatCurrency(versements)}</TableCell>
                         <TableCell className="text-right">{formatCurrency(bons)}</TableCell>
-                        <TableCell className="text-center">
-                           <Button variant="ghost" size="icon" onClick={() => setEditEntry(entry)} title={t("Modifier")}>
-                            <Pencil className="w-4 h-4" />
-                          </Button>
-                           <Button variant="ghost" size="icon" onClick={() => setDeleteEntry(entry)} title={t("Supprimer")} className="text-destructive hover:text-destructive">
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
+                        <TableCell>
+                          {validated ? (
+                            <Badge variant="outline" className="border-success/40 text-success whitespace-nowrap" title={entry.validated_by_name ? `Validé par ${entry.validated_by_name}` : undefined}>Validé N+1</Badge>
+                          ) : (
+                            <Badge variant="outline" className="border-warning/40 text-warning whitespace-nowrap">Pré-enregistré</Badge>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-center whitespace-nowrap">
+                          {!validated && canValidate && (isPlatformAdmin || entry.user_id !== user?.id) && (
+                            <Button variant="ghost" size="icon" onClick={() => handleValidate(entry)} disabled={validating === entry.id} title="Valider (N+1)" className="text-success">
+                              {validating === entry.id ? <Loader2 className="w-4 h-4 animate-spin" /> : <ShieldCheck className="w-4 h-4" />}
+                            </Button>
+                          )}
+                          {!validated && (
+                            <>
+                              <Button variant="ghost" size="icon" onClick={() => setEditEntry(entry)} title={t("Modifier")}>
+                                <Pencil className="w-4 h-4" />
+                              </Button>
+                              <Button variant="ghost" size="icon" onClick={() => setDeleteEntry(entry)} title={t("Supprimer")} className="text-destructive hover:text-destructive">
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
+                            </>
+                          )}
                         </TableCell>
                       </TableRow>
+                      {expanded === entry.id && (
+                        <TableRow>
+                          <TableCell colSpan={10} className="bg-muted/30">
+                            {!pumpDetail[entry.id] ? <Skeleton className="h-6 w-full" /> : pumpDetail[entry.id].length === 0 ? (
+                              <p className="text-xs text-muted-foreground">Ancien format : pas de détail par pistolet.</p>
+                            ) : (
+                              <div className="grid gap-1 text-xs sm:grid-cols-2">
+                                {pumpDetail[entry.id].map((r: any) => (
+                                  <div key={r.pump_id} className="flex justify-between gap-3 rounded border border-border/50 px-2 py-1 tabular-nums">
+                                    <span className="font-medium">{r.pumps?.name ?? "—"} <span className="text-muted-foreground uppercase">{r.product_type}</span></span>
+                                    <span>{Number(r.index_depart).toLocaleString(locale)} → {Number(r.index_arrivee).toLocaleString(locale)} · retour {Number(r.retour_cuve || 0).toLocaleString(locale)} · net <strong>{Number(r.liters_net ?? 0).toLocaleString(locale)} L</strong></span>
+                                  </div>
+                                ))}
+                              </div>
+                            )}
+                            {!!entry.sync_warnings?.length && <p className="mt-2 text-xs text-warning">{entry.sync_warnings.join(" · ")}</p>}
+                          </TableCell>
+                        </TableRow>
+                      )}
+                      </Fragment>
                     );
                   })}
                 </TableBody>

@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
@@ -156,8 +157,10 @@ const IndexEntry = () => {
   }, [dbStations, selectedStation]);
 
   // --- Dynamic pump/tank configuration ---
-  const { pumps } = usePumps(selectedStation?.id);
-  const { tanks } = useTanks(selectedStation?.id);
+  const { pumps, loading: pumpsLoading } = usePumps(selectedStation?.id);
+  const { tanks, loading: tanksLoading } = useTanks(selectedStation?.id);
+  // Ne jamais afficher les pistolets tant que leurs cuves ne sont pas chargées (évite les faux blocs « Pompes sans cuve »)
+  const configLoading = pumpsLoading || tanksLoading || pumps.some((p) => p.tank_id && !tanks.some((tk) => tk.id === p.tank_id));
   const hasDynamicConfig = pumps.length > 0;
   /** Cuves effectivement alimentant au moins un pistolet : elles reçoivent un bilan journalier. */
   const tanksWithPumps = useMemo(
@@ -219,7 +222,7 @@ const IndexEntry = () => {
       if (!selectedStation?.id || !selectedDate) return null;
       const { data, error } = await supabase
         .from("index_entries")
-        .select("super1_index_arrivee, super2_index_arrivee, gasoil1_index_arrivee, gasoil2_index_arrivee, entry_date")
+        .select("super1_index_arrivee, super2_index_arrivee, gasoil1_index_arrivee, gasoil2_index_arrivee, entry_date, status")
         .eq("station_id", selectedStation.id)
         .lt("entry_date", selectedDate)
         .order("entry_date", { ascending: false })
@@ -248,6 +251,14 @@ const IndexEntry = () => {
   }, [previousEntry, form, hasDynamicConfig]);
 
   const hasPreviousEntry = !!previousEntry;
+  const previousPending = !!previousEntry && (previousEntry as any).status !== "valide";
+
+  // Changement de station ou de date : repartir de lignes vierges (la reprise veille / saisie du jour se refait ensuite)
+  useEffect(() => {
+    setPumpRows(Object.fromEntries(pumps.map((p) => [p.id, { pumpId: p.id, tankId: p.tank_id, productType: p.product_type, indexDepart: "", indexArrivee: "", retour: "" }])));
+    setTankJauges(Object.fromEntries(tanks.map((tk) => [tk.id, { tankId: tk.id, productType: tk.product_type, jauge: "", ouverture: "" }])));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedStation?.id, selectedDate]);
 
   // Pump-level: previous index_arrivee per pump (for auto-fill in dynamic mode)
   const pumpIds = useMemo(() => pumps.map((p) => p.id), [pumps]);
@@ -901,6 +912,16 @@ const IndexEntry = () => {
                     {pumps.length} pompe(s) · {tanks.length} cuve(s) configurée(s)
                   </span>
                 </div>
+                {previousEntry && (
+                  <div className={`text-xs rounded-md border px-3 py-2 ${previousPending ? "border-warning/40 bg-warning/10 text-warning" : "border-success/40 bg-success/10 text-success"}`}>
+                    {previousPending
+                      ? `Index de départ repris de la saisie du ${new Date(previousEntry.entry_date).toLocaleDateString("fr-FR")}, encore en attente de validation N+1.`
+                      : `Index de départ repris de la saisie validée du ${new Date(previousEntry.entry_date).toLocaleDateString("fr-FR")}.`}
+                  </div>
+                )}
+                {configLoading ? (
+                  <div className="space-y-3">{[0, 1, 2].map((i) => <Skeleton key={i} className="h-32 w-full" />)}</div>
+                ) : (
                 <DynamicPumpEntry
                   pumps={pumps}
                   tanks={tanks}
@@ -912,8 +933,9 @@ const IndexEntry = () => {
                   onChangeJauge={handleJaugeChange}
                   tankContext={tankContext}
                   prices={prices}
-                  disabled={isFiscalYearClosed}
+                  disabled={isFiscalYearClosed || existingDay?.entry?.status === "valide"}
                 />
+                )}
               </div>
             ) : (
               <>

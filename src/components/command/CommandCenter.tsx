@@ -57,6 +57,7 @@ export function CommandCenter() {
     return c && allowed.includes(c) ? [c] : allowed;
   }, [countryF, drill.country, allowed]);
   const r = range(period);
+  const [includePending, setIncludePending] = useState(false);
   const today = format(new Date(), "yyyy-MM-dd");
 
   const q = useQuery({
@@ -75,7 +76,7 @@ export function CommandCenter() {
         base("stock_levels", "tank_id,station_id,product_id,location_type,theoretical,physical,variance,alert_level,capacity"),
         base("daily_closures", "id,station_id,closure_date,status,total_amount,total_volume").gte("closure_date", r.start).lte("closure_date", r.end).neq("status", "rejected"),
         base("closure_sales", "closure_id,product_id,tank_id,volume,amount"),
-        base("index_entries", "station_id,entry_date,total_super_liters,total_gasoil_liters").gte("entry_date", r.start).lte("entry_date", r.end),
+        base("index_entries", "station_id,entry_date,total_super_liters,total_gasoil_liters,status").gte("entry_date", r.start).lte("entry_date", r.end),
         base("supply_requests", "id,reference,station_id,status,qty_requested").in("status", OPEN_SUPPLY),
         base("support_tickets", "id,ticket_number,subject,priority,status,station_id").not("status", "in", "(resolved,closed)"),
         base("reconciliations", "station_id,recon_date,result,workflow,value_variance").gte("recon_date", r.start).lte("recon_date", r.end),
@@ -92,6 +93,7 @@ export function CommandCenter() {
   });
 
   const d = q.data;
+  const pendingCount = useMemo(() => (d?.entries ?? []).filter((e: any) => e.status !== "valide").length, [d]);
   const view = useMemo(() => {
     if (!d) return null;
     const prodById = new Map(d.products.map((p) => [p.id, p]));
@@ -127,6 +129,7 @@ export function CommandCenter() {
       else (linesByClosure.get(c.id) ?? []).filter((l) => l.product_id === productF).forEach((l) => add(c.station_id, c.closure_date, Number(l.amount), Number(l.volume)));
     });
     d.entries.forEach((e) => {
+      if (!includePending && e.status !== "valide") return;
       if (closureKey.has(`${e.station_id}|${e.entry_date}`)) return;
       const s = Math.max(0, Number(e.total_super_liters) || 0), g = Math.max(0, Number(e.total_gasoil_liters) || 0);
       const vs = selKind === "gasoil" ? 0 : s, vg = selKind === "super" ? 0 : g;
@@ -174,7 +177,7 @@ export function CommandCenter() {
         alerts: levels.filter((l) => l.alert_level && l.alert_level !== "normal").length,
       },
     };
-  }, [d, productF, stationF, drill.zone, drill.station, today]);
+  }, [d, productF, stationF, drill.zone, drill.station, today, includePending]);
 
   const countryName = (id?: string) => countries.find((c) => c.id === id)?.name ?? "—";
    const zoneName = (id?: string) => (id === "none" ? t("Sans zone") : d?.zones.find((z) => z.id === id)?.name ?? "—");
@@ -184,6 +187,14 @@ export function CommandCenter() {
 
   return (
     <div className="space-y-6">
+      {pendingCount > 0 && (
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-sm text-warning">
+          <span>{pendingCount} saisie(s) d'index en attente de validation N+1 {includePending ? "incluse(s) à titre provisoire" : "non comptée(s) dans les chiffres"}.</span>
+          <Button size="sm" variant="outline" onClick={() => setIncludePending((v) => !v)}>
+            {includePending ? "Saisies validées uniquement" : "Inclure les saisies pré-enregistrées"}
+          </Button>
+        </div>
+      )}
       {/* Filtres */}
       <div className="flex flex-wrap items-center gap-2">
         <Select value={period} onValueChange={(v) => setPeriod(v as PeriodKey)}>

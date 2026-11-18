@@ -17,7 +17,7 @@ export const useBiDataset = (tenantId: string | null | undefined, countryIds: st
         q("closure_sales", "closure_id,product_id,volume,amount"),
         q("closure_payments", "closure_id,payment_method_id,amount"),
         q("payment_methods", "id,code,kind"),
-        q("index_entries", "station_id,entry_date,total_super_liters,total_gasoil_liters").gte("entry_date", start).lte("entry_date", end),
+        q("index_entries", "station_id,entry_date,total_super_liters,total_gasoil_liters").eq("status", "valide").gte("entry_date", start).lte("entry_date", end),
         q("stock_levels", "station_id,tank_id,product_id,theoretical,capacity,variance,alert_level"),
         q("reconciliations", "station_id,recon_date,result,volume_variance,value_variance").gte("recon_date", start).lte("recon_date", end),
         q("b2b_consumptions", "client_id,station_id,product_id,consumed_on,litres,amount").gte("consumed_on", start).lte("consumed_on", end),

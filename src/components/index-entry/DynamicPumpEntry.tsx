@@ -88,7 +88,7 @@ export const DynamicPumpEntry = ({
     for (const p of pumps) {
       const row = pumpRows[p.id];
       const prev = previousIndex[p.id];
-      if (prev != null && (!row || row.indexDepart === "" || row.indexDepart === "0")) {
+      if (prev != null && (!row || row.indexDepart !== String(prev))) {
         onChangePump(p.id, { indexDepart: String(prev) });
       }
     }
@@ -184,10 +184,10 @@ export const DynamicPumpEntry = ({
                             min="0"
                             placeholder="0.00"
                             value={row.indexDepart}
-                            readOnly={hasPrevious}
+                            readOnly={previousIndex[p.id] != null}
                             disabled={disabled}
                             onChange={(e) => onChangePump(p.id, { indexDepart: e.target.value })}
-                            className={`h-11 md:h-12 text-base tabular-nums ${hasPrevious ? "bg-muted text-muted-foreground cursor-not-allowed" : "bg-background"}`}
+                            className={`h-11 md:h-12 text-base tabular-nums ${previousIndex[p.id] != null ? "bg-muted text-muted-foreground cursor-not-allowed" : "bg-background"}`}
                           />
                         </div>
                         <div className="space-y-1">
