@@ -42,7 +42,7 @@ async function runConnectorJobs(db: SupabaseClient, conn: any) {
     const { data: claimed } = await db.from("integration_sync_jobs").update({ status: "running", started_at: now, attempts: job.attempts + 1 })
       .eq("id", job.id).eq("status", "pending").select("id").maybeSingle();
     if (!claimed) continue;
-    const ctx = { config: conn.config ?? {}, credentials, params: job.params ?? {} };
+    const ctx = { config: conn.config ?? {}, credentials, params: job.params ?? {}, approvedHost: conn.approved_host ?? null };
     let r;
     try {
       const fn = job.job_type === "test" ? driver.test : job.job_type === "pull" ? driver.pull : driver.push;

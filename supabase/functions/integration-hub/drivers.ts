@@ -1,6 +1,6 @@
 // Provider-agnostic driver registry. Add a provider by registering a driver; no core change needed.
 import { assertPublicHttpsUrl } from "./netguard.ts";
-export type Ctx = { config: Record<string, unknown>; credentials: Record<string, string>; params: Record<string, unknown> };
+export type Ctx = { config: Record<string, unknown>; credentials: Record<string, string>; params: Record<string, unknown>; approvedHost?: string | null };
 export type Mapping = { entity: string; external_value: string; internal_value: string };
 export type DriverResult = { ok: boolean; records?: number; detail?: unknown; error?: string; retryable?: boolean };
 export type Driver = { test: (c: Ctx) => Promise<DriverResult>; pull?: (c: Ctx, m: Mapping[]) => Promise<DriverResult>; push?: (c: Ctx, m: Mapping[]) => Promise<DriverResult> };
@@ -18,6 +18,12 @@ function headers(c: Ctx): Record<string, string> {
 async function call(c: Ctx, path: unknown, method = "GET", body?: unknown): Promise<{ res: Response; data: unknown }> {
   const base = String(c.config.base_url ?? "");
   if (!/^https:\/\//.test(base)) throw Object.assign(new Error("base_url HTTPS requise dans la configuration"), { retryable: false });
+  let host = "";
+  try { host = new URL(base).hostname.toLowerCase(); } catch { /* rejected below */ }
+  // Destination must be the exact host approved by the LUMATEK platform admin.
+  if (!host || !c.approvedHost || c.approvedHost.toLowerCase() !== host) {
+    throw Object.assign(new Error("Destination non approuvée par LUMATEK"), { retryable: false });
+  }
   const url = await assertPublicHttpsUrl(base, base.replace(/\/$/, "") + String(path ?? "/"));
   const ctrl = new AbortController();
   const t = setTimeout(() => ctrl.abort(), Number(c.config.timeout_ms ?? 15000));

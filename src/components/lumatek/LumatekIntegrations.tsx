@@ -11,7 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Clock, Plus, KeyRound, Play, Plug, RefreshCw, RotateCw, Trash2 } from "lucide-react";
+import { Clock, Plus, KeyRound, Play, Plug, RefreshCw, RotateCw, ShieldCheck, Trash2 } from "lucide-react";
 
 export const CATEGORIES: Record<string, string> = {
   erp: "ERP / comptabilité", banking: "Banques", mobile_money: "Mobile Money", pos: "POS / TPE",
@@ -28,6 +28,8 @@ const db = supabase as any;
 const fmt = (d?: string | null) => (d ? new Date(d).toLocaleString("fr-FR") : "—");
 const INTERVAL_LABELS: Record<number, string> = { 60: "Toutes les heures", 120: "Toutes les 2 h", 240: "Toutes les 4 h", 360: "Toutes les 6 h", 720: "Toutes les 12 h", 1440: "Une fois par jour" };
 const errMsg = (e: any) => e?.message ?? String(e);
+/** Host of the connector's HTTPS base_url, as checked by the server. */
+const baseHost = (config: any) => String(config?.base_url ?? "").match(/^https:\/\/([^/:?#@]+)/i)?.[1]?.toLowerCase() ?? null;
 
 function useData() {
   return useQuery({
@@ -100,14 +102,23 @@ export function LumatekIntegrations() {
       </Select>
       <Card><CardContent className="overflow-x-auto p-0">
         <Table>
-          <TableHeader><TableRow><TableHead>Connecteur</TableHead><TableHead>Catégorie</TableHead><TableHead>Client / pays</TableHead><TableHead>Statut</TableHead><TableHead>Identifiants</TableHead><TableHead>Dernière synchro</TableHead><TableHead>Prochaine synchro</TableHead><TableHead>Erreur</TableHead><TableHead /></TableRow></TableHeader>
+          <TableHeader><TableRow><TableHead>Connecteur</TableHead><TableHead>Catégorie</TableHead><TableHead>Client / pays</TableHead><TableHead>Destination</TableHead><TableHead>Statut</TableHead><TableHead>Identifiants</TableHead><TableHead>Dernière synchro</TableHead><TableHead>Prochaine synchro</TableHead><TableHead>Erreur</TableHead><TableHead /></TableRow></TableHeader>
           <TableBody>
-            {list.length === 0 && <TableRow><TableCell colSpan={9} className="text-center text-muted-foreground">Aucun connecteur</TableCell></TableRow>}
+            {list.length === 0 && <TableRow><TableCell colSpan={10} className="text-center text-muted-foreground">Aucun connecteur</TableCell></TableRow>}
             {list.map((c: any) => (
               <TableRow key={c.id} className="cursor-pointer" onClick={() => setSel(c.id)}>
                 <TableCell><div className="font-medium">{c.name}</div><div className="font-mono text-xs text-muted-foreground">{c.provider} · {c.environment}</div></TableCell>
                 <TableCell>{CATEGORIES[c.category]}</TableCell>
                 <TableCell>{tenantName(c.tenant_id)}<div className="text-xs text-muted-foreground">{countryName(c.tenant_id, c.country_id)}</div></TableCell>
+                <TableCell className="text-xs" onClick={(e) => e.stopPropagation()}>
+                  <div className="font-mono">{baseHost(c.config) ?? "—"}</div>
+                  {baseHost(c.config) && c.approved_host === baseHost(c.config)
+                    ? <span className="text-emerald-300">Approuvée</span>
+                    : baseHost(c.config) && <Button size="sm" variant="outline" className="mt-1 h-7" onClick={async () => {
+                        if (!window.confirm(`Autoriser les envois de ce connecteur vers ${baseHost(c.config)} ?`)) return;
+                        if (await act("approve_destination", c.id, { host: baseHost(c.config) })) toast.success("Destination approuvée");
+                      }}><ShieldCheck className="mr-1 h-3 w-3" />Approuver</Button>}
+                </TableCell>
                 <TableCell><Badge className={STATUS_VARIANT[c.status]}>{c.status}</Badge></TableCell>
                 <TableCell className="text-xs">{c.has_credentials ? c.credential_hint : <span className="text-muted-foreground">Non configurés</span>}</TableCell>
                 <TableCell className="text-xs">{fmt(c.last_sync_at)}</TableCell>

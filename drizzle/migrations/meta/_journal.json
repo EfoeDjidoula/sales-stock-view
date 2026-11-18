@@ -393,6 +393,13 @@
       "when": 1795018618905,
       "tag": "0055_b2b_portal_revoke_direct_writes",
       "breakpoints": true
+    },
+    {
+      "idx": 56,
+      "version": "7",
+      "when": 1795019880562,
+      "tag": "0056_credit_check_lockdown_and_integration_destination_approval",
+      "breakpoints": true
     }
   ]
 }

@@ -3447,6 +3447,9 @@ export type Database = {
       }
       integration_connectors: {
         Row: {
+          approved_at: string | null
+          approved_by: string | null
+          approved_host: string | null
           category: string
           config: Json
           consecutive_failures: number
@@ -3471,6 +3474,9 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          approved_host?: string | null
           category: string
           config?: Json
           consecutive_failures?: number
@@ -3495,6 +3501,9 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          approved_host?: string | null
           category?: string
           config?: Json
           consecutive_failures?: number
@@ -8579,6 +8588,7 @@ export type Database = {
         Args: { _action: string; _data: Json; _id: string }
         Returns: Json
       }
+      integration_base_host: { Args: { _config: Json }; Returns: string }
       integration_can_manage: {
         Args: { _country: string; _tenant: string }
         Returns: boolean
