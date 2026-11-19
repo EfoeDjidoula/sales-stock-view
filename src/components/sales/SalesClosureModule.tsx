@@ -33,7 +33,7 @@ const fmt = (n: number) => Math.round(Number(n) || 0).toLocaleString("fr-FR");
 const isGasoil = (p?: Row) => /gas|ago|diesel/i.test(`${p?.code ?? ""} ${p?.name ?? ""}`);
 const errMsg = (e: unknown) => (e as { message?: string })?.message ?? String(e);
 
-interface Line { nozzle: Row; index_start: string; index_end: string; volume: string; volume_mode: "index" | "manual"; unit_price: string }
+interface Line { nozzle: Row; index_start: string; index_end: string; volume: string; volume_mode: "index" | "manual"; unit_price: string; saved_amount?: number }
 
 export const SalesClosureModule = () => {
   const { t, language } = useLanguage();
@@ -137,6 +137,7 @@ export const SalesClosureModule = () => {
           volume: e ? String(e.volume) : "",
           volume_mode: e?.volume_mode ?? "index",
           unit_price: String(e?.unit_price ?? defPrice),
+          saved_amount: e?.amount != null ? Number(e.amount) : undefined,
         };
       }));
       const { data: lv } = await db.from("stock_levels").select("*").eq("location_type", "station").eq("station_id", stationId);
@@ -234,7 +235,9 @@ export const SalesClosureModule = () => {
   }, [savedSales]);
   const nozzleName = (id: string) => lines.find((l) => l.nozzle.id === id)?.nozzle;
 
-  const liveTotal = lines.reduce((a, l) => ({ v: a.v + Math.max(0, lineVolume(l)), m: a.m + Math.max(0, lineVolume(l)) * (Number(l.unit_price) || 0) }), { v: 0, m: 0 });
+  // Clôture verrouillée : montants enregistrés (arrondis ligne par ligne) pour coller au total officiel.
+  const lineAmount = (l: Line) => (!editable && l.saved_amount != null ? l.saved_amount : Math.max(0, lineVolume(l)) * (Number(l.unit_price) || 0));
+  const liveTotal = lines.reduce((a, l) => ({ v: a.v + Math.max(0, lineVolume(l)), m: a.m + lineAmount(l) }), { v: 0, m: 0 });
   const payTotal = methods.reduce((a, m) => a + (Number(payments[m.id]?.amount) || 0), 0);
 
   const status = closure ? CLOSURE_STATUS[closure.status] : null;
@@ -281,7 +284,7 @@ export const SalesClosureModule = () => {
              {!lines.length && <p className="text-sm text-muted-foreground">{t("Aucun pistolet actif pour cette station (Configuration → Stations → Référentiels).")}</p>}
             {!!lines.length && (
               <div className="overflow-x-auto rounded-lg border border-border">
-                <table className="w-full text-sm">
+                <table className="w-full min-w-[860px] text-sm">
                   <thead className="bg-muted/40 text-muted-foreground">
                     <tr>
                        <th className="p-2 text-left">{t("Pompe / Pistolet")}</th><th className="p-2 text-left">{t("Produit")}</th>
@@ -312,7 +315,7 @@ export const SalesClosureModule = () => {
                               : <span className={bad ? "text-destructive" : ""}>{fmt(v)}</span>}
                           </td>
                           <td className="p-1 w-28"><Input type="number" min={0} aria-label={`Prix ${l.nozzle.name}`} disabled={!editable || !canEditPrice} value={l.unit_price} onChange={(e) => setLine(i, { unit_price: e.target.value })} /></td>
-                          <td className="p-2 text-right">{fmt(Math.max(0, v) * (Number(l.unit_price) || 0))}</td>
+                          <td className="p-2 text-right">{fmt(lineAmount(l))}</td>
                         </tr>
                       );
                     })}

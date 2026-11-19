@@ -407,6 +407,13 @@
       "when": 1795080665450,
       "tag": "0057_closure_sales_from_index_with_nozzle_and_indexes",
       "breakpoints": true
+    },
+    {
+      "idx": 58,
+      "version": "7",
+      "when": 1795080878866,
+      "tag": "0058_closure_sales_include_zero_volume_nozzles",
+      "breakpoints": true
     }
   ]
 }
