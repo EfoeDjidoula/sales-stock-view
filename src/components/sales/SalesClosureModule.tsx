@@ -123,9 +123,11 @@ export const SalesClosureModule = () => {
         setEvents(ev ?? []);
       } else { setPayments({}); setEvents([]); }
       setSavedSales(existing);
-      const exMap = Object.fromEntries(existing.map((r) => [r.nozzle_id, r]));
+      const exMap = Object.fromEntries(existing.filter((r) => r.nozzle_id).map((r) => [r.nozzle_id, r]));
+      // Lignes générées sans pistolet (anciennes clôtures issues des index) : rattachées par pompe.
+      const exByPump = Object.fromEntries(existing.filter((r) => !r.nozzle_id && r.pump_id).map((r) => [r.pump_id, r]));
       setLines(nozzles.map((n: Row) => {
-        const e = exMap[n.id];
+        const e = exMap[n.id] ?? exByPump[n.pump_id];
         const defPrice = isGasoil(products[n.product_id])
           ? (price?.gasoil_price || FUEL_PRICES.GASOIL) : (price?.super_price || FUEL_PRICES.SUPER);
         return {
