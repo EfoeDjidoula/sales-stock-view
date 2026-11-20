@@ -1,5 +1,6 @@
 import ProSuiteModule from "@/components/pro/ProSuiteModule";
 import PeriodicReportsModule from "@/components/reports/PeriodicReportsModule";
+import SynthesisModule from "@/components/synthesis/SynthesisModule";
 import WorkflowModule from "@/components/workflow/WorkflowModule";
 import HseModule from "@/components/hse/HseModule";
 import AssetsMaintenanceModule from "@/components/maintenance/AssetsMaintenanceModule";
@@ -75,6 +76,7 @@ import {
   Building2,
   Contact,
   CreditCard,
+  Scale,
 } from "lucide-react";
 import { ClientsModule } from "@/components/clients/ClientsModule";
 import { B2BModule } from "@/components/clients/B2BModule";
@@ -140,6 +142,7 @@ const TAB_PERMISSIONS: Record<string, AppRole[]> = {
   workflows: ["admin", "manager"],
   suite_pro: ["admin", "manager"],
   rapports: ["admin", "manager"],
+  etats_synthese: ["admin", "manager"],
 };
 
 // Metadata (label + icon) for each tab
@@ -176,6 +179,7 @@ const TAB_META: Record<string, { label: string; icon: typeof TrendingUp }> = {
   workflows: { label: "Workflows & approbations", icon: ShieldCheck },
   suite_pro: { label: "Suite Pro", icon: FileText },
   rapports: { label: "Rapports périodiques", icon: FileText },
+  etats_synthese: { label: "États de synthèse & Contrôle", icon: Scale },
 };
 
 // Permission RBAC (au moins une) requise pour chaque onglet ; null = toujours visible
@@ -212,6 +216,7 @@ const TAB_RBAC: Record<string, string[] | null> = {
   workflows: ["workflows.view", "workflows.manage"],
   suite_pro: ["reports.view"],
   rapports: ["reports.view"],
+  etats_synthese: ["reports.view"],
 };
 
 // Module (feature flag) requis pour chaque onglet
@@ -239,6 +244,7 @@ const TAB_MODULE: Record<string, string> = {
   b2b: "clients_b2b",
   fuel_cards: "cartes_carburant",
   fournisseurs: "achats",
+  etats_synthese: "ventes",
 };
 
 // Modules dédiés du catalogue SaaS : leur désactivation masque aussi l'onglet
@@ -735,6 +741,9 @@ const Index = () => {
 
           <TabsContent value="rapports" className="animate-fade-in">
             {canAccessTab("rapports") ? <PeriodicReportsModule /> : <AccessDenied onGoBack={() => setActiveTab("ventes")} />}
+          </TabsContent>
+          <TabsContent value="etats_synthese" className="animate-fade-in">
+            {canAccessTab("etats_synthese") ? <SynthesisModule /> : <AccessDenied onGoBack={() => setActiveTab("ventes")} />}
           </TabsContent>
           <TabsContent value="suite_pro" className="animate-fade-in">
             {canAccessTab("suite_pro") ? <ProSuiteModule /> : <AccessDenied onGoBack={() => setActiveTab("ventes")} />}

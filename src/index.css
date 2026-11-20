@@ -41,6 +41,8 @@
     /* Destructive - Red alert */
     --destructive: 0 84% 60%;
     --destructive-foreground: 210 40% 98%;
+    /* Negative figures (shortfalls) readable on any background */
+    --negative: 0 84% 66%;
 
     /* Success - Fuel green */
     --success: 142 71% 45%;

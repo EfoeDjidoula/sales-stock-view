@@ -29,3 +29,9 @@ describe("menu latéral", () => {
     expect(formatBadge(7)).toBe("7");
   });
 });
+
+describe("États de synthèse & Contrôle", () => {
+  it("est rangé dans le pôle 4 Audit, Contrôle & Finance", () => {
+    expect(findPoleOfTab("etats_synthese")?.number).toBe(4);
+  });
+});
