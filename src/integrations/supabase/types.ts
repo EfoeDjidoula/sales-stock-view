@@ -1615,6 +1615,276 @@ export type Database = {
           },
         ]
       }
+      depot_proforma_lines: {
+        Row: {
+          amount_ht: number
+          amount_ttc: number
+          country_id: string
+          id: string
+          product_id: string
+          proforma_id: string
+          qty_lifted: number
+          qty_litres: number
+          tax_amount: number
+          tax_rate: number
+          tenant_id: string
+          unit_price: number
+        }
+        Insert: {
+          amount_ht: number
+          amount_ttc: number
+          country_id: string
+          id?: string
+          product_id: string
+          proforma_id: string
+          qty_lifted?: number
+          qty_litres: number
+          tax_amount: number
+          tax_rate?: number
+          tenant_id: string
+          unit_price: number
+        }
+        Update: {
+          amount_ht?: number
+          amount_ttc?: number
+          country_id?: string
+          id?: string
+          product_id?: string
+          proforma_id?: string
+          qty_lifted?: number
+          qty_litres?: number
+          tax_amount?: number
+          tax_rate?: number
+          tenant_id?: string
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "depot_proforma_lines_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "petroleum_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "depot_proforma_lines_proforma_id_fkey"
+            columns: ["proforma_id"]
+            isOneToOne: false
+            referencedRelation: "depot_proformas"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      depot_proformas: {
+        Row: {
+          country_id: string
+          created_at: string
+          created_by: string | null
+          depot_id: string | null
+          id: string
+          number: string
+          observations: string | null
+          proforma_date: string
+          supplier_id: string | null
+          tenant_id: string
+          total_ht: number
+          total_tax: number
+          total_ttc: number
+          valid_until: string | null
+        }
+        Insert: {
+          country_id: string
+          created_at?: string
+          created_by?: string | null
+          depot_id?: string | null
+          id?: string
+          number: string
+          observations?: string | null
+          proforma_date: string
+          supplier_id?: string | null
+          tenant_id: string
+          total_ht?: number
+          total_tax?: number
+          total_ttc?: number
+          valid_until?: string | null
+        }
+        Update: {
+          country_id?: string
+          created_at?: string
+          created_by?: string | null
+          depot_id?: string | null
+          id?: string
+          number?: string
+          observations?: string | null
+          proforma_date?: string
+          supplier_id?: string | null
+          tenant_id?: string
+          total_ht?: number
+          total_tax?: number
+          total_ttc?: number
+          valid_until?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "depot_proformas_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "countries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "depot_proformas_depot_id_fkey"
+            columns: ["depot_id"]
+            isOneToOne: false
+            referencedRelation: "depots"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "depot_proformas_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "depot_proformas_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      depot_purchase_order_events: {
+        Row: {
+          action: string
+          author_id: string | null
+          author_name: string | null
+          country_id: string
+          created_at: string
+          from_status: string | null
+          id: string
+          order_id: string
+          reason: string | null
+          tenant_id: string
+          to_status: string | null
+        }
+        Insert: {
+          action: string
+          author_id?: string | null
+          author_name?: string | null
+          country_id: string
+          created_at?: string
+          from_status?: string | null
+          id?: string
+          order_id: string
+          reason?: string | null
+          tenant_id: string
+          to_status?: string | null
+        }
+        Update: {
+          action?: string
+          author_id?: string | null
+          author_name?: string | null
+          country_id?: string
+          created_at?: string
+          from_status?: string | null
+          id?: string
+          order_id?: string
+          reason?: string | null
+          tenant_id?: string
+          to_status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "depot_purchase_order_events_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "depot_purchase_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      depot_purchase_orders: {
+        Row: {
+          beneficiary_client_id: string | null
+          beneficiary_name: string
+          country_id: string
+          created_at: string
+          created_by: string | null
+          id: string
+          issue_date: string
+          number: string
+          payment_status: string
+          proforma_id: string
+          status_at: string
+          status_by: string | null
+          status_by_name: string | null
+          tenant_id: string
+        }
+        Insert: {
+          beneficiary_client_id?: string | null
+          beneficiary_name: string
+          country_id: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          issue_date?: string
+          number: string
+          payment_status?: string
+          proforma_id: string
+          status_at?: string
+          status_by?: string | null
+          status_by_name?: string | null
+          tenant_id: string
+        }
+        Update: {
+          beneficiary_client_id?: string | null
+          beneficiary_name?: string
+          country_id?: string
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          issue_date?: string
+          number?: string
+          payment_status?: string
+          proforma_id?: string
+          status_at?: string
+          status_by?: string | null
+          status_by_name?: string | null
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "depot_purchase_orders_beneficiary_client_id_fkey"
+            columns: ["beneficiary_client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "depot_purchase_orders_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "countries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "depot_purchase_orders_proforma_id_fkey"
+            columns: ["proforma_id"]
+            isOneToOne: true
+            referencedRelation: "depot_proformas"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "depot_purchase_orders_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       depotages: {
         Row: {
           country_id: string | null
@@ -8694,6 +8964,10 @@ export type Database = {
           _to_tank: string
           _to_type: string
         }
+        Returns: string
+      }
+      depot_supply_action: {
+        Args: { _action: string; _data: Json }
         Returns: string
       }
       fraud_alert_action: {
