@@ -32,8 +32,8 @@
 - [x] Application installable et utilisable sans internet : écrans déjà consultés, saisie des index et réception logistique gardées sur l'appareil puis envoyées au retour du réseau.
 - [x] Récap PDF : prix de vente = structure de prix en vigueur à la date
 - [x] États de synthèse & Contrôle — étape 1 : menu (pôle 4) + Compte des gérants (station, plage de dates, tolérance libre, bilan matières/financier, livraisons commandé/enlevé/réceptionné, index, détail journalier, export Excel).
-- [ ] États de synthèse — étape 2/3 : arrêté des comptes (passation de gérance, changement de prix).
-- [ ] États de synthèse — étape 4 : récaps ECAP hebdo/mensuel et fiches d'inventaire (Excel + PDF).
+- [x] États de synthèse — étape 2/3 : arrêté des comptes (passation de gérance, changement de prix).
+- [x] États de synthèse — étape 4 : récaps ECAP hebdo/mensuel et fiches d'inventaire (Excel + PDF).
 
 ## Priorité 1 — assainissement (21/11/2026)
 - [x] Réconciliation : écart volume = écart journalier des bilans de cuve (plus le cumul du registre).
@@ -47,7 +47,7 @@
 
 ## Priorité 2 — États de synthèse
 - [x] Arrêté des comptes : fiche station + bilan réseau, Excel/PDF, arrêtés archivés, validés et verrouillés (le suivant reprend date et gérant).
-- [ ] Récaps hebdo/mensuel, fiches d'inventaire.
+- [x] Récaps ECAP hebdo/mensuel (station ou toutes stations) et fiches d'inventaire (pompes, cuves au volume BL, caisse comptée), Excel/PDF.
 
 ## Priorité 3 — Logistique
 - [ ] Rectification/justification des alertes de livraison (TRP-20261010-B04F5F), compartiments.

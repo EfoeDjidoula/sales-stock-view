@@ -151,10 +151,10 @@ export async function exportNetworkXlsx(n: NetworkClosing) {
 
 /* ---------------- PDF ---------------- */
 
-type Doc = InstanceType<typeof jsPDF>;
-interface Col { label: string; w: number; right?: boolean }
+export type Doc = InstanceType<typeof jsPDF>;
+export interface Col { label: string; w: number; right?: boolean }
 
-function table(doc: Doc, y: number, cols: Col[], rows: { cells: string[]; bold?: boolean }[], x0 = 10): number {
+export function table(doc: Doc, y: number, cols: Col[], rows: { cells: string[]; bold?: boolean }[], x0 = 10): number {
   const H = doc.internal.pageSize.getHeight();
   const rowH = 5.2;
   const head = () => {
@@ -180,14 +180,14 @@ function table(doc: Doc, y: number, cols: Col[], rows: { cells: string[]; bold?:
   return y + 3;
 }
 
-function section(doc: Doc, y: number, title: string, need = 20): number {
+export function section(doc: Doc, y: number, title: string, need = 20): number {
   if (y + need > doc.internal.pageSize.getHeight() - 8) { doc.addPage(); y = 12; }
   doc.setFont("helvetica", "bold"); doc.setFontSize(9); doc.setTextColor(31, 41, 55);
   doc.text(title, 10, y + 4);
   return y + 6;
 }
 
-function signatures(doc: Doc, y: number, labels: string[]) {
+export function signatures(doc: Doc, y: number, labels: string[]) {
   const W = doc.internal.pageSize.getWidth();
   if (y + 24 > doc.internal.pageSize.getHeight() - 8) { doc.addPage(); y = 12; }
   const w = (W - 20) / labels.length;

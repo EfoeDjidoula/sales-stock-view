@@ -1,19 +1,9 @@
 import { CalendarRange, ClipboardList, FileSpreadsheet, Scale } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Card, CardContent } from "@/components/ui/card";
 import ManagerAccount from "./ManagerAccount";
 import AccountClosing from "./AccountClosing";
-
-const NEXT: Record<string, { title: string; text: string }> = {
-  ecap: {
-    title: "Récapitulatifs ECAP hebdomadaire et mensuel",
-    text: "Tableaux calqués sur vos modèles ECAP, avec export Excel et PDF. Prévu à l'étape 4.",
-  },
-  inventaire: {
-    title: "Fiches d'inventaire périodiques",
-    text: "Fiche d'inventaire par station selon votre modèle, à partir des jauges et index validés. Prévu à l'étape 4.",
-  },
-};
+import EcapRecap from "./EcapRecap";
+import InventorySheet from "./InventorySheet";
 
 /** Menu « États de synthèse & Contrôle » : compte des gérants, arrêtés, récaps ECAP et inventaires. */
 export default function SynthesisModule() {
@@ -27,14 +17,8 @@ export default function SynthesisModule() {
       </TabsList>
       <TabsContent value="compte"><ManagerAccount /></TabsContent>
       <TabsContent value="arrete"><AccountClosing /></TabsContent>
-      {Object.entries(NEXT).map(([k, v]) => (
-        <TabsContent key={k} value={k}>
-          <Card className="glass-card"><CardContent className="py-10 text-center space-y-2">
-            <p className="font-display text-lg font-semibold">{v.title}</p>
-            <p className="mx-auto max-w-xl text-sm text-muted-foreground">{v.text}</p>
-          </CardContent></Card>
-        </TabsContent>
-      ))}
+      <TabsContent value="ecap"><EcapRecap /></TabsContent>
+      <TabsContent value="inventaire"><InventorySheet /></TabsContent>
     </Tabs>
   );
 }
