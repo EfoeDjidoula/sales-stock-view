@@ -32,5 +32,5 @@
 - B2B portal: b2b_portal_users rows make get_user_tenant NULL; clients use only b2b_portal_overview/b2b_portal_action RPCs; why: client logins never reach tenant data.
 - Offline: PWA only via src/lib/pwa.ts; offline writes replay via src/lib/offlineQueue.ts; query cache kept in IndexedDB without JSON (offlineCache.ts); why: server stays authoritative, Set/Map data survives reloads.
 - Report e-mails go only to the caller's own address (send-report-email); why: app emails are one-recipient, user-triggered.
-- PDF letterhead: src/lib/pdf.ts jsPDF wrapper shrinks each page's content between a header/footer drawn by src/lib/pdfLetterhead.ts from the active brand; why: every report gets the client letterhead without per-report code.
-- Nozzle display: lists of nozzles/tanks always come from configured rows sorted by src/lib/nozzleOrder.ts, never fixed fields; why: stations may have any number of nozzles per product.
+- PDF letterhead drawn centrally by src/lib/pdf.ts + pdfLetterhead.ts; why: no per-report code.
+- Nozzles/tanks listed from configured rows (src/lib/nozzleOrder.ts); why: any count per product.
