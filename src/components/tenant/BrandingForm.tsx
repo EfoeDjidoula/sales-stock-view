@@ -23,6 +23,10 @@ interface BrandingState {
   app_title: string;
   app_description: string;
   footer_note: string;
+  tax_id: string;
+  phone: string;
+  address: string;
+  bank_details: string;
   show_powered_by: boolean;
   powered_by_label: string;
 }
@@ -35,6 +39,10 @@ const EMPTY: BrandingState = {
   app_title: "",
   app_description: "",
   footer_note: "",
+  tax_id: "",
+  phone: "",
+  address: "",
+  bank_details: "",
   show_powered_by: true,
   powered_by_label: "Powered by LUMATEK TECHNOLOGY",
 };
@@ -85,7 +93,7 @@ export const BrandingForm = ({ tenantId }: { tenantId: string }) => {
       const { data, error } = await supabase
         .from("tenants")
         .select(
-          "name, legal_name, trade_name, address, phone, email, website, tax_id, logo_url, favicon_url, primary_color, secondary_color, app_title, app_description, footer_note, show_powered_by, powered_by_label"
+          "name, legal_name, trade_name, address, phone, email, website, tax_id, logo_url, favicon_url, primary_color, secondary_color, app_title, app_description, footer_note, show_powered_by, powered_by_label, bank_details"
         )
         .eq("id", tenantId)
         .maybeSingle();
@@ -107,6 +115,10 @@ export const BrandingForm = ({ tenantId }: { tenantId: string }) => {
       app_title: data.app_title ?? "",
       app_description: data.app_description ?? "",
       footer_note: data.footer_note ?? "",
+      tax_id: data.tax_id ?? "",
+      phone: data.phone ?? "",
+      address: data.address ?? "",
+      bank_details: (data as any).bank_details ?? "",
       show_powered_by: data.show_powered_by ?? true,
       powered_by_label: data.powered_by_label ?? EMPTY.powered_by_label,
     });
@@ -129,6 +141,10 @@ export const BrandingForm = ({ tenantId }: { tenantId: string }) => {
           app_title: form.app_title.trim() || null,
           app_description: form.app_description.trim() || null,
           footer_note: form.footer_note.trim() || null,
+          tax_id: form.tax_id.trim() || null,
+          phone: form.phone.trim() || null,
+          address: form.address.trim() || null,
+          bank_details: form.bank_details.trim() || null,
           show_powered_by: form.show_powered_by,
           powered_by_label:
             form.powered_by_label.trim() || EMPTY.powered_by_label,
@@ -195,6 +211,23 @@ export const BrandingForm = ({ tenantId }: { tenantId: string }) => {
         <div className="space-y-2 md:col-span-2">
           <Label htmlFor="brand-footer">Mention de bas de page</Label>
           <Input id="brand-footer" value={form.footer_note} onChange={set("footer_note")} placeholder="Ex : Tous droits réservés" />
+        </div>
+
+        <div className="space-y-2">
+          <Label htmlFor="brand-ifu">Numéro IFU</Label>
+          <Input id="brand-ifu" value={form.tax_id} onChange={set("tax_id")} maxLength={60} />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="brand-phone">Téléphone(s)</Label>
+          <Input id="brand-phone" value={form.phone} onChange={set("phone")} maxLength={120} />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="brand-address">Adresse</Label>
+          <Input id="brand-address" value={form.address} onChange={set("address")} maxLength={200} />
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="brand-bank">Coordonnées bancaires (pied de page des PDF)</Label>
+          <Input id="brand-bank" value={form.bank_details} onChange={set("bank_details")} maxLength={240} placeholder="Ex : BOA Bénin · RIB BJ061 01001 …" />
         </div>
 
         <div className="md:col-span-2 flex flex-col gap-3 rounded-lg border border-border p-4">

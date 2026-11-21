@@ -7540,6 +7540,7 @@ export type Database = {
           address: string | null
           app_description: string | null
           app_title: string | null
+          bank_details: string | null
           code: string
           created_at: string
           default_currency: string
@@ -7569,6 +7570,7 @@ export type Database = {
           address?: string | null
           app_description?: string | null
           app_title?: string | null
+          bank_details?: string | null
           code: string
           created_at?: string
           default_currency?: string
@@ -7598,6 +7600,7 @@ export type Database = {
           address?: string | null
           app_description?: string | null
           app_title?: string | null
+          bank_details?: string | null
           code?: string
           created_at?: string
           default_currency?: string

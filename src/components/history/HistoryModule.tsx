@@ -4,6 +4,7 @@ import { useStations } from "@/hooks/useIndexEntries";
 import { formatCurrency } from "@/data/stationsData";
 import { FUEL_PRICES } from "@/config/prices";
 import { EditEntryDialog } from "./EditEntryDialog";
+import { sortNozzles } from "@/lib/nozzleOrder";
 import { IndexValidationDialog } from "./IndexValidationDialog";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -289,7 +290,7 @@ export const HistoryModule = () => {
                     const validated = entry.status === "valide";
                     const rejected = entry.status === "rejete";
                     const versements = computeVersements(entry);
-                    const bons = entry.bons_carburant_valeur + entry.bons_entreprise_valeur;
+                    const bons = Number((entry as any).bons_clients_montant) || (entry.bons_carburant_valeur + entry.bons_entreprise_valeur);
                     return (
                       <Fragment key={entry.id}>
                       <TableRow>
@@ -344,7 +345,7 @@ export const HistoryModule = () => {
                               <p className="text-xs text-muted-foreground">Ancien format : pas de détail par pistolet.</p>
                             ) : (
                               <div className="grid gap-1 text-xs sm:grid-cols-2">
-                                {pumpDetail[entry.id].map((r: any) => (
+                                {sortNozzles(pumpDetail[entry.id].map((r: any) => ({ ...r, name: r.pumps?.name ?? "" }))).map((r: any) => (
                                   <div key={r.pump_id} className="flex justify-between gap-3 rounded border border-border/50 px-2 py-1 tabular-nums">
                                     <span className="font-medium">{r.pumps?.name ?? "—"} <span className="text-muted-foreground uppercase">{r.product_type}</span></span>
                                     <span>{Number(r.index_depart).toLocaleString(locale)} → {Number(r.index_arrivee).toLocaleString(locale)} · retour {Number(r.retour_cuve || 0).toLocaleString(locale)} · net <strong>{Number(r.liters_net ?? 0).toLocaleString(locale)} L</strong></span>
@@ -352,6 +353,21 @@ export const HistoryModule = () => {
                                 ))}
                               </div>
                             )}
+                            {(() => {
+                              const e = entry as any; const n = (v: unknown) => Number(v) || 0;
+                              const vente = n(e.vente_globale);
+                              const ded = n(e.autoconso_montant) + n(e.bons_clients_montant) + n(e.tickets_valeur_montant) + n(e.cartes_montant) + n(e.versement_momo);
+                              const aVerser = e.montant_a_verser ?? vente - ded;
+                              const verse = n(e.versement_banque) + n(e.versement_liquidite);
+                              const items: [string, number][] = [["Vente brute", vente], ["Autoconso", n(e.autoconso_montant)], ["Bons clients", n(e.bons_clients_montant)], ["Tickets valeur", n(e.tickets_valeur_montant)], ["Cartes", n(e.cartes_montant)], ["Mobile Money", n(e.versement_momo)], ["Net à verser", aVerser], [`Versé banque${e.versement_banque_ref ? ` (BV ${e.versement_banque_ref})` : ""}`, verse], ["Écart versement", verse - aVerser]];
+                              return (
+                                <div className="mt-2 grid gap-1 text-xs sm:grid-cols-3 lg:grid-cols-5">
+                                  {items.map(([l, v]) => (
+                                    <div key={l} className="flex justify-between gap-2 rounded border border-border/50 px-2 py-1 tabular-nums"><span className="text-muted-foreground">{l}</span><strong>{formatCurrency(v)}</strong></div>
+                                  ))}
+                                </div>
+                              );
+                            })()}
                             {rejected && (
                               <p className="mt-2 text-xs text-destructive">
                                 Rejetée par {entry.rejected_by_name ?? "le N+1"}{entry.rejected_at ? ` le ${new Date(entry.rejected_at).toLocaleDateString(locale)}` : ""} : {entry.rejection_reason}

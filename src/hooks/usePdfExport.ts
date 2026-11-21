@@ -1,4 +1,4 @@
-import { getActiveBrand, hslToRgb, documentFooter } from "@/lib/branding";
+import { getActiveBrand, hslToRgb } from "@/lib/branding";
 import { jsPDF } from "@/lib/pdf";
 import { formatNumber } from "@/data/stationsData";
 
@@ -240,7 +240,7 @@ export const usePdfExport = () => {
     doc.setFontSize(7);
     doc.setTextColor(...muted);
     doc.setFont("helvetica", "normal");
-    doc.text(`Document généré le ${new Date().toLocaleDateString("fr-FR")} à ${new Date().toLocaleTimeString("fr-FR")}  ·  ${documentFooter(brand)}`, W / 2, H - 6, { align: "center" });
+    doc.text(`Document généré le ${new Date().toLocaleDateString("fr-FR")} à ${new Date().toLocaleTimeString("fr-FR")}`, W / 2, H - 6, { align: "center" });
 
     doc.save(`Recap_${data.stationName.replace(/\s+/g, "_")}_${data.date}.pdf`);
   };

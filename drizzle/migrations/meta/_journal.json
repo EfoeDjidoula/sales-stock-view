@@ -421,6 +421,20 @@
       "when": 1795222909412,
       "tag": "0059_supply_reception_reverse",
       "breakpoints": true
+    },
+    {
+      "idx": 60,
+      "version": "7",
+      "when": 1795267684087,
+      "tag": "0060_reconcile_daily_tank_variance",
+      "breakpoints": true
+    },
+    {
+      "idx": 61,
+      "version": "7",
+      "when": 1795267790771,
+      "tag": "0061_tenant_bank_details",
+      "breakpoints": true
     }
   ]
 }

@@ -25,6 +25,7 @@ export interface Tenant {
   app_title?: string | null;
   app_description?: string | null;
   tax_id?: string | null;
+  bank_details?: string | null;
   footer_note?: string | null;
   show_powered_by?: boolean;
   powered_by_label?: string | null;

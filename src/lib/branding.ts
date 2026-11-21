@@ -17,6 +17,7 @@ export interface BrandIdentity {
   email: string | null;
   website: string | null;
   taxId: string | null;
+  bankDetails?: string | null;
   currency: string;
   language: string;
   appTitle: string | null;

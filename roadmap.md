@@ -34,3 +34,19 @@
 - [x] États de synthèse & Contrôle — étape 1 : menu (pôle 4) + Compte des gérants (station, plage de dates, tolérance libre, bilan matières/financier, livraisons commandé/enlevé/réceptionné, index, détail journalier, export Excel).
 - [ ] États de synthèse — étape 2/3 : arrêté des comptes (passation de gérance, changement de prix).
 - [ ] États de synthèse — étape 4 : récaps ECAP hebdo/mensuel et fiches d'inventaire (Excel + PDF).
+
+## Priorité 1 — assainissement (21/11/2026)
+- [x] Réconciliation : écart volume = écart journalier des bilans de cuve (plus le cumul du registre).
+- [x] Retrait du dépotage annulé de 3 010 L (FIDJROSSÈ 19/11, Gasoil 2).
+- [x] Historique : colonne Bons corrigée + détail Autoconso/Bons/Tickets/Cartes/MoMo/Net à verser/BV/Écart.
+- [x] Fenêtres Crayon et Bouclier : tous les pistolets configurés, sans plafond (S1…Sn, G1…Gn).
+- [x] Papier à en-tête sur tous les PDF (logo, société, descriptif ; pied : IFU, banque, téléphone ; éditeur à droite) + champs IFU/banque dans l'identité société.
+- [ ] Point zéro du registre de stock (15/11) — à confirmer : les écarts 15–16/11 viennent de ventes gasoil non passées au stock (stock à 0).
+- [ ] Dépotage au volume BL (chargé) + écart transporteur séparé.
+- [ ] Cascade automatique annulation réception → ligne d'index en attente.
+
+## Priorité 2 — États de synthèse
+- [ ] Arrêté des comptes, récaps hebdo/mensuel, fiches d'inventaire.
+
+## Priorité 3 — Logistique
+- [ ] Rectification/justification des alertes de livraison (TRP-20261010-B04F5F), compartiments.

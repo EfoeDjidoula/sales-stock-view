@@ -1,4 +1,4 @@
-import { getActiveBrand, hslToRgb, documentFooter } from "@/lib/branding";
+import { getActiveBrand, hslToRgb } from "@/lib/branding";
 import { jsPDF } from "@/lib/pdf";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -150,7 +150,6 @@ export const useOrdersPdfExport = () => {
     y += 10;
     doc.setFontSize(8);
     doc.setTextColor(...mutedColor);
-    doc.text(documentFooter(brand), pageWidth / 2, y, { align: "center" });
 
     doc.save(`Commandes_${format(new Date(), "yyyy-MM-dd")}.pdf`);
   };
@@ -276,7 +275,6 @@ export const useOrdersPdfExport = () => {
     y += 10;
     doc.setFontSize(8);
     doc.setTextColor(...mutedColor);
-    doc.text(documentFooter(brand), pageWidth / 2, y, { align: "center" });
 
     doc.save(`Approvisionnements_${format(new Date(), "yyyy-MM-dd")}.pdf`);
   };

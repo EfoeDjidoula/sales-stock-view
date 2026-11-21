@@ -11,7 +11,7 @@ import { toast } from "sonner";
 import { Loader2, Plus, Eye, Check, X, Ban, FileDown } from "lucide-react";
 import { jsPDF } from "@/lib/pdf";
 import { fr } from "date-fns/locale";
-import { getActiveBrand, hslToRgb, documentFooter } from "@/lib/branding";
+import { getActiveBrand, hslToRgb } from "@/lib/branding";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -153,7 +153,6 @@ export const SupplyWorkflowModule = () => {
     });
 
     doc.setFontSize(8); doc.setTextColor(...muted);
-    doc.text(documentFooter(brand), pageWidth / 2, doc.internal.pageSize.getHeight() - 8, { align: "center" });
     doc.save(`Approvisionnements_${format(new Date(), "yyyy-MM-dd")}.pdf`);
   };
 

@@ -5,6 +5,7 @@ import {
   DEFAULT_BRAND,
   setActiveBrand,
 } from "@/lib/branding";
+import { preloadLetterheadLogo } from "@/lib/pdfLetterhead";
 
 const applyColor = (variable: string, value: string | null | undefined) => {
   const root = document.documentElement;
@@ -48,6 +49,7 @@ export const useBranding = (): BrandIdentity => {
       email: tenant.email || null,
       website: tenant.website || null,
       taxId: tenant.tax_id || null,
+      bankDetails: tenant.bank_details || null,
       currency: tenant.default_currency || DEFAULT_BRAND.currency,
       language: tenant.default_language || DEFAULT_BRAND.language,
       appTitle: tenant.app_title || null,
@@ -67,6 +69,7 @@ export const BrandingProvider = ({ children }: { children: React.ReactNode }) =>
 
   useEffect(() => {
     setActiveBrand(brand);
+    void preloadLetterheadLogo(brand.logoUrl);
     applyColor("--primary", brand.primaryColor);
     applyColor("--ring", brand.primaryColor);
     applyColor("--sidebar-primary", brand.primaryColor);

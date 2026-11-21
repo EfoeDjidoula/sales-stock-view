@@ -14,6 +14,7 @@ import { toast } from "sonner";
 import { buildValidationChecks } from "@/lib/indexValidationChecks";
 import { usePdfExport } from "@/hooks/usePdfExport";
 import { useDayPrices } from "@/hooks/useIndexDailyContext";
+import { sortNozzles } from "@/lib/nozzleOrder";
 
 const db = supabase as any;
 
@@ -190,6 +191,28 @@ export const IndexValidationDialog = ({ entry, open, onOpenChange, readOnly }: P
                 <Row label="Écart sur versement" value={`${formatNumber(verse - aVerser)} FCFA`} strong tone={Math.round(verse - aVerser) === 0 ? "ok" : "warn"} />
               </div>
             </div>
+
+            {!!detail?.pumps.length && (
+              <div className="overflow-x-auto rounded-lg border border-border">
+                <table className="w-full text-xs tabular-nums">
+                  <thead className="bg-muted/40 text-muted-foreground">
+                    <tr>{["Pistolet", "Index départ", "Index arrivée", "Sortie brute", "Retour cuve", "Sortie réelle (L)"].map((h, i) => <th key={h} className={`p-2 ${i ? "text-right" : "text-left"}`}>{h}</th>)}</tr>
+                  </thead>
+                  <tbody>
+                    {sortNozzles(detail.pumps.map((r: any) => ({ ...r, name: r.pumps?.name ?? "—" }))).map((r: any) => (
+                      <tr key={r.pump_id} className="border-t border-border/50">
+                        <td className="p-2 font-medium">{r.name} <span className="uppercase text-muted-foreground">{r.product_type}</span></td>
+                        <td className="p-2 text-right">{formatNumber(n(r.index_depart))}</td>
+                        <td className="p-2 text-right">{formatNumber(n(r.index_arrivee))}</td>
+                        <td className="p-2 text-right">{formatNumber(n(r.index_arrivee) - n(r.index_depart))}</td>
+                        <td className="p-2 text-right">{formatNumber(n(r.retour_cuve))}</td>
+                        <td className="p-2 text-right font-semibold">{formatNumber(n(r.liters_net ?? r.liters_sold))}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
 
             {!!detail?.tanks.length && (
               <div className="overflow-x-auto rounded-lg border border-border">
