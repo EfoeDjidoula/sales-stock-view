@@ -12,6 +12,7 @@ import { LoadPlanDialog } from "./LoadPlanDialog";
 import { SiteCheckinDialog, siteProgress } from "./SiteCheckinDialog";
 import { StationTrackingTab } from "./StationTrackingTab";
 import { VarianceDialog } from "./VarianceDialog";
+import { ThreeStocksTab } from "./ThreeStocksTab";
 import { VARIANCE_CATEGORIES } from "./variance";
 import { SupplyWorkflowModule } from "@/components/supply/SupplyWorkflowModule";
 import { Package } from "lucide-react";
@@ -246,7 +247,9 @@ export const LogisticsModule = () => {
           <TabsTrigger value="map"><MapPin className="h-4 w-4 mr-1" />9. {L("Carte & GPS", "Map & GPS")}</TabsTrigger>
           <TabsTrigger value="alerts">10. {L("Alertes", "Alerts")} {alerts.length > 0 && <Badge variant="destructive" className="ml-1">{alerts.length}</Badge>}</TabsTrigger>
           <TabsTrigger value="stations">11. {L("Suivi par station", "Station tracking")}</TabsTrigger>
+          <TabsTrigger value="three_stocks">12. {L("Bilan des 3 stocks", "3-stock balance")}</TabsTrigger>
         </TabsList>
+        <TabsContent value="three_stocks"><ThreeStocksTab /></TabsContent>
         <TabsContent value="stations"><StationTrackingTab stations={d.stations ?? []} products={d.products ?? []} /></TabsContent>
 
         <TabsContent value="trips">
