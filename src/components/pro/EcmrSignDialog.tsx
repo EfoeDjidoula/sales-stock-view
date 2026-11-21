@@ -18,7 +18,7 @@ const db = supabase as any;
 export const ROLE_LABEL: Record<string, string> = { shipper: "Expéditeur (dépôt)", carrier: "Transporteur / chauffeur", consignee: "Destinataire" };
 export const DECISION_LABEL: Record<string, string> = { signed: "Signé", accepted: "Reçu conforme", accepted_with_reserves: "Reçu avec réserves", refused: "Refusé" };
 
-function SignaturePad({ onChange }: { onChange: (png: string | null) => void }) {
+export function SignaturePad({ onChange }: { onChange: (png: string | null) => void }) {
   const ref = useRef<HTMLCanvasElement>(null);
   const drawing = useRef(false);
   const dirty = useRef(false);

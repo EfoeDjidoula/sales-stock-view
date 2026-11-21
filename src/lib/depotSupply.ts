@@ -35,3 +35,32 @@ export function orderCounters(lines: { qty_litres: number; qty_lifted?: number }
 export function sumCounters(list: Counters[]): Counters {
   return list.reduce((a, c) => ({ ordered: a.ordered + c.ordered, authorized: a.authorized + c.authorized, lifted: a.lifted + c.lifted, available: a.available + c.available }), { ordered: 0, authorized: 0, lifted: 0, available: 0 });
 }
+
+/* ---------- Bons d'enlèvement (miroir de depot_supply_action create_lifting) ---------- */
+export type LiftingStatus = "established" | "signed" | "cancelled";
+export interface PoLine { id: string; product_id: string; qty_litres: number; qty_lifted?: number }
+export interface ReservedLine { proforma_line_id: string; qty_litres: number; status: LiftingStatus }
+
+/** Solde disponible par produit = autorisé − déjà enlevé (BE signés) − réservé (BE établis non signés). */
+export function productBalances(lines: PoLine[], status: PaymentStatus | null | undefined, liftings: ReservedLine[] = []): Record<string, number> {
+  const out: Record<string, number> = {};
+  for (const l of lines) {
+    const reserved = liftings.filter((x) => x.proforma_line_id === l.id && x.status === "established").reduce((s, x) => s + (x.qty_litres || 0), 0);
+    const free = isAuthorized(status) ? (l.qty_litres || 0) - (l.qty_lifted || 0) - reserved : 0;
+    out[l.product_id] = (out[l.product_id] ?? 0) + Math.max(0, free);
+  }
+  return out;
+}
+
+export function planByProduct(plan: { product_id: string; qty_litres: number | string }[]): Record<string, number> {
+  const out: Record<string, number> = {};
+  for (const p of plan) if (p.product_id) out[p.product_id] = (out[p.product_id] ?? 0) + (Number(p.qty_litres) || 0);
+  return out;
+}
+
+/** Produits du plan qui dépassent le solde du BC (ou absents du BC). */
+export function planExcess(plan: { product_id: string; qty_litres: number | string }[], balances: Record<string, number>) {
+  return Object.entries(planByProduct(plan))
+    .filter(([pid, q]) => q > (balances[pid] ?? 0))
+    .map(([product_id, requested]) => ({ product_id, requested, available: balances[product_id] ?? 0 }));
+}

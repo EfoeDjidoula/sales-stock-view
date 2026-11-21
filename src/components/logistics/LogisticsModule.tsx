@@ -14,6 +14,7 @@ import { StationTrackingTab } from "./StationTrackingTab";
 import { VarianceDialog } from "./VarianceDialog";
 import { ThreeStocksTab } from "./ThreeStocksTab";
 import { DepotSupplyTab } from "./DepotSupplyTab";
+import { LiftingOrdersTab } from "./LiftingOrdersTab";
 import { VARIANCE_CATEGORIES } from "./variance";
 import { SupplyWorkflowModule } from "@/components/supply/SupplyWorkflowModule";
 import { Package } from "lucide-react";
@@ -35,7 +36,7 @@ type Row = Record<string, any>; // eslint-disable-line @typescript-eslint/no-exp
 export const TRIP_STATUS: Record<string, [string, string]> = {
   planned: ["Planifié", "Planned"], loading: ["Au chargement", "Loading"], loaded: ["Chargé", "Loaded"],
   in_transit: ["En transit", "In transit"], arrived: ["Arrivé", "Arrived"], unloading: ["Déchargement", "Unloading"],
-  delivered: ["Livré", "Delivered"], incident: ["Incident", "Incident"],
+  delivered: ["Livré", "Delivered"], incident: ["Incident", "Incident"], cancelled: ["Annulé", "Cancelled"],
 };
 const NEXT: Record<string, [string, string, string]> = {
   planned: ["start_loading", "Début chargement", "Start loading"],
@@ -100,8 +101,9 @@ export const LogisticsModule = () => {
       db.from("clients").select("id,name").eq("tenant_id", tenantId).order("name"),
       q("logistics_load_deliveries"),
       q("logistics_trip_events").in("action", ["rectify_delivery", "justify_variance"]).order("created_at", { ascending: false }).limit(200),
+      q("depot_lifting_orders", "trip_id,number,status"),
     ]);
-    const keys = ["trips", "carriers", "vehicles", "compartments", "drivers", "documents", "seals", "alerts", "supplies", "loads", "products", "stations", "clients", "deliveries", "corrections"];
+    const keys = ["trips", "carriers", "vehicles", "compartments", "drivers", "documents", "seals", "alerts", "supplies", "loads", "products", "stations", "clients", "deliveries", "corrections", "liftings"];
     const out: Record<string, Row[]> = {};
     res.forEach((r: Row, i: number) => { out[keys[i]] = r.data ?? []; if (r.error) console.error(keys[i], r.error); });
     setD(out);
@@ -192,7 +194,7 @@ export const LogisticsModule = () => {
   const alerts = d.alerts ?? [];
   const trips = d.trips ?? [];
   const kpis = useMemo(() => ({
-    active: trips.filter((t) => !["delivered"].includes(t.status)).length,
+    active: trips.filter((t) => !["delivered", "cancelled"].includes(t.status)).length,
     transit: trips.filter((t) => t.status === "in_transit").length,
     incident: trips.filter((t) => t.status === "incident").length,
     alerts: alerts.length,
@@ -238,20 +240,22 @@ export const LogisticsModule = () => {
       <Tabs defaultValue="depot_supply">
         <TabsList className="flex-wrap h-auto">
           <TabsTrigger value="depot_supply">1. {L("Approvisionnement dépôt (pro-formas & BC)", "Depot supply (pro-formas & POs)")}</TabsTrigger>
-          <TabsTrigger value="carriers">2. {L("Transporteurs", "Carriers")}</TabsTrigger>
-          <TabsTrigger value="vehicles">3. {L("Camions, tracteurs & citernes", "Trucks, tractors & tankers")}</TabsTrigger>
-          <TabsTrigger value="compartments">4. {L("Compartiments", "Compartments")}</TabsTrigger>
-          <TabsTrigger value="drivers">5. {L("Chauffeurs", "Drivers")}</TabsTrigger>
-          <TabsTrigger value="documents">6. {L("Documents", "Documents")}</TabsTrigger>
-          <TabsTrigger value="seals">7. {L("Scellés", "Seals")}</TabsTrigger>
-          <TabsTrigger value="supplies">8. {L("Demandes d'appro.", "Supply requests")}</TabsTrigger>
-          <TabsTrigger value="trips">9. {L("Chargements & transports", "Loadings & trips")}</TabsTrigger>
-          <TabsTrigger value="map"><MapPin className="h-4 w-4 mr-1" />10. {L("Carte & GPS", "Map & GPS")}</TabsTrigger>
-          <TabsTrigger value="alerts">11. {L("Alertes", "Alerts")} {alerts.length > 0 && <Badge variant="destructive" className="ml-1">{alerts.length}</Badge>}</TabsTrigger>
-          <TabsTrigger value="stations">12. {L("Suivi par station", "Station tracking")}</TabsTrigger>
-          <TabsTrigger value="three_stocks">13. {L("Bilan des 3 stocks", "3-stock balance")}</TabsTrigger>
+          <TabsTrigger value="liftings">2. {L("Bons d'enlèvement", "Lifting orders")}</TabsTrigger>
+          <TabsTrigger value="carriers">3. {L("Transporteurs", "Carriers")}</TabsTrigger>
+          <TabsTrigger value="vehicles">4. {L("Camions, tracteurs & citernes", "Trucks, tractors & tankers")}</TabsTrigger>
+          <TabsTrigger value="compartments">5. {L("Compartiments", "Compartments")}</TabsTrigger>
+          <TabsTrigger value="drivers">6. {L("Chauffeurs", "Drivers")}</TabsTrigger>
+          <TabsTrigger value="documents">7. {L("Documents", "Documents")}</TabsTrigger>
+          <TabsTrigger value="seals">8. {L("Scellés", "Seals")}</TabsTrigger>
+          <TabsTrigger value="supplies">9. {L("Demandes d'appro.", "Supply requests")}</TabsTrigger>
+          <TabsTrigger value="trips">10. {L("Chargements & transports", "Loadings & trips")}</TabsTrigger>
+          <TabsTrigger value="map"><MapPin className="h-4 w-4 mr-1" />11. {L("Carte & GPS", "Map & GPS")}</TabsTrigger>
+          <TabsTrigger value="alerts">12. {L("Alertes", "Alerts")} {alerts.length > 0 && <Badge variant="destructive" className="ml-1">{alerts.length}</Badge>}</TabsTrigger>
+          <TabsTrigger value="stations">13. {L("Suivi par station", "Station tracking")}</TabsTrigger>
+          <TabsTrigger value="three_stocks">14. {L("Bilan des 3 stocks", "3-stock balance")}</TabsTrigger>
         </TabsList>
         <TabsContent value="three_stocks"><ThreeStocksTab /></TabsContent>
+        <TabsContent value="liftings"><LiftingOrdersTab canWrite={canWrite} canValidate={canValidate} /></TabsContent>
         <TabsContent value="depot_supply"><DepotSupplyTab canWrite={canWrite} canValidate={canValidate} /></TabsContent>
         <TabsContent value="stations"><StationTrackingTab stations={d.stations ?? []} products={d.products ?? []} /></TabsContent>
 
@@ -276,7 +280,7 @@ export const LogisticsModule = () => {
                     return (
                       <TableRow key={t.id}>
                         <TableCell className="font-mono text-xs">{t.reference}</TableCell>
-                        <TableCell className="text-xs">{t.supply_request_id ? (d.supplies ?? []).find((s) => s.id === t.supply_request_id)?.reference ?? "✓" : "—"}</TableCell>
+                        <TableCell className="text-xs">{(d.liftings ?? []).find((b) => b.trip_id === t.id)?.number ?? (t.supply_request_id ? (d.supplies ?? []).find((s) => s.id === t.supply_request_id)?.reference ?? "✓" : "—")}</TableCell>
                         <TableCell>{name("vehicles", t.truck_id, "registration")}{t.tanker_id && ` + ${name("vehicles", t.tanker_id, "registration")}`}</TableCell>
                         <TableCell>{name("drivers", t.driver_id, "full_name")}</TableCell>
                         <TableCell className="text-xs">{fmtDt(t.eta)}</TableCell>
@@ -287,13 +291,13 @@ export const LogisticsModule = () => {
                         <TableCell><Badge variant={t.status === "incident" ? "destructive" : t.status === "delivered" ? "outline" : "default"}>{L(...TRIP_STATUS[t.status])}</Badge></TableCell>
                         <TableCell className="flex gap-1 flex-wrap">
                           <Button size="sm" variant="ghost" onClick={() => openDetail(t)}><Eye className="h-4 w-4" /></Button>
-                          {canWrite && ["planned", "loading"].includes(t.status) && <Button size="sm" variant="outline" title={L("Plan de chargement", "Loading plan")} onClick={() => setPlanTrip(t)}><Package className="h-4 w-4" /></Button>}
+                          {canWrite && ["planned", "loading"].includes(t.status) && !(d.liftings ?? []).some((b) => b.trip_id === t.id) && <Button size="sm" variant="outline" title={L("Plan de chargement", "Loading plan")} onClick={() => setPlanTrip(t)}><Package className="h-4 w-4" /></Button>}
                           {["arrived", "unloading", "delivered"].includes(t.status) && (() => { const p = siteProgress((d.loads ?? []).filter((x) => x.trip_id === t.id), (d.deliveries ?? []).filter((x) => x.trip_id === t.id)); return p.total ? <Button size="sm" variant="outline" onClick={() => setCheckTrip(t)}>{L("Sites", "Sites")} {p.done}/{p.total}</Button> : null; })()}
                           {canValidate && t.status === "delivered" && Number(t.qty_loaded) > 0 && t.qty_delivered != null && Number(t.qty_delivered) !== Number(t.qty_loaded) && <Button size="sm" variant="outline" title={L("Rectifier / justifier l'écart", "Rectify / justify variance")} onClick={() => setVarTrip(t)}><Scale className="h-4 w-4" /></Button>}
                           {canWrite && n && <Button size="sm" onClick={() => { setActionData({}); setAction({ trip: t, action: n[0], title: L(n[1], n[2]) }); }}>{L(n[1], n[2])}</Button>}
                           {canWrite && t.status === "incident" && <Button size="sm" variant="outline" onClick={() => { setActionData({ status: "in_transit" }); setAction({ trip: t, action: "resume", title: L("Reprendre", "Resume") }); }}>{L("Reprendre", "Resume")}</Button>}
-                          {canWrite && !["delivered", "incident"].includes(t.status) && <Button size="sm" variant="destructive" onClick={() => { setActionData({}); setAction({ trip: t, action: "incident", title: L("Déclarer un incident", "Report incident") }); }}><AlertTriangle className="h-4 w-4" /></Button>}
-                          {canWrite && t.status !== "delivered" && <Button size="sm" variant="outline" title={L("Position GPS manuelle", "Manual GPS position")} onClick={() => { setActionData({}); setAction({ trip: t, action: "position", title: L("Enregistrer une position", "Record position") }); }}><MapPin className="h-4 w-4" /></Button>}
+                          {canWrite && !["delivered", "incident", "cancelled"].includes(t.status) && <Button size="sm" variant="destructive" onClick={() => { setActionData({}); setAction({ trip: t, action: "incident", title: L("Déclarer un incident", "Report incident") }); }}><AlertTriangle className="h-4 w-4" /></Button>}
+                          {canWrite && !["delivered", "cancelled"].includes(t.status) && <Button size="sm" variant="outline" title={L("Position GPS manuelle", "Manual GPS position")} onClick={() => { setActionData({}); setAction({ trip: t, action: "position", title: L("Enregistrer une position", "Record position") }); }}><MapPin className="h-4 w-4" /></Button>}
                         </TableCell>
                       </TableRow>
                     );

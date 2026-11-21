@@ -498,6 +498,20 @@
       "when": 1795274942108,
       "tag": "0070_depot_proformas_purchase_orders",
       "breakpoints": true
+    },
+    {
+      "idx": 71,
+      "version": "7",
+      "when": 1795276403546,
+      "tag": "0071_depot_lifting_orders",
+      "breakpoints": true
+    },
+    {
+      "idx": 72,
+      "version": "7",
+      "when": 1795276448673,
+      "tag": "0072_lifting_guard_any_progress",
+      "breakpoints": true
     }
   ]
 }

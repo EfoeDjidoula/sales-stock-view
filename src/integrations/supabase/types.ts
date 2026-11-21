@@ -1547,6 +1547,252 @@ export type Database = {
           },
         ]
       }
+      depot_lifting_events: {
+        Row: {
+          action: string
+          author_id: string | null
+          author_name: string | null
+          country_id: string
+          created_at: string
+          data: Json | null
+          from_status: string | null
+          id: string
+          lifting_id: string
+          reason: string | null
+          tenant_id: string
+          to_status: string | null
+        }
+        Insert: {
+          action: string
+          author_id?: string | null
+          author_name?: string | null
+          country_id: string
+          created_at?: string
+          data?: Json | null
+          from_status?: string | null
+          id?: string
+          lifting_id: string
+          reason?: string | null
+          tenant_id: string
+          to_status?: string | null
+        }
+        Update: {
+          action?: string
+          author_id?: string | null
+          author_name?: string | null
+          country_id?: string
+          created_at?: string
+          data?: Json | null
+          from_status?: string | null
+          id?: string
+          lifting_id?: string
+          reason?: string | null
+          tenant_id?: string
+          to_status?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "depot_lifting_events_lifting_id_fkey"
+            columns: ["lifting_id"]
+            isOneToOne: false
+            referencedRelation: "depot_lifting_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      depot_lifting_lines: {
+        Row: {
+          country_id: string
+          id: string
+          lifting_id: string
+          product_id: string
+          proforma_line_id: string
+          qty_litres: number
+          tenant_id: string
+        }
+        Insert: {
+          country_id: string
+          id?: string
+          lifting_id: string
+          product_id: string
+          proforma_line_id: string
+          qty_litres: number
+          tenant_id: string
+        }
+        Update: {
+          country_id?: string
+          id?: string
+          lifting_id?: string
+          product_id?: string
+          proforma_line_id?: string
+          qty_litres?: number
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "depot_lifting_lines_lifting_id_fkey"
+            columns: ["lifting_id"]
+            isOneToOne: false
+            referencedRelation: "depot_lifting_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "depot_lifting_lines_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "petroleum_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "depot_lifting_lines_proforma_line_id_fkey"
+            columns: ["proforma_line_id"]
+            isOneToOne: false
+            referencedRelation: "depot_proforma_lines"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      depot_lifting_orders: {
+        Row: {
+          cancel_reason: string | null
+          cancelled_at: string | null
+          cancelled_by: string | null
+          country_id: string
+          created_at: string
+          created_by: string | null
+          depot_id: string | null
+          driver_id: string
+          id: string
+          load_mode: string
+          number: string
+          observations: string | null
+          order_id: string
+          planned_date: string
+          signature_png: string | null
+          signed_at: string | null
+          signed_by: string | null
+          signed_by_name: string | null
+          signed_role: string | null
+          status: string
+          tanker_id: string | null
+          tenant_id: string
+          total_litres: number
+          trip_id: string
+          vehicle_id: string
+        }
+        Insert: {
+          cancel_reason?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          country_id: string
+          created_at?: string
+          created_by?: string | null
+          depot_id?: string | null
+          driver_id: string
+          id?: string
+          load_mode?: string
+          number: string
+          observations?: string | null
+          order_id: string
+          planned_date?: string
+          signature_png?: string | null
+          signed_at?: string | null
+          signed_by?: string | null
+          signed_by_name?: string | null
+          signed_role?: string | null
+          status?: string
+          tanker_id?: string | null
+          tenant_id: string
+          total_litres?: number
+          trip_id: string
+          vehicle_id: string
+        }
+        Update: {
+          cancel_reason?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          country_id?: string
+          created_at?: string
+          created_by?: string | null
+          depot_id?: string | null
+          driver_id?: string
+          id?: string
+          load_mode?: string
+          number?: string
+          observations?: string | null
+          order_id?: string
+          planned_date?: string
+          signature_png?: string | null
+          signed_at?: string | null
+          signed_by?: string | null
+          signed_by_name?: string | null
+          signed_role?: string | null
+          status?: string
+          tanker_id?: string | null
+          tenant_id?: string
+          total_litres?: number
+          trip_id?: string
+          vehicle_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "depot_lifting_orders_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "countries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "depot_lifting_orders_depot_id_fkey"
+            columns: ["depot_id"]
+            isOneToOne: false
+            referencedRelation: "depots"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "depot_lifting_orders_driver_id_fkey"
+            columns: ["driver_id"]
+            isOneToOne: false
+            referencedRelation: "logistics_drivers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "depot_lifting_orders_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "depot_purchase_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "depot_lifting_orders_tanker_id_fkey"
+            columns: ["tanker_id"]
+            isOneToOne: false
+            referencedRelation: "logistics_vehicles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "depot_lifting_orders_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "depot_lifting_orders_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: true
+            referencedRelation: "logistics_trips"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "depot_lifting_orders_vehicle_id_fkey"
+            columns: ["vehicle_id"]
+            isOneToOne: false
+            referencedRelation: "logistics_vehicles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       depot_product_thresholds: {
         Row: {
           capacity_liters: number
@@ -9073,6 +9319,15 @@ export type Database = {
         Args: { _lines: Json; _note?: string; _trip: string }
         Returns: number
       }
+      logistics_driver_availability: {
+        Args: { _country: string; _tenant: string }
+        Returns: {
+          available: boolean
+          driver_id: string
+          full_name: string
+          reasons: string[]
+        }[]
+      }
       logistics_set_loads: {
         Args: { _lines: Json; _mode: string; _trip: string }
         Returns: number
@@ -9096,6 +9351,17 @@ export type Database = {
       logistics_variance_action: {
         Args: { _action: string; _data?: Json; _reason: string; _trip: string }
         Returns: number
+      }
+      logistics_vehicle_availability: {
+        Args: { _country: string; _tenant: string }
+        Returns: {
+          available: boolean
+          capacity: number
+          kind: string
+          reasons: string[]
+          registration: string
+          vehicle_id: string
+        }[]
       }
       recon_classify: {
         Args: {
