@@ -1,4 +1,10 @@
-import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { Undo2 } from "lucide-react";
+import { usePermissions } from "@/hooks/usePermissions";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
+import { Textarea } from "@/components/ui/textarea";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { ArrowRight, Droplets, History, Truck } from "lucide-react";
@@ -29,6 +35,22 @@ export const DepotageModule = () => {
   const { user } = useAuth();
   const { scopeQuery, tenantId, countryId } = useScope();
   const { depotages: legacy, loading: legacyLoading } = useDepotages();
+  const { can } = usePermissions();
+  const canFix = can("supplies.validate");
+  const qc = useQueryClient();
+  const [target, setTarget] = useState<any>(null);
+  const [reason, setReason] = useState("");
+  const [busy, setBusy] = useState(false);
+  const reverse = async () => {
+    if (!reason.trim()) return toast.error(t("Un motif est obligatoire"));
+    setBusy(true);
+    const { error } = await db.rpc("supply_reception_reverse", { _id: target.id, _reason: reason.trim() });
+    setBusy(false);
+    if (error) return toast.error(error.message);
+    toast.success(t("Dépotage annulé et stock corrigé"));
+    setTarget(null); setReason("");
+    qc.invalidateQueries();
+  };
 
   const { data: receptions = [], isLoading } = useQuery({
     queryKey: ["depotage-receptions", tenantId, countryId],
@@ -91,6 +113,7 @@ export const DepotageModule = () => {
                     <TableHead className="text-right">{t("Jauge après")}</TableHead>
                     <TableHead className="text-right">{t("Reçue")}</TableHead>
                     <TableHead className="text-right">{t("Écart")}</TableHead>
+                    {canFix && <TableHead />}
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -108,6 +131,7 @@ export const DepotageModule = () => {
                       <TableCell className="text-right tabular-nums">{fmt(r.gauge_after)} L</TableCell>
                       <TableCell className="text-right tabular-nums font-semibold">{fmt(r.qty_received)} L</TableCell>
                       <TableCell className={`text-right tabular-nums font-semibold ${Number(r.delivery_variance) ? "text-warning" : ""}`}>{fmt(r.delivery_variance)} L</TableCell>
+                      {canFix && <TableCell><Button size="sm" variant="ghost" className="gap-1 text-destructive" onClick={() => setTarget(r)}><Undo2 className="h-4 w-4" />{t("Annuler")}</Button></TableCell>}
                     </TableRow>
                   ))}
                 </TableBody>
@@ -116,6 +140,22 @@ export const DepotageModule = () => {
           )}
         </CardContent>
       </Card>
+
+      <Dialog open={!!target} onOpenChange={(o) => { if (!o) { setTarget(null); setReason(""); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t("Annuler ce dépotage")}</DialogTitle>
+            <DialogDescription>
+              {target?.reference} · {target?.tanks?.name} · {fmt(target?.qty_received)} L. {t("Le stock de la cuve sera diminué d'autant par un ajustement tracé ; l'opération reste visible dans l'historique. Ressaisissez ensuite la bonne réception en Logistique si nécessaire.")}
+            </DialogDescription>
+          </DialogHeader>
+          <Textarea placeholder={t("Motif de l'annulation (obligatoire)")} value={reason} onChange={(e) => setReason(e.target.value)} />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setTarget(null)}>{t("Fermer")}</Button>
+            <Button variant="destructive" disabled={busy} onClick={reverse}>{t("Confirmer l'annulation")}</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {(legacyLoading || legacy.length > 0) && (
         <Card>

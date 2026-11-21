@@ -414,6 +414,13 @@
       "when": 1795080878866,
       "tag": "0058_closure_sales_include_zero_volume_nozzles",
       "breakpoints": true
+    },
+    {
+      "idx": 59,
+      "version": "7",
+      "when": 1795222909412,
+      "tag": "0059_supply_reception_reverse",
+      "breakpoints": true
     }
   ]
 }

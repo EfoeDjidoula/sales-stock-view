@@ -8679,6 +8679,10 @@ export type Database = {
         }
         Returns: number
       }
+      supply_reception_reverse: {
+        Args: { _id: string; _reason: string }
+        Returns: string
+      }
       supply_transition: {
         Args: { _action: string; _data?: Json; _id: string; _reason?: string }
         Returns: string
