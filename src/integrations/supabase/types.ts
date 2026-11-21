@@ -3365,6 +3365,7 @@ export type Database = {
           country_id: string | null
           created_at: string
           depotage: number
+          depotage_reception: number
           depotage_refs: string | null
           ecart: number | null
           entry_date: string
@@ -3385,6 +3386,7 @@ export type Database = {
           country_id?: string | null
           created_at?: string
           depotage?: number
+          depotage_reception?: number
           depotage_refs?: string | null
           ecart?: number | null
           entry_date: string
@@ -3405,6 +3407,7 @@ export type Database = {
           country_id?: string | null
           created_at?: string
           depotage?: number
+          depotage_reception?: number
           depotage_refs?: string | null
           ecart?: number | null
           entry_date?: string
@@ -8656,6 +8659,10 @@ export type Database = {
       reconciliation_action: {
         Args: { _action: string; _comment: string; _id: string }
         Returns: string
+      }
+      refresh_pending_tank_readings: {
+        Args: { _at: string; _tank: string }
+        Returns: number
       }
       reject_index_entry: {
         Args: { _id: string; _reason: string }

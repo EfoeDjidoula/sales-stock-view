@@ -1153,7 +1153,7 @@ const IndexEntry = () => {
                     Synthèse du suivi stock
                   </CardTitle>
                   <CardDescription>
-                    Stock clôture théorique = ouverture + dépotages validés − sorties réelles ; écart = jauge − stock théorique.
+                    Stock clôture théorique = ouverture + dépotages au volume chargé (BL) − sorties réelles ; écart = jauge − stock théorique, dont écart camion (constaté − BL).
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="overflow-x-auto">
@@ -1167,6 +1167,7 @@ const IndexEntry = () => {
                         <th className="text-right">Clôture théo.</th>
                         <th className="text-right">Jauge</th>
                         <th className="text-right">Écart</th>
+                        <th className="text-right">dont camion</th>
                       </tr>
                     </thead>
                     <tbody>
@@ -1187,6 +1188,12 @@ const IndexEntry = () => {
                             }`}
                           >
                             {r.jaugeFilled ? signed(r.bal.ecart) : "—"}
+                          </td>
+                          <td
+                            className={`text-right ${r.ctx?.ecartCamion ? (r.ctx.ecartCamion < 0 ? "text-destructive" : "text-success") : "text-muted-foreground"}`}
+                            title={r.ctx?.receptions.map((x) => `BL ${x.bl ?? "—"} : chargé ${formatNumber(x.qty)} L, constaté ${formatNumber(x.qtyConstatee)} L`).join("\n")}
+                          >
+                            {r.ctx?.receptions.length ? signed(r.ctx.ecartCamion) : "—"}
                           </td>
                         </tr>
                       ))}

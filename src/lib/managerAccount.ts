@@ -3,7 +3,8 @@
  *
  * Bilan matières par carburant, sur une station et une plage de dates :
  *   Stock initial      = Σ stock d'ouverture des cuves au premier jour saisi de la période
- *   Réceptions         = Σ quantités réceptionnées en cuve (réceptions logistiques validées)
+ *   Dépotages          = Σ quantités chargées (BL) des réceptions logistiques validées
+ *                        (repli sur le volume constaté en cuve si aucun BL chiffré)
  *   Total disponible   = Stock initial + Réceptions
  *   Ventes             = Σ sorties nettes aux pistolets (index arrivée − index départ − retour en cuve)
  *   Stock théorique    = Total disponible − Ventes
@@ -13,7 +14,8 @@
  *
  * Les trois niveaux de stock amont restent séparés : commandé (qty_approved),
  * enlevé au dépôt (qty_loaded, quantité facturée du BL) et réceptionné en cuve (qty_received).
- * Seul le réceptionné entre dans le bilan matières.
+ * Règle de gestion : le bilan matières prend le volume BL ; l'écart camion (constaté − BL)
+ * reste affiché à part et se retrouve dans l'écart de la station.
  */
 import { nozzleOutput, num } from "@/lib/indexModel";
 
@@ -84,7 +86,10 @@ export const classifyVariance = (pct: number | null, tolerancePct: number): Verd
 
 export interface StockBalance {
   stockInitial: number;
+  /** Dépotages au volume chargé (BL) — entrent dans le bilan matières. */
   receptions: number;
+  /** Volume constaté en cuve (jauges) pour les mêmes réceptions. */
+  receptionnes: number;
   totalDisponible: number;
   ventes: number;
   stockTheorique: number;
@@ -125,7 +130,8 @@ export function stockBalance(
   const depotagesSaisis = r.reduce((s, x) => s + num(x.depotage), 0);
 
   const rec = receptions.filter((x) => x.fuel === fuel);
-  const receptionsQty = rec.reduce((s, x) => s + num(x.qty_received), 0);
+  const receptionnes = rec.reduce((s, x) => s + num(x.qty_received), 0);
+  const receptionsQty = rec.reduce((s, x) => s + (num(x.qty_loaded) > 0 ? num(x.qty_loaded) : num(x.qty_received)), 0);
   const commande = rec.reduce((s, x) => s + num(x.qty_approved), 0);
   const enleve = rec.reduce((s, x) => s + num(x.qty_loaded), 0);
   const livreDeclare = rec.reduce((s, x) => s + num(x.qty_delivered), 0);
@@ -141,6 +147,7 @@ export function stockBalance(
   return {
     stockInitial: round(stockInitial),
     receptions: round(receptionsQty),
+    receptionnes: round(receptionnes),
     totalDisponible: round(totalDisponible),
     ventes: round(ventes),
     stockTheorique: round(stockTheorique),
@@ -152,7 +159,7 @@ export function stockBalance(
     commande: round(commande),
     enleve: round(enleve),
     livreDeclare: round(livreDeclare),
-    ecartTransport: round(receptionsQty - enleve),
+    ecartTransport: round(receptionnes - enleve),
   };
 }
 

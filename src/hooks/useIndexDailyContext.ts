@@ -40,8 +40,13 @@ export interface TankDayContext {
   /** Stock d'ouverture connu (jauge du dernier bilan), null si aucun historique. */
   stockOuverture: number | null;
   ouvertureSource: string | null;
+  /** Dépotages du jour au volume chargé (BL) — règle de gestion du bilan de cuve. */
   depotage: number;
-  receptions: { reference: string; bl: string | null; driver: string | null; qty: number; variance: number | null }[];
+  /** Volume constaté en cuve (jauge après − avant) pour les mêmes réceptions. */
+  depotageConstate: number;
+  /** Écart camion = constaté − BL (négatif = manquant à la livraison). */
+  ecartCamion: number;
+  receptions: { reference: string; bl: string | null; driver: string | null; qty: number; qtyConstatee: number; variance: number | null }[];
 }
 
 /**
@@ -59,7 +64,7 @@ export const useTankDayContext = (stationId?: string, date?: string, tanks: Tank
     queryFn: async () => {
       const out: Record<string, TankDayContext> = {};
       if (!stationId || !date || !tanks.length) return out;
-      for (const t of tanks) out[t.id] = { stockOuverture: null, ouvertureSource: null, depotage: 0, receptions: [] };
+      for (const t of tanks) out[t.id] = { stockOuverture: null, ouvertureSource: null, depotage: 0, depotageConstate: 0, ecartCamion: 0, receptions: [] };
 
       // 1. Dernier bilan cuve connu avant la date
       const { data: prevReadings } = await scopeQuery(
@@ -111,7 +116,7 @@ export const useTankDayContext = (stationId?: string, date?: string, tanks: Tank
       const { data: recs } = await scopeQuery(
         db
           .from("supply_requests")
-          .select("reference, tank_id, qty_received, received_at, bl_number, driver_name, delivery_variance, status"),
+          .select("reference, tank_id, qty_loaded, qty_received, received_at, bl_number, driver_name, delivery_variance, status"),
       )
         .eq("station_id", stationId)
         .eq("status", "received")
@@ -121,14 +126,18 @@ export const useTankDayContext = (stationId?: string, date?: string, tanks: Tank
         if (!r.tank_id || !out[r.tank_id] || !r.received_at) continue;
         const local = new Date(r.received_at).toLocaleDateString("en-CA", { timeZone: tz });
         if (local !== date) continue;
-        const qty = Number(r.qty_received) || 0;
+        const constate = Number(r.qty_received) || 0;
+        const qty = Number(r.qty_loaded) > 0 ? Number(r.qty_loaded) : constate;
         out[r.tank_id].depotage += qty;
+        out[r.tank_id].depotageConstate += constate;
+        out[r.tank_id].ecartCamion += constate - qty;
         out[r.tank_id].receptions.push({
           reference: r.reference,
           bl: r.bl_number,
           driver: r.driver_name,
           qty,
-          variance: r.delivery_variance == null ? null : Number(r.delivery_variance),
+          qtyConstatee: constate,
+          variance: constate - qty,
         });
       }
       return out;

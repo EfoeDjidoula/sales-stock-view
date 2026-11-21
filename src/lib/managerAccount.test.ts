@@ -20,8 +20,9 @@ describe("compte des gérants — bilan matières", () => {
     expect(b.stockPhysique).toBe(989);
   });
 
-  it("ne compte que la quantité réceptionnée en cuve, jamais la commandée ni l'enlevée", () => {
-    expect(b.receptions).toBe(8922);
+  it("compte le dépotage au volume chargé (BL), jamais la quantité commandée", () => {
+    expect(b.receptions).toBe(9000);
+    expect(b.receptionnes).toBe(8922);
     expect(b.commande).toBe(9000);
     expect(b.enleve).toBe(9000);
     expect(b.ecartTransport).toBe(-78);
@@ -33,8 +34,13 @@ describe("compte des gérants — bilan matières", () => {
   });
 
   it("écart = stock physique − (stock initial + réceptions − ventes)", () => {
-    expect(b.stockTheorique).toBe(8923 + 8922 - 16650);
-    expect(b.ecart).toBe(989 - (8923 + 8922 - 16650));
+    expect(b.stockTheorique).toBe(8923 + 9000 - 16650);
+    expect(b.ecart).toBe(989 - (8923 + 9000 - 16650));
+  });
+
+  it("se replie sur le volume constaté quand aucun BL n'est chiffré", () => {
+    const r2: ReceptionRow[] = [{ date: "2026-11-15", fuel: "super", qty_approved: null, qty_loaded: null, qty_delivered: null, qty_received: 4000 }];
+    expect(stockBalance("super", readings, pumps, r2, 0.3).receptions).toBe(4000);
   });
 });
 

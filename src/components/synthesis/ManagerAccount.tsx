@@ -50,7 +50,7 @@ async function fetchAll<T>(build: (from: number, to: number) => Promise<{ data: 
 
 const BALANCE_ROWS: { key: keyof StockBalance; label: string; strong?: boolean; hint?: string }[] = [
   { key: "stockInitial", label: "Stock initial (jauge d'ouverture)" },
-  { key: "receptions", label: "+ Réceptions en cuve", hint: "Réceptions logistiques validées" },
+  { key: "receptions", label: "+ Dépotages (volume chargé BL)", hint: "Réceptions logistiques validées, au volume du BL ; l'écart camion se retrouve dans l'écart" },
   { key: "totalDisponible", label: "= Total disponible", strong: true },
   { key: "ventes", label: "− Ventes (sorties nettes pistolets)" },
   { key: "stockTheorique", label: "= Stock théorique", strong: true },
@@ -318,7 +318,7 @@ export default function ManagerAccount() {
                       <TableRow key={f} className="bg-muted/30 font-semibold">
                         <TableCell colSpan={4}>Total {FUEL_LABEL[f]}</TableCell>
                         <TableCell className="text-right tabular-nums">{fmt(b.commande)}</TableCell><TableCell className="text-right tabular-nums">{fmt(b.enleve)}</TableCell>
-                        <TableCell className="text-right tabular-nums">{fmt(b.receptions)}</TableCell><TableCell className="text-right tabular-nums">{fmt(b.ecartTransport)}</TableCell>
+                        <TableCell className="text-right tabular-nums">{fmt(b.receptionnes)}</TableCell><TableCell className="text-right tabular-nums">{fmt(b.ecartTransport)}</TableCell>
                       </TableRow>
                     ); })}
                   </TableBody>

@@ -58,7 +58,7 @@ export const DepotageModule = () => {
     queryFn: async () => {
       const { data, error } = await scopeQuery(
         db.from("supply_requests").select(
-          "id, reference, received_at, qty_delivered, qty_received, gauge_before, gauge_after, delivery_variance, bl_number, driver_name, vehicle_registration, stations(name), tanks(name), petroleum_products(name)",
+          "id, reference, received_at, qty_loaded, qty_delivered, qty_received, gauge_before, gauge_after, delivery_variance, bl_number, driver_name, vehicle_registration, stations(name), tanks(name), petroleum_products(name)",
         ),
       )
         .eq("status", "received")
@@ -108,11 +108,11 @@ export const DepotageModule = () => {
                     <TableHead>{t("Produit")}</TableHead>
                     <TableHead>{t("Camion")}</TableHead>
                     <TableHead>BL</TableHead>
-                    <TableHead className="text-right">{t("Livrée")}</TableHead>
+                    <TableHead className="text-right">{t("Dépotage (BL chargé)")}</TableHead>
                     <TableHead className="text-right">{t("Jauge avant")}</TableHead>
                     <TableHead className="text-right">{t("Jauge après")}</TableHead>
-                    <TableHead className="text-right">{t("Reçue")}</TableHead>
-                    <TableHead className="text-right">{t("Écart")}</TableHead>
+                    <TableHead className="text-right">{t("Constatée")}</TableHead>
+                    <TableHead className="text-right">{t("Écart camion")}</TableHead>
                     {canFix && <TableHead />}
                   </TableRow>
                 </TableHeader>
@@ -126,11 +126,11 @@ export const DepotageModule = () => {
                       <TableCell>{r.petroleum_products?.name ?? "—"}</TableCell>
                       <TableCell>{r.vehicle_registration ?? "—"}{r.driver_name ? ` · ${r.driver_name}` : ""}</TableCell>
                       <TableCell>{r.bl_number ?? "—"}</TableCell>
-                      <TableCell className="text-right tabular-nums">{fmt(r.qty_delivered)} L</TableCell>
+                      <TableCell className="text-right tabular-nums font-semibold">{fmt(Number(r.qty_loaded) > 0 ? r.qty_loaded : r.qty_received)} L</TableCell>
                       <TableCell className="text-right tabular-nums">{fmt(r.gauge_before)} L</TableCell>
                       <TableCell className="text-right tabular-nums">{fmt(r.gauge_after)} L</TableCell>
-                      <TableCell className="text-right tabular-nums font-semibold">{fmt(r.qty_received)} L</TableCell>
-                      <TableCell className={`text-right tabular-nums font-semibold ${Number(r.delivery_variance) ? "text-warning" : ""}`}>{fmt(r.delivery_variance)} L</TableCell>
+                      <TableCell className="text-right tabular-nums">{fmt(r.qty_received)} L</TableCell>
+                      {(() => { const gap = Number(r.qty_loaded) > 0 ? (Number(r.qty_received) || 0) - Number(r.qty_loaded) : 0; return <TableCell className={`text-right tabular-nums font-semibold ${gap ? "text-warning" : ""}`}>{fmt(gap)} L</TableCell>; })()}
                       {canFix && <TableCell><Button size="sm" variant="ghost" className="gap-1 text-destructive" onClick={() => setTarget(r)}><Undo2 className="h-4 w-4" />{t("Annuler")}</Button></TableCell>}
                     </TableRow>
                   ))}
@@ -146,7 +146,7 @@ export const DepotageModule = () => {
           <DialogHeader>
             <DialogTitle>{t("Annuler ce dépotage")}</DialogTitle>
             <DialogDescription>
-              {target?.reference} · {target?.tanks?.name} · {fmt(target?.qty_received)} L. {t("Le stock de la cuve sera diminué d'autant par un ajustement tracé ; l'opération reste visible dans l'historique. Ressaisissez ensuite la bonne réception en Logistique si nécessaire.")}
+              {target?.reference} · {target?.tanks?.name} · {fmt(Number(target?.qty_loaded) > 0 ? target?.qty_loaded : target?.qty_received)} L. {t("Le stock de la cuve sera diminué d'autant par un ajustement tracé ; l'opération reste visible dans l'historique. Ressaisissez ensuite la bonne réception en Logistique si nécessaire.")}
             </DialogDescription>
           </DialogHeader>
           <Textarea placeholder={t("Motif de l'annulation (obligatoire)")} value={reason} onChange={(e) => setReason(e.target.value)} />

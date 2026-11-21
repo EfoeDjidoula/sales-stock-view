@@ -52,7 +52,7 @@ export const IndexValidationDialog = ({ entry, open, onOpenChange, readOnly }: P
     queryFn: async () => {
       const [pumps, tanks, closure, prior] = await Promise.all([
         db.from("pump_index_entries").select("pump_id, product_type, index_depart, index_arrivee, liters_net, liters_sold, retour_cuve, pumps(name)").eq("entry_id", entry!.id),
-        db.from("index_tank_readings").select("tank_id, product_type, stock_ouverture, depotage, sortie, stock_cloture, jauge, ecart, tanks(name)").eq("entry_id", entry!.id),
+        db.from("index_tank_readings").select("tank_id, product_type, stock_ouverture, depotage, depotage_reception, sortie, stock_cloture, jauge, ecart, tanks(name)").eq("entry_id", entry!.id),
         db.from("daily_closures").select("id, status, source").eq("station_id", entry!.station_id).eq("closure_date", entry!.entry_date).maybeSingle(),
         db.from("index_entries").select("id", { count: "exact", head: true }).eq("station_id", entry!.station_id).lt("entry_date", entry!.entry_date).neq("status", "valide"),
       ]);
@@ -218,7 +218,7 @@ export const IndexValidationDialog = ({ entry, open, onOpenChange, readOnly }: P
               <div className="overflow-x-auto rounded-lg border border-border">
                 <table className="w-full text-xs tabular-nums">
                   <thead className="bg-muted/40 text-muted-foreground">
-                    <tr>{["Cuve", "Ouverture", "Dépotage", "Sorties", "Théorique", "Jauge", "Écart"].map((h, i) => <th key={h} className={`p-2 ${i ? "text-right" : "text-left"}`}>{h}</th>)}</tr>
+                    <tr>{["Cuve", "Ouverture", "Dépotage (BL)", "Sorties", "Théorique", "Jauge", "Écart", "dont camion"].map((h, i) => <th key={h} className={`p-2 ${i ? "text-right" : "text-left"}`}>{h}</th>)}</tr>
                   </thead>
                   <tbody>
                     {detail.tanks.map((t: any) => (
@@ -230,6 +230,7 @@ export const IndexValidationDialog = ({ entry, open, onOpenChange, readOnly }: P
                         <td className="p-2 text-right">{formatNumber(n(t.stock_cloture))}</td>
                         <td className="p-2 text-right">{t.jauge == null ? "—" : formatNumber(n(t.jauge))}</td>
                         <td className={`p-2 text-right font-semibold ${n(t.ecart) === 0 ? "" : "text-warning"}`}>{t.ecart == null ? "—" : formatNumber(n(t.ecart))}</td>
+                        <td className={`p-2 text-right ${n(t.depotage_reception) - n(t.depotage) < 0 ? "text-destructive" : "text-muted-foreground"}`}>{n(t.depotage_reception) > 0 ? formatNumber(n(t.depotage_reception) - n(t.depotage)) : "—"}</td>
                       </tr>
                     ))}
                   </tbody>

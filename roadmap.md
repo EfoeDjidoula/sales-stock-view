@@ -42,8 +42,8 @@
 - [x] Fenêtres Crayon et Bouclier : tous les pistolets configurés, sans plafond (S1…Sn, G1…Gn).
 - [x] Papier à en-tête sur tous les PDF (logo, société, descriptif ; pied : IFU, banque, téléphone ; éditeur à droite) + champs IFU/banque dans l'identité société.
 - [x] Calage du stock FIDJROSSÈ au 15/11 (ventes manquantes passées + ajustement d'ouverture) ; registre = bilans de cuve.
-- [ ] Dépotage au volume BL (chargé) + écart transporteur séparé.
-- [ ] Cascade automatique annulation réception → ligne d'index en attente.
+- [x] Dépotage au volume BL (chargé) + écart camion séparé (saisie, validation N+1, Dépotages, Compte des gérants).
+- [x] Cascade automatique annulation réception → ligne d'index en attente (refus si la journée est déjà validée N+1).
 
 ## Priorité 2 — États de synthèse
 - [ ] Arrêté des comptes, récaps hebdo/mensuel, fiches d'inventaire.
