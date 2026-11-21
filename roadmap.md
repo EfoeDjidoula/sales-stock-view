@@ -51,3 +51,6 @@
 
 ## Priorité 3 — Logistique
 - [x] Rectification par compartiment / justification des écarts de livraison (outil livré ; TRP-20261010-B04F5F reste à traiter par l'utilisateur avec les quantités réelles).
+
+## SaaS
+- [x] Consolidation YATT & CO ENERGY : 1 société, 4 pays (Bénin, Togo, Burkina, Côte d'Ivoire), anciennes sociétés vides supprimées, structures de prix uniques par société + pays.

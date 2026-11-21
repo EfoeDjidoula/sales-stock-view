@@ -38,6 +38,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
+import { useCountry } from "@/hooks/useCountry";
 import {
   Upload,
   FileSpreadsheet,
@@ -64,6 +65,7 @@ const formatDateFr = (d: string) =>
 export const PriceStructureModule = () => {
   const { structures, loading, importStructure, toggleActive, deleteStructure } =
     usePriceStructures();
+  const { country } = useCountry();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [importOpen, setImportOpen] = useState(false);
@@ -117,8 +119,8 @@ export const PriceStructureModule = () => {
             Structure de prix
           </h2>
           <p className="text-sm text-muted-foreground">
-            Base des structures de prix par période (Bénin). Les prix de vente Super et Gasoil en
-            découlent.
+            Base des structures de prix par période{country ? ` (${country.name})` : ""}. Les prix de vente
+            Super et Gasoil en découlent.
           </p>
         </div>
         <input

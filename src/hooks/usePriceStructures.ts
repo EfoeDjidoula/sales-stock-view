@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { toast } from "sonner";
 import { useScope } from "@/hooks/useScope";
+import { useCountry } from "@/hooks/useCountry";
 
 import ExcelJS from "exceljs";
 
@@ -144,6 +145,7 @@ export const parsePriceStructureFile = async (file: File): Promise<ParsedPriceSt
 export const usePriceStructures = () => {
   const { user } = useAuth();
   const { scopeQuery, scopeRow, tenantId, countryId } = useScope();
+  const { country } = useCountry();
   const [structures, setStructures] = useState<PriceStructure[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -165,13 +167,17 @@ export const usePriceStructures = () => {
 
   const importStructure = async (parsed: ParsedPriceStructure, label?: string) => {
     if (!user) return null;
+    if (!tenantId || !countryId || !country) {
+      toast.error("Choisissez d'abord le pays de travail");
+      return null;
+    }
     try {
       const { data, error } = await supabase
         .from("price_structures")
         .upsert(
           scopeRow({
             user_id: user.id,
-            country: "BJ",
+            country: country.iso_code,
             effective_date: parsed.effective_date,
             label: label ?? null,
             super_price: parsed.super_price,
@@ -179,7 +185,7 @@ export const usePriceStructures = () => {
             elements: parsed.elements as unknown as any,
             is_active: true,
           }) as any,
-          { onConflict: "country,effective_date" }
+          { onConflict: "tenant_id,country_id,effective_date" }
         )
         .select()
         .single();

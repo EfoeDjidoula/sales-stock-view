@@ -32,3 +32,4 @@
 - Report e-mails go only to the caller's own address (send-report-email); why: app emails are one-recipient, user-triggered.
 - PDF letterhead drawn centrally by src/lib/pdf.ts + pdfLetterhead.ts; why: no per-report code.
 - Nozzles/tanks listed from configured rows (src/lib/nozzleOrder.ts); why: any count per product.
+- Price structures: unique per tenant_id + country_id + effective_date (country text = derived ISO code); why: one company can price each of its countries independently.
