@@ -38,7 +38,7 @@ import {
   X,
   Gauge,
 } from "lucide-react";
-import { FUEL_PRICES } from "@/config/prices";
+import { fallbackFuelPrices } from "@/config/prices";
 import { usePdfExport } from "@/hooks/usePdfExport";
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
@@ -135,9 +135,11 @@ import { useLicenseState } from "@/hooks/useLicenseState";
 import { LicenseBanner, LicenseBlockedScreen } from "@/components/license/LicenseBanner";
 import { useBranding } from "@/hooks/useBranding";
 import { AccessDenied } from "@/components/AccessDenied";
+import { useCountry } from "@/hooks/useCountry";
 
 const IndexEntry = () => {
   const brand = useBranding();
+  const { country } = useCountry();
   const { t } = useLanguage();
   const { isModuleEnabled, isLoading: modulesLoading } = useModules();
   const { data: dbStations } = useStations();
@@ -269,7 +271,7 @@ const IndexEntry = () => {
 
   // Prix du jour, stock d'ouverture + dépotages validés par cuve, saisie existante du jour
   const { data: dayPrices } = useDayPrices(selectedDate);
-  const prices = dayPrices ?? { super: FUEL_PRICES.SUPER as number, gasoil: FUEL_PRICES.GASOIL as number, source: "Prix par défaut" };
+  const prices = dayPrices ?? { ...fallbackFuelPrices(country?.iso_code), source: "Prix par défaut" };
   const { data: tankContext = {} } = useTankDayContext(selectedStation?.id, selectedDate, tanksWithPumps);
   const { data: existingDay } = useExistingDayEntry(selectedStation?.id, selectedDate);
 
@@ -1047,7 +1049,7 @@ const IndexEntry = () => {
                   size="sm"
                   className="shrink-0 gap-2"
                   disabled={!selectedStation || cascade.venteGlobale <= 0}
-                  onClick={() => exportPdf(buildRecap())}
+                  onClick={() => { if (!prices.super && !prices.gasoil) { toast.error(`Aucune structure de prix en vigueur pour ${country?.name ?? "ce pays"} à cette date`, { description: "Importez ou activez la structure de prix du pays avant d'éditer le récapitulatif." }); return; } exportPdf(buildRecap()); }}
                 >
                   <FileDown className="w-4 h-4" />
                   Export PDF

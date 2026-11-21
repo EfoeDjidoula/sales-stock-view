@@ -34,7 +34,7 @@ const val = (el: PriceElement | undefined, product: ProductKey): number => {
 
 /**
  * Dérive la ventilation fiscale (base taxable, TVA, base exonérée) d'un produit
- * à partir de la structure de prix officielle du Bénin.
+ * à partir de la structure de prix officielle du pays de travail.
  */
 export const getTaxBreakdown = (structure: PriceStructure, product: ProductKey): TaxBreakdown => {
   const ttc = product === "super" ? structure.super_price : structure.gasoil_price;
@@ -116,6 +116,8 @@ export interface ProformaMeta {
   date: string; // YYYY-MM-DD
   client?: ProformaClientInfo | null;
   structureLabel?: string | null;
+  /** Pays de la structure de prix (pays de travail). */
+  countryName?: string | null;
 }
 
 export const exportProformaPdf = (
@@ -267,7 +269,7 @@ export const exportProformaPdf = (
   doc.setFontSize(8);
   doc.setTextColor(...mutedColor);
   doc.text(
-    "Facture proforma sans valeur comptable - Prix basés sur la structure officielle en vigueur au Bénin.",
+    `Facture proforma sans valeur comptable - Prix basés sur la structure officielle en vigueur${meta.countryName ? ` (${meta.countryName})` : ""}.`,
     marginX,
     y
   );

@@ -4,7 +4,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useScope } from "@/hooks/useScope";
 import { usePermissions } from "@/hooks/usePermissions";
 import { usePlatformAdmin } from "@/hooks/usePlatformAdmin";
-import { FUEL_PRICES } from "@/config/prices";
+import { fallbackFuelPrices } from "@/config/prices";
+import { useCountry } from "@/hooks/useCountry";
 import { toast } from "sonner";
 import { Loader2, Save, Send, Check, X, RotateCcw, Plus, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -38,6 +39,7 @@ interface Line { nozzle: Row; index_start: string; index_end: string; volume: st
 export const SalesClosureModule = () => {
   const { t, language } = useLanguage();
   const { tenantId, countryId, scopeQuery } = useScope();
+  const { country: workCountry } = useCountry();
   const { can } = usePermissions();
   const { isPlatformAdmin } = usePlatformAdmin();
   const canWrite = isPlatformAdmin || can("sales", "create") || can("sales", "edit");
@@ -128,8 +130,9 @@ export const SalesClosureModule = () => {
       const exByPump = Object.fromEntries(existing.filter((r) => !r.nozzle_id && r.pump_id).map((r) => [r.pump_id, r]));
       setLines(nozzles.map((n: Row) => {
         const e = exMap[n.id] ?? exByPump[n.pump_id];
+        const fb = fallbackFuelPrices(workCountry?.iso_code);
         const defPrice = isGasoil(products[n.product_id])
-          ? (price?.gasoil_price || FUEL_PRICES.GASOIL) : (price?.super_price || FUEL_PRICES.SUPER);
+          ? (price?.gasoil_price || fb.gasoil) : (price?.super_price || fb.super);
         return {
           nozzle: n,
           index_start: e?.index_start != null ? String(e.index_start) : (n.id in prevMap ? String(prevMap[n.id]) : ""),
@@ -143,7 +146,7 @@ export const SalesClosureModule = () => {
       const { data: lv } = await db.from("stock_levels").select("*").eq("location_type", "station").eq("station_id", stationId);
       setLevels(lv ?? []);
     } finally { setLoading(false); }
-  }, [stationId, date, products, scopeQuery]);
+  }, [stationId, date, products, scopeQuery, workCountry?.iso_code]);
 
   useEffect(() => { load(); }, [load]);
 

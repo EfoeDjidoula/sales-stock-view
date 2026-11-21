@@ -1,5 +1,6 @@
 import { useMemo, useState } from "react";
 import { usePriceStructures, PriceStructure } from "@/hooks/usePriceStructures";
+import { useCountry } from "@/hooks/useCountry";
 import { useClients } from "@/hooks/useClients";
 import {
   getTaxBreakdown,
@@ -50,6 +51,7 @@ const genNumber = () => {
 
 export const ProformaModule = () => {
   const { structures, loading } = usePriceStructures();
+  const { country } = useCountry();
   const { clients, loading: clientsLoading } = useClients();
 
   const activeStructures = useMemo(
@@ -110,6 +112,7 @@ export const ProformaModule = () => {
       number,
       date,
       structureLabel: structure.label || `Structure ${structure.country}`,
+      countryName: country?.name ?? null,
       client: selectedClient
         ? {
             name: selectedClient.name,
@@ -141,7 +144,7 @@ export const ProformaModule = () => {
             Proforma
           </h2>
           <p className="text-sm text-muted-foreground">
-            Établissez une facture proforma à partir de la structure de prix officielle (Bénin) :
+            Établissez une facture proforma à partir de la structure de prix officielle ({country?.name ?? "pays de travail"}) :
             base taxable, base exonérée et TVA.
           </p>
         </div>

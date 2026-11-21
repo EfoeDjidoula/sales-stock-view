@@ -58,3 +58,4 @@
 - [x] Création de compte : choisir le ou les pays d'intervention.
 - [x] Droits et modules : module + droits « États de synthèse », libellés manquants dans la matrice, liste complète des modules YATT.
 - [x] Identité légale par pays (raison sociale, adresse, IFU, banque, téléphone) utilisée sur les rapports PDF selon le pays actif.
+- [x] Rapports PDF/Excel : prix de la structure du pays de travail (plus de repli sur les prix du Bénin pour les autres pays) + publication pour l'import des structures.

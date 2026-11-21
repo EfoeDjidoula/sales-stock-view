@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useScope } from "@/hooks/useScope";
 import { useCountry } from "@/hooks/useCountry";
-import { FUEL_PRICES } from "@/config/prices";
+import { fallbackFuelPrices } from "@/config/prices";
 import type { Tank } from "@/hooks/useTanks";
 
 const db = supabase as any;
@@ -12,9 +12,12 @@ const db = supabase as any;
 export const useDayPrices = (date?: string) => {
   const { user } = useAuth();
   const { scopeQuery, tenantId, countryId } = useScope();
+  const { country } = useCountry();
+  const iso = country?.iso_code ?? null;
   return useQuery({
-    queryKey: ["day-prices", date, tenantId, countryId],
+    queryKey: ["day-prices", date, tenantId, countryId, iso],
     queryFn: async () => {
+      const fb = fallbackFuelPrices(iso);
       const { data } = await scopeQuery(
         db.from("price_structures").select("super_price,gasoil_price,effective_date,label"),
       )
@@ -25,12 +28,12 @@ export const useDayPrices = (date?: string) => {
       const p = (data || [])[0];
       if (p && (Number(p.super_price) > 0 || Number(p.gasoil_price) > 0)) {
         return {
-          super: Number(p.super_price) || FUEL_PRICES.SUPER,
-          gasoil: Number(p.gasoil_price) || FUEL_PRICES.GASOIL,
+          super: Number(p.super_price) || fb.super,
+          gasoil: Number(p.gasoil_price) || fb.gasoil,
           source: `Structure de prix du ${new Date(p.effective_date).toLocaleDateString("fr-FR")}`,
         };
       }
-      return { super: FUEL_PRICES.SUPER as number, gasoil: FUEL_PRICES.GASOIL as number, source: "Prix par défaut" };
+      return { super: fb.super, gasoil: fb.gasoil, source: "Prix par défaut" };
     },
     enabled: !!user && !!date,
   });

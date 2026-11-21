@@ -4,7 +4,7 @@ import { useScope } from "@/hooks/useScope";
 import { useCountry } from "@/hooks/useCountry";
 import { addDays } from "@/lib/reports";
 import { localDay } from "@/lib/accountClosing";
-import { FUEL_PRICES } from "@/config/prices";
+import { fallbackFuelPrices } from "@/config/prices";
 import { priceResolver, type InvReading, type InvReception, type InvTank, type PriceStructure, type PumpEntryRow, type SalesEntry } from "@/lib/ecap";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -56,7 +56,7 @@ export function useSynthesisPeriod(from: string, to: string, includePending: boo
   const { country } = useCountry();
   const tz = country?.timezone || "Africa/Porto-Novo";
   return useQuery({
-    queryKey: ["synthesis-period", tenantId, countryId, from, to, includePending, tz],
+    queryKey: ["synthesis-period", tenantId, countryId, from, to, includePending, tz, country?.iso_code],
     enabled: !!tenantId && !!from && !!to && from <= to,
     queryFn: async (): Promise<PeriodData> => {
       const statuses = includePending ? ["valide", "pre_enregistre"] : ["valide"];
@@ -89,7 +89,7 @@ export function useSynthesisPeriod(from: string, to: string, includePending: boo
         tanks,
         receptions,
         pumpNames: new Map(names.map((p) => [p.id, p.name])),
-        price: priceResolver(structures, { super: FUEL_PRICES.SUPER, gasoil: FUEL_PRICES.GASOIL }),
+        price: priceResolver(structures, fallbackFuelPrices(country?.iso_code)),
       };
     },
   });

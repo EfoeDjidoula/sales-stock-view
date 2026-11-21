@@ -3,6 +3,9 @@ import { useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useScope } from "@/hooks/useScope";
+import { useCountry } from "@/hooks/useCountry";
+import { fallbackFuelPrices } from "@/config/prices";
+import { priceResolver } from "@/lib/ecap";
 import { toast } from "sonner";
 import ExcelJS from "exceljs";
 
@@ -24,6 +27,7 @@ const HEADERS_ROW_2 = [
 export const useExcelExport = () => {
   const { user } = useAuth();
   const { scopeQuery } = useScope();
+  const { country } = useCountry();
   const [isExporting, setIsExporting] = useState(false);
 
   const exportToExcel = async (month?: number, year?: number) => {
@@ -75,6 +79,19 @@ export const useExcelExport = () => {
 
       if (entriesError) throw entriesError;
 
+      // Prix du pays de travail : structures de prix actives (jamais les prix d'un autre pays).
+      const { data: structures, error: psError } = await scopeQuery(
+        supabase.from("price_structures").select("effective_date, super_price, gasoil_price")
+      )
+        .eq("is_active", true)
+        .lt("effective_date", endDate)
+        .order("effective_date");
+      if (psError) throw psError;
+      const priceOf = priceResolver(
+        (structures || []).map((p) => ({ effective_date: p.effective_date, super_price: Number(p.super_price), gasoil_price: Number(p.gasoil_price) })),
+        fallbackFuelPrices(country?.iso_code),
+      );
+
       const workbook = new ExcelJS.Workbook();
 
       const blankRow = () => Array(31).fill("");
@@ -118,8 +135,10 @@ export const useExcelExport = () => {
           const gasoil2Qty = entry.gasoil2_index_arrivee - entry.gasoil2_index_depart;
           const totalSuper = super1Qty + super2Qty;
           const totalGasoil = gasoil1Qty + gasoil2Qty;
-          const superAmount = totalSuper * 695;
-          const gasoilAmount = totalGasoil * 720;
+          const puSuper = priceOf(entry.entry_date, "super");
+          const puGasoil = priceOf(entry.entry_date, "gasoil");
+          const superAmount = totalSuper * puSuper;
+          const gasoilAmount = totalGasoil * puGasoil;
           const totalAmount = superAmount + gasoilAmount;
 
           const productRows: (string | number)[][] = [];
@@ -172,7 +191,7 @@ export const useExcelExport = () => {
             if (i === 0) {
               row[5] = dash(totalSuper);
               row[7] = dash(totalSuper);
-              row[8] = 695;
+              row[8] = puSuper || "-";
               row[9] = dash(superAmount);
               row[7] = dash(totalSuper);
               salesCols(row);
@@ -195,7 +214,7 @@ export const useExcelExport = () => {
             if (i === 0) {
               row[5] = dash(totalGasoil);
               row[7] = dash(totalGasoil);
-              row[8] = 720;
+              row[8] = puGasoil || "-";
               row[9] = dash(gasoilAmount);
             }
             row[21] = cuveLabel(t.name, t.cap);
