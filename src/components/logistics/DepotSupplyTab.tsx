@@ -41,6 +41,7 @@ export const DepotSupplyTab = ({ canWrite, canValidate }: { canWrite: boolean; c
   const [loading, setLoading] = useState(false);
   const [busy, setBusy] = useState(false);
   const [openPf, setOpenPf] = useState(false);
+  const [direct, setDirect] = useState(false);
   const [pf, setPf] = useState<Row>({});
   const [lines, setLines] = useState([emptyLine()]);
   const [issueFor, setIssueFor] = useState<Row | null>(null);
@@ -70,10 +71,10 @@ export const DepotSupplyTab = ({ canWrite, canValidate }: { canWrite: boolean; c
 
   const act = async (action: string, data: Row, ok: string) => {
     setBusy(true);
-    const { error } = await db.rpc("depot_supply_action", { _action: action, _data: data });
+    const { data: id, error } = await db.rpc("depot_supply_action", { _action: action, _data: data });
     setBusy(false);
     if (error) { toast.error(error.message); return false; }
-    toast.success(ok); load(); return true;
+    toast.success(ok); load(); return (id as string) || true;
   };
 
   const numLines = lines.map((l) => ({ ...l, qty_litres: Number(l.qty_litres) || 0, unit_price: Number(l.unit_price) || 0, tax_rate: Number(l.tax_rate) || 0 }));
@@ -84,9 +85,14 @@ export const DepotSupplyTab = ({ canWrite, canValidate }: { canWrite: boolean; c
   const savePf = async () => {
     if (!pf.number || !pf.proforma_date) return toast.error(L("Numéro et date obligatoires", "Number and date required"));
     if (numLines.some((l) => !l.product_id || l.qty_litres <= 0)) return toast.error(L("Chaque ligne doit avoir un produit et une quantité", "Each line needs a product and quantity"));
-    if (await act("create_proforma", { ...pf, tenant_id: tenantId, country_id: countryId, lines: numLines }, L("Pro-forma enregistré", "Pro-forma saved"))) {
-      setOpenPf(false); setPf({}); setLines([emptyLine()]);
+    if (direct && !benef.name.trim()) return toast.error(L("Nom du bénéficiaire obligatoire", "Beneficiary name required"));
+    const pid = await act("create_proforma", { ...pf, tenant_id: tenantId, country_id: countryId, lines: numLines }, L("Pro-forma enregistré", "Pro-forma saved"));
+    if (!pid) return;
+    if (direct && typeof pid === "string") {
+      const oid = await act("issue_order", { proforma_id: pid, client_id: benef.client_id || null, beneficiary_name: benef.name }, L("Bon de commande émis", "Purchase order issued"));
+      if (!oid) toast.info(L("Pro-forma conservé : émettez le BC depuis le tableau.", "Pro-forma kept: issue the PO from the table."));
     }
+    setOpenPf(false); setPf({}); setLines([emptyLine()]); setDirect(false);
   };
 
   const openHistory = async (o: Row) => {
@@ -137,7 +143,10 @@ export const DepotSupplyTab = ({ canWrite, canValidate }: { canWrite: boolean; c
       <Card className="glass-card">
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-base">{L("Pro-formas & bons de commande", "Pro-formas & purchase orders")}</CardTitle>
-          {canWrite && <Button size="sm" onClick={() => setOpenPf(true)}><Plus className="h-4 w-4 mr-1" />{L("Nouveau pro-forma", "New pro-forma")}</Button>}
+          <div className="flex flex-wrap gap-2">
+            {canValidate && <Button size="sm" onClick={() => { setDirect(true); setBenef({ client_id: "", name: brand.legalName || brand.companyName || "" }); setOpenPf(true); }}><FileText className="h-4 w-4 mr-1" />{L("Nouveau bon de commande", "New purchase order")}</Button>}
+            {canWrite && <Button size="sm" variant="outline" onClick={() => { setDirect(false); setOpenPf(true); }}><Plus className="h-4 w-4 mr-1" />{L("Nouveau pro-forma", "New pro-forma")}</Button>}
+          </div>
         </CardHeader>
         <CardContent className="p-0 overflow-x-auto">
           <Table>
@@ -180,7 +189,7 @@ export const DepotSupplyTab = ({ canWrite, canValidate }: { canWrite: boolean; c
 
       <Dialog open={openPf} onOpenChange={setOpenPf}>
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>{L("Enregistrer un pro-forma dépôt", "Record a depot pro-forma")}</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{direct ? L("Nouveau bon de commande (à partir du pro-forma dépôt)", "New purchase order (from depot pro-forma)") : L("Enregistrer un pro-forma dépôt", "Record a depot pro-forma")}</DialogTitle></DialogHeader>
           <div className="grid gap-3 md:grid-cols-2">
             <div><Label>{L("Fournisseur", "Supplier")}</Label>
               <Select value={pf.supplier_id ?? ""} onValueChange={(v) => setPf({ ...pf, supplier_id: v })}><SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
@@ -215,7 +224,18 @@ export const DepotSupplyTab = ({ canWrite, canValidate }: { canWrite: boolean; c
             <div className="text-right text-sm">HT {fmt(draftTotals.amount_ht)} · {L("Taxes", "Taxes")} {fmt(draftTotals.tax_amount)} · <b>TTC {fmt(draftTotals.amount_ttc)} FCFA</b></div>
           </div>
           <div><Label>{L("Observations", "Notes")}</Label><Textarea value={pf.observations ?? ""} onChange={(e) => setPf({ ...pf, observations: e.target.value })} /></div>
-          <DialogFooter><Button disabled={busy} onClick={savePf}>{L("Enregistrer", "Save")}</Button></DialogFooter>
+          {direct && (
+            <div className="grid gap-3 md:grid-cols-2 border-t border-border pt-3">
+              <div><Label>{L("Client bénéficiaire du BC", "PO beneficiary client")}</Label>
+                <Select value={benef.client_id || "self"} onValueChange={(v) => setBenef(v === "self" ? { client_id: "", name: brand.legalName || brand.companyName || "" } : { client_id: v, name: (ref.clients ?? []).find((c) => c.id === v)?.name ?? "" })}>
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent><SelectItem value="self">{L("Notre entreprise", "Our company")}</SelectItem>{(ref.clients ?? []).map((c) => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}</SelectContent>
+                </Select></div>
+              <div><Label>{L("Nom du bénéficiaire", "Beneficiary name")}</Label><Input value={benef.name} onChange={(e) => setBenef({ ...benef, name: e.target.value })} /></div>
+              <p className="md:col-span-2 text-xs text-muted-foreground">{L("Le BC est numéroté automatiquement et créé en NON PAYÉ ; choisissez ensuite le règlement dans le tableau.", "The PO is auto-numbered and starts UNPAID; then set payment in the table.")}</p>
+            </div>
+          )}
+          <DialogFooter><Button disabled={busy} onClick={savePf}>{direct ? L("Enregistrer et émettre le BC", "Save and issue PO") : L("Enregistrer", "Save")}</Button></DialogFooter>
         </DialogContent>
       </Dialog>
 

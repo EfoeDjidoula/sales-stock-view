@@ -235,21 +235,21 @@ export const LogisticsModule = () => {
         ))}
       </div>
       {loading && <Loader2 className="h-5 w-5 animate-spin text-primary" />}
-      <Tabs defaultValue="trips">
+      <Tabs defaultValue="depot_supply">
         <TabsList className="flex-wrap h-auto">
-          <TabsTrigger value="carriers">1. {L("Transporteurs", "Carriers")}</TabsTrigger>
-          <TabsTrigger value="vehicles">2. {L("Camions, tracteurs & citernes", "Trucks, tractors & tankers")}</TabsTrigger>
-          <TabsTrigger value="compartments">3. {L("Compartiments", "Compartments")}</TabsTrigger>
-          <TabsTrigger value="drivers">4. {L("Chauffeurs", "Drivers")}</TabsTrigger>
-          <TabsTrigger value="documents">5. {L("Documents", "Documents")}</TabsTrigger>
-          <TabsTrigger value="seals">6. {L("Scellés", "Seals")}</TabsTrigger>
-          <TabsTrigger value="supplies">7. {L("Demandes d'appro.", "Supply requests")}</TabsTrigger>
-          <TabsTrigger value="trips">8. {L("Chargements & transports", "Loadings & trips")}</TabsTrigger>
-          <TabsTrigger value="map"><MapPin className="h-4 w-4 mr-1" />9. {L("Carte & GPS", "Map & GPS")}</TabsTrigger>
-          <TabsTrigger value="alerts">10. {L("Alertes", "Alerts")} {alerts.length > 0 && <Badge variant="destructive" className="ml-1">{alerts.length}</Badge>}</TabsTrigger>
-          <TabsTrigger value="stations">11. {L("Suivi par station", "Station tracking")}</TabsTrigger>
-          <TabsTrigger value="three_stocks">12. {L("Bilan des 3 stocks", "3-stock balance")}</TabsTrigger>
-          <TabsTrigger value="depot_supply">13. {L("Approvisionnement dépôt (pro-formas & BC)", "Depot supply (pro-formas & POs)")}</TabsTrigger>
+          <TabsTrigger value="depot_supply">1. {L("Approvisionnement dépôt (pro-formas & BC)", "Depot supply (pro-formas & POs)")}</TabsTrigger>
+          <TabsTrigger value="carriers">2. {L("Transporteurs", "Carriers")}</TabsTrigger>
+          <TabsTrigger value="vehicles">3. {L("Camions, tracteurs & citernes", "Trucks, tractors & tankers")}</TabsTrigger>
+          <TabsTrigger value="compartments">4. {L("Compartiments", "Compartments")}</TabsTrigger>
+          <TabsTrigger value="drivers">5. {L("Chauffeurs", "Drivers")}</TabsTrigger>
+          <TabsTrigger value="documents">6. {L("Documents", "Documents")}</TabsTrigger>
+          <TabsTrigger value="seals">7. {L("Scellés", "Seals")}</TabsTrigger>
+          <TabsTrigger value="supplies">8. {L("Demandes d'appro.", "Supply requests")}</TabsTrigger>
+          <TabsTrigger value="trips">9. {L("Chargements & transports", "Loadings & trips")}</TabsTrigger>
+          <TabsTrigger value="map"><MapPin className="h-4 w-4 mr-1" />10. {L("Carte & GPS", "Map & GPS")}</TabsTrigger>
+          <TabsTrigger value="alerts">11. {L("Alertes", "Alerts")} {alerts.length > 0 && <Badge variant="destructive" className="ml-1">{alerts.length}</Badge>}</TabsTrigger>
+          <TabsTrigger value="stations">12. {L("Suivi par station", "Station tracking")}</TabsTrigger>
+          <TabsTrigger value="three_stocks">13. {L("Bilan des 3 stocks", "3-stock balance")}</TabsTrigger>
         </TabsList>
         <TabsContent value="three_stocks"><ThreeStocksTab /></TabsContent>
         <TabsContent value="depot_supply"><DepotSupplyTab canWrite={canWrite} canValidate={canValidate} /></TabsContent>
