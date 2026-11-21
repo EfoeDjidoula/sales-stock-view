@@ -32,4 +32,3 @@
 - B2B portal: b2b_portal_users rows make get_user_tenant NULL; clients use only b2b_portal_overview/b2b_portal_action RPCs; why: client logins never reach tenant data.
 - Offline: PWA only via src/lib/pwa.ts; offline writes replay via src/lib/offlineQueue.ts; query cache kept in IndexedDB without JSON (offlineCache.ts); why: server stays authoritative, Set/Map data survives reloads.
 - Report e-mails go only to the caller's own address (send-report-email); why: app emails are one-recipient, user-triggered.
-- Synthesis reports ("États de synthèse & Contrôle"): pure calculations in src/lib/managerAccount.ts over validated index entries (pending optional), tank readings and validated logistics receptions; only the quantity received in tanks enters the stock balance, ordered/loaded stay separate; tolerance is user-entered; why: one auditable formula, no double counting.

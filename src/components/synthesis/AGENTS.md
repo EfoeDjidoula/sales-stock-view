@@ -1,0 +1,1 @@
+- Synthesis reports ("États de synthèse & Contrôle"): pure calculations in src/lib/managerAccount.ts over validated index entries (pending optional), tank readings and validated logistics receptions; only the quantity received in tanks enters the stock balance, ordered/loaded stay separate; tolerance is user-entered; why: one auditable formula, no double counting.
