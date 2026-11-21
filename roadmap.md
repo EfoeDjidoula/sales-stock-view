@@ -50,4 +50,4 @@
 - [x] Récaps ECAP hebdo/mensuel (station ou toutes stations) et fiches d'inventaire (pompes, cuves au volume BL, caisse comptée), Excel/PDF.
 
 ## Priorité 3 — Logistique
-- [ ] Rectification/justification des alertes de livraison (TRP-20261010-B04F5F), compartiments.
+- [x] Rectification par compartiment / justification des écarts de livraison (outil livré ; TRP-20261010-B04F5F reste à traiter par l'utilisateur avec les quantités réelles).

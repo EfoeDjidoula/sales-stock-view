@@ -6,11 +6,13 @@ import { usePermissions } from "@/hooks/usePermissions";
 import { usePlatformAdmin } from "@/hooks/usePlatformAdmin";
 import { useLanguage } from "@/hooks/useLanguage";
 import { toast } from "sonner";
-import { Loader2, Plus, Eye, AlertTriangle, MapPin } from "lucide-react";
+import { Loader2, Plus, Eye, AlertTriangle, MapPin, Scale } from "lucide-react";
 import { LogisticsMap } from "./LogisticsMap";
 import { LoadPlanDialog } from "./LoadPlanDialog";
 import { SiteCheckinDialog, siteProgress } from "./SiteCheckinDialog";
 import { StationTrackingTab } from "./StationTrackingTab";
+import { VarianceDialog } from "./VarianceDialog";
+import { VARIANCE_CATEGORIES } from "./variance";
 import { SupplyWorkflowModule } from "@/components/supply/SupplyWorkflowModule";
 import { Package } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -62,6 +64,7 @@ export const LogisticsModule = () => {
   const { can } = usePermissions();
   const { isPlatformAdmin } = usePlatformAdmin();
   const canWrite = isPlatformAdmin || can("supplies", "create") || can("supplies", "edit") || can("supplies", "validate");
+  const canValidate = isPlatformAdmin || can("supplies", "validate");
 
   const [d, setD] = useState<Record<string, Row[]>>({});
   const [loading, setLoading] = useState(false);
@@ -73,6 +76,7 @@ export const LogisticsModule = () => {
   const [busy, setBusy] = useState(false);
   const [planTrip, setPlanTrip] = useState<Row | null>(null);
   const [checkTrip, setCheckTrip] = useState<Row | null>(null);
+  const [varTrip, setVarTrip] = useState<Row | null>(null);
 
   const load = useCallback(async () => {
     if (!tenantId) return;
@@ -93,8 +97,9 @@ export const LogisticsModule = () => {
       q("stations", "id,name").order("name"),
       db.from("clients").select("id,name").eq("tenant_id", tenantId).order("name"),
       q("logistics_load_deliveries"),
+      q("logistics_trip_events").in("action", ["rectify_delivery", "justify_variance"]).order("created_at", { ascending: false }).limit(200),
     ]);
-    const keys = ["trips", "carriers", "vehicles", "compartments", "drivers", "documents", "seals", "alerts", "supplies", "loads", "products", "stations", "clients", "deliveries"];
+    const keys = ["trips", "carriers", "vehicles", "compartments", "drivers", "documents", "seals", "alerts", "supplies", "loads", "products", "stations", "clients", "deliveries", "corrections"];
     const out: Record<string, Row[]> = {};
     res.forEach((r: Row, i: number) => { out[keys[i]] = r.data ?? []; if (r.error) console.error(keys[i], r.error); });
     setD(out);
@@ -278,6 +283,7 @@ export const LogisticsModule = () => {
                           <Button size="sm" variant="ghost" onClick={() => openDetail(t)}><Eye className="h-4 w-4" /></Button>
                           {canWrite && ["planned", "loading"].includes(t.status) && <Button size="sm" variant="outline" title={L("Plan de chargement", "Loading plan")} onClick={() => setPlanTrip(t)}><Package className="h-4 w-4" /></Button>}
                           {["arrived", "unloading", "delivered"].includes(t.status) && (() => { const p = siteProgress((d.loads ?? []).filter((x) => x.trip_id === t.id), (d.deliveries ?? []).filter((x) => x.trip_id === t.id)); return p.total ? <Button size="sm" variant="outline" onClick={() => setCheckTrip(t)}>{L("Sites", "Sites")} {p.done}/{p.total}</Button> : null; })()}
+                          {canValidate && t.status === "delivered" && Number(t.qty_loaded) > 0 && t.qty_delivered != null && Number(t.qty_delivered) !== Number(t.qty_loaded) && <Button size="sm" variant="outline" title={L("Rectifier / justifier l'écart", "Rectify / justify variance")} onClick={() => setVarTrip(t)}><Scale className="h-4 w-4" /></Button>}
                           {canWrite && n && <Button size="sm" onClick={() => { setActionData({}); setAction({ trip: t, action: n[0], title: L(n[1], n[2]) }); }}>{L(n[1], n[2])}</Button>}
                           {canWrite && t.status === "incident" && <Button size="sm" variant="outline" onClick={() => { setActionData({ status: "in_transit" }); setAction({ trip: t, action: "resume", title: L("Reprendre", "Resume") }); }}>{L("Reprendre", "Resume")}</Button>}
                           {canWrite && !["delivered", "incident"].includes(t.status) && <Button size="sm" variant="destructive" onClick={() => { setActionData({}); setAction({ trip: t, action: "incident", title: L("Déclarer un incident", "Report incident") }); }}><AlertTriangle className="h-4 w-4" /></Button>}
@@ -303,9 +309,9 @@ export const LogisticsModule = () => {
             <CardHeader><CardTitle className="text-base">{L("Alertes logistiques", "Logistics alerts")}</CardTitle></CardHeader>
             <CardContent className="overflow-x-auto">
               <Table>
-                <TableHeader><TableRow><TableHead>{L("Type", "Type")}</TableHead><TableHead>{L("Sévérité", "Severity")}</TableHead><TableHead>{L("Objet", "Subject")}</TableHead><TableHead>{L("Valeur / règle", "Value / rule")}</TableHead><TableHead>{L("Échéance", "Due")}</TableHead></TableRow></TableHeader>
+                <TableHeader><TableRow><TableHead>{L("Type", "Type")}</TableHead><TableHead>{L("Sévérité", "Severity")}</TableHead><TableHead>{L("Objet", "Subject")}</TableHead><TableHead>{L("Valeur / règle", "Value / rule")}</TableHead><TableHead>{L("Échéance", "Due")}</TableHead><TableHead /></TableRow></TableHeader>
                 <TableBody>
-                  {alerts.length === 0 && <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground">{L("Aucune alerte", "No alerts")}</TableCell></TableRow>}
+                  {alerts.length === 0 && <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground">{L("Aucune alerte", "No alerts")}</TableCell></TableRow>}
                   {alerts.map((a, i) => (
                     <TableRow key={i}>
                       <TableCell>{L(...ALERT[a.kind])}</TableCell>
@@ -318,6 +324,33 @@ export const LogisticsModule = () => {
                         {a.kind === "seal_broken" && L("Scellé déclaré rompu au déchargement", "Seal reported broken at unloading")}
                       </TableCell>
                       <TableCell className="text-xs">{fmtDt(a.due_at)}</TableCell>
+                      <TableCell>
+                        {a.kind === "quantity_variance" && canValidate && (() => { const t = trips.find((x) => x.id === a.trip_id); return t ? <Button size="sm" variant="outline" className="gap-1" onClick={() => setVarTrip(t)}><Scale className="h-4 w-4" />{L("Rectifier / justifier", "Rectify / justify")}</Button> : null; })()}
+                        {a.kind === "quantity_variance" && !canValidate && <span className="text-xs text-muted-foreground">{L("Droit « valider les approvisionnements » requis", "“Validate supplies” right required")}</span>}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+          <Card className="glass-card mt-4">
+            <CardHeader><CardTitle className="text-base">{L("Rectifications et justifications d'écarts", "Variance rectifications and justifications")}</CardTitle></CardHeader>
+            <CardContent className="overflow-x-auto">
+              <Table>
+                <TableHeader><TableRow><TableHead>{L("Date", "Date")}</TableHead><TableHead>{L("Transport", "Trip")}</TableHead><TableHead>{L("Action", "Action")}</TableHead><TableHead>{L("Détail", "Detail")}</TableHead><TableHead>{L("Motif", "Reason")}</TableHead><TableHead>{L("Par", "By")}</TableHead></TableRow></TableHeader>
+                <TableBody>
+                  {(d.corrections ?? []).length === 0 && <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground">{L("Aucune rectification ni justification", "No rectification or justification")}</TableCell></TableRow>}
+                  {(d.corrections ?? []).map((e) => (
+                    <TableRow key={e.id}>
+                      <TableCell className="text-xs whitespace-nowrap">{fmtDt(e.created_at)}</TableCell>
+                      <TableCell className="font-mono text-xs">{name("trips", e.trip_id, "reference")}</TableCell>
+                      <TableCell>{e.action === "rectify_delivery" ? <Badge variant="outline">{L("Rectification", "Rectification")}</Badge> : <Badge variant="secondary">{L("Justification", "Justification")}</Badge>}</TableCell>
+                      <TableCell className="text-xs">{e.action === "rectify_delivery"
+                        ? L(`Livré ${fmt(e.data?.old_qty)} → ${fmt(e.data?.new_qty)} L (chargé ${fmt(e.data?.qty_loaded)} L)`, `Delivered ${fmt(e.data?.old_qty)} → ${fmt(e.data?.new_qty)} L (loaded ${fmt(e.data?.qty_loaded)} L)`)
+                        : `${L(...(VARIANCE_CATEGORIES[e.data?.category] ?? ["Autre", "Other"]))} · ${L("écart", "variance")} ${fmt(e.data?.variance)} L`}</TableCell>
+                      <TableCell className="text-xs max-w-xs">{e.reason}</TableCell>
+                      <TableCell className="text-xs">{e.author_name ?? "—"}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -423,6 +456,8 @@ export const LogisticsModule = () => {
 
       <SiteCheckinDialog trip={checkTrip ? (d.trips ?? []).find((x) => x.id === checkTrip.id) ?? checkTrip : null} onClose={() => setCheckTrip(null)} onSaved={load} canWrite={canWrite} L={L}
         loads={d.loads ?? []} deliveries={d.deliveries ?? []} compartments={d.compartments ?? []} products={d.products ?? []} stations={d.stations ?? []} clients={d.clients ?? []} />
+      <VarianceDialog trip={varTrip ? (d.trips ?? []).find((x) => x.id === varTrip.id) ?? varTrip : null} onClose={() => setVarTrip(null)} onSaved={load} L={L}
+        loads={d.loads ?? []} deliveries={d.deliveries ?? []} compartments={d.compartments ?? []} products={d.products ?? []} stations={d.stations ?? []} clients={d.clients ?? []} />
       <LoadPlanDialog trip={planTrip} onClose={() => setPlanTrip(null)} onSaved={load} L={L}
         vehicles={d.vehicles ?? []} compartments={d.compartments ?? []} products={d.products ?? []} stations={d.stations ?? []} clients={d.clients ?? []} loads={d.loads ?? []} />
 
@@ -444,7 +479,7 @@ export const LogisticsModule = () => {
               <div className="space-y-1 max-h-60 overflow-y-auto">
                 {events.map((e) => (
                   <div key={e.id} className="border-l-2 border-primary pl-2 text-xs">
-                    <b>{fmtDt(e.created_at)}</b> — {e.action} {e.to_status && `→ ${L(...(TRIP_STATUS[e.to_status] ?? [e.to_status, e.to_status]))}`} · {e.author_name ?? ""}{e.reason && ` · ${e.reason}`}
+                    <b>{fmtDt(e.created_at)}</b> — {e.action === "rectify_delivery" ? L(`Rectification livraison ${fmt(e.data?.old_qty)} → ${fmt(e.data?.new_qty)} L`, `Delivery rectified ${fmt(e.data?.old_qty)} → ${fmt(e.data?.new_qty)} L`) : e.action === "justify_variance" ? L("Écart justifié", "Variance justified") : e.action} {e.to_status && `→ ${L(...(TRIP_STATUS[e.to_status] ?? [e.to_status, e.to_status]))}`} · {e.author_name ?? ""}{e.reason && ` · ${e.reason}`}
                   </div>
                 ))}
               </div>

@@ -8801,6 +8801,10 @@ export type Database = {
         Args: { _action: string; _data?: Json; _id: string; _reason?: string }
         Returns: string
       }
+      logistics_variance_action: {
+        Args: { _action: string; _data?: Json; _reason: string; _trip: string }
+        Returns: number
+      }
       recon_classify: {
         Args: {
           _amt: number
