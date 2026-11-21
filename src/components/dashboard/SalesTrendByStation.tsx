@@ -10,6 +10,7 @@ import {
   Legend,
 } from "recharts";
 import { formatCurrency } from "@/data/stationsData";
+import { useCountryPrices } from "@/hooks/useCountryPrices";
 import { Button } from "@/components/ui/button";
 
 interface StationTrendEntry {
@@ -37,6 +38,7 @@ const STATION_COLORS = [
 
 export const SalesTrendByStation = ({ rawChartEntries, stations }: SalesTrendByStationProps) => {
   const [viewMode, setViewMode] = useState<"amount" | "liters">("amount");
+  const { priceOf } = useCountryPrices();
 
   const { chartData, stationNames } = useMemo(() => {
     if (!rawChartEntries || rawChartEntries.length === 0) {
@@ -56,7 +58,7 @@ export const SalesTrendByStation = ({ rawChartEntries, stations }: SalesTrendByS
       const gasoilL = (g1 > 0 ? g1 : 0) + (g2 > 0 ? g2 : 0);
 
       const value = viewMode === "amount"
-        ? superL * 695 + gasoilL * 720
+        ? superL * priceOf(entry.entry_date, "super") + gasoilL * priceOf(entry.entry_date, "gasoil")
         : superL + gasoilL;
 
       const stationInfo = entry.stations as any;

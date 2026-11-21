@@ -23,13 +23,15 @@ export const useBiDataset = (tenantId: string | null | undefined, countryIds: st
         q("b2b_consumptions", "client_id,station_id,product_id,consumed_on,litres,amount").gte("consumed_on", start).lte("consumed_on", end),
         q("b2b_invoices", "id,client_id,amount,due_on"),
         q("b2b_payments", "invoice_id,amount"),
-        q("price_structures", "country_id,effective_date,is_active,elements"),
+        q("price_structures", "country_id,effective_date,is_active,elements,super_price,gasoil_price"),
         q("maintenance_assets", "id,station_id,status"),
         q("maintenance_work_orders", "asset_id,downtime_hours,labour_cost,parts_cost,completed_at,opened_at"),
         q("hse_inspections", "station_id,inspected_on,status,score"),
         q("hse_nonconformities", "station_id").eq("severity", "critical").neq("status", "closed"),
         q("perequation_zones", "id,name"),
         q("clients", "id,name,country_id"),
+        // codes ISO des pays du périmètre : seuls Bénin a un repli de prix historique
+        sb.from("countries").select("id,iso_code").in("id", countryIds),
       ]);
       const [st] = res;
       if (st.error) throw st.error;
@@ -42,6 +44,7 @@ export const useBiDataset = (tenantId: string | null | undefined, countryIds: st
         stations: v(0), products: v(1), closures: v(2), closureSales: v(3), closurePayments: v(4), paymentMethods: v(5),
         entries: v(6), levels: v(7), recons: v(8), consumptions: v(9), invoices: v(10), payments: v(11), priceStructures: v(12),
         assets: v(13), workOrders: v(14), inspections: v(15), criticalNc: v(16), zones: v(17), clients: v(18), countries: countryIds,
+        countryIso: Object.fromEntries(((res[19] as any).error ? [] : (res[19] as any).data ?? []).map((c: any) => [c.id, c.iso_code])),
       };
     },
   });

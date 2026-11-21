@@ -4,7 +4,8 @@
  * Les données reçues sont déjà filtrées par la base (tenant + pays autorisés).
  */
 import { availabilityPct } from "@/lib/maintenance";
-import { FUEL_PRICES } from "@/config/prices";
+import { fallbackFuelPrices } from "@/config/prices";
+import { priceResolver, type PriceFn } from "@/lib/ecap";
 
 export type Kind = "super" | "gasoil" | "other";
 export type Channel = "cash" | "card" | "voucher" | "mobile_money" | "fuel_card" | "b2b" | "other";
@@ -30,7 +31,9 @@ export type Dataset = {
   consumptions: { client_id: string; station_id: string | null; product_id: string | null; consumed_on: string; litres: number; amount: number }[];
   invoices: { id: string; client_id: string; amount: number; due_on: string | null }[];
   payments: { invoice_id: string; amount: number }[];
-  priceStructures: { country_id: string | null; effective_date: string; is_active: boolean; elements: any }[];
+  priceStructures: { country_id: string | null; effective_date: string; is_active: boolean; elements: any; super_price?: number | null; gasoil_price?: number | null }[];
+  /** code ISO par identifiant de pays — sert au seul repli de prix (Bénin). */
+  countryIso?: Record<string, string>;
   assets: { id: string; station_id: string | null; status: string }[];
   workOrders: { asset_id: string; downtime_hours: number | null; labour_cost: number | null; parts_cost: number | null; completed_at: string | null; opened_at: string }[];
   inspections: { station_id: string; inspected_on: string; status: string; score: number | null }[];
@@ -63,6 +66,22 @@ export const channelOf = (code?: string | null): Channel => {
 export const buildSaleFacts = (d: Dataset, f: Pick<Filters, "start" | "end">): SaleFact[] => {
   const st = new Map(d.stations.map((s) => [s.id, s]));
   const prod = new Map(d.products.map((p) => [p.id, p]));
+  // Prix de vente du pays de la station : structure active en vigueur à la date,
+  // repli historique uniquement pour le Bénin (jamais pour un autre pays).
+  const priceFns = new Map<string, PriceFn>();
+  const price = (countryId: string, date: string, kind: "super" | "gasoil") => {
+    let fn = priceFns.get(countryId);
+    if (!fn) {
+      fn = priceResolver(
+        d.priceStructures
+          .filter((p) => p.is_active && (p.country_id ?? "") === countryId)
+          .map((p) => ({ effective_date: p.effective_date, super_price: p.super_price ?? null, gasoil_price: p.gasoil_price ?? null })),
+        fallbackFuelPrices(d.countryIso?.[countryId])
+      );
+      priceFns.set(countryId, fn);
+    }
+    return fn(date, kind);
+  };
   const closures = new Map(d.closures.filter((c) => c.status !== "rejected" && c.closure_date >= f.start && c.closure_date <= f.end).map((c) => [c.id, c]));
   const out = new Map<string, SaleFact>();
   const push = (date: string, sid: string, kind: Kind, vol: number, amt: number) => {
@@ -81,8 +100,9 @@ export const buildSaleFacts = (d: Dataset, f: Pick<Filters, "start" | "end">): S
   d.entries.forEach((e) => {
     if (e.entry_date < f.start || e.entry_date > f.end || closed.has(`${e.entry_date}|${e.station_id}`)) return;
     const s = Math.max(0, n(e.total_super_liters)), g = Math.max(0, n(e.total_gasoil_liters)); // saisies négatives ignorées
-    if (s) push(e.entry_date, e.station_id, "super", s, s * FUEL_PRICES.SUPER);
-    if (g) push(e.entry_date, e.station_id, "gasoil", g, g * FUEL_PRICES.GASOIL);
+    const cid = st.get(e.station_id)?.country_id ?? "";
+    if (s) push(e.entry_date, e.station_id, "super", s, s * price(cid, e.entry_date, "super"));
+    if (g) push(e.entry_date, e.station_id, "gasoil", g, g * price(cid, e.entry_date, "gasoil"));
   });
   return [...out.values()];
 };

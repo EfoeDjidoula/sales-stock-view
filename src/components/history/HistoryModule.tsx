@@ -2,7 +2,7 @@ import { useState, useMemo } from "react";
 import { useIndexEntries, type IndexEntry } from "@/hooks/useIndexEntries";
 import { useStations } from "@/hooks/useIndexEntries";
 import { formatCurrency } from "@/data/stationsData";
-import { FUEL_PRICES } from "@/config/prices";
+import { useCountryPrices } from "@/hooks/useCountryPrices";
 import { EditEntryDialog } from "./EditEntryDialog";
 import { sortNozzles } from "@/lib/nozzleOrder";
 import { IndexValidationDialog } from "./IndexValidationDialog";
@@ -92,6 +92,7 @@ export const HistoryModule = () => {
 
   const { data: entries, isLoading } = useIndexEntries(stationId, startStr, endStr);
   const { data: stations } = useStations();
+  const { priceOf } = useCountryPrices();
 
   const computeLiters = (entry: IndexEntry) => {
     const s1 = Math.max(0, entry.super1_index_arrivee - entry.super1_index_depart);
@@ -111,11 +112,11 @@ export const HistoryModule = () => {
       const { superL, gasoilL } = computeLiters(e);
       acc.superL += superL;
       acc.gasoilL += gasoilL;
-      acc.amount += superL * FUEL_PRICES.SUPER + gasoilL * FUEL_PRICES.GASOIL;
+      acc.amount += superL * priceOf(e.entry_date, "super") + gasoilL * priceOf(e.entry_date, "gasoil");
       acc.versements += computeVersements(e);
       return acc;
     }, { superL: 0, gasoilL: 0, amount: 0, versements: 0 });
-  }, [entries]);
+  }, [entries, priceOf]);
 
   return (
     <div className="space-y-4">
@@ -286,7 +287,7 @@ export const HistoryModule = () => {
                     const legacy = computeLiters(entry);
                     const superL = entry.total_super_liters ?? legacy.superL;
                     const gasoilL = entry.total_gasoil_liters ?? legacy.gasoilL;
-                    const amount = entry.vente_globale ?? superL * FUEL_PRICES.SUPER + gasoilL * FUEL_PRICES.GASOIL;
+                    const amount = entry.vente_globale ?? superL * priceOf(entry.entry_date, "super") + gasoilL * priceOf(entry.entry_date, "gasoil");
                     const validated = entry.status === "valide";
                     const rejected = entry.status === "rejete";
                     const versements = computeVersements(entry);

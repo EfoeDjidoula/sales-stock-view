@@ -43,6 +43,33 @@ describe("couche de métriques BI", () => {
   it("index utilisé si aucune clôture ce jour", () => {
     expect(buildSaleFacts({ ...base, closures: [] }, f)[0].volume).toBe(50);
   });
+  it("prix du pays : structure active de la station, jamais celle du Bénin", () => {
+    const tg: Dataset = { ...base,
+      stations: [{ id: "s2", name: "B", country_id: "tg", zone_id: null }],
+      entries: [{ station_id: "s2", entry_date: "2026-10-01", total_super_liters: 100, total_gasoil_liters: 0 }],
+      priceStructures: [{ country_id: "tg", effective_date: "2026-09-11", is_active: true, elements: [], super_price: 817, gasoil_price: 766 }],
+      countryIso: { tg: "TGO" },
+    };
+    expect(buildSaleFacts(tg, f)[0].amount).toBe(81700);
+  });
+  it("pays sans structure de prix : montant inconnu, jamais les prix du Bénin", () => {
+    const bf: Dataset = { ...base,
+      stations: [{ id: "s3", name: "C", country_id: "bf", zone_id: null }],
+      entries: [{ station_id: "s3", entry_date: "2026-10-01", total_super_liters: 100, total_gasoil_liters: 0 }],
+      priceStructures: [],
+      countryIso: { bf: "RBF" },
+    };
+    expect(buildSaleFacts(bf, f)[0].amount).toBe(0);
+  });
+  it("Bénin sans structure : repli historique 695 / 720", () => {
+    const bj: Dataset = { ...base,
+      closures: [], closureSales: [],
+      entries: [{ station_id: "s1", entry_date: "2026-10-02", total_super_liters: 100, total_gasoil_liters: 0 }],
+      priceStructures: [],
+      countryIso: { bj: "BJ" },
+    };
+    expect(buildSaleFacts(bj, f)[0].amount).toBe(69500);
+  });
   it("période précédente et variation", () => {
     expect(previousRange("2026-10-08", "2026-10-14")).toEqual({ start: "2026-10-01", end: "2026-10-07" });
     expect(deltaPct(120, 100)).toBe(20);

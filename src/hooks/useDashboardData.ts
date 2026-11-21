@@ -3,9 +3,9 @@ import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { startOfDay, subDays, startOfWeek, startOfMonth, format } from "date-fns";
-import { FUEL_PRICES } from "@/config/prices";
 import { useTenant } from "@/hooks/useTenant";
 import { useCountry } from "@/hooks/useCountry";
+import { useCountryPrices } from "@/hooks/useCountryPrices";
 
 export interface DashboardStation {
   id: string;
@@ -47,6 +47,7 @@ export const useDashboardData = (period: Period, stationId?: string | null) => {
   const { user } = useAuth();
   const { tenantId } = useTenant();
   const { countryId } = useCountry();
+  const { priceOf } = useCountryPrices();
   const queryClient = useQueryClient();
   const range = getPeriodRange(period);
 
@@ -201,9 +202,9 @@ export const useDashboardData = (period: Period, stationId?: string | null) => {
       date: entry.entry_date,
       superLiters,
       gasoilLiters,
-      superAmount: superLiters * FUEL_PRICES.SUPER,
-      gasoilAmount: gasoilLiters * FUEL_PRICES.GASOIL,
-      totalAmount: superLiters * FUEL_PRICES.SUPER + gasoilLiters * FUEL_PRICES.GASOIL,
+      superAmount: superLiters * priceOf(entry.entry_date, "super"),
+      gasoilAmount: gasoilLiters * priceOf(entry.entry_date, "gasoil"),
+      totalAmount: superLiters * priceOf(entry.entry_date, "super") + gasoilLiters * priceOf(entry.entry_date, "gasoil"),
       stationId: entry.station_id,
       stationName: stationData?.name || "",
       super1Jauge: entry.super1_jauge,
@@ -257,8 +258,8 @@ export const useDashboardData = (period: Period, stationId?: string | null) => {
       const gasoilL = (g1 > 0 ? g1 : 0) + (g2 > 0 ? g2 : 0);
 
       const existing = dateMap.get(entry.entry_date) || { super: 0, gasoil: 0 };
-      existing.super += superL * FUEL_PRICES.SUPER;
-      existing.gasoil += gasoilL * FUEL_PRICES.GASOIL;
+      existing.super += superL * priceOf(entry.entry_date, "super");
+      existing.gasoil += gasoilL * priceOf(entry.entry_date, "gasoil");
       dateMap.set(entry.entry_date, existing);
     }
 

@@ -5,7 +5,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { useTenant } from "@/hooks/useTenant";
 import { useCountry } from "@/hooks/useCountry";
 import { useLanguage } from "@/hooks/useLanguage";
-import { FUEL_PRICES } from "@/config/prices";
+import { fallbackFuelPrices } from "@/config/prices";
+import { priceResolver } from "@/lib/ecap";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -67,7 +68,7 @@ export function CommandCenter() {
     queryFn: async () => {
       const sb = supabase as any;
       const base = (t: string, cols: string) => sb.from(t).select(cols).eq("tenant_id", tenantId).in("country_id", scope);
-      const [st, zn, pr, tk, pu, lv, cl, cs, ie, sp, ti, rc, hc] = await Promise.all([
+      const [st, zn, pr, tk, pu, lv, cl, cs, ie, sp, ti, rc, hc, ps] = await Promise.all([
         base("stations", "id,name,location,country_id,zone_id,status"),
         base("perequation_zones", "id,name"),
         base("petroleum_products", "id,name,code,color"),
@@ -81,6 +82,7 @@ export function CommandCenter() {
         base("support_tickets", "id,ticket_number,subject,priority,status,station_id").not("status", "in", "(resolved,closed)"),
         base("reconciliations", "station_id,recon_date,result,workflow,value_variance").gte("recon_date", r.start).lte("recon_date", r.end),
         base("hse_nonconformities", "id,station_id,title,due_on,status").eq("severity", "critical").neq("status", "closed"),
+        base("price_structures", "country_id,effective_date,super_price,gasoil_price").eq("is_active", true),
       ]);
       const err = [st, zn, pr, tk, pu, lv, cl, cs, ie, sp].find((x) => x.error);
       if (err) throw err.error;
@@ -88,6 +90,7 @@ export function CommandCenter() {
         stations: st.data as any[], zones: zn.data as any[], products: pr.data as any[], tanks: tk.data as any[], pumps: pu.data as any[],
         levels: lv.data as any[], closures: cl.data as any[], closureSales: cs.data as any[], entries: ie.data as any[],
         supplies: sp.data as any[], tickets: ti.data as any[], recons: (rc.error ? [] : rc.data) as any[], hse: (hc.error ? [] : hc.data) as any[],
+        priceStructures: (ps.error ? [] : ps.data) as any[],
       };
     },
   });
@@ -128,13 +131,29 @@ export function CommandCenter() {
       if (productF === "all") add(c.station_id, c.closure_date, Number(c.total_amount), Number(c.total_volume));
       else (linesByClosure.get(c.id) ?? []).filter((l) => l.product_id === productF).forEach((l) => add(c.station_id, c.closure_date, Number(l.amount), Number(l.volume)));
     });
+    // Prix de vente du pays de la station : structure active en vigueur à la date,
+    // repli historique uniquement pour le Bénin (jamais pour un autre pays).
+    const stCountry = new Map(d.stations.map((s) => [s.id, s.country_id]));
+    const priceFns = new Map<string, (date: string, fuel: "super" | "gasoil") => number>();
+    const priceOf = (sid: string, date: string, fuel: "super" | "gasoil") => {
+      const cid = stCountry.get(sid) ?? "";
+      let fn = priceFns.get(cid);
+      if (!fn) {
+        fn = priceResolver(
+          (d.priceStructures ?? []).filter((p) => (p.country_id ?? "") === cid),
+          fallbackFuelPrices(countries.find((c) => c.id === cid)?.iso_code)
+        );
+        priceFns.set(cid, fn);
+      }
+      return fn(date, fuel);
+    };
     d.entries.forEach((e) => {
       if (!includePending && e.status !== "valide") return;
       if (closureKey.has(`${e.station_id}|${e.entry_date}`)) return;
       const s = Math.max(0, Number(e.total_super_liters) || 0), g = Math.max(0, Number(e.total_gasoil_liters) || 0);
       const vs = selKind === "gasoil" ? 0 : s, vg = selKind === "super" ? 0 : g;
       if (productF !== "all" && !selKind) return;
-      add(e.station_id, e.entry_date, vs * FUEL_PRICES.SUPER + vg * FUEL_PRICES.GASOIL, vs + vg);
+      add(e.station_id, e.entry_date, vs * priceOf(e.station_id, e.entry_date, "super") + vg * priceOf(e.station_id, e.entry_date, "gasoil"), vs + vg);
     });
 
     const levels = d.levels.filter((l) => l.location_type === "station" && ids.has(l.station_id) && (productF === "all" || l.product_id === productF));
@@ -177,7 +196,7 @@ export function CommandCenter() {
         alerts: levels.filter((l) => l.alert_level && l.alert_level !== "normal").length,
       },
     };
-  }, [d, productF, stationF, drill.zone, drill.station, today, includePending]);
+  }, [d, productF, stationF, drill.zone, drill.station, today, includePending, countries]);
 
   const countryName = (id?: string) => countries.find((c) => c.id === id)?.name ?? "—";
    const zoneName = (id?: string) => (id === "none" ? t("Sans zone") : d?.zones.find((z) => z.id === id)?.name ?? "—");
