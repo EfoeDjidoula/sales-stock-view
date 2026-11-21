@@ -41,7 +41,7 @@
 - [x] Historique : colonne Bons corrigée + détail Autoconso/Bons/Tickets/Cartes/MoMo/Net à verser/BV/Écart.
 - [x] Fenêtres Crayon et Bouclier : tous les pistolets configurés, sans plafond (S1…Sn, G1…Gn).
 - [x] Papier à en-tête sur tous les PDF (logo, société, descriptif ; pied : IFU, banque, téléphone ; éditeur à droite) + champs IFU/banque dans l'identité société.
-- [ ] Point zéro du registre de stock (15/11) — à confirmer : les écarts 15–16/11 viennent de ventes gasoil non passées au stock (stock à 0).
+- [x] Calage du stock FIDJROSSÈ au 15/11 (ventes manquantes passées + ajustement d'ouverture) ; registre = bilans de cuve.
 - [ ] Dépotage au volume BL (chargé) + écart transporteur séparé.
 - [ ] Cascade automatique annulation réception → ligne d'index en attente.
 
