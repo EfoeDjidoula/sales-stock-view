@@ -484,6 +484,13 @@
       "when": 1795272433382,
       "tag": "0068_tenant_country_legal_identity",
       "breakpoints": true
+    },
+    {
+      "idx": 69,
+      "version": "7",
+      "when": 1795273974476,
+      "tag": "0069_has_permission_self_scope",
+      "breakpoints": true
     }
   ]
 }
