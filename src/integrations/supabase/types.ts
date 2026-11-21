@@ -7592,43 +7592,61 @@ export type Database = {
       }
       tenant_countries: {
         Row: {
+          address: string | null
+          bank_details: string | null
           configuration: Json
           country_id: string
           created_at: string
           currency: string | null
+          email: string | null
           id: string
           is_active: boolean
           is_default: boolean
           language: string | null
+          legal_name: string | null
+          phone: string | null
           status: string
+          tax_id: string | null
           tenant_id: string
           timezone: string | null
           updated_at: string
         }
         Insert: {
+          address?: string | null
+          bank_details?: string | null
           configuration?: Json
           country_id: string
           created_at?: string
           currency?: string | null
+          email?: string | null
           id?: string
           is_active?: boolean
           is_default?: boolean
           language?: string | null
+          legal_name?: string | null
+          phone?: string | null
           status?: string
+          tax_id?: string | null
           tenant_id: string
           timezone?: string | null
           updated_at?: string
         }
         Update: {
+          address?: string | null
+          bank_details?: string | null
           configuration?: Json
           country_id?: string
           created_at?: string
           currency?: string | null
+          email?: string | null
           id?: string
           is_active?: boolean
           is_default?: boolean
           language?: string | null
+          legal_name?: string | null
+          phone?: string | null
           status?: string
+          tax_id?: string | null
           tenant_id?: string
           timezone?: string | null
           updated_at?: string
@@ -8835,6 +8853,10 @@ export type Database = {
       }
       seed_payment_methods: {
         Args: { _country: string; _tenant: string }
+        Returns: undefined
+      }
+      set_country_identity: {
+        Args: { _country: string; _data: Json; _tenant: string }
         Returns: undefined
       }
       shares_tenant_with: {

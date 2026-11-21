@@ -1,8 +1,10 @@
 import { useEffect, useMemo } from "react";
 import { useTenant } from "@/hooks/useTenant";
+import { useOptionalCountry } from "@/hooks/useCountry";
 import {
   BrandIdentity,
   DEFAULT_BRAND,
+  applyCountryIdentity,
   setActiveBrand,
 } from "@/lib/branding";
 import { preloadLetterheadLogo } from "@/lib/pdfLetterhead";
@@ -33,10 +35,12 @@ const applyFavicon = (url: string | null) => {
  */
 export const useBranding = (): BrandIdentity => {
   const { tenant } = useTenant();
+  // L'identité légale du pays actif remplace celle de la société quand elle est renseignée
+  const country = useOptionalCountry()?.country ?? null;
 
   return useMemo<BrandIdentity>(() => {
     if (!tenant) return DEFAULT_BRAND;
-    return {
+    return applyCountryIdentity({
       tenantId: tenant.id,
       companyName: tenant.trade_name || tenant.name,
       legalName: tenant.legal_name || tenant.name,
@@ -59,8 +63,8 @@ export const useBranding = (): BrandIdentity => {
         tenant.show_powered_by === false
           ? null
           : tenant.powered_by_label || DEFAULT_BRAND.poweredBy,
-    };
-  }, [tenant]);
+    }, country);
+  }, [tenant, country]);
 };
 
 /** Applique dynamiquement thème, titre et favicon de la société active */

@@ -55,6 +55,13 @@ export const MODULE_LABELS: Record<string, string> = {
   users: "Utilisateurs et rôles",
   settings: "Paramètres société",
   reports: "Rapports et exports",
+  synthesis: "États de synthèse & Contrôle",
+  sales: "Ventes & clôtures",
+  reconciliation: "Réconciliation",
+  fraud: "Anti-fraude & risques",
+  hse: "HSE & Conformité",
+  workflows: "Workflows & approbations",
+  integrations: "Intégrations Enterprise",
 };
 
 export const ACTION_LABELS: Record<string, string> = {
@@ -65,6 +72,7 @@ export const ACTION_LABELS: Record<string, string> = {
   delete: "Supprimer",
   export: "Exporter",
   administer: "Administrer",
+  manage: "Gérer",
 };
 
 export const ACTION_ORDER = [
@@ -75,6 +83,7 @@ export const ACTION_ORDER = [
   "delete",
   "export",
   "administer",
+  "manage",
 ];
 
 export const useRbac = () => {

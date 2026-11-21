@@ -12,6 +12,8 @@ interface CreateUserRequest {
   password: string;
   full_name: string;
   role: "admin" | "manager" | "operator";
+  /** Pays dans lesquels le nouvel utilisateur peut intervenir (au moins un). */
+  country_ids?: string[];
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -66,7 +68,7 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    const { email, password, full_name, role }: CreateUserRequest = await req.json();
+    const { email, password, full_name, role, country_ids }: CreateUserRequest = await req.json();
 
     // Validate required fields
     if (!email || !password || !full_name || !role) {
@@ -110,6 +112,40 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
+    // Société de l'administrateur appelant + pays demandés (validés AVANT la création du compte)
+    const { data: callerProfile } = await supabaseAdmin
+      .from("profiles")
+      .select("tenant_id, country_id")
+      .eq("user_id", caller.id)
+      .maybeSingle();
+
+    const requested = Array.from(new Set((Array.isArray(country_ids) ? country_ids : []).filter((v) => typeof v === "string")));
+    let allowedCountries: string[] = [];
+    if (callerProfile?.tenant_id) {
+      if (requested.length === 0) {
+        return new Response(
+          JSON.stringify({ error: "Choisissez au moins un pays d'intervention" }),
+          { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        );
+      }
+      const [{ data: tenantCountries }, { data: callerAccess }] = await Promise.all([
+        supabaseAdmin.from("tenant_countries").select("country_id")
+          .eq("tenant_id", callerProfile.tenant_id).eq("is_active", true),
+        supabaseAdmin.from("user_country_access").select("country_id")
+          .eq("tenant_id", callerProfile.tenant_id).eq("user_id", caller.id),
+      ]);
+      const tenantSet = new Set((tenantCountries || []).map((r) => r.country_id as string));
+      const callerSet = new Set((callerAccess || []).map((r) => r.country_id as string));
+      const invalid = requested.filter((id) => !tenantSet.has(id) || (callerSet.size > 0 && !callerSet.has(id)));
+      if (invalid.length > 0) {
+        return new Response(
+          JSON.stringify({ error: "Pays non autorisé pour cette société ou pour votre compte" }),
+          { status: 403, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        );
+      }
+      allowedCountries = requested;
+    }
+
     // Create user using admin API (doesn't affect current session)
     const { data: userData, error: createError } = await supabaseAdmin.auth.admin.createUser({
       email,
@@ -128,23 +164,33 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Rattache le nouvel utilisateur à la société (et au pays) de l'administrateur appelant
-    const { data: callerProfile } = await supabaseAdmin
-      .from("profiles")
-      .select("tenant_id, country_id")
-      .eq("user_id", caller.id)
-      .maybeSingle();
-
+    // Rattache le nouvel utilisateur à la société de l'administrateur et aux pays choisis
     if (userData.user && callerProfile?.tenant_id) {
       const { error: profileScopeError } = await supabaseAdmin
         .from("profiles")
         .update({
           tenant_id: callerProfile.tenant_id,
-          country_id: callerProfile.country_id ?? null,
+          country_id: allowedCountries[0] ?? callerProfile.country_id ?? null,
         })
         .eq("user_id", userData.user.id);
       if (profileScopeError) {
         console.error("Error scoping new user profile:", profileScopeError);
+      }
+      const { error: accessError } = await supabaseAdmin.from("user_country_access").insert(
+        allowedCountries.map((country_id) => ({
+          user_id: userData.user!.id,
+          tenant_id: callerProfile.tenant_id,
+          country_id,
+        }))
+      );
+      if (accessError) {
+        console.error("Error granting country access:", accessError);
+        // Sans pays enregistré, le compte verrait tous les pays : on le supprime plutôt.
+        await supabaseAdmin.auth.admin.deleteUser(userData.user.id);
+        return new Response(
+          JSON.stringify({ error: "Impossible d'enregistrer les pays d'intervention ; compte non créé" }),
+          { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } }
+        );
       }
     }
 

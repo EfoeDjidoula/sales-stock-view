@@ -216,7 +216,7 @@ const TAB_RBAC: Record<string, string[] | null> = {
   workflows: ["workflows.view", "workflows.manage"],
   suite_pro: ["reports.view"],
   rapports: ["reports.view"],
-  etats_synthese: ["reports.view"],
+  etats_synthese: ["synthesis.view"],
 };
 
 // Module (feature flag) requis pour chaque onglet
@@ -261,6 +261,7 @@ const TAB_EXTRA_MODULE: Record<string, string> = {
   proforma: "proforma",
   exercices: "exercices",
   support: "support",
+  etats_synthese: "etats_synthese",
 };
 
 const Index = () => {

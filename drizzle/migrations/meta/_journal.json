@@ -470,6 +470,20 @@
       "when": 1795271963418,
       "tag": "0066_price_structures_unique_per_tenant_country",
       "breakpoints": true
+    },
+    {
+      "idx": 67,
+      "version": "7",
+      "when": 1795272353022,
+      "tag": "0067_account_closing_synthesis_permissions",
+      "breakpoints": true
+    },
+    {
+      "idx": 68,
+      "version": "7",
+      "when": 1795272433382,
+      "tag": "0068_tenant_country_legal_identity",
+      "breakpoints": true
     }
   ]
 }

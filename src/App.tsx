@@ -134,14 +134,15 @@ const App = () => (
       <BrowserRouter>
         <AuthProvider>
           <TenantProvider>
-            <BrandingProvider>
-              <LanguageProvider><CountryProvider>
+            <LanguageProvider><CountryProvider>
+              {/* Identité dépendante du pays actif (raison sociale, adresse, IFU, banque) */}
+              <BrandingProvider>
                 <Toaster />
                 <Sonner />
                 <AppRoutes />
                 <OfflineStatus />
-              </CountryProvider></LanguageProvider>
-            </BrandingProvider>
+              </BrandingProvider>
+            </CountryProvider></LanguageProvider>
           </TenantProvider>
         </AuthProvider>
       </BrowserRouter>

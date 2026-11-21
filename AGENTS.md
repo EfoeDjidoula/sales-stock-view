@@ -26,10 +26,12 @@
 - Identity helpers (has_role, get_user_role, get_user_tenant) only answer for self, same-tenant admins/colleagues or platform admins; internal-only helpers have EXECUTE revoked from app roles; why: no cross-user/tenant lookups.
 - Index validation: index_entries start 'pre_enregistre'; only validate_index_entry / reject_index_entry (N+1, no self-decision, strict chronological order, mandatory reject reason) change status, logged in immutable index_entry_events; validation locks the entry, posts sale + inventory stock_movements and generates the day's validated daily_closure (source 'index', never overwriting a submitted/validated one, no double stock sale); editing a rejected entry returns it to 'pre_enregistre'; why: one traceable path from station input to official stock, closures and KPIs.
 - Dépotages: only validated logistics receptions, booked at BL loaded qty (gauge volume = truck variance); receive/reverse refresh pending index tank readings, reversal refused on N+1-validated days; legacy depotages read-only; why: one record, truck vs station variances visible.
-- Tenant logo/favicon: local files are signature-checked and redrawn as compact PNG data URLs (src/lib/brandImage.ts) in tenants.logo_url/favicon_url; links still accepted; why: public buckets blocked, redrawing strips SVG scripts.
+- Tenant logo/favicon: local files signature-checked and redrawn as PNG data URLs (src/lib/brandImage.ts); why: no public bucket, strips SVG scripts.
 - B2B portal: b2b_portal_users rows make get_user_tenant NULL; clients use only b2b_portal_overview/b2b_portal_action RPCs; why: client logins never reach tenant data.
-- Offline: PWA only via src/lib/pwa.ts; offline writes replay via src/lib/offlineQueue.ts; query cache kept in IndexedDB without JSON (offlineCache.ts); why: server stays authoritative, Set/Map data survives reloads.
-- Report e-mails go only to the caller's own address (send-report-email); why: app emails are one-recipient, user-triggered.
-- PDF letterhead drawn centrally by src/lib/pdf.ts + pdfLetterhead.ts; why: no per-report code.
-- Nozzles/tanks listed from configured rows (src/lib/nozzleOrder.ts); why: any count per product.
-- Price structures: unique per tenant_id + country_id + effective_date (country text = derived ISO code); why: one company can price each of its countries independently.
+- Offline: PWA via src/lib/pwa.ts, writes replay via offlineQueue.ts, IndexedDB cache without JSON (offlineCache.ts); why: server authoritative, Set/Map survive reloads.
+- Report e-mails go only to the caller's own address (send-report-email); why: one-recipient, user-triggered.
+- PDF letterhead: src/lib/pdf.ts + pdfLetterhead.ts; why: no per-report code.
+- Nozzles/tanks from configured rows (nozzleOrder.ts); why: any count.
+- Price structures: unique per tenant+country+effective_date; why: per-country pricing.
+- Country legal identity: tenant_countries legal fields (set_country_identity) override tenant ones via applyCountryIdentity; why: PDFs follow the active country.
+- create-user requires country_ids checked against tenant + caller access; why: no default all-country access.

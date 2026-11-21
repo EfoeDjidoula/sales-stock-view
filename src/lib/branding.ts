@@ -47,6 +47,34 @@ export const DEFAULT_BRAND: BrandIdentity = {
   poweredBy: "Powered by LUMATEK TECHNOLOGY",
 };
 
+export interface CountryLegalIdentity {
+  legal_name?: string | null;
+  address?: string | null;
+  phone?: string | null;
+  email?: string | null;
+  tax_id?: string | null;
+  bank_details?: string | null;
+}
+
+/** L'identité légale du pays actif remplace celle de la société, champ par champ, quand elle est renseignée. */
+export const applyCountryIdentity = (
+  brand: BrandIdentity,
+  country: CountryLegalIdentity | null | undefined
+): BrandIdentity => {
+  if (!country) return brand;
+  const pick = (v: string | null | undefined, fallback: string | null | undefined) =>
+    v && v.trim() ? v.trim() : fallback ?? null;
+  return {
+    ...brand,
+    legalName: pick(country.legal_name, brand.legalName) as string,
+    address: pick(country.address, brand.address),
+    phone: pick(country.phone, brand.phone),
+    email: pick(country.email, brand.email),
+    taxId: pick(country.tax_id, brand.taxId),
+    bankDetails: pick(country.bank_details, brand.bankDetails),
+  };
+};
+
 let activeBrand: BrandIdentity = DEFAULT_BRAND;
 
 export const setActiveBrand = (brand: BrandIdentity) => {

@@ -42,6 +42,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RolesPermissionsMatrix } from "@/components/users/RolesPermissionsMatrix";
 import { UserAccessDialog } from "@/components/users/UserAccessDialog";
 import { useRbac } from "@/hooks/useRbac";
+import { useCountry } from "@/hooks/useCountry";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Loader2, Shield, ShieldCheck, User, UserCog, Crown, AlertTriangle, UserPlus, KeyRound, Power, PowerOff } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -82,6 +84,8 @@ export const UsersModule = () => {
   const [newUserPassword, setNewUserPassword] = useState("");
   const [newUserRole, setNewUserRole] = useState<AppRole>("operator");
   const [isCreating, setIsCreating] = useState(false);
+  const { countries: grantableCountries, countryId: activeCountryId } = useCountry();
+  const [newUserCountries, setNewUserCountries] = useState<string[]>([]);
   const [userToToggle, setUserToToggle] = useState<{ id: string; name: string; isActive: boolean } | null>(null);
   const [userToResetPassword, setUserToResetPassword] = useState<{ id: string; name: string; email: string } | null>(null);
   const [resetEmail, setResetEmail] = useState("");
@@ -107,6 +111,15 @@ export const UsersModule = () => {
         variant: "destructive",
         title: "Erreur",
         description: "Veuillez remplir tous les champs obligatoires.",
+      });
+      return;
+    }
+
+    if (newUserCountries.length === 0) {
+      toast({
+        variant: "destructive",
+        title: "Erreur",
+        description: "Choisissez au moins un pays d'intervention.",
       });
       return;
     }
@@ -144,6 +157,7 @@ export const UsersModule = () => {
             password: newUserPassword,
             full_name: newUserName,
             role: newUserRole,
+            country_ids: newUserCountries,
           }),
         }
       );
@@ -164,6 +178,7 @@ export const UsersModule = () => {
       setNewUserName("");
       setNewUserPassword("");
       setNewUserRole("operator");
+      setNewUserCountries([]);
       setIsCreateDialogOpen(false);
       
       // Refresh users list
@@ -272,7 +287,13 @@ export const UsersModule = () => {
             Créez des profils et gérez les rôles des utilisateurs
           </p>
         </div>
-        <Button onClick={() => setIsCreateDialogOpen(true)} className="gap-2">
+        <Button
+          onClick={() => {
+            setNewUserCountries(activeCountryId ? [activeCountryId] : []);
+            setIsCreateDialogOpen(true);
+          }}
+          className="gap-2"
+        >
           <UserPlus className="w-4 h-4" />
           Créer un utilisateur
         </Button>
@@ -570,6 +591,33 @@ export const UsersModule = () => {
               </Select>
               <p className="text-xs text-muted-foreground">
                 {roleConfig[newUserRole].description}
+              </p>
+            </div>
+            <div className="space-y-2">
+              <Label>Pays d'intervention *</Label>
+              <div className="grid grid-cols-2 gap-2">
+                {grantableCountries.map((c) => (
+                  <label
+                    key={c.id}
+                    className="flex items-center gap-2 rounded-md border px-3 py-2 cursor-pointer"
+                  >
+                    <Checkbox
+                      checked={newUserCountries.includes(c.id)}
+                      onCheckedChange={() =>
+                        setNewUserCountries((prev) =>
+                          prev.includes(c.id) ? prev.filter((v) => v !== c.id) : [...prev, c.id]
+                        )
+                      }
+                      aria-label={c.name}
+                    />
+                    <span className="text-sm">
+                      {c.flag} {c.name}
+                    </span>
+                  </label>
+                ))}
+              </div>
+              <p className="text-xs text-muted-foreground">
+                L'utilisateur ne verra que les pays cochés. Modifiable ensuite via « Accès ».
               </p>
             </div>
             <div className="flex justify-end gap-2 pt-2">

@@ -15,6 +15,13 @@ export interface WorkspaceCountry {
   default_language: string;
   timezone: string;
   is_default: boolean;
+  /** Identité légale propre au pays (null = reprendre celle de la société). */
+  legal_name: string | null;
+  address: string | null;
+  phone: string | null;
+  email: string | null;
+  tax_id: string | null;
+  bank_details: string | null;
 }
 
 const storageKey = (tenantId: string) => `lumatek.selectedCountryId.${tenantId}`;
@@ -47,7 +54,7 @@ export const CountryProvider = ({ children }: { children: ReactNode }) => {
       const [{ data: tc, error: e1 }, { data: access, error: e2 }] = await Promise.all([
         supabase
           .from("tenant_countries")
-          .select("country_id, is_default, is_active, status, countries(id, name, iso_code, flag, default_currency, default_language, timezone)")
+          .select("country_id, is_default, is_active, status, legal_name, address, phone, email, tax_id, bank_details, countries(id, name, iso_code, flag, default_currency, default_language, timezone)")
           .eq("tenant_id", tenantId!)
           .eq("is_active", true),
         supabase
@@ -64,8 +71,19 @@ export const CountryProvider = ({ children }: { children: ReactNode }) => {
       const list = (tc || [])
         .filter((row) => allowedIds.size === 0 || allowedIds.has(row.country_id as string))
         .map((row) => {
-          const c = row.countries as unknown as Omit<WorkspaceCountry, "is_default">;
-          return c ? ({ ...c, is_default: Boolean(row.is_default) } as WorkspaceCountry) : null;
+          const c = row.countries as unknown as Omit<WorkspaceCountry, "is_default" | "legal_name" | "address" | "phone" | "email" | "tax_id" | "bank_details">;
+          return c
+            ? ({
+                ...c,
+                is_default: Boolean(row.is_default),
+                legal_name: row.legal_name ?? null,
+                address: row.address ?? null,
+                phone: row.phone ?? null,
+                email: row.email ?? null,
+                tax_id: row.tax_id ?? null,
+                bank_details: row.bank_details ?? null,
+              } as WorkspaceCountry)
+            : null;
         })
         .filter(Boolean) as WorkspaceCountry[];
 
@@ -131,7 +149,8 @@ export const CountryProvider = ({ children }: { children: ReactNode }) => {
 
   // Synchronise l'URL avec le pays actif (refresh / partage de lien)
   useEffect(() => {
-    if (query.isLoading) return;
+    // Tant que la société ou ses pays ne sont pas chargés, on garde le pays du lien partagé
+    if (!tenantId || query.isLoading || !query.data) return;
     const current = searchParams.get("country");
     if (countryId) {
       if (current === countryId) return;
@@ -143,7 +162,7 @@ export const CountryProvider = ({ children }: { children: ReactNode }) => {
       next.delete("country");
       setSearchParams(next, { replace: true });
     }
-  }, [countryId, query.isLoading, searchParams, setSearchParams]);
+  }, [countryId, tenantId, query.isLoading, query.data, searchParams, setSearchParams]);
 
   // Changement de pays : purge des données affichées (jamais les caches de contexte)
   const previousCountryRef = useRef<string | null>(null);
@@ -173,6 +192,9 @@ export const CountryProvider = ({ children }: { children: ReactNode }) => {
 
   return <CountryContext.Provider value={value}>{children}</CountryContext.Provider>;
 };
+
+/** Contexte pays s'il existe (null hors CountryProvider). */
+export const useOptionalCountry = () => useContext(CountryContext) ?? null;
 
 export const useCountry = () => {
   const ctx = useContext(CountryContext);

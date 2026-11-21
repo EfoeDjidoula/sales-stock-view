@@ -54,3 +54,7 @@
 
 ## SaaS
 - [x] Consolidation YATT & CO ENERGY : 1 société, 4 pays (Bénin, Togo, Burkina, Côte d'Ivoire), anciennes sociétés vides supprimées, structures de prix uniques par société + pays.
+- [x] Tous les utilisateurs YATT ont accès aux 4 pays (réglage ensuite dans la gestion des utilisateurs).
+- [x] Création de compte : choisir le ou les pays d'intervention.
+- [x] Droits et modules : module + droits « États de synthèse », libellés manquants dans la matrice, liste complète des modules YATT.
+- [x] Identité légale par pays (raison sociale, adresse, IFU, banque, téléphone) utilisée sur les rapports PDF selon le pays actif.
