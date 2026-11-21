@@ -1,0 +1,2 @@
+- Logistics loading: trip loading plans live in logistics_trip_loads, written only via logistics_set_loads (full capacity, one product+destination per compartment, mono/mixed mode) and frozen once loaded; why: load conformity is enforced server-side and stays traceable.
+- Logistics delivery: logistics_confirm_site writes immutable logistics_load_deliveries (≤ compartment load), auto-delivers after the last site; why: site-by-site proof.
