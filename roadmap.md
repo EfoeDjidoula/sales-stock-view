@@ -31,3 +31,6 @@
 - [ ] Abonnements programmés aux rapports par email — non faisable avec les e-mails de l'application (envois groupés programmés interdits) ; attend un choix de l'utilisateur.
 - [x] Application installable et utilisable sans internet : écrans déjà consultés, saisie des index et réception logistique gardées sur l'appareil puis envoyées au retour du réseau.
 - [x] Récap PDF : prix de vente = structure de prix en vigueur à la date
+- [x] États de synthèse & Contrôle — étape 1 : menu (pôle 4) + Compte des gérants (station, plage de dates, tolérance libre, bilan matières/financier, livraisons commandé/enlevé/réceptionné, index, détail journalier, export Excel).
+- [ ] États de synthèse — étape 2/3 : arrêté des comptes (passation de gérance, changement de prix).
+- [ ] États de synthèse — étape 4 : récaps ECAP hebdo/mensuel et fiches d'inventaire (Excel + PDF).

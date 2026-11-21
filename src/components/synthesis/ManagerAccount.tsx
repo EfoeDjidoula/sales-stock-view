@@ -31,7 +31,7 @@ const dateFr = (d: string) => new Date(d + "T00:00:00").toLocaleDateString("fr-F
 const FUEL_LABEL: Record<Fuel, string> = { super: "Super", gasoil: "Gasoil" };
 const VERDICT: Record<Verdict, { label: string; cls: string }> = {
   ok: { label: "Dans la tolérance", cls: "bg-success/15 text-success border-success/30" },
-  manquant: { label: "Manquant à justifier", cls: "bg-destructive/15 text-negative border-destructive/30" },
+  manquant: { label: "Manquant à justifier", cls: "bg-negative/15 text-negative border-negative/40" },
   excedent: { label: "Excédent à justifier", cls: "bg-warning/15 text-warning border-warning/30" },
   na: { label: "Non qualifiable", cls: "bg-muted text-muted-foreground border-border" },
 };
