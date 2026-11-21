@@ -449,6 +449,13 @@
       "when": 1795268946328,
       "tag": "0063_depotage_bl_and_reverse_cascade",
       "breakpoints": true
+    },
+    {
+      "idx": 64,
+      "version": "7",
+      "when": 1795269799109,
+      "tag": "0064_account_closings_archive",
+      "breakpoints": true
     }
   ]
 }

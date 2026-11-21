@@ -46,7 +46,8 @@
 - [x] Cascade automatique annulation réception → ligne d'index en attente (refus si la journée est déjà validée N+1).
 
 ## Priorité 2 — États de synthèse
-- [ ] Arrêté des comptes, récaps hebdo/mensuel, fiches d'inventaire.
+- [x] Arrêté des comptes : fiche station + bilan réseau, Excel/PDF, arrêtés archivés, validés et verrouillés (le suivant reprend date et gérant).
+- [ ] Récaps hebdo/mensuel, fiches d'inventaire.
 
 ## Priorité 3 — Logistique
 - [ ] Rectification/justification des alertes de livraison (TRP-20261010-B04F5F), compartiments.

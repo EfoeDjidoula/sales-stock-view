@@ -14,6 +14,159 @@ export type Database = {
   }
   public: {
     Tables: {
+      account_closing_events: {
+        Row: {
+          action: string
+          author_id: string | null
+          author_name: string | null
+          closing_id: string
+          country_id: string
+          created_at: string
+          id: string
+          reason: string | null
+          tenant_id: string
+        }
+        Insert: {
+          action: string
+          author_id?: string | null
+          author_name?: string | null
+          closing_id: string
+          country_id: string
+          created_at?: string
+          id?: string
+          reason?: string | null
+          tenant_id: string
+        }
+        Update: {
+          action?: string
+          author_id?: string | null
+          author_name?: string | null
+          closing_id?: string
+          country_id?: string
+          created_at?: string
+          id?: string
+          reason?: string | null
+          tenant_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "account_closing_events_closing_id_fkey"
+            columns: ["closing_id"]
+            isOneToOne: false
+            referencedRelation: "account_closings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      account_closings: {
+        Row: {
+          cancel_reason: string | null
+          cancelled_at: string | null
+          cancelled_by: string | null
+          cancelled_by_name: string | null
+          control_date: string
+          country_id: string
+          created_at: string
+          date_reprise: string | null
+          gerant: string
+          gerant_entrant: string | null
+          id: string
+          include_pending: boolean
+          motif: string
+          prev_control: string
+          price_gasoil: number
+          price_super: number
+          reference: string
+          snapshot: Json
+          station_id: string
+          status: string
+          tank_gauges: Json
+          tenant_id: string
+          totals: Json
+          validated_at: string
+          validated_by: string
+          validated_by_name: string | null
+        }
+        Insert: {
+          cancel_reason?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          cancelled_by_name?: string | null
+          control_date: string
+          country_id: string
+          created_at?: string
+          date_reprise?: string | null
+          gerant: string
+          gerant_entrant?: string | null
+          id?: string
+          include_pending?: boolean
+          motif: string
+          prev_control: string
+          price_gasoil: number
+          price_super: number
+          reference: string
+          snapshot?: Json
+          station_id: string
+          status?: string
+          tank_gauges?: Json
+          tenant_id: string
+          totals?: Json
+          validated_at?: string
+          validated_by: string
+          validated_by_name?: string | null
+        }
+        Update: {
+          cancel_reason?: string | null
+          cancelled_at?: string | null
+          cancelled_by?: string | null
+          cancelled_by_name?: string | null
+          control_date?: string
+          country_id?: string
+          created_at?: string
+          date_reprise?: string | null
+          gerant?: string
+          gerant_entrant?: string | null
+          id?: string
+          include_pending?: boolean
+          motif?: string
+          prev_control?: string
+          price_gasoil?: number
+          price_super?: number
+          reference?: string
+          snapshot?: Json
+          station_id?: string
+          status?: string
+          tank_gauges?: Json
+          tenant_id?: string
+          totals?: Json
+          validated_at?: string
+          validated_by?: string
+          validated_by_name?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "account_closings_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "countries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "account_closings_station_id_fkey"
+            columns: ["station_id"]
+            isOneToOne: false
+            referencedRelation: "stations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "account_closings_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       api_keys: {
         Row: {
           allowed_countries: string[]
@@ -8376,6 +8529,10 @@ export type Database = {
       }
     }
     Functions: {
+      account_closing_action: {
+        Args: { _action: string; _data: Json }
+        Returns: string
+      }
       api_key_create: {
         Args: {
           _countries: string[]
