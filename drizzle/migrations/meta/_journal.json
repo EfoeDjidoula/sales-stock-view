@@ -512,6 +512,13 @@
       "when": 1795276448673,
       "tag": "0072_lifting_guard_any_progress",
       "breakpoints": true
+    },
+    {
+      "idx": 73,
+      "version": "7",
+      "when": 1795308037124,
+      "tag": "0073_enterprise_plan_includes_all_modules",
+      "breakpoints": true
     }
   ]
 }
