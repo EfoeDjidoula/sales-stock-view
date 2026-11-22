@@ -33,5 +33,5 @@
 - PDF letterhead: src/lib/pdf.ts + pdfLetterhead.ts; why: no per-report code.
 - Nozzles/tanks from configured rows (nozzleOrder.ts); why: any count.
 - Price structures: unique per tenant+country+effective_date; why: per-country pricing.
-- Country legal identity: tenant_countries legal fields (set_country_identity) override tenant ones via applyCountryIdentity, letterhead title included; why: PDFs follow the active country.
+- Country legal identity: tenant_countries legal fields (set_country_identity) override tenant ones via applyCountryIdentity; why: PDFs follow the active country.
 - create-user requires country_ids checked against tenant + caller access; why: no default all-country access.
