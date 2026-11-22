@@ -207,13 +207,13 @@ export default function PeriodicReportsModule() {
     }
   }, [d, key, from, to]);
 
-  const sub = `${brand?.companyName ?? ""} — période du ${from} au ${to}`;
+  const sub = `${brand?.legalName ?? ""} — période du ${from} au ${to}`;
   const [mailing, setMailing] = useState(false);
   // Sends the displayed report to the signed-in user's own e-mail address.
   const toMail = async (r: Report) => {
     setMailing(true);
     const { data, error } = await supabase.functions.invoke("send-report-email", {
-      body: { report_key: key, title: r.title, from, to, company: brand?.companyName ?? "", headers: r.headers, rows: r.rows.map((x) => x.map(String)), note: r.note },
+      body: { report_key: key, title: r.title, from, to, company: brand?.legalName ?? "", headers: r.headers, rows: r.rows.map((x) => x.map(String)), note: r.note },
     });
     setMailing(false);
     let msg = error?.message;

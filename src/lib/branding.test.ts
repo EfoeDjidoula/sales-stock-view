@@ -28,3 +28,21 @@ describe("identité légale par pays sur les rapports", () => {
     expect(b.companyName).toBe("YATT & CO ENERGY");
   });
 });
+
+describe("papier à en-tête PDF", () => {
+  it("la raison sociale du pays actif est le titre, pas le nom commercial", async () => {
+    const { letterheadLines } = await import("./pdfLetterhead");
+    const b = applyCountryIdentity({ ...group, appDescription: "Suivi, gestion des stock et stations" }, { name: "Togo", legal_name: "YATT & CO ENERGY TOGO" });
+    const l = letterheadLines(b);
+    expect(l.title).toBe("YATT & CO ENERGY TOGO");
+    expect(l.subtitle).toBe("Suivi, gestion des stock et stations");
+    expect(l.detail).toBe("YATT & CO ENERGY  ·  Pays : Togo");
+  });
+
+  it("sans raison sociale propre au pays, le titre reprend celle de la société", async () => {
+    const { letterheadLines } = await import("./pdfLetterhead");
+    const l = letterheadLines(applyCountryIdentity(group, { name: "Côte d'Ivoire", legal_name: null }));
+    expect(l.title).toBe("YATT & CO ENERGY");
+    expect(l.detail).toBe("Pays : Côte d'Ivoire");
+  });
+});

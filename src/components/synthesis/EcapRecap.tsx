@@ -87,9 +87,9 @@ export default function EcapRecap() {
             {isFetching && <Loader2 className="w-4 h-4 animate-spin" />}
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button variant="outline" className="gap-2" disabled={!sheet} onClick={() => void exportEcapXlsx([sheet!], brand.companyName)}><Download className="w-4 h-4" />Excel station</Button>
+            <Button variant="outline" className="gap-2" disabled={!sheet} onClick={() => void exportEcapXlsx([sheet!], brand.legalName)}><Download className="w-4 h-4" />Excel station</Button>
             <Button variant="outline" className="gap-2" disabled={!sheet} onClick={() => exportEcapPdf([sheet!])}><FileText className="w-4 h-4" />PDF station</Button>
-            <Button variant="outline" className="gap-2" disabled={!data} onClick={() => void exportEcapXlsx(allSheets(), brand.companyName)}><Download className="w-4 h-4" />Excel toutes stations</Button>
+            <Button variant="outline" className="gap-2" disabled={!data} onClick={() => void exportEcapXlsx(allSheets(), brand.legalName)}><Download className="w-4 h-4" />Excel toutes stations</Button>
             <Button variant="outline" className="gap-2" disabled={!data} onClick={() => exportEcapPdf(allSheets())}><FileText className="w-4 h-4" />PDF toutes stations</Button>
           </div>
         </CardContent>

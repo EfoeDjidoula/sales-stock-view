@@ -18,6 +18,8 @@ export interface BrandIdentity {
   website: string | null;
   taxId: string | null;
   bankDetails?: string | null;
+  /** Nom du pays actif (affiché sur le papier à en-tête). */
+  countryName?: string | null;
   currency: string;
   language: string;
   appTitle: string | null;
@@ -48,6 +50,7 @@ export const DEFAULT_BRAND: BrandIdentity = {
 };
 
 export interface CountryLegalIdentity {
+  name?: string | null;
   legal_name?: string | null;
   address?: string | null;
   phone?: string | null;
@@ -72,6 +75,7 @@ export const applyCountryIdentity = (
     email: pick(country.email, brand.email),
     taxId: pick(country.tax_id, brand.taxId),
     bankDetails: pick(country.bank_details, brand.bankDetails),
+    countryName: pick(country.name, brand.countryName),
   };
 };
 

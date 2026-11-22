@@ -99,7 +99,7 @@ export default function InventorySheet() {
             {isFetching && <Loader2 className="w-4 h-4 animate-spin" />}
           </div>
           <div className="flex flex-wrap gap-2">
-            <Button variant="outline" className="gap-2" disabled={!sheet} onClick={() => void exportInventoryXlsx(sheet!, brand.companyName)}><Download className="w-4 h-4" />Excel</Button>
+            <Button variant="outline" className="gap-2" disabled={!sheet} onClick={() => void exportInventoryXlsx(sheet!, brand.legalName)}><Download className="w-4 h-4" />Excel</Button>
             <Button variant="outline" className="gap-2" disabled={!sheet} onClick={() => exportInventoryPdf(sheet!)}><FileText className="w-4 h-4" />PDF</Button>
           </div>
           {!rangeOk && <p className="text-sm text-negative">La date de début doit précéder la date du relevé.</p>}

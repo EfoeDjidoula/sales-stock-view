@@ -113,7 +113,7 @@ export default function ProSuiteModule() {
 
   const stName = (id: string) => d.stations?.find((s) => s.id === id)?.name ?? "—";
   const prName = (id: string) => d.products?.find((p) => p.id === id)?.name ?? "—";
-  const sub = `${brand?.companyName ?? ""} — période du ${from} au ${to}`;
+  const sub = `${brand?.legalName ?? ""} — période du ${from} au ${to}`;
 
   return (
     <div className="space-y-4">

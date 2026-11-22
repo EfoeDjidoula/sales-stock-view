@@ -84,10 +84,11 @@ export const usePdfExport = () => {
     doc.setTextColor(255, 255, 255);
     doc.setFont("helvetica", "bold");
     doc.setFontSize(15);
-    doc.text(brand.legalName, W / 2, 10, { align: "center" });
+    // La raison sociale du pays figure déjà sur le papier à en-tête : le bandeau porte le titre du rapport.
+    doc.text("Récapitulatif journalier des index et des ventes", W / 2, 10, { align: "center" });
     doc.setFont("helvetica", "normal");
     doc.setFontSize(9.5);
-    doc.text("Récapitulatif journalier des index et des ventes", W / 2, 17, { align: "center" });
+    if (brand.countryName) doc.text(`Pays : ${brand.countryName}`, W / 2, 17, { align: "center" });
 
     let y = 29;
     doc.setTextColor(...text);

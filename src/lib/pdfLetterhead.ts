@@ -29,6 +29,19 @@ export function footerLines(b: BrandIdentity): string[] {
   return [l1, l2].filter(Boolean);
 }
 
+/**
+ * Lignes centrées de l'en-tête : la raison sociale du pays actif en titre (jamais masquée
+ * par le nom commercial ni par la description), puis le descriptif, puis nom commercial + pays.
+ */
+export function letterheadLines(b: BrandIdentity): { title: string; subtitle: string; detail: string } {
+  const title = (b.legalName || b.companyName || "").trim();
+  const subtitle = (b.appDescription || "").trim();
+  const trade = b.companyName && b.companyName.trim() !== title ? b.companyName.trim() : null;
+  const country = b.countryName?.trim() || null;
+  const detail = [trade, country ? `Pays : ${country}` : null].filter(Boolean).join("  ·  ");
+  return { title, subtitle, detail };
+}
+
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 type Doc = any;
 
@@ -46,10 +59,13 @@ export function drawLetterhead(doc: Doc, page: number, pages: number, brand: Bra
     const r = Math.min(maxW / logoCache.w, maxH / logoCache.h);
     try { doc.addImage(logoCache.data, "PNG", m, mm(4), logoCache.w * r, logoCache.h * r); } catch { /* logo illisible : ignoré */ }
   }
+  const lh = letterheadLines(brand);
   doc.setFont("helvetica", "bold"); doc.setFontSize(14);
-  doc.text(brand.companyName || brand.legalName, W / 2, mm(10), { align: "center" });
-  const desc = brand.appDescription || (brand.legalName !== brand.companyName ? brand.legalName : "");
-  if (desc) { doc.setFont("helvetica", "normal"); doc.setFontSize(8.5); doc.text(doc.splitTextToSize(desc, W - mm(100)).slice(0, 2), W / 2, mm(15), { align: "center" }); }
+  doc.text(doc.splitTextToSize(lh.title, W - mm(100))[0], W / 2, mm(9.5), { align: "center" });
+  let y = mm(14);
+  doc.setFont("helvetica", "normal");
+  if (lh.subtitle) { doc.setFontSize(8.5); doc.text(doc.splitTextToSize(lh.subtitle, W - mm(100))[0], W / 2, y, { align: "center" }); y += mm(3.8); }
+  if (lh.detail) { doc.setFontSize(7.5); doc.setTextColor(90, 90, 90); doc.text(doc.splitTextToSize(lh.detail, W - mm(100))[0], W / 2, y, { align: "center" }); doc.setTextColor(30, 30, 30); }
   doc.setDrawColor(200, 200, 200); doc.setLineWidth(mm(0.3));
   doc.line(m, top - mm(2), W - m, top - mm(2));
   doc.line(m, H - bottom + mm(1.5), W - m, H - bottom + mm(1.5));

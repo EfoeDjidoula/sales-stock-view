@@ -149,7 +149,7 @@ export default function ManagerAccount() {
     const wb = new ExcelJS.Workbook();
     const ws = wb.addWorksheet("Compte des gérants");
     const title = ws.addRow([`COMPTE DES GÉRANTS — ${station?.name ?? ""}`]); title.font = { bold: true, size: 14 };
-    ws.addRow([brand.companyName, `Du ${dateFr(from)} au ${dateFr(to)}`, includePending ? "Saisies validées + en attente" : "Saisies validées N+1", `Tolérance ±${fmt(tol, 2)} %`]);
+    ws.addRow([brand.legalName, `Du ${dateFr(from)} au ${dateFr(to)}`, includePending ? "Saisies validées + en attente" : "Saisies validées N+1", `Tolérance ±${fmt(tol, 2)} %`]);
     ws.addRow([]);
     ws.addRow(["A. BILAN MATIÈRES (litres)", "Super", "Gasoil"]).font = { bold: true };
     BALANCE_ROWS.forEach((r) => ws.addRow([r.label, result.balances.super[r.key] as number, result.balances.gasoil[r.key] as number]));

@@ -182,19 +182,19 @@ export default function AccountClosing() {
       .map(({ pos: _pos, ...p }) => p);
     const sales = periodSales(data.entries, weeklyPeriods(from, to));
     return {
-      company: brand.companyName, stationName: station.name, motif, gerant: gerant.trim(), gerantEntrant: gerantEntrant.trim(), dateReprise,
+      company: brand.legalName, stationName: station.name, motif, gerant: gerant.trim(), gerantEntrant: gerantEntrant.trim(), dateReprise,
       prevControl, control, includePending, prices, tanks,
       deliveries: monthlyDeliveries(data.receptions, from, to), sales, pumps,
       valuation: valuation(tanks, sales.total.montant),
       missing: missingDays(from, to, data.entries),
     };
-  }, [data, mode, station, prices.super, prices.gasoil, motif, gerant, gerantEntrant, dateReprise, prevControl, control, includePending, from, to, brand.companyName]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [data, mode, station, prices.super, prices.gasoil, motif, gerant, gerantEntrant, dateReprise, prevControl, control, includePending, from, to, brand.legalName]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const networkClosing: NetworkClosing | null = useMemo(() => {
     if (!data || mode !== "network") return null;
     const periods = [{ from, to, label: "TOTAL" }];
     return {
-      company: brand.companyName, prevControl, control, includePending,
+      company: brand.legalName, prevControl, control, includePending,
       stations: stations
         .map((s) => {
           const tks = data.tanks.filter((t) => t.station_id === s.id);
@@ -206,7 +206,7 @@ export default function AccountClosing() {
         })
         .filter((x): x is NonNullable<typeof x> => !!x),
     };
-  }, [data, mode, stations, prices.super, prices.gasoil, prevControl, control, includePending, from, to, brand.companyName]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [data, mode, stations, prices.super, prices.gasoil, prevControl, control, includePending, from, to, brand.legalName]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const prevLocked = !!lastValid && mode === "station";
   const canArchive = !!stationClosing && !!gerant.trim() && (motif !== "gerance" || !!gerantEntrant.trim()) && prices.super > 0 && prices.gasoil > 0;
