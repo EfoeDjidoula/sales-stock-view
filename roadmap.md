@@ -53,7 +53,7 @@
 - [x] Rectification par compartiment / justification des écarts de livraison (outil livré ; TRP-20261010-B04F5F reste à traiter par l'utilisateur avec les quantités réelles).
 - [x] Phase 1 : pro-formas dépôt, bons de commande, statut de règlement (onglet 1).
 - [x] Phase 2 : bons d'enlèvement (solde BC, camions/chauffeurs disponibles, documents obligatoires, signature, annulation motivée, PDF).
-- [ ] Phase 3 : suivi des chargements (statuts, filtres, historique).
+- [x] Phase 3 : suivi des chargements (7 statuts, filtres, historique).
 - [ ] Phase 4 : bons de livraison numériques par site + 3 signatures.
 - [ ] Phase 5 : dépotages par compartiment et par cuve.
 - [ ] Phase 6 : répartition BE/BL.
