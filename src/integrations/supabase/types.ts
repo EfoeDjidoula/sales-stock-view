@@ -4755,6 +4755,179 @@ export type Database = {
           },
         ]
       }
+      logistics_delivery_note_events: {
+        Row: {
+          action: string
+          actor: string | null
+          created_at: string
+          details: Json
+          id: string
+          note_id: string
+        }
+        Insert: {
+          action: string
+          actor?: string | null
+          created_at?: string
+          details?: Json
+          id?: string
+          note_id: string
+        }
+        Update: {
+          action?: string
+          actor?: string | null
+          created_at?: string
+          details?: Json
+          id?: string
+          note_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "logistics_delivery_note_events_note_id_fkey"
+            columns: ["note_id"]
+            isOneToOne: false
+            referencedRelation: "logistics_delivery_notes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      logistics_delivery_note_signatures: {
+        Row: {
+          decision: string
+          id: string
+          note_id: string
+          reserves: string | null
+          role: string
+          signature_png: string
+          signed_at: string
+          signed_by: string
+          signer_name: string
+        }
+        Insert: {
+          decision: string
+          id?: string
+          note_id: string
+          reserves?: string | null
+          role: string
+          signature_png: string
+          signed_at?: string
+          signed_by: string
+          signer_name: string
+        }
+        Update: {
+          decision?: string
+          id?: string
+          note_id?: string
+          reserves?: string | null
+          role?: string
+          signature_png?: string
+          signed_at?: string
+          signed_by?: string
+          signer_name?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "logistics_delivery_note_signatures_note_id_fkey"
+            columns: ["note_id"]
+            isOneToOne: false
+            referencedRelation: "logistics_delivery_notes"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      logistics_delivery_notes: {
+        Row: {
+          carrier_user: string | null
+          client_id: string | null
+          consignee_user: string | null
+          country_id: string
+          created_at: string
+          id: string
+          lifting_id: string | null
+          number: string
+          shipper_user: string | null
+          site_key: string
+          snapshot: Json
+          station_id: string | null
+          tenant_id: string
+          trip_id: string
+        }
+        Insert: {
+          carrier_user?: string | null
+          client_id?: string | null
+          consignee_user?: string | null
+          country_id: string
+          created_at?: string
+          id?: string
+          lifting_id?: string | null
+          number?: string
+          shipper_user?: string | null
+          site_key: string
+          snapshot: Json
+          station_id?: string | null
+          tenant_id: string
+          trip_id: string
+        }
+        Update: {
+          carrier_user?: string | null
+          client_id?: string | null
+          consignee_user?: string | null
+          country_id?: string
+          created_at?: string
+          id?: string
+          lifting_id?: string | null
+          number?: string
+          shipper_user?: string | null
+          site_key?: string
+          snapshot?: Json
+          station_id?: string | null
+          tenant_id?: string
+          trip_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "logistics_delivery_notes_client_id_fkey"
+            columns: ["client_id"]
+            isOneToOne: false
+            referencedRelation: "clients"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "logistics_delivery_notes_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "countries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "logistics_delivery_notes_lifting_id_fkey"
+            columns: ["lifting_id"]
+            isOneToOne: false
+            referencedRelation: "depot_lifting_orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "logistics_delivery_notes_station_id_fkey"
+            columns: ["station_id"]
+            isOneToOne: false
+            referencedRelation: "stations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "logistics_delivery_notes_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "logistics_delivery_notes_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "logistics_trips"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       logistics_documents: {
         Row: {
           country_id: string
@@ -9314,6 +9487,18 @@ export type Database = {
           _module: string
         }
         Returns: undefined
+      }
+      logistics_bl_action: {
+        Args: { _action: string; _data?: Json; _id: string }
+        Returns: Json
+      }
+      logistics_bl_generate_internal: {
+        Args: { _trip: string }
+        Returns: number
+      }
+      logistics_bl_overview: {
+        Args: { _country?: string; _offset?: number; _tenant?: string }
+        Returns: Json
       }
       logistics_confirm_site: {
         Args: { _lines: Json; _note?: string; _trip: string }

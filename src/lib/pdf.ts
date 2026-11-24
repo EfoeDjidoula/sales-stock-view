@@ -1,5 +1,6 @@
 import { jsPDF as BaseJsPDF, type jsPDFOptions } from "jspdf";
 import { drawLetterhead, LETTERHEAD_TOP_MM, LETTERHEAD_BOTTOM_MM } from "./pdfLetterhead";
+import type { BrandIdentity } from "./branding";
 
 /**
  * Les formats fr-FR utilisent des espaces insécables (U+202F, U+00A0) comme
@@ -18,6 +19,7 @@ export function pdfSafeText<T>(value: T): T {
 type AnyFn = (...args: any[]) => any;
 
 export class jsPDF extends BaseJsPDF {
+  declare letterheadBrand?: BrandIdentity;
   constructor(options?: jsPDFOptions);
   constructor(
     orientation?: jsPDFOptions["orientation"],
@@ -77,7 +79,7 @@ export function stampLetterhead(doc: Doc) {
   for (let i = 1; i <= pages; i++) {
     doc.setPage(i);
     doc.internal.write("Q");
-    drawLetterhead(doc, i, pages);
+    drawLetterhead(doc, i, pages, doc.letterheadBrand);
   }
   doc.setPage(current);
 }
