@@ -1,0 +1,147 @@
+import { useEffect, useMemo, useState } from "react";
+import { format } from "date-fns";
+import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { useScope } from "@/hooks/useScope";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { dischargeVariance, pendingDischarges, validGauges } from "@/lib/discharges";
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const db = supabase as any;
+type Row = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
+const fmt = (n: unknown) => (n == null ? "—" : Math.round(Number(n)).toLocaleString("fr-FR"));
+
+interface Props { d: Record<string, Row[]>; L: (fr: string, en: string) => string; canValidate: boolean; onChanged: () => void }
+
+export const DischargesTab = ({ d, L, canValidate, onChanged }: Props) => {
+  const { scopeQuery } = useScope();
+  const [tanks, setTanks] = useState<Row[]>([]);
+  const [done, setDone] = useState<Row[]>([]);
+  const [cur, setCur] = useState<Row | null>(null);
+  const [form, setForm] = useState({ tank: "", before: "", after: "", note: "" });
+  const [busy, setBusy] = useState(false);
+
+  const load = async () => {
+    const [t, x] = await Promise.all([
+      scopeQuery(db.from("tanks").select("id,name,station_id,product_id,capacity_liters")),
+      scopeQuery(db.from("logistics_discharges").select("*").order("created_at", { ascending: false }).limit(500)),
+    ]);
+    setTanks(t.data ?? []); setDone(x.data ?? []);
+  };
+  useEffect(() => { load(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const nm = (list: string, id?: string | null, key = "name") => (d[list] ?? []).find((r) => r.id === id)?.[key] ?? "—";
+  const trip = (id: string) => (d.trips ?? []).find((t) => t.id === id);
+  const pending = useMemo(() => pendingDischarges((d.loads ?? []) as Row[] as never[],
+    new Set((d.deliveries ?? []).map((r) => r.load_id)), new Set(done.map((r) => r.load_id))) as Row[], [d, done]);
+  const tankName = (id: string) => tanks.find((t) => t.id === id)?.name ?? "—";
+  const candTanks = cur ? tanks.filter((t) => t.station_id === cur.station_id && (!t.product_id || t.product_id === cur.product_id)) : [];
+  const tk = tanks.find((t) => t.id === form.tank);
+  const b = Number(form.before), a = Number(form.after);
+  const ok = !!form.tank && form.before !== "" && form.after !== "" && validGauges(b, a, tk?.capacity_liters);
+  const v = cur && ok ? dischargeVariance(Number(cur.qty_litres), b, a) : null;
+
+  const submit = async () => {
+    if (!cur) return;
+    setBusy(true);
+    const { error } = await db.rpc("logistics_discharge", { _load: cur.id, _tank: form.tank, _before: b, _after: a, _note: form.note || null });
+    setBusy(false);
+    if (error) return toast.error(error.message);
+    toast.success(L("Dépotage enregistré", "Discharge recorded"));
+    setCur(null); await load(); onChanged();
+  };
+
+  return (
+    <div className="space-y-4">
+      <Card>
+        <CardHeader><CardTitle className="text-base">{L("Compartiments à dépoter", "Compartments to discharge")} <Badge variant="outline" className="ml-2">{pending.length}</Badge></CardTitle></CardHeader>
+        <CardContent className="overflow-x-auto">
+          <Table>
+            <TableHeader><TableRow>
+              <TableHead>{L("Transport", "Trip")}</TableHead><TableHead>{L("Station", "Station")}</TableHead>
+              <TableHead>{L("Compartiment", "Compartment")}</TableHead><TableHead>{L("Produit", "Product")}</TableHead>
+              <TableHead className="text-right">{L("Volume BL (L)", "BL volume (L)")}</TableHead><TableHead />
+            </TableRow></TableHeader>
+            <TableBody>
+              {pending.length === 0 && <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground">{L("Aucun compartiment livré en attente de dépotage", "No delivered compartment awaiting discharge")}</TableCell></TableRow>}
+              {pending.map((l) => (
+                <TableRow key={l.id}>
+                  <TableCell>{trip(l.trip_id)?.reference ?? "—"}</TableCell>
+                  <TableCell>{nm("stations", l.station_id)}</TableCell>
+                  <TableCell>N° {nm("compartments", l.compartment_id, "position")}</TableCell>
+                  <TableCell>{nm("products", l.product_id)}</TableCell>
+                  <TableCell className="text-right">{fmt(l.qty_litres)}</TableCell>
+                  <TableCell className="text-right">
+                    <Button size="sm" disabled={!canValidate} onClick={() => { setCur(l); setForm({ tank: "", before: "", after: "", note: "" }); }}>{L("Dépoter", "Discharge")}</Button>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader><CardTitle className="text-base">{L("Dépotages enregistrés (non modifiables)", "Recorded discharges (locked)")}</CardTitle></CardHeader>
+        <CardContent className="overflow-x-auto">
+          <Table>
+            <TableHeader><TableRow>
+              <TableHead>{L("Date", "Date")}</TableHead><TableHead>{L("Transport", "Trip")}</TableHead><TableHead>{L("Station", "Station")}</TableHead>
+              <TableHead>{L("Cuve", "Tank")}</TableHead><TableHead className="text-right">BL</TableHead>
+              <TableHead className="text-right">{L("Jauge avant", "Gauge before")}</TableHead><TableHead className="text-right">{L("Jauge après", "Gauge after")}</TableHead>
+              <TableHead className="text-right">{L("Jaugé", "Measured")}</TableHead><TableHead className="text-right">{L("Écart", "Variance")}</TableHead>
+              <TableHead>{L("Stock", "Stock")}</TableHead>
+            </TableRow></TableHeader>
+            <TableBody>
+              {done.length === 0 && <TableRow><TableCell colSpan={10} className="text-center text-muted-foreground">{L("Aucun dépotage", "No discharge")}</TableCell></TableRow>}
+              {done.map((r) => (
+                <TableRow key={r.id}>
+                  <TableCell>{format(new Date(r.created_at), "dd/MM/yyyy HH:mm")}</TableCell>
+                  <TableCell>{trip(r.trip_id)?.reference ?? "—"}</TableCell>
+                  <TableCell>{nm("stations", r.station_id)}</TableCell>
+                  <TableCell>{tankName(r.tank_id)}</TableCell>
+                  <TableCell className="text-right">{fmt(r.qty_bl)}</TableCell>
+                  <TableCell className="text-right">{fmt(r.gauge_before)}</TableCell>
+                  <TableCell className="text-right">{fmt(r.gauge_after)}</TableCell>
+                  <TableCell className="text-right">{fmt(r.qty_measured)}</TableCell>
+                  <TableCell className="text-right"><Badge variant={Number(r.variance) < 0 ? "destructive" : "outline"}>{Number(r.variance) > 0 ? "+" : ""}{fmt(r.variance)}</Badge></TableCell>
+                  <TableCell>{r.stock_booked ? L("Crédité (BL)", "Booked (BL)") : L("Via réception appro", "Via supply reception")}</TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+
+      <Dialog open={!!cur} onOpenChange={(o) => !o && setCur(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>{L("Dépotage du compartiment", "Compartment discharge")} — {cur && `${nm("stations", cur.station_id)} · ${fmt(cur.qty_litres)} L BL`}</DialogTitle></DialogHeader>
+          <div className="space-y-3">
+            <div><Label>{L("Cuve de destination", "Destination tank")}</Label>
+              <Select value={form.tank} onValueChange={(x) => setForm({ ...form, tank: x })}>
+                <SelectTrigger><SelectValue placeholder={L("Choisir la cuve", "Choose tank")} /></SelectTrigger>
+                <SelectContent>{candTanks.map((t) => <SelectItem key={t.id} value={t.id}>{t.name} ({fmt(t.capacity_liters)} L)</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label>{L("Jauge avant (L)", "Gauge before (L)")}</Label><Input inputMode="decimal" type="number" min={0} value={form.before} onChange={(e) => setForm({ ...form, before: e.target.value })} /></div>
+              <div><Label>{L("Jauge après (L)", "Gauge after (L)")}</Label><Input inputMode="decimal" type="number" min={0} value={form.after} onChange={(e) => setForm({ ...form, after: e.target.value })} /></div>
+            </div>
+            {v && <p className="text-sm">{L("Jaugé", "Measured")} : <b>{fmt(v.measured)} L</b> · {L("Écart station", "Station variance")} : <b className={v.variance < 0 ? "text-destructive" : ""}>{v.variance > 0 ? "+" : ""}{fmt(v.variance)} L ({v.pct.toFixed(2)} %)</b></p>}
+            {form.after !== "" && !ok && <p className="text-sm text-destructive">{L("Jauges invalides : après ≥ avant ≥ 0, sans dépasser la capacité.", "Invalid gauges: after ≥ before ≥ 0, within capacity.")}</p>}
+            <div><Label>{L("Observation", "Note")}</Label><Input value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })} /></div>
+            <p className="text-xs text-muted-foreground">{L("Le stock de la cuve est crédité au volume BL ; l'écart jaugé reste visible séparément. Enregistrement définitif.", "Tank stock is booked at BL volume; the measured variance stays separate. Final record.")}</p>
+          </div>
+          <DialogFooter><Button disabled={!ok || busy} onClick={submit}>{L("Enregistrer le dépotage", "Record discharge")}</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+};

@@ -4928,6 +4928,98 @@ export type Database = {
           },
         ]
       }
+      logistics_discharges: {
+        Row: {
+          author_id: string | null
+          country_id: string
+          created_at: string
+          gauge_after: number
+          gauge_before: number
+          id: string
+          load_id: string
+          note: string | null
+          product_id: string
+          qty_bl: number
+          qty_measured: number | null
+          station_id: string
+          stock_booked: boolean
+          stock_movement_id: string | null
+          tank_id: string
+          tenant_id: string
+          trip_id: string
+          variance: number | null
+        }
+        Insert: {
+          author_id?: string | null
+          country_id: string
+          created_at?: string
+          gauge_after: number
+          gauge_before: number
+          id?: string
+          load_id: string
+          note?: string | null
+          product_id: string
+          qty_bl: number
+          qty_measured?: number | null
+          station_id: string
+          stock_booked?: boolean
+          stock_movement_id?: string | null
+          tank_id: string
+          tenant_id: string
+          trip_id: string
+          variance?: number | null
+        }
+        Update: {
+          author_id?: string | null
+          country_id?: string
+          created_at?: string
+          gauge_after?: number
+          gauge_before?: number
+          id?: string
+          load_id?: string
+          note?: string | null
+          product_id?: string
+          qty_bl?: number
+          qty_measured?: number | null
+          station_id?: string
+          stock_booked?: boolean
+          stock_movement_id?: string | null
+          tank_id?: string
+          tenant_id?: string
+          trip_id?: string
+          variance?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "logistics_discharges_load_id_fkey"
+            columns: ["load_id"]
+            isOneToOne: true
+            referencedRelation: "logistics_trip_loads"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "logistics_discharges_station_id_fkey"
+            columns: ["station_id"]
+            isOneToOne: false
+            referencedRelation: "stations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "logistics_discharges_tank_id_fkey"
+            columns: ["tank_id"]
+            isOneToOne: false
+            referencedRelation: "tanks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "logistics_discharges_trip_id_fkey"
+            columns: ["trip_id"]
+            isOneToOne: false
+            referencedRelation: "logistics_trips"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       logistics_documents: {
         Row: {
           country_id: string
@@ -9503,6 +9595,16 @@ export type Database = {
       logistics_confirm_site: {
         Args: { _lines: Json; _note?: string; _trip: string }
         Returns: number
+      }
+      logistics_discharge: {
+        Args: {
+          _after: number
+          _before: number
+          _load: string
+          _note?: string
+          _tank: string
+        }
+        Returns: string
       }
       logistics_driver_availability: {
         Args: { _country: string; _tenant: string }

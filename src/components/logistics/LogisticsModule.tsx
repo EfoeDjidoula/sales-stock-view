@@ -17,6 +17,7 @@ import { DepotSupplyTab } from "./DepotSupplyTab";
 import { LiftingOrdersTab } from "./LiftingOrdersTab";
 import { LoadingTrackingTab } from "./LoadingTrackingTab";
 import { DeliveryNotesTab } from "./DeliveryNotesTab";
+import { DischargesTab } from "./DischargesTab";
 import { VARIANCE_CATEGORIES } from "./variance";
 import { SupplyWorkflowModule } from "@/components/supply/SupplyWorkflowModule";
 import { Package } from "lucide-react";
@@ -246,19 +247,21 @@ export const LogisticsModule = () => {
           <TabsTrigger value="liftings">2. {L("Bons d'enlèvement", "Lifting orders")}</TabsTrigger>
           <TabsTrigger value="loading_tracking">3. {L("Suivi des chargements", "Loading tracking")}</TabsTrigger>
           <TabsTrigger value="delivery_notes">4. {L("Bons de livraison numériques", "Digital delivery notes")}</TabsTrigger>
-          <TabsTrigger value="carriers">5. {L("Transporteurs", "Carriers")}</TabsTrigger>
-          <TabsTrigger value="vehicles">6. {L("Camions, tracteurs & citernes", "Trucks, tractors & tankers")}</TabsTrigger>
-          <TabsTrigger value="compartments">7. {L("Compartiments", "Compartments")}</TabsTrigger>
-          <TabsTrigger value="drivers">8. {L("Chauffeurs", "Drivers")}</TabsTrigger>
-          <TabsTrigger value="documents">9. {L("Documents", "Documents")}</TabsTrigger>
-          <TabsTrigger value="seals">10. {L("Scellés", "Seals")}</TabsTrigger>
-          <TabsTrigger value="supplies">11. {L("Demandes d'appro.", "Supply requests")}</TabsTrigger>
-          <TabsTrigger value="trips">12. {L("Chargements & transports", "Loadings & trips")}</TabsTrigger>
-          <TabsTrigger value="map"><MapPin className="h-4 w-4 mr-1" />13. {L("Carte & GPS", "Map & GPS")}</TabsTrigger>
-          <TabsTrigger value="alerts">14. {L("Alertes", "Alerts")} {alerts.length > 0 && <Badge variant="destructive" className="ml-1">{alerts.length}</Badge>}</TabsTrigger>
-          <TabsTrigger value="stations">15. {L("Suivi par station", "Station tracking")}</TabsTrigger>
-          <TabsTrigger value="three_stocks">16. {L("Bilan des 3 stocks", "3-stock balance")}</TabsTrigger>
+          <TabsTrigger value="discharges">5. {L("Dépotages par compartiment", "Compartment discharges")}</TabsTrigger>
+          <TabsTrigger value="carriers">6. {L("Transporteurs", "Carriers")}</TabsTrigger>
+          <TabsTrigger value="vehicles">7. {L("Camions, tracteurs & citernes", "Trucks, tractors & tankers")}</TabsTrigger>
+          <TabsTrigger value="compartments">8. {L("Compartiments", "Compartments")}</TabsTrigger>
+          <TabsTrigger value="drivers">9. {L("Chauffeurs", "Drivers")}</TabsTrigger>
+          <TabsTrigger value="documents">10. {L("Documents", "Documents")}</TabsTrigger>
+          <TabsTrigger value="seals">11. {L("Scellés", "Seals")}</TabsTrigger>
+          <TabsTrigger value="supplies">12. {L("Demandes d'appro.", "Supply requests")}</TabsTrigger>
+          <TabsTrigger value="trips">13. {L("Chargements & transports", "Loadings & trips")}</TabsTrigger>
+          <TabsTrigger value="map"><MapPin className="h-4 w-4 mr-1" />14. {L("Carte & GPS", "Map & GPS")}</TabsTrigger>
+          <TabsTrigger value="alerts">15. {L("Alertes", "Alerts")} {alerts.length > 0 && <Badge variant="destructive" className="ml-1">{alerts.length}</Badge>}</TabsTrigger>
+          <TabsTrigger value="stations">16. {L("Suivi par station", "Station tracking")}</TabsTrigger>
+          <TabsTrigger value="three_stocks">17. {L("Bilan des 3 stocks", "3-stock balance")}</TabsTrigger>
         </TabsList>
+        <TabsContent value="discharges"><DischargesTab d={d} L={L} canValidate={canValidate} onChanged={load} /></TabsContent>
         <TabsContent value="delivery_notes"><DeliveryNotesTab trips={trips} canValidate={canValidate} onChanged={load} /></TabsContent>
         <TabsContent value="loading_tracking"><LoadingTrackingTab d={d} L={L} statusLabel={(x) => L(...(TRIP_STATUS[x] ?? [x, x]))} /></TabsContent>
         <TabsContent value="three_stocks"><ThreeStocksTab /></TabsContent>
