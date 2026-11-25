@@ -1,10 +1,10 @@
 // Sends the report currently displayed to the signed-in user's own address only.
 // Requires reports.view; content is plain text cells (escaped by React), size-capped.
 import { createClient } from 'npm:@supabase/supabase-js@2'
+import { withCors } from '../_shared/cors.ts'
 import { sendTemplateEmail } from '../_shared/transactional-email-templates/send-email.ts'
 
 const cors = {
-  'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 const json = (b: unknown, status = 200) => new Response(JSON.stringify(b), { status, headers: { 'Content-Type': 'application/json', ...cors } })
@@ -12,7 +12,7 @@ const cell = (v: unknown, max = 60) => String(v ?? '').replace(/[\u0000-\u001f]/
 const REPORT_KEYS = new Set(['flash', 'monthly', 'stock', 'losses', 'control', 'aged', 'logistics'])
 const MAX_ROWS = 40
 
-Deno.serve(async (req) => {
+Deno.serve(withCors(async (req) => {
   if (req.method === 'OPTIONS') return new Response(null, { headers: cors })
   if (req.method !== 'POST') return json({ error: 'Méthode non autorisée' }, 405)
   const auth = req.headers.get('Authorization') ?? ''
@@ -59,4 +59,4 @@ Deno.serve(async (req) => {
     console.error('send-report-email', err.message)
     return json({ error: "Envoi impossible pour le moment." }, 500)
   }
-})
+}))

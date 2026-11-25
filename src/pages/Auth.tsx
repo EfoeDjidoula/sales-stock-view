@@ -41,6 +41,24 @@ const Auth = () => {
   useEffect(() => { if (!fieldsFilled) setCaptchaToken(null); }, [fieldsFilled]);
   const [captchaReset, setCaptchaReset] = useState(0);
   const [captchaLoadError, setCaptchaLoadError] = useState(false);
+  // Anti brute force : délai progressif puis verrouillage temporaire après 5 échecs consécutifs.
+  const [failures, setFailures] = useState(() => Number(localStorage.getItem("auth_failures") || 0));
+  const [lockUntil, setLockUntil] = useState(() => Number(localStorage.getItem("auth_lock_until") || 0));
+  const [now, setNow] = useState(Date.now());
+  useEffect(() => {
+    if (lockUntil <= Date.now()) return;
+    const id = setInterval(() => setNow(Date.now()), 1000);
+    return () => clearInterval(id);
+  }, [lockUntil]);
+  const lockRemaining = Math.max(0, Math.ceil((lockUntil - now) / 1000));
+  const recordFailure = () => {
+    const n = failures + 1;
+    setFailures(n); localStorage.setItem("auth_failures", String(n));
+    // 5 échecs : 30 s, puis double à chaque nouvel échec (max 15 min) ; avant : 1 s × n.
+    const delay = n >= 5 ? Math.min(30_000 * 2 ** (n - 5), 900_000) : n * 1000;
+    const until = Date.now() + delay;
+    setLockUntil(until); setNow(Date.now()); localStorage.setItem("auth_lock_until", String(until));
+  };
 
   const enter = () => {
     if (splashLeaving) return;
@@ -50,6 +68,10 @@ const Auth = () => {
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (lockUntil > Date.now()) {
+      toast.error(t("Trop de tentatives"), { description: `${t("Réessayez dans")} ${Math.ceil((lockUntil - Date.now()) / 1000)} s` });
+      return;
+    }
     if (CAPTCHA_ON && !captchaToken) {
       toast.error(t("Veuillez confirmer que vous n'êtes pas un robot"));
       return;
@@ -72,10 +94,13 @@ const Auth = () => {
     const { error } = await signIn(loginEmail, loginPassword, captchaToken);
     
     if (error) {
+      recordFailure();
        toast.error(t("Erreur de connexion"), {
         description: error.message,
       });
     } else {
+      setFailures(0); setLockUntil(0);
+      localStorage.removeItem("auth_failures"); localStorage.removeItem("auth_lock_until");
        toast.success(t("Connexion réussie"));
       navigate(redirectTo);
     }
@@ -177,9 +202,11 @@ const Auth = () => {
               <Button
                 type="submit"
                 className="w-full bg-primary hover:bg-primary/90"
-                disabled={isLoading || (CAPTCHA_ON && !captchaToken)}
+                disabled={isLoading || lockRemaining > 0 || (CAPTCHA_ON && !captchaToken)}
               >
-                {isLoading ? (
+                {lockRemaining > 0 && !isLoading ? (
+                  <>{t("Réessayez dans")} {lockRemaining} s</>
+                ) : isLoading ? (
                   <>
                     <Loader2 className="w-4 h-4 mr-2 animate-spin" />
                      {t("Connexion...")}
