@@ -6,7 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Download } from "lucide-react";
+import { Download, FileDown } from "lucide-react";
+import { jsPDF } from "@/lib/pdf";
 import { summarize, fuelOf, type ProvisionLine } from "@/lib/stationProvision";
 import { useCountryPrices } from "@/hooks/useCountryPrices";
 
@@ -35,6 +36,33 @@ export const StationProvisionTab = ({ d, L }: { d: Record<string, Row[]>; L: (fr
   }), [d, priceOf, from, to, station]);
   const sum = summarize(lines);
   const total = lines.reduce((s, l) => s + l.amount, 0);
+
+  // Une mise à disposition = un transport livré à une station.
+  const items = useMemo(() => {
+    const m = new Map<string, { key: string; tripRef: string; stationId: string; date: string; lines: ProvisionLine[] }>();
+    lines.forEach((l) => { const k = l.tripRef + "|" + l.stationId; const e = m.get(k) ?? { key: k, tripRef: l.tripRef, stationId: l.stationId, date: l.date, lines: [] }; e.lines.push(l); m.set(k, e); });
+    return [...m.values()].sort((a, b) => b.date.localeCompare(a.date));
+  }, [lines]);
+
+  const printPdf = (it: (typeof items)[number]) => {
+    const doc = new jsPDF({ unit: "mm", format: "a4" }); const W = doc.internal.pageSize.getWidth(); let y = 34;
+    doc.setFont("helvetica", "bold"); doc.setFontSize(14); doc.text("AVIS DE MISE À DISPOSITION", W / 2, y, { align: "center" }); y += 10;
+    doc.setFontSize(9.5);
+    ([["Station", name("stations", it.stationId)], ["Transport", it.tripRef], ["Date de livraison", it.date.split("-").reverse().join("/")], ["Base de valorisation", "Volume BL chargé × prix pompe en vigueur à la date"]] as [string, string][])
+      .forEach(([k, v]) => { doc.setFont("helvetica", "bold"); doc.text(`${k} :`, 14, y); doc.setFont("helvetica", "normal"); doc.text(v, 58, y); y += 6; });
+    y += 4; const cols = [14, 80, 120, 160]; const head = ["Produit", "Litres (BL)", "Prix pompe", "Valeur"];
+    doc.setFillColor(230, 230, 230); doc.rect(12, y - 5, W - 24, 7, "F"); doc.setFont("helvetica", "bold");
+    head.forEach((h, i) => doc.text(h, cols[i], y)); y += 7; doc.setFont("helvetica", "normal");
+    summarize(it.lines).forEach((s) => {
+      const unit = s.litres ? s.amount / s.litres : 0;
+      [name("products", s.productId), fmt(s.litres), fmt(unit), fmt(s.amount)].forEach((v, k) => doc.text(v, cols[k], y));
+      doc.line(12, y + 2, W - 12, y + 2); y += 7;
+    });
+    doc.setFont("helvetica", "bold");
+    doc.text("Total", cols[0], y); doc.text(fmt(it.lines.reduce((a, l) => a + l.litres, 0)), cols[1], y); doc.text(`${fmt(it.lines.reduce((a, l) => a + l.amount, 0))} FCFA`, cols[3], y); y += 20;
+    doc.setFont("helvetica", "normal"); doc.text("Le Responsable Logistique", 20, y); doc.text("Le Gérant de la station", W - 70, y);
+    doc.save(`mise-a-disposition_${it.tripRef}_${name("stations", it.stationId)}.pdf`);
+  };
 
   const exportXlsx = async () => {
     const wb = new ExcelJS.Workbook(); const ws = wb.addWorksheet("Mise à disposition");
@@ -66,6 +94,20 @@ export const StationProvisionTab = ({ d, L }: { d: Record<string, Row[]>; L: (fr
               {sum.length === 0 && <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-6">{L("Aucune mise à disposition sur la période.", "No provision in this period.")}</TableCell></TableRow>}
               {sum.map((s) => <TableRow key={s.stationId + s.productId}><TableCell>{name("stations", s.stationId)}</TableCell><TableCell>{name("products", s.productId)}</TableCell><TableCell className="text-right">{s.count}</TableCell><TableCell className="text-right">{fmt(s.litres)}</TableCell><TableCell className="text-right">{fmt(s.amount)}</TableCell></TableRow>)}
               {sum.length > 0 && <TableRow className="font-semibold"><TableCell colSpan={3}>Total</TableCell><TableCell className="text-right">{fmt(sum.reduce((a, s) => a + s.litres, 0))}</TableCell><TableCell className="text-right">{fmt(total)}</TableCell></TableRow>}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+      <Card className="glass-card">
+        <CardHeader className="pb-2"><CardTitle className="text-base">{L("Détail des mises à disposition", "Provision details")}</CardTitle></CardHeader>
+        <CardContent className="overflow-x-auto">
+          <Table>
+            <TableHeader><TableRow><TableHead>Date</TableHead><TableHead>{L("Transport", "Trip")}</TableHead><TableHead>{L("Station", "Station")}</TableHead><TableHead className="text-right">{L("Litres (BL)", "Litres")}</TableHead><TableHead className="text-right">{L("Valeur", "Value")}</TableHead><TableHead /></TableRow></TableHeader>
+            <TableBody>
+              {items.length === 0 && <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-6">—</TableCell></TableRow>}
+              {items.map((it) => <TableRow key={it.key}><TableCell>{it.date.split("-").reverse().join("/")}</TableCell><TableCell className="text-xs">{it.tripRef}</TableCell><TableCell>{name("stations", it.stationId)}</TableCell>
+                <TableCell className="text-right">{fmt(it.lines.reduce((a, l) => a + l.litres, 0))}</TableCell><TableCell className="text-right">{fmt(it.lines.reduce((a, l) => a + l.amount, 0))}</TableCell>
+                <TableCell><Button size="sm" variant="outline" title="PDF" onClick={() => printPdf(it)}><FileDown className="h-4 w-4 mr-1" />PDF</Button></TableCell></TableRow>)}
             </TableBody>
           </Table>
         </CardContent>
