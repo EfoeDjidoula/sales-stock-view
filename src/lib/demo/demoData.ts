@@ -18,7 +18,7 @@ const ALL_PERMS = [...PERM_AREAS.flatMap((a) => ACTIONS.map((x) => `${a}.${x}`))
 export const permissionsFor = (role: DemoRole): string[] => {
   if (role === "admin") return ALL_PERMS;
   if (role === "operator")
-    return ["dashboard.view", "index_entries.view", "index_entries.create", "index_entries.edit", "stock.view", "depotages.view", "depotages.create", "sales.view", "sales.create", "stations.view", "reports.view"];
+    return ["dashboard.view", "index_entries.view", "index_entries.create", "index_entries.edit", "stock.view", "depotages.view", "depotages.create", "supplies.view", "supplies.validate", "sales.view", "sales.create", "stations.view", "reports.view"];
   return ALL_PERMS.filter((p) =>
     /^(dashboard|stock|depotages|orders|supplies|clients|trucks|suppliers|proforma)\./.test(p) ||
     ["sales.view", "reports.view", "reports.export", "index_entries.view", "index_entries.validate", "fuel_cards.view", "reconciliation.view", "stations.view"].includes(p));

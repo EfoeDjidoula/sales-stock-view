@@ -77,6 +77,8 @@ export const LogisticsModule = () => {
   const canWrite = isPlatformAdmin || can("supplies", "create") || can("supplies", "edit") || can("supplies", "validate");
   const canValidate = isPlatformAdmin || can("supplies", "validate");
 
+  const [sub, setSub] = useState<string>(() => { const v = sessionStorage.getItem("logistics-subtab"); sessionStorage.removeItem("logistics-subtab"); return v || "depot_supply"; });
+  useEffect(() => { const on = (e: Event) => setSub(String((e as CustomEvent).detail)); window.addEventListener("lumatek:logistics-subtab", on); return () => window.removeEventListener("lumatek:logistics-subtab", on); }, []);
   const [d, setD] = useState<Record<string, Row[]>>({});
   const [loading, setLoading] = useState(false);
   const [dialog, setDialog] = useState<{ table: string; title: string; fields: Field[]; values: Row; id?: string } | null>(null);
@@ -245,7 +247,7 @@ export const LogisticsModule = () => {
         ))}
       </div>
       {loading && <Loader2 className="h-5 w-5 animate-spin text-primary" />}
-      <Tabs defaultValue="depot_supply">
+      <Tabs value={sub} onValueChange={setSub}>
         <TabsList className="flex-wrap h-auto">
           <TabsTrigger value="depot_supply">1. {L("Approvisionnement dépôt (pro-formas & BC)", "Depot supply (pro-formas & POs)")}</TabsTrigger>
           <TabsTrigger value="liftings">2. {L("Bons d'enlèvement", "Lifting orders")}</TabsTrigger>

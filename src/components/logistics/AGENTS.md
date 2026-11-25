@@ -12,3 +12,4 @@
 - Logistics dashboard (phase 8): LogisticsDashboardTab builds stock sheets (ordered → lifted → received), loss by carrier/truck/driver, rotation delays and order execution via src/lib/logisticsKpis.ts (tested); read-only; why: KPIs reuse the same BL/discharge records, no new write path.
 - B2B portal delivery notes: clients read their BL via b2b_portal_delivery_notes and sign as consignee through logistics_bl_action; why: same signature rules for staff and clients.
 - Fleet: one FleetTab creates vehicle + towed unit (tractor→default_trailer_id) + compartments in one form, default_driver_id pre-fills lifting orders; kinds in src/lib/fleet.ts (tested); why: one place to configure a truck.
+- Station managers: DischargesTab limits BE/BL, pending compartments and tanks to the user's station_assignments (no assignment = network view); the Dépotages menu opens logistics sub-tab 'discharges'; why: no discharge into another station.

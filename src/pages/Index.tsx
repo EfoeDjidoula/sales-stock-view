@@ -319,7 +319,16 @@ const Index = () => {
   const [exportOpen, setExportOpen] = useState(false);
   // Onglet par défaut (non choisi) : redirection silencieuse vers la première section autorisée
   const tabIsDefault = useRef(true);
-  const selectTab = (tab: string) => { tabIsDefault.current = false; setActiveTab(tab); };
+  const selectTab = (tab: string) => {
+    tabIsDefault.current = false;
+    // Menu Dépotages → volet 5 « Dépotages par compartiment » de la logistique
+    if (tab === "depotage" && canAccessTab("logistique_avancee")) {
+      sessionStorage.setItem("logistics-subtab", "discharges");
+      window.dispatchEvent(new CustomEvent("lumatek:logistics-subtab", { detail: "discharges" }));
+      tab = "logistique_avancee";
+    }
+    setActiveTab(tab);
+  };
 
   // La section active est reflétée dans l'adresse (?tab=) pour le partage et le retour arrière
   useEffect(() => {

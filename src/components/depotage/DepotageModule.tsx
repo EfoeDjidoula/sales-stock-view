@@ -23,7 +23,12 @@ const db = supabase as any;
 const fmt = (n: number | null | undefined) => (n == null ? "—" : Number(n).toLocaleString("fr-FR", { maximumFractionDigits: 2 }).replace(/[\u202f\u00a0]/g, " "));
 
 /** Ouvre l'onglet Logistique (demandes d'appro → réception avec jauges). */
-const openLogistics = () => window.dispatchEvent(new CustomEvent("lumatek:open-tab", { detail: "logistique_avancee" }));
+export const openDischarges = () => {
+  sessionStorage.setItem("logistics-subtab", "discharges");
+  window.dispatchEvent(new CustomEvent("lumatek:open-tab", { detail: "logistique_avancee" }));
+  window.dispatchEvent(new CustomEvent("lumatek:logistics-subtab", { detail: "discharges" }));
+};
+const openLogistics = openDischarges;
 
 /**
  * Dépotages : source unique = réceptions validées de la Logistique (jauges avant/après, BL, chauffeur).

@@ -3,6 +3,7 @@ import { format } from "date-fns";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useScope } from "@/hooks/useScope";
+import { useAuth } from "@/hooks/useAuth";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,6 +23,12 @@ interface Props { d: Record<string, Row[]>; L: (fr: string, en: string) => strin
 
 export const DischargesTab = ({ d, L, canValidate, onChanged }: Props) => {
   const { scopeQuery } = useScope();
+  const { user } = useAuth();
+  /** Stations affectées au compte (gérant) : null = aucune affectation → vue réseau complète. */
+  const [mine, setMine] = useState<Set<string> | null>(null);
+  useEffect(() => { if (!user) return; db.from("station_assignments").select("station_id").eq("user_id", user.id)
+    .then(({ data }: { data: Row[] | null }) => setMine(data && data.length ? new Set(data.map((r) => r.station_id)) : null)); }, [user]);
+  const allowed = (st?: string | null) => !mine || (!!st && mine.has(st));
   const [tanks, setTanks] = useState<Row[]>([]);
   const [done, setDone] = useState<Row[]>([]);
   const [cur, setCur] = useState<Row | null>(null);
@@ -42,8 +49,8 @@ export const DischargesTab = ({ d, L, canValidate, onChanged }: Props) => {
 
   const nm = (list: string, id?: string | null, key = "name") => (d[list] ?? []).find((r) => r.id === id)?.[key] ?? "—";
   const trip = (id: string) => (d.trips ?? []).find((t) => t.id === id);
-  const pending = useMemo(() => pendingDischarges((d.loads ?? []) as Row[] as never[],
-    new Set((d.deliveries ?? []).map((r) => r.load_id)), new Set(done.map((r) => r.load_id))) as Row[], [d, done]);
+  const pending = useMemo(() => (pendingDischarges((d.loads ?? []) as Row[] as never[],
+    new Set((d.deliveries ?? []).map((r) => r.load_id)), new Set(done.map((r) => r.load_id))) as Row[]).filter((l) => allowed(l.station_id)), [d, done, mine]); // eslint-disable-line react-hooks/exhaustive-deps
   const beOf = (tripId: string) => (d.liftings ?? []).find((b) => b.trip_id === tripId)?.number;
   const blOf = (tripId: string, st?: string) => notes.find((n) => n.trip_id === tripId && n.station_id === st)?.number;
   const keyOf = (l: Row) => `${l.trip_id}|${l.station_id}`;
@@ -55,13 +62,13 @@ export const DischargesTab = ({ d, L, canValidate, onChanged }: Props) => {
     const m = new Map<string, Row>();
     (d.loads ?? []).forEach((l) => {
       const t = trip(l.trip_id);
-      if (!l.station_id || delivered.has(l.id) || !t || !["loaded", "in_transit", "arrived", "unloading"].includes(t.status)) return;
+      if (!l.station_id || !allowed(l.station_id) || delivered.has(l.id) || !t || !["loaded", "in_transit", "arrived", "unloading"].includes(t.status)) return;
       const k = keyOf(l); const g = m.get(k) ?? { ...l, t, lines: [] as Row[] }; g.lines.push(l); m.set(k, g);
     });
     return [...m.values()];
-  }, [d, notes]); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [d, notes, mine]); // eslint-disable-line react-hooks/exhaustive-deps
   const tankName = (id: string) => tanks.find((t) => t.id === id)?.name ?? "—";
-  const candTanks = cur ? tanks.filter((t) => t.station_id === cur.station_id && (!t.product_id || t.product_id === cur.product_id)) : [];
+  const candTanks = cur ? tanks.filter((t) => allowed(t.station_id) && t.station_id === cur.station_id && (!t.product_id || t.product_id === cur.product_id)) : [];
   const tk = tanks.find((t) => t.id === form.tank);
   const b = Number(form.before), a = Number(form.after);
   const ok = !!form.tank && form.before !== "" && form.after !== "" && validGauges(b, a, tk?.capacity_liters);
@@ -79,6 +86,7 @@ export const DischargesTab = ({ d, L, canValidate, onChanged }: Props) => {
 
   return (
     <div className="space-y-4">
+      {mine && <Badge variant="secondary">{L("Vos stations : ", "Your stations: ")}{[...mine].map((id) => nm("stations", id)).join(", ")}</Badge>}
       <Card>
         <CardHeader><CardTitle className="text-base">{L("Approvisionnements attendus (en route)", "Expected supplies (on the way)")} <Badge variant="outline" className="ml-2">{incoming.length}</Badge></CardTitle></CardHeader>
         <CardContent className="space-y-2">
