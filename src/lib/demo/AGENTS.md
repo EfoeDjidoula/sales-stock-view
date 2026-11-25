@@ -1,0 +1,1 @@
+- Demo mode: src/lib/demo intercepts every backend call in the browser (installed as first import of main.tsx) and serves simulated data; writes only show a toast; why: client demos and training never touch the real database or real accounts.
