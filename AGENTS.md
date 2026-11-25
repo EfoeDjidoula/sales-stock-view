@@ -19,7 +19,6 @@
 - Integrations: scoped connectors via integration_action; destination host needs LUMATEK approval (approved_host, re-checked by integration-hub); credentials AES-GCM encrypted server-side; idempotent jobs, immutable logs, hourly tick; why: no unapproved target or browser secret.
 - Workflows: requests change only via workflow_action (immutable events, delegations, scope/licence/role checks, no self-approval); final approval executes the operation once via DB trigger (stock movement / new b2b_terms); why: no RBAC bypass, atomic execution.
 - Login CAPTCHA: Turnstile token checked by `verify-turnstile` before sign-in; why: secret stays server-side.
-- PDF: jsPDF via src/lib/pdf; why: it strips fr-FR spaces shown as "/".
 - Index model: retour_cuve, index_tank_readings and sales/versement variances are recomputed by DB triggers; formulas in src/lib/indexModel.ts; why: no browser-side tampering.
 - Navigation: sections grouped only in src/lib/navigation.ts, rendered by AppSidebar; badges = read-only scoped counts (useNavBadges); why: one menu definition.
 - File & export safety: stored files open via authenticated download (src/lib/storageFiles.ts), never signed URLs; CSV cells go through src/lib/csv.ts; integration-hub outbound calls pass netguard.ts (public HTTPS only, no redirects); why: no bearer links, formula injection or internal-network access.
@@ -35,4 +34,4 @@
 - Price structures: unique per tenant+country+effective_date; why: per-country pricing.
 - Country legal identity: tenant_countries legal fields (set_country_identity) override tenant ones via applyCountryIdentity; why: PDFs follow the active country.
 - create-user requires country_ids checked against tenant + caller access; why: no default all-country access.
-- Theme: light palette in :root, dark in .dark, mode chosen per browser via src/lib/theme.ts (pre-paint script in index.html); why: no flash and one switch point.
+- Theme: light in :root, dark in .dark, mode via src/lib/theme.ts; why: one switch point.
