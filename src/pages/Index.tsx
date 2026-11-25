@@ -3,6 +3,7 @@ import PeriodicReportsModule from "@/components/reports/PeriodicReportsModule";
 import SynthesisModule from "@/components/synthesis/SynthesisModule";
 import WorkflowModule from "@/components/workflow/WorkflowModule";
 import HseModule from "@/components/hse/HseModule";
+import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { HelpButton } from "@/components/help/HelpDrawer";
 import { HELP_FOR_SCREEN } from "@/lib/help/manual";
 import AssetsMaintenanceModule from "@/components/maintenance/AssetsMaintenanceModule";
@@ -418,6 +419,7 @@ const Index = () => {
               <div className="ml-auto flex items-center gap-1.5">
                 {HELP_FOR_SCREEN[activeTab] && <HelpButton screen={activeTab} />}
                 <HelpButton label="Manuel / Guide" />
+                <ThemeToggle />
                 {isPlatformAdmin && (
                   <Button asChild variant="outline" size="sm" className="gap-2 border-primary/40 text-primary hover:text-primary">
                     <Link to="/lumatek" title="LUMATEK SaaS">

@@ -1,4 +1,6 @@
 import "./lib/demo/install";
+import { initTheme } from "./lib/theme";
+initTheme();
 import { createRoot } from "react-dom/client";
 import App from "./App.tsx";
 import "./index.css";
