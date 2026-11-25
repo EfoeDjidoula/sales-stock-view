@@ -41,6 +41,8 @@ const e30 = () => iso(new Date(Date.now() + 30 * 86400000));
 let seed = 42;
 const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
 
+import { buildHseMaintenance } from "./demoHseMaintenance";
+
 export const buildDemoDb = (role: DemoRole) => {
   seed = 42;
   const now = new Date().toISOString();
@@ -129,5 +131,6 @@ export const buildDemoDb = (role: DemoRole) => {
     index_entries: entries, pump_index_entries: pumpEntries, index_tank_readings: readings,
     daily_closures: closures, closure_sales: sales, closure_payments, payment_methods, stock_levels, depotages, clients, b2b_consumptions, b2b_invoices, b2b_payments,
     b2b_portal_users: [], platform_admins: [],
+    ...buildHseMaintenance(base, stations, tanks, pumps, prof.userId, DEMO_PROFILES.admin.userId),
   } as Record<string, any[]>;
 };
