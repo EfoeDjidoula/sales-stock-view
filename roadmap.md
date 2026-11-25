@@ -54,7 +54,7 @@
 - [x] Phase 1 : pro-formas dépôt, bons de commande, statut de règlement (onglet 1).
 - [x] Phase 2 : bons d'enlèvement (solde BC, camions/chauffeurs disponibles, documents obligatoires, signature, annulation motivée, PDF).
 - [x] Phase 3 : suivi des chargements (7 statuts, filtres, historique).
-- [ ] Phase 4 : bons de livraison numériques par site + 3 signatures.
+- [x] Phase 4 : bons de livraison numériques par site + 3 signatures (portail client à relier ensuite).
 - [ ] Phase 5 : dépotages par compartiment et par cuve.
 - [ ] Phase 6 : répartition BE/BL.
 - [ ] Phase 7 : mise à disposition / facturation stations.

@@ -16,6 +16,7 @@ import { ThreeStocksTab } from "./ThreeStocksTab";
 import { DepotSupplyTab } from "./DepotSupplyTab";
 import { LiftingOrdersTab } from "./LiftingOrdersTab";
 import { LoadingTrackingTab } from "./LoadingTrackingTab";
+import { DeliveryNotesTab } from "./DeliveryNotesTab";
 import { VARIANCE_CATEGORIES } from "./variance";
 import { SupplyWorkflowModule } from "@/components/supply/SupplyWorkflowModule";
 import { Package } from "lucide-react";
@@ -244,19 +245,21 @@ export const LogisticsModule = () => {
           <TabsTrigger value="depot_supply">1. {L("Approvisionnement dépôt (pro-formas & BC)", "Depot supply (pro-formas & POs)")}</TabsTrigger>
           <TabsTrigger value="liftings">2. {L("Bons d'enlèvement", "Lifting orders")}</TabsTrigger>
           <TabsTrigger value="loading_tracking">3. {L("Suivi des chargements", "Loading tracking")}</TabsTrigger>
-          <TabsTrigger value="carriers">4. {L("Transporteurs", "Carriers")}</TabsTrigger>
-          <TabsTrigger value="vehicles">5. {L("Camions, tracteurs & citernes", "Trucks, tractors & tankers")}</TabsTrigger>
-          <TabsTrigger value="compartments">6. {L("Compartiments", "Compartments")}</TabsTrigger>
-          <TabsTrigger value="drivers">7. {L("Chauffeurs", "Drivers")}</TabsTrigger>
-          <TabsTrigger value="documents">8. {L("Documents", "Documents")}</TabsTrigger>
-          <TabsTrigger value="seals">9. {L("Scellés", "Seals")}</TabsTrigger>
-          <TabsTrigger value="supplies">10. {L("Demandes d'appro.", "Supply requests")}</TabsTrigger>
-          <TabsTrigger value="trips">11. {L("Chargements & transports", "Loadings & trips")}</TabsTrigger>
-          <TabsTrigger value="map"><MapPin className="h-4 w-4 mr-1" />12. {L("Carte & GPS", "Map & GPS")}</TabsTrigger>
-          <TabsTrigger value="alerts">13. {L("Alertes", "Alerts")} {alerts.length > 0 && <Badge variant="destructive" className="ml-1">{alerts.length}</Badge>}</TabsTrigger>
-          <TabsTrigger value="stations">14. {L("Suivi par station", "Station tracking")}</TabsTrigger>
-          <TabsTrigger value="three_stocks">15. {L("Bilan des 3 stocks", "3-stock balance")}</TabsTrigger>
+          <TabsTrigger value="delivery_notes">4. {L("Bons de livraison numériques", "Digital delivery notes")}</TabsTrigger>
+          <TabsTrigger value="carriers">5. {L("Transporteurs", "Carriers")}</TabsTrigger>
+          <TabsTrigger value="vehicles">6. {L("Camions, tracteurs & citernes", "Trucks, tractors & tankers")}</TabsTrigger>
+          <TabsTrigger value="compartments">7. {L("Compartiments", "Compartments")}</TabsTrigger>
+          <TabsTrigger value="drivers">8. {L("Chauffeurs", "Drivers")}</TabsTrigger>
+          <TabsTrigger value="documents">9. {L("Documents", "Documents")}</TabsTrigger>
+          <TabsTrigger value="seals">10. {L("Scellés", "Seals")}</TabsTrigger>
+          <TabsTrigger value="supplies">11. {L("Demandes d'appro.", "Supply requests")}</TabsTrigger>
+          <TabsTrigger value="trips">12. {L("Chargements & transports", "Loadings & trips")}</TabsTrigger>
+          <TabsTrigger value="map"><MapPin className="h-4 w-4 mr-1" />13. {L("Carte & GPS", "Map & GPS")}</TabsTrigger>
+          <TabsTrigger value="alerts">14. {L("Alertes", "Alerts")} {alerts.length > 0 && <Badge variant="destructive" className="ml-1">{alerts.length}</Badge>}</TabsTrigger>
+          <TabsTrigger value="stations">15. {L("Suivi par station", "Station tracking")}</TabsTrigger>
+          <TabsTrigger value="three_stocks">16. {L("Bilan des 3 stocks", "3-stock balance")}</TabsTrigger>
         </TabsList>
+        <TabsContent value="delivery_notes"><DeliveryNotesTab trips={trips} canValidate={canValidate} onChanged={load} /></TabsContent>
         <TabsContent value="loading_tracking"><LoadingTrackingTab d={d} L={L} statusLabel={(x) => L(...(TRIP_STATUS[x] ?? [x, x]))} /></TabsContent>
         <TabsContent value="three_stocks"><ThreeStocksTab /></TabsContent>
         <TabsContent value="liftings"><LiftingOrdersTab canWrite={canWrite} canValidate={canValidate} /></TabsContent>
