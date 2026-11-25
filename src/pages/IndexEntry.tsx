@@ -829,7 +829,7 @@ const IndexEntry = () => {
       <main className="container mx-auto px-4 py-6">
         <LicenseBanner />
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 max-md:pb-32">
             {/* Date Selection */}
             <Card className="bg-card border-border">
               <CardHeader>
@@ -1207,11 +1207,16 @@ const IndexEntry = () => {
 
 
             {/* Submit Button */}
-            <div className="flex flex-col sm:flex-row gap-3 pt-4">
+            <div className="max-md:fixed max-md:inset-x-0 max-md:bottom-0 max-md:z-40 max-md:border-t max-md:border-border max-md:bg-background/95 max-md:backdrop-blur max-md:px-4 max-md:pb-[max(0.75rem,env(safe-area-inset-bottom))] max-md:pt-2 flex flex-col sm:flex-row gap-3 pt-4">
+              <div className="md:hidden flex items-center justify-between text-xs">
+                <span className="text-muted-foreground">Vente {formatNumber(cascade.venteGlobale)} FCFA</span>
+                <span className="font-semibold">À verser {formatNumber(cascade.montantAVerser)} FCFA</span>
+              </div>
+              <div className="flex gap-2 sm:contents">
               <Button
                 type="submit"
                 size="lg"
-                className="flex-1 sm:flex-none bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
+                className="flex-1 sm:flex-none h-12 sm:h-11 bg-primary hover:bg-primary/90 text-primary-foreground font-semibold"
                 disabled={isSubmitting || isFiscalYearClosed}
               >
                 {isSubmitting ? (
@@ -1231,10 +1236,11 @@ const IndexEntry = () => {
                 variant="outline"
                 size="lg"
                 onClick={resetForm}
-                className="border-border"
+                className="border-border max-md:h-12 max-md:px-3"
               >
                 Réinitialiser
               </Button>
+              </div>
             </div>
 
             {Object.keys(form.formState.errors).length > 0 && (

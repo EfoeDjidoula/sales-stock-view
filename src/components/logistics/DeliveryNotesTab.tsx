@@ -25,6 +25,8 @@ export function DeliveryNotesTab({ trips, canValidate, onChanged }: { trips: Row
   const { user } = useAuth();
   const [notes, setNotes] = useState<DeliveryNote[]>([]);
   const [people, setPeople] = useState<Row[]>([]);
+  const [portal, setPortal] = useState<Row[]>([]);
+  const [noteClient, setNoteClient] = useState<Record<string, string | null>>({});
   const [busy, setBusy] = useState(false);
   const [assign, setAssign] = useState<DeliveryNote | null>(null);
   const [who, setWho] = useState<Record<BlRole, string>>({ shipper: "", carrier: "", consignee: "" });
@@ -41,6 +43,12 @@ export function DeliveryNotesTab({ trips, canValidate, onChanged }: { trips: Row
     ]);
     if (n.error) toast.error(n.error.message); else setNotes(n.data ?? []);
     setPeople(p.data ?? []);
+    const [pu, nc] = await Promise.all([
+      db.from("b2b_portal_users").select("user_id,full_name,client_id").eq("tenant_id", tenantId).eq("country_id", countryId).eq("active", true).eq("can_manage", true),
+      db.from("logistics_delivery_notes").select("id,client_id").eq("tenant_id", tenantId).eq("country_id", countryId),
+    ]);
+    setPortal(pu.data ?? []);
+    setNoteClient(Object.fromEntries((nc.data ?? []).map((x: Row) => [x.id, x.client_id])));
   }, [tenantId, countryId]);
   useEffect(() => { load(); }, [load]);
 
@@ -52,7 +60,7 @@ export function DeliveryNotesTab({ trips, canValidate, onChanged }: { trips: Row
     toast.success(ok); await load(); onChanged(); return true;
   };
   const pending = trips.filter((t) => t.loaded_at && !["planned", "loading", "cancelled"].includes(t.status) && !notes.some((n) => n.trip_id === t.id));
-  const personName = (id: string | null) => people.find((p) => p.user_id === id)?.full_name ?? (id ? "Compte client" : "—");
+  const personName = (id: string | null) => people.find((p) => p.user_id === id)?.full_name ?? (portal.find((p) => p.user_id === id) ? `${portal.find((p) => p.user_id === id)?.full_name} (client)` : id ? "Compte client" : "—");
 
   return (
     <Card className="glass-card">
@@ -99,8 +107,9 @@ export function DeliveryNotesTab({ trips, canValidate, onChanged }: { trips: Row
           <DialogHeader><DialogTitle>Signataires du {assign?.number}</DialogTitle></DialogHeader>
           {BL_ROLES.map((r) => <div key={r} className="space-y-1"><Label>{BL_ROLE_LABEL[r]}</Label>
             <Select value={who[r]} onValueChange={(v) => setWho({ ...who, [r]: v })}><SelectTrigger><SelectValue placeholder="Choisir un compte" /></SelectTrigger>
-              <SelectContent>{people.map((p) => <SelectItem key={p.user_id} value={p.user_id}>{p.full_name || p.user_id}</SelectItem>)}</SelectContent></Select></div>)}
-          <p className="text-xs text-muted-foreground">Le destinataire d'une station doit être affecté à cette station.</p>
+              <SelectContent>{people.map((p) => <SelectItem key={p.user_id} value={p.user_id}>{p.full_name || p.user_id}</SelectItem>)}
+                {r === "consignee" && assign && portal.filter((p) => p.client_id && p.client_id === noteClient[assign.id]).map((p) => <SelectItem key={"c" + p.user_id} value={p.user_id}>{p.full_name} · Espace client</SelectItem>)}</SelectContent></Select></div>)}
+          <p className="text-xs text-muted-foreground">Le destinataire d'une station doit être affecté à cette station. Pour un client B2B, choisissez son compte « Espace client » : il signera depuis son espace.</p>
           <DialogFooter><Button variant="outline" onClick={() => setAssign(null)}>Annuler</Button>
             <Button disabled={busy || !who.shipper || !who.carrier || !who.consignee} onClick={async () => { if (assign && await run("assign", assign.id, who, "Signataires enregistrés")) setAssign(null); }}>Enregistrer</Button></DialogFooter>
         </DialogContent>

@@ -9389,6 +9389,7 @@ export type Database = {
         Args: { _action: string; _data?: Json }
         Returns: Json
       }
+      b2b_portal_delivery_notes: { Args: never; Returns: Json }
       b2b_portal_me: {
         Args: never
         Returns: {

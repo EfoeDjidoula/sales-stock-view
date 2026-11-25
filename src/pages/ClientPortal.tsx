@@ -20,6 +20,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { csvRow } from "@/lib/csv";
+import { PortalDeliveryNotes } from "@/components/clients/PortalDeliveryNotes";
 import { jsPDF } from "@/lib/pdf";
 import {
   CARD_STATUS_LABEL, PORTAL_REQUEST_LABEL, PORTAL_STATUS_LABEL, creditSummary, formatMoney, invoiceState,
@@ -217,6 +218,7 @@ const ClientPortal = () => {
             {o.modules.cards && <TabsTrigger value="cards"><CreditCard className="mr-1 h-4 w-4" />Cartes</TabsTrigger>}
             {o.modules.cards && <TabsTrigger value="fleet"><Car className="mr-1 h-4 w-4" />Conducteurs & véhicules</TabsTrigger>}
             <TabsTrigger value="invoices"><FileText className="mr-1 h-4 w-4" />Factures</TabsTrigger>
+            <TabsTrigger value="delivery_notes"><FileText className="mr-1 h-4 w-4" />Bons de livraison</TabsTrigger>
             <TabsTrigger value="requests"><Inbox className="mr-1 h-4 w-4" />Demandes{openRequests > 0 && <Badge className="ml-2">{openRequests}</Badge>}</TabsTrigger>
           </TabsList>
 
@@ -318,6 +320,7 @@ const ClientPortal = () => {
             </CardContent></Card>}
           </TabsContent>
 
+          <TabsContent value="delivery_notes"><PortalDeliveryNotes canManage={canManage} /></TabsContent>
           <TabsContent value="requests" className="grid gap-4 md:grid-cols-5">
             {canManage && <Card className="md:col-span-2">
               <CardHeader className="pb-2"><CardTitle className="text-base">Nouvelle demande</CardTitle></CardHeader>
