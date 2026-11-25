@@ -526,6 +526,13 @@
       "when": 1795479667472,
       "tag": "0074_logistics_digital_delivery_notes",
       "breakpoints": true
+    },
+    {
+      "idx": 75,
+      "version": "7",
+      "when": 1795566523971,
+      "tag": "0075_bl_module_key_fix",
+      "breakpoints": true
     }
   ]
 }
