@@ -1,6 +1,6 @@
+import { withCors } from "../_shared/cors.ts";
 // Vérifie un jeton Cloudflare Turnstile côté serveur avant la connexion.
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
@@ -10,7 +10,7 @@ const json = (body: unknown, status = 200) =>
     headers: { "Content-Type": "application/json", ...corsHeaders },
   });
 
-Deno.serve(async (req) => {
+Deno.serve(withCors(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   if (req.method !== "POST") return json({ success: false, error: "method_not_allowed" }, 405);
 
@@ -46,4 +46,4 @@ Deno.serve(async (req) => {
     console.error("turnstile verify error", e);
     return json({ success: false, error: "captcha_unreachable" }, 502);
   }
-});
+}));

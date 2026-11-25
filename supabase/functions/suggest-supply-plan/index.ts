@@ -1,10 +1,10 @@
+import { withCors } from "../_shared/cors.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { createOpenAI } from "npm:@ai-sdk/openai";
 import { streamText } from "npm:ai";
 import { createLovableAiGatewayRunIdFetch, getLovableAiGatewayRunId } from "../_shared/run-id.ts";
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-lovable-aig-run-id",
   "Access-Control-Expose-Headers": "X-Lovable-AIG-Run-ID",
 };
@@ -22,7 +22,7 @@ Réponds UNIQUEMENT par un objet JSON valide de la forme :
 {"summary": string, "trips": [{"priority": number, "truck": string, "mode": "mono"|"mixte", "planned_date": string, "loads": [{"compartment": number, "litres": number, "product": "Super"|"Gasoil", "station": string}], "reason": string}], "unserved": [{"station": string, "product": string, "litres": number, "reason": string}], "warnings": [string]}
 En français, concis et concret.`;
 
-Deno.serve(async (req) => {
+Deno.serve(withCors(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   if (req.method !== "POST") return json({ error: "Méthode non autorisée" }, 405);
   const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_ANON_KEY")!, {
@@ -76,4 +76,4 @@ ${trucks.map((t) => `- ${String(t.registration).slice(0, 30)} | ${num(t.capacity
     console.error("suggest-supply-plan error", e);
     return json({ error: "Erreur du service IA." }, 500);
   }
-});
+}));

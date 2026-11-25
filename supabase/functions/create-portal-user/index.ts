@@ -1,10 +1,10 @@
+import { withCors } from "../_shared/cors.ts";
 // Creates a B2B client-portal login. Authorization is checked in the database
 // (b2b_portal_staff_guard: clients.edit + tenant/country scope + module + licence),
 // called with the caller's own token before any account is created.
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 const json = (body: unknown, status = 200) =>
@@ -13,7 +13,7 @@ const json = (body: unknown, status = 200) =>
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const EMAIL = /^[^\s@]{1,64}@[^\s@]{1,190}\.[^\s@]{2,}$/;
 
-Deno.serve(async (req) => {
+Deno.serve(withCors(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   if (req.method !== "POST") return json({ error: "Méthode non autorisée" }, 405);
 
@@ -71,4 +71,4 @@ Deno.serve(async (req) => {
   });
 
   return json({ user_id: uid });
-});
+}));

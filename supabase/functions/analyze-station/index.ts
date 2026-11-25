@@ -1,3 +1,4 @@
+import { withCors } from "../_shared/cors.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { createOpenAI } from "npm:@ai-sdk/openai";
 import { streamText } from "npm:ai";
@@ -7,7 +8,6 @@ import {
 } from "../_shared/run-id.ts";
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type, x-lovable-aig-run-id",
   "Access-Control-Expose-Headers": "X-Lovable-AIG-Run-ID",
@@ -35,7 +35,7 @@ Réponds UNIQUEMENT par un objet JSON valide, sans texte autour, de la forme :
 {"summary": string, "anomalies": [{"date": string, "product": "Super"|"Gasoil"|"Global", "severity": "haute"|"moyenne"|"faible", "title": string, "detail": string}], "actions": [{"priority": 1, "title": string, "detail": string}]}
 Au plus 8 anomalies et 5 actions, classées par importance. Rédige en français, concis et concret.`;
 
-Deno.serve(async (req) => {
+Deno.serve(withCors(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   if (req.method !== "POST") return json({ error: "Méthode non autorisée" }, 405);
 
@@ -130,4 +130,4 @@ Deno.serve(async (req) => {
     console.error("analyze-station error", e);
     return json({ error: "Erreur du service IA." }, 500);
   }
-});
+}));

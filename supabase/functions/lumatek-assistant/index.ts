@@ -1,10 +1,10 @@
+import { withCors } from "../_shared/cors.ts";
 import { createClient } from "npm:@supabase/supabase-js@2";
 import { createOpenAI } from "npm:@ai-sdk/openai";
 import { streamText } from "npm:ai";
 import { createLovableAiGatewayRunIdFetch, getLovableAiGatewayRunId } from "../_shared/run-id.ts";
 
 const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-lovable-aig-run-id",
   "Access-Control-Expose-Headers": "X-Lovable-AIG-Run-ID",
 };
@@ -24,7 +24,7 @@ Rédige dans la langue de la question, concis et concret.`;
 
 const clip = (v: unknown, n: number) => String(v ?? "").slice(0, n);
 
-Deno.serve(async (req) => {
+Deno.serve(withCors(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { headers: corsHeaders });
   if (req.method !== "POST") return json({ error: "Méthode non autorisée" }, 405);
   const supabase = createClient(Deno.env.get("SUPABASE_URL")!, Deno.env.get("SUPABASE_ANON_KEY")!, {
@@ -83,4 +83,4 @@ ${rows.map((r: unknown) => `- ${clip(r, 200)}`).join("\n") || "- aucune ligne"}`
     console.error("lumatek-assistant error", e);
     return json({ error: "Erreur du service IA." }, 500);
   }
-});
+}));
