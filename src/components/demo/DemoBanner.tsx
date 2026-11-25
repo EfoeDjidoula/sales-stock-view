@@ -22,8 +22,8 @@ export const DemoBanner = () => {
           ))}
         </SelectContent>
       </Select>
-      <Button size="sm" variant="outline" className="ml-auto h-7 text-xs" onClick={() => openHelp()}>
-        <BookOpen className="mr-1 h-3.5 w-3.5" /> Manuel / Guide
+      <Button size="sm" variant="outline" className="ml-auto h-7 text-xs" onClick={() => openHelp()} aria-label="Manuel / Guide">
+        <BookOpen className="h-3.5 w-3.5 sm:mr-1" /><span className="hidden sm:inline">Manuel / Guide</span>
       </Button>
       <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => void exitDemo()}>
         <LogOut className="mr-1 h-3.5 w-3.5" /> Quitter le mode démo

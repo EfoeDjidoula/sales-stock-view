@@ -72,3 +72,4 @@
 - [x] Données démo HSE & maintenance
 - [x] Liens vers le manuel de formation depuis chaque écran clé
 - [x] Volet d'aide manuel de formation (HelpDrawer + boutons)
+- [x] Guide adapté aux petits écrans
