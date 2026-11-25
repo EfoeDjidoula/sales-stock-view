@@ -85,6 +85,20 @@ export const StationProvisionTab = ({ d, L }: { d: Record<string, Row[]>; L: (fr
         <Button variant="outline" onClick={exportXlsx} disabled={!lines.length}><Download className="h-4 w-4 mr-1" />Excel</Button>
       </CardContent></Card>
       <Card className="glass-card">
+        <CardHeader className="pb-2"><CardTitle className="text-base">{L("Détail des mises à disposition", "Provision details")}</CardTitle></CardHeader>
+        <CardContent className="overflow-x-auto">
+          <Table>
+            <TableHeader><TableRow><TableHead>Date</TableHead><TableHead>{L("Transport", "Trip")}</TableHead><TableHead>{L("Station", "Station")}</TableHead><TableHead className="text-right">{L("Litres (BL)", "Litres")}</TableHead><TableHead className="text-right">{L("Valeur", "Value")}</TableHead><TableHead /></TableRow></TableHeader>
+            <TableBody>
+              {items.length === 0 && <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-6">{L("Aucune livraison signée sur la période choisie : élargissez les dates « Du / Au » pour voir les boutons PDF.", "No signed delivery in this period: widen the dates to see PDF buttons.")}</TableCell></TableRow>}
+              {items.map((it) => <TableRow key={it.key}><TableCell>{it.date.split("-").reverse().join("/")}</TableCell><TableCell className="text-xs">{it.tripRef}</TableCell><TableCell>{name("stations", it.stationId)}</TableCell>
+                <TableCell className="text-right">{fmt(it.lines.reduce((a, l) => a + l.litres, 0))}</TableCell><TableCell className="text-right">{fmt(it.lines.reduce((a, l) => a + l.amount, 0))}</TableCell>
+                <TableCell><Button size="sm" variant="outline" title="PDF" onClick={() => printPdf(it)}><FileDown className="h-4 w-4 mr-1" />PDF</Button></TableCell></TableRow>)}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+      <Card className="glass-card">
         <CardHeader className="pb-2"><CardTitle className="text-base">{L("Mise à disposition & valorisation par station", "Station provision & valuation")}</CardTitle>
           <p className="text-xs text-muted-foreground">{L("Volume BL chargé × prix pompe du pays en vigueur à la date de livraison (structure de prix). Lecture seule, aucun stock modifié.", "Loaded DN volume × country pump price in force on delivery date. Read-only.")}</p></CardHeader>
         <CardContent className="overflow-x-auto">
@@ -94,20 +108,6 @@ export const StationProvisionTab = ({ d, L }: { d: Record<string, Row[]>; L: (fr
               {sum.length === 0 && <TableRow><TableCell colSpan={5} className="text-center text-muted-foreground py-6">{L("Aucune mise à disposition sur la période.", "No provision in this period.")}</TableCell></TableRow>}
               {sum.map((s) => <TableRow key={s.stationId + s.productId}><TableCell>{name("stations", s.stationId)}</TableCell><TableCell>{name("products", s.productId)}</TableCell><TableCell className="text-right">{s.count}</TableCell><TableCell className="text-right">{fmt(s.litres)}</TableCell><TableCell className="text-right">{fmt(s.amount)}</TableCell></TableRow>)}
               {sum.length > 0 && <TableRow className="font-semibold"><TableCell colSpan={3}>Total</TableCell><TableCell className="text-right">{fmt(sum.reduce((a, s) => a + s.litres, 0))}</TableCell><TableCell className="text-right">{fmt(total)}</TableCell></TableRow>}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
-      <Card className="glass-card">
-        <CardHeader className="pb-2"><CardTitle className="text-base">{L("Détail des mises à disposition", "Provision details")}</CardTitle></CardHeader>
-        <CardContent className="overflow-x-auto">
-          <Table>
-            <TableHeader><TableRow><TableHead>Date</TableHead><TableHead>{L("Transport", "Trip")}</TableHead><TableHead>{L("Station", "Station")}</TableHead><TableHead className="text-right">{L("Litres (BL)", "Litres")}</TableHead><TableHead className="text-right">{L("Valeur", "Value")}</TableHead><TableHead /></TableRow></TableHeader>
-            <TableBody>
-              {items.length === 0 && <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground py-6">—</TableCell></TableRow>}
-              {items.map((it) => <TableRow key={it.key}><TableCell>{it.date.split("-").reverse().join("/")}</TableCell><TableCell className="text-xs">{it.tripRef}</TableCell><TableCell>{name("stations", it.stationId)}</TableCell>
-                <TableCell className="text-right">{fmt(it.lines.reduce((a, l) => a + l.litres, 0))}</TableCell><TableCell className="text-right">{fmt(it.lines.reduce((a, l) => a + l.amount, 0))}</TableCell>
-                <TableCell><Button size="sm" variant="outline" title="PDF" onClick={() => printPdf(it)}><FileDown className="h-4 w-4 mr-1" />PDF</Button></TableCell></TableRow>)}
             </TableBody>
           </Table>
         </CardContent>
