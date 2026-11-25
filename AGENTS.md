@@ -35,4 +35,3 @@
 - Price structures: unique per tenant+country+effective_date; why: per-country pricing.
 - Country legal identity: tenant_countries legal fields (set_country_identity) override tenant ones via applyCountryIdentity; why: PDFs follow the active country.
 - create-user requires country_ids checked against tenant + caller access; why: no default all-country access.
-- Phone layout: shared mobile rules (tabs.tsx scrollable tabs, index.css inputs); why: all screens adapt.
