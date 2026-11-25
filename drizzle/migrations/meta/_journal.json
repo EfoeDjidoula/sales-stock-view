@@ -561,6 +561,13 @@
       "when": 1795600634533,
       "tag": "0079_security_separation_and_scope",
       "breakpoints": true
+    },
+    {
+      "idx": 80,
+      "version": "7",
+      "when": 1795602519774,
+      "tag": "0080_verify_turnstile_rate_limit",
+      "breakpoints": true
     }
   ]
 }

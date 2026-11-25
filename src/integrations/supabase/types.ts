@@ -2321,6 +2321,24 @@ export type Database = {
           },
         ]
       }
+      edge_rate_limits: {
+        Row: {
+          bucket: string
+          hits: number
+          window_start: string
+        }
+        Insert: {
+          bucket: string
+          hits?: number
+          window_start: string
+        }
+        Update: {
+          bucket?: string
+          hits?: number
+          window_start?: string
+        }
+        Relationships: []
+      }
       equipment_types: {
         Row: {
           category: string
@@ -9481,6 +9499,10 @@ export type Database = {
       depot_supply_action: {
         Args: { _action: string; _data: Json }
         Returns: string
+      }
+      edge_rate_limit_hit: {
+        Args: { _bucket: string; _limit: number }
+        Returns: boolean
       }
       fraud_alert_action: {
         Args: { _action: string; _comment: string; _id: string }

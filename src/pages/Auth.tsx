@@ -83,6 +83,11 @@ const Auth = () => {
       : { data: { success: true }, error: null };
     // Un jeton Turnstile n'est utilisable qu'une seule fois : on le régénère.
     if (CAPTCHA_ON) setCaptchaReset((n) => n + 1);
+    if (check?.error === "rate_limited" || (checkError as { context?: Response })?.context?.status === 429) {
+      toast.error(t("Trop de tentatives"), { description: t("Réessayez dans une minute.") });
+      setIsLoading(false);
+      return;
+    }
     if (checkError || !check?.success) {
       toast.error(t("Vérification anti-robot échouée"), {
         description: t("Veuillez réessayer la vérification."),
