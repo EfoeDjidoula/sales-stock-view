@@ -132,6 +132,14 @@ const rpc = (name: string, role: DemoRole) => {
     case "is_platform_admin": return false;
     case "is_module_enabled": case "can_access_tenant": case "can_access_tenant_country": case "can_write_module": case "can_write_station": return true;
     case "tenant_license_state": return { tenant_status: "active", mode: "full", has_license: true, license_number: "DEMO-0001", plan_name: "Enterprise (démo)", status: "active", expiration_date: "2099-12-31", grace_end: null, days_left: 9999, expiry_policy: "read_only", max_users: 100, max_countries: 10, max_stations: 100, users: 3, countries: 1, stations: 4 };
+    case "logistics_vehicle_availability": {
+      const busy = new Set((db?.logistics_trips ?? []).filter((t: any) => !["delivered", "cancelled"].includes(t.status)).flatMap((t: any) => [t.truck_id, t.tanker_id]));
+      return (db?.logistics_vehicles ?? []).map((v: any) => ({ vehicle_id: v.id, registration: v.registration, kind: v.kind, capacity: v.capacity_litres, available: !busy.has(v.id), reasons: busy.has(v.id) ? ["Transport en cours"] : [] }));
+    }
+    case "logistics_driver_availability": {
+      const busy = new Set((db?.logistics_trips ?? []).filter((t: any) => !["delivered", "cancelled"].includes(t.status)).map((t: any) => t.driver_id));
+      return (db?.logistics_drivers ?? []).map((x: any) => ({ driver_id: x.id, full_name: x.full_name, available: !busy.has(x.id), reasons: busy.has(x.id) ? ["Transport en cours"] : [] }));
+    }
     default: return null;
   }
 };

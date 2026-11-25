@@ -42,6 +42,7 @@ let seed = 42;
 const rnd = () => ((seed = (seed * 16807) % 2147483647) / 2147483647);
 
 import { buildHseMaintenance } from "./demoHseMaintenance";
+import { buildLogistics } from "./demoLogistics";
 
 export const buildDemoDb = (role: DemoRole) => {
   seed = 42;
@@ -71,7 +72,8 @@ export const buildDemoDb = (role: DemoRole) => {
     stations.forEach((s, si) => {
       n++;
       const eid = id("d8000000", n), cid = id("d9000000", n);
-      const e: any = { ...base, id: eid, station_id: s.id, entry_date: date, user_id: prof.userId, status: d > 1 ? "valide" : "pre_enregistre", validated_by: null, validated_by_name: d > 1 ? "Démo — Contrôleur" : null, validated_at: d > 1 ? now : null, closure_id: d > 1 ? cid : null };
+      const ok = !(d === 0 && si === 3);
+      const e: any = { ...base, id: eid, station_id: s.id, entry_date: date, user_id: prof.userId, status: ok ? "valide" : "pre_enregistre", validated_by: null, validated_by_name: ok ? "Démo — Contrôleur" : null, validated_at: ok ? now : null, closure_id: ok ? cid : null };
       let tot = { super: 0, gasoil: 0 };
       pumps.filter((p) => p.station_id === s.id).forEach((p) => {
         const liters = Math.round((si === 2 ? 1400 : 800) + rnd() * 700);
@@ -98,7 +100,7 @@ export const buildDemoDb = (role: DemoRole) => {
       const bons = Math.round(vente * 0.06), momo = Math.round(vente * 0.18), cartes = Math.round(vente * 0.04);
       Object.assign(e, { total_super_liters: tot.super, total_gasoil_liters: tot.gasoil, vente_globale: vente, bons_clients_montant: bons, tickets_valeur_montant: 0, cartes_montant: cartes, autoconso_montant: 0, versement_momo: momo, montant_a_verser: vente - bons - momo - cartes, versement_banque: vente - bons - momo - cartes, ecart_versement: 0, banque_nom: "Banque démo", total_versements: vente - bons - cartes, total_bons: bons, bons_carburant_nombre: 0, bons_carburant_valeur: 0, bons_entreprise_nombre: 0, bons_entreprise_valeur: 0, versement_liquidite: 0, sync_warnings: null });
       entries.push(e);
-      if (d > 1) closures.push({ ...base, id: cid, station_id: s.id, closure_date: date, status: "validated", total_volume: tot.super + tot.gasoil, total_amount: vente, total_collected: vente, cash_variance: 0, notes: null, created_by: prof.userId, submitted_by: prof.userId, submitted_at: now, validated_by: DEMO_PROFILES.admin.userId, validated_at: now, source: "index", index_entry_id: eid });
+      if (ok) closures.push({ ...base, id: cid, station_id: s.id, closure_date: date, status: "validated", total_volume: tot.super + tot.gasoil, total_amount: vente, total_collected: vente, cash_variance: 0, notes: null, created_by: prof.userId, submitted_by: prof.userId, submitted_at: now, validated_by: DEMO_PROFILES.admin.userId, validated_at: now, source: "index", index_entry_id: eid });
     });
   }
 
@@ -131,6 +133,7 @@ export const buildDemoDb = (role: DemoRole) => {
     index_entries: entries, pump_index_entries: pumpEntries, index_tank_readings: readings,
     daily_closures: closures, closure_sales: sales, closure_payments, payment_methods, stock_levels, depotages, clients, b2b_consumptions, b2b_invoices, b2b_payments,
     b2b_portal_users: [], platform_admins: [],
+    ...buildLogistics(base, stations, products, clients, prof.userId),
     ...buildHseMaintenance(base, stations, tanks, pumps, prof.userId, DEMO_PROFILES.admin.userId),
   } as Record<string, any[]>;
 };
