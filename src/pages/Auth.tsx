@@ -18,6 +18,7 @@ import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 import { TurnstileWidget } from "@/components/auth/TurnstileWidget";
 import { supabase } from "@/integrations/supabase/client";
 import { isCaptchaRequired } from "@/lib/captcha";
+import { DemoAccess } from "@/components/demo/DemoAccess";
 
 const CAPTCHA_ON = isCaptchaRequired();
 
@@ -226,6 +227,8 @@ const Auth = () => {
             </form>
           </CardContent>
         </Card>
+
+        <DemoAccess />
 
         {/* Footer */}
         <p className="text-center text-xs text-muted-foreground">

@@ -73,6 +73,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       console.warn("Sign out error (clearing local state):", error);
     }
     await clearOfflineCache();
+    try { localStorage.removeItem("lumatek-demo-role"); } catch { /* ignore */ }
     // Force clear local state regardless of API response
     setSession(null);
     setUser(null);
