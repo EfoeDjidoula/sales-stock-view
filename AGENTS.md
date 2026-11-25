@@ -34,4 +34,4 @@
 - Price structures: unique per tenant+country+effective_date; why: per-country pricing.
 - Country legal identity: tenant_countries legal fields (set_country_identity) override tenant ones via applyCountryIdentity; why: PDFs follow the active country.
 - create-user requires country_ids checked against tenant + caller access; why: no default all-country access.
-- Theme: light in :root, dark in .dark, mode via src/lib/theme.ts; why: one switch point.
+- Theme: :root light, .dark dark, via src/lib/theme.ts; why: one switch.
