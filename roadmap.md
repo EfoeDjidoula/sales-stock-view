@@ -56,7 +56,7 @@
 - [x] Phase 3 : suivi des chargements (7 statuts, filtres, historique).
 - [x] Phase 4 : bons de livraison numériques par site + 3 signatures (portail client à relier ensuite).
 - [x] Phase 5 : dépotages par compartiment et par cuve (+ correctif module BL).
-- [ ] Phase 6 : répartition BE/BL.
+- [x] Phase 6 : répartition BE/BL (concordance enlevé / affecté / livré).
 - [ ] Phase 7 : mise à disposition / facturation stations.
 - [ ] Phase 8 : fiches de stock et tableau de bord.
 - [ ] Saisir les documents des 2 camions et créer les chauffeurs (aucun chauffeur enregistré) — à faire par l'utilisateur.
