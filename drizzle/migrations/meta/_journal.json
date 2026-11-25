@@ -540,6 +540,13 @@
       "when": 1795597036714,
       "tag": "0076_logistics_discharges_phase5",
       "breakpoints": true
+    },
+    {
+      "idx": 77,
+      "version": "7",
+      "when": 1795597704420,
+      "tag": "0077_bl_generate_currency_fix",
+      "breakpoints": true
     }
   ]
 }
