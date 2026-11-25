@@ -64,7 +64,7 @@ export const PortalAccessPanel = ({ clientId, clientName }: { clientId: string; 
   const portalUrl = `${window.location.origin}/portail`;
 
   const create = async () => {
-    if (form.password.length < 6 || form.password.length > 8) return toast.error("Le mot de passe doit contenir entre 6 et 8 caractères");
+    if (form.password.length < 10 || form.password.length > 72) return toast.error("Le mot de passe doit contenir entre 10 et 72 caractères");
     setBusy(true);
     const { error } = await supabase.functions.invoke("create-portal-user", { body: { ...form, client_id: clientId } });
     setBusy(false);
@@ -153,7 +153,7 @@ export const PortalAccessPanel = ({ clientId, clientName }: { clientId: string; 
           <div className="space-y-3">
             <div className="space-y-1"><Label>Nom complet</Label><Input value={form.full_name} maxLength={120} onChange={(e) => setForm({ ...form, full_name: e.target.value })} /></div>
             <div className="space-y-1"><Label>E-mail</Label><Input type="email" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} /></div>
-            <div className="space-y-1"><Label>Mot de passe (6 à 8 caractères)</Label><Input type="text" value={form.password} maxLength={8} autoComplete="new-password" onChange={(e) => setForm({ ...form, password: e.target.value })} /></div>
+            <div className="space-y-1"><Label>Mot de passe (10 à 72 caractères)</Label><Input type="text" value={form.password} maxLength={72} autoComplete="new-password" onChange={(e) => setForm({ ...form, password: e.target.value })} /></div>
             <label className="flex items-start gap-3 rounded-md border border-border p-3 text-sm">
               <Switch checked={form.can_manage} onCheckedChange={(v) => setForm({ ...form, can_manage: v })} />
               <span><span className="font-medium">Peut gérer</span><br /><span className="text-muted-foreground">Bloquer une carte, gérer conducteurs et véhicules, faire des demandes. Sinon : consultation seule.</span></span>

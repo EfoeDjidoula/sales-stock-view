@@ -88,9 +88,9 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     // Validate password strength
-    if (password.length < 6 || password.length > 8) {
+    if (password.length < 10 || password.length > 72) {
       return new Response(
-        JSON.stringify({ error: "Le mot de passe doit contenir entre 6 et 8 caractères" }),
+        JSON.stringify({ error: "Le mot de passe doit contenir entre 10 et 72 caractères" }),
         { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }

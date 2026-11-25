@@ -33,7 +33,7 @@ Deno.serve(async (req) => {
 
   if (!UUID.test(clientId)) return json({ error: "Client invalide" }, 400);
   if (!EMAIL.test(email)) return json({ error: "Adresse e-mail invalide" }, 400);
-  if (password.length < 6 || password.length > 8) return json({ error: "Le mot de passe doit contenir entre 6 et 8 caractères" }, 400);
+  if (password.length < 10 || password.length > 72) return json({ error: "Le mot de passe doit contenir entre 10 et 72 caractères" }, 400);
   if (fullName.length < 2 || fullName.length > 120) return json({ error: "Nom complet obligatoire (120 caractères max.)" }, 400);
 
   // 1. Authorization as the caller (RLS / permission checks apply).

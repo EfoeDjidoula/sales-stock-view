@@ -42,7 +42,7 @@ export const LumatekSettings = () => {
   });
 
   const rows: [string, string][] = [
-    ["Politique mot de passe (création de comptes)", "6 à 8 caractères maximum, vérifiée à l'écran et côté serveur"],
+    ["Politique mot de passe (création de comptes)", "10 à 72 caractères, vérifiée à l'écran et côté serveur"],
     ["Inscription publique", "Désactivée — comptes créés par un administrateur"],
     ["Langues", "Français (source), Anglais — choix par utilisateur"],
     ["Domaine email", "notify.lumatek.com"],
