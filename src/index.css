@@ -213,3 +213,10 @@
 }
 
 
+
+/* Téléphone : pas de zoom automatique à la saisie, tableaux défilables, boutons tactiles. */
+@media (max-width: 767px) {
+  input, select, textarea { font-size: 16px !important; }
+  table { white-space: nowrap; }
+  main, [role="main"] { overflow-x: hidden; }
+}

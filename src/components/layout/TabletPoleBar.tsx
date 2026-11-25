@@ -20,7 +20,7 @@ interface Props {
 export function TabletPoleBar({ tabMeta, canAccessTab, activeTab, onSelect, badges }: Props) {
   const { t } = useLanguage();
   return (
-    <nav aria-label={t("Pôles métiers")} className="flex xl:hidden gap-1.5 overflow-x-auto px-3 md:px-6 pb-2 scrollbar-none">
+    <nav aria-label={t("Pôles métiers")} className="hidden md:flex xl:hidden gap-1.5 overflow-x-auto px-3 md:px-6 pb-2 scrollbar-none">
       {ALL_NAV_GROUPS.map((pole) => {
         const tabs = pole.tabs.filter((tab) => tabMeta[tab] && canAccessTab(tab));
         if (!tabs.length) return null;

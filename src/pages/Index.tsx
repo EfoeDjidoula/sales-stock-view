@@ -373,7 +373,7 @@ const Index = () => {
       style={{ "--sidebar-width": "17.5rem" } as CSSProperties}
     >
       <div className="min-h-screen flex w-full bg-background">
-        <div className="hidden xl:contents"><AppSidebar
+        <div className="contents md:hidden xl:contents"><AppSidebar
           tabMeta={TAB_META}
           canAccessTab={canAccessTab}
           activeTab={activeTab}
@@ -385,7 +385,7 @@ const Index = () => {
           {/* En-tête épuré : fil d'Ariane, contexte, actions */}
           <header className="sticky top-0 z-40 border-b border-border bg-background/80 backdrop-blur-xl">
             <div className="flex flex-wrap items-center gap-x-3 gap-y-2 px-3 md:px-6 py-2.5">
-              <SidebarTrigger className="shrink-0 hidden xl:inline-flex" aria-label={t("Afficher / masquer le menu")} />
+              <SidebarTrigger className="shrink-0 h-10 w-10 md:hidden xl:inline-flex xl:h-7 xl:w-7" aria-label={t("Afficher / masquer le menu")} />
               <div className="hidden sm:block h-6 w-px bg-border" />
               <nav aria-label="Fil d'Ariane" className="min-w-[10rem] flex-1">
                 <p className="truncate text-[11px] uppercase tracking-wider text-muted-foreground">
@@ -396,7 +396,7 @@ const Index = () => {
                 </h1>
               </nav>
 
-              <div className="order-last flex w-full flex-wrap items-center gap-2 2xl:order-none 2xl:w-auto">
+              <div className="order-last flex w-full flex-wrap items-center gap-2 max-md:flex-nowrap max-md:overflow-x-auto max-md:[scrollbar-width:none] max-md:[&>*]:shrink-0 2xl:order-none 2xl:w-auto">
                 <CountrySwitcher />
                 <TenantSelector />
                 <DbStationSelector selectedStation={selectedStation} onSelect={setSelectedStation} />
