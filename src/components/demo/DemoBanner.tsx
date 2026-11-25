@@ -1,6 +1,7 @@
-import { FlaskConical, LogOut } from "lucide-react";
+import { BookOpen, FlaskConical, LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { openHelp } from "@/lib/help/manual";
 import { exitDemo, getDemoRole, startDemo } from "@/lib/demo/demoMode";
 import { DEMO_PROFILES, type DemoRole } from "@/lib/demo/demoData";
 
@@ -21,7 +22,10 @@ export const DemoBanner = () => {
           ))}
         </SelectContent>
       </Select>
-      <Button size="sm" variant="outline" className="ml-auto h-7 text-xs" onClick={() => void exitDemo()}>
+      <Button size="sm" variant="outline" className="ml-auto h-7 text-xs" onClick={() => openHelp()}>
+        <BookOpen className="mr-1 h-3.5 w-3.5" /> Manuel / Guide
+      </Button>
+      <Button size="sm" variant="outline" className="h-7 text-xs" onClick={() => void exitDemo()}>
         <LogOut className="mr-1 h-3.5 w-3.5" /> Quitter le mode démo
       </Button>
     </div>

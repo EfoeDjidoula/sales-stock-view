@@ -3,6 +3,8 @@ import PeriodicReportsModule from "@/components/reports/PeriodicReportsModule";
 import SynthesisModule from "@/components/synthesis/SynthesisModule";
 import WorkflowModule from "@/components/workflow/WorkflowModule";
 import HseModule from "@/components/hse/HseModule";
+import { HelpButton } from "@/components/help/HelpDrawer";
+import { HELP_FOR_SCREEN } from "@/lib/help/manual";
 import AssetsMaintenanceModule from "@/components/maintenance/AssetsMaintenanceModule";
 import { useState, useMemo, useEffect, useRef, type CSSProperties } from "react";
 import { formatCurrency } from "@/data/stationsData";
@@ -414,6 +416,8 @@ const Index = () => {
               </div>
 
               <div className="ml-auto flex items-center gap-1.5">
+                {HELP_FOR_SCREEN[activeTab] && <HelpButton screen={activeTab} />}
+                <HelpButton label="Manuel / Guide" />
                 {isPlatformAdmin && (
                   <Button asChild variant="outline" size="sm" className="gap-2 border-primary/40 text-primary hover:text-primary">
                     <Link to="/lumatek" title="LUMATEK SaaS">

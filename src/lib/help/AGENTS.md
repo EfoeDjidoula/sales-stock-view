@@ -1,0 +1,1 @@
+- Training manual: content only here (manual.ts, HELP_FOR_SCREEN maps tabs to sections), shown by one HelpDrawer via openHelp(); why: one manual linked from every screen.

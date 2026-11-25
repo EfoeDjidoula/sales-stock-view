@@ -20,6 +20,7 @@ import LumatekAdmin from "./pages/LumatekAdmin";
 import ClientPortal from "./pages/ClientPortal";
 import { usePortalMembership } from "@/hooks/usePortalMembership";
 import { DemoBanner } from "@/components/demo/DemoBanner";
+import { HelpDrawer } from "@/components/help/HelpDrawer";
 
 const queryClient = createAppQueryClient();
 
@@ -141,6 +142,7 @@ const App = () => (
                 <Toaster />
                 <Sonner />
                 <DemoBanner />
+                <HelpDrawer />
                 <AppRoutes />
                 <OfflineStatus />
               </BrandingProvider>

@@ -4,6 +4,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { HelpButton } from "@/components/help/HelpDrawer";
 import { formatNumber } from "@/data/stationsData";
 import { useStations, useSaveIndexEntry, type PumpEntryInput } from "@/hooks/useIndexEntries";
 import { useFiscalYears } from "@/hooks/useFiscalYears";
@@ -811,6 +812,7 @@ const IndexEntry = () => {
                      {t("Enregistrement journalier")}
                   </p>
                 </div>
+                <HelpButton screen="saisie" />
               </div>
             </div>
             <div className="flex flex-wrap items-center gap-3">

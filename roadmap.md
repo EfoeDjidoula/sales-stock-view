@@ -70,4 +70,5 @@
 - [x] Rapports PDF/Excel : prix de la structure du pays de travail (plus de repli sur les prix du Bénin pour les autres pays) + publication pour l'import des structures.
 - [x] Écrans (tableau de bord, Historique, Command Center, BI, tendance 30 j) : prix du pays de travail, plus de 695/720 en dur.
 - [x] Données démo HSE & maintenance
-- [ ] Liens vers le manuel de formation depuis chaque écran clé
+- [x] Liens vers le manuel de formation depuis chaque écran clé
+- [x] Volet d'aide manuel de formation (HelpDrawer + boutons)
