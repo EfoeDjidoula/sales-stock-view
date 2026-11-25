@@ -18,6 +18,7 @@ import { LiftingOrdersTab } from "./LiftingOrdersTab";
 import { LoadingTrackingTab } from "./LoadingTrackingTab";
 import { LiftingAllocationTab } from "./LiftingAllocationTab";
 import { StationProvisionTab } from "./StationProvisionTab";
+import { LogisticsDashboardTab } from "./LogisticsDashboardTab";
 import { DeliveryNotesTab } from "./DeliveryNotesTab";
 import { DischargesTab } from "./DischargesTab";
 import { VARIANCE_CATEGORIES } from "./variance";
@@ -264,7 +265,9 @@ export const LogisticsModule = () => {
           <TabsTrigger value="alerts">17. {L("Alertes", "Alerts")} {alerts.length > 0 && <Badge variant="destructive" className="ml-1">{alerts.length}</Badge>}</TabsTrigger>
           <TabsTrigger value="stations">18. {L("Suivi par station", "Station tracking")}</TabsTrigger>
           <TabsTrigger value="three_stocks">19. {L("Bilan des 3 stocks", "3-stock balance")}</TabsTrigger>
+          <TabsTrigger value="dashboard">20. {L("Fiches de stock & tableau de bord", "Stock sheets & dashboard")}</TabsTrigger>
         </TabsList>
+        <TabsContent value="dashboard"><LogisticsDashboardTab d={d} L={L} /></TabsContent>
         <TabsContent value="provision"><StationProvisionTab d={d} L={L} /></TabsContent>
         <TabsContent value="allocation"><LiftingAllocationTab d={d} L={L} /></TabsContent>
         <TabsContent value="discharges"><DischargesTab d={d} L={L} canValidate={canValidate} onChanged={load} /></TabsContent>

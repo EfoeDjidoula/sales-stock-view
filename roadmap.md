@@ -58,7 +58,7 @@
 - [x] Phase 5 : dépotages par compartiment et par cuve (+ correctif module BL).
 - [x] Phase 6 : répartition BE/BL (concordance enlevé / affecté / livré).
 - [x] Phase 7 : mise à disposition stations valorisée au prix pompe du pays à la date de livraison (lecture + Excel).
-- [ ] Phase 8 : fiches de stock et tableau de bord.
+- [x] Phase 8 : fiches de stock & tableau de bord logistique
 - [ ] Saisir les documents des 2 camions et créer les chauffeurs (aucun chauffeur enregistré) — à faire par l'utilisateur.
 
 ## SaaS
