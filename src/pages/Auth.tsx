@@ -69,7 +69,7 @@ const Auth = () => {
       return;
     }
 
-    const { error } = await signIn(loginEmail, loginPassword);
+    const { error } = await signIn(loginEmail, loginPassword, captchaToken);
     
     if (error) {
        toast.error(t("Erreur de connexion"), {
