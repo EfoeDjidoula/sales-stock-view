@@ -73,3 +73,7 @@
 - [x] Liens vers le manuel de formation depuis chaque écran clé
 - [x] Volet d'aide manuel de formation (HelpDrawer + boutons)
 - [x] Guide adapté aux petits écrans
+- [x] Documents : chauffeur attitré pré-rempli au choix du camion.
+- [x] Dépotages : approvisionnements attendus (BE/BL, camion, chauffeur, ETA) + choix du BE/BL à réceptionner ; suivi par station signale l'appro en cours.
+- [ ] Retirer/masquer « Demandes d'appro » et « Chargements & transports » — attend la décision de l'utilisateur.
+- [ ] Ensuite : bilan des 3 stocks, fiches de stock & tableau de bord.

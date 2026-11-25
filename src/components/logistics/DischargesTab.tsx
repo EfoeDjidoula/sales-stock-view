@@ -27,13 +27,16 @@ export const DischargesTab = ({ d, L, canValidate, onChanged }: Props) => {
   const [cur, setCur] = useState<Row | null>(null);
   const [form, setForm] = useState({ tank: "", before: "", after: "", note: "" });
   const [busy, setBusy] = useState(false);
+  const [notes, setNotes] = useState<Row[]>([]);
+  const [pick, setPick] = useState<string>("all");
 
   const load = async () => {
-    const [t, x] = await Promise.all([
+    const [t, x, n] = await Promise.all([
       scopeQuery(db.from("tanks").select("id,name,station_id,product_id,capacity_liters")),
       scopeQuery(db.from("logistics_discharges").select("*").order("created_at", { ascending: false }).limit(500)),
+      scopeQuery(db.from("logistics_delivery_notes").select("id,number,trip_id,station_id")),
     ]);
-    setTanks(t.data ?? []); setDone(x.data ?? []);
+    setTanks(t.data ?? []); setDone(x.data ?? []); setNotes(n.data ?? []);
   };
   useEffect(() => { load(); }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -41,6 +44,22 @@ export const DischargesTab = ({ d, L, canValidate, onChanged }: Props) => {
   const trip = (id: string) => (d.trips ?? []).find((t) => t.id === id);
   const pending = useMemo(() => pendingDischarges((d.loads ?? []) as Row[] as never[],
     new Set((d.deliveries ?? []).map((r) => r.load_id)), new Set(done.map((r) => r.load_id))) as Row[], [d, done]);
+  const beOf = (tripId: string) => (d.liftings ?? []).find((b) => b.trip_id === tripId)?.number;
+  const blOf = (tripId: string, st?: string) => notes.find((n) => n.trip_id === tripId && n.station_id === st)?.number;
+  const keyOf = (l: Row) => `${l.trip_id}|${l.station_id}`;
+  const labelOf = (l: Row) => `${beOf(l.trip_id) ?? trip(l.trip_id)?.reference ?? "—"} · ${blOf(l.trip_id, l.station_id) ?? L("BL à venir", "BL pending")} · ${nm("stations", l.station_id)}`;
+  const groups = useMemo(() => { const m = new Map<string, Row>(); pending.forEach((l) => { if (!m.has(keyOf(l))) m.set(keyOf(l), l); }); return [...m.entries()]; }, [pending, notes, d]); // eslint-disable-line react-hooks/exhaustive-deps
+  const shown = pick === "all" ? pending : pending.filter((l) => keyOf(l) === pick);
+  const delivered = new Set((d.deliveries ?? []).map((r) => r.load_id));
+  const incoming = useMemo(() => {
+    const m = new Map<string, Row>();
+    (d.loads ?? []).forEach((l) => {
+      const t = trip(l.trip_id);
+      if (!l.station_id || delivered.has(l.id) || !t || !["loaded", "in_transit", "arrived", "unloading"].includes(t.status)) return;
+      const k = keyOf(l); const g = m.get(k) ?? { ...l, t, lines: [] as Row[] }; g.lines.push(l); m.set(k, g);
+    });
+    return [...m.values()];
+  }, [d, notes]); // eslint-disable-line react-hooks/exhaustive-deps
   const tankName = (id: string) => tanks.find((t) => t.id === id)?.name ?? "—";
   const candTanks = cur ? tanks.filter((t) => t.station_id === cur.station_id && (!t.product_id || t.product_id === cur.product_id)) : [];
   const tk = tanks.find((t) => t.id === form.tank);
@@ -61,25 +80,49 @@ export const DischargesTab = ({ d, L, canValidate, onChanged }: Props) => {
   return (
     <div className="space-y-4">
       <Card>
-        <CardHeader><CardTitle className="text-base">{L("Compartiments à dépoter", "Compartments to discharge")} <Badge variant="outline" className="ml-2">{pending.length}</Badge></CardTitle></CardHeader>
+        <CardHeader><CardTitle className="text-base">{L("Approvisionnements attendus (en route)", "Expected supplies (on the way)")} <Badge variant="outline" className="ml-2">{incoming.length}</Badge></CardTitle></CardHeader>
+        <CardContent className="space-y-2">
+          {incoming.length === 0 && <p className="text-sm text-muted-foreground">{L("Aucun camion en route vers vos stations", "No truck on the way to your stations")}</p>}
+          {incoming.map((g) => (
+            <div key={keyOf(g)} className="rounded-md border border-border p-3 text-sm space-y-1">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <b>{nm("stations", g.station_id)}</b>
+                <Badge>{L(...((({ loaded: ["Chargé", "Loaded"], in_transit: ["En route", "On the way"], arrived: ["Arrivé", "Arrived"], unloading: ["Déchargement", "Unloading"] }) as Record<string, [string, string]>)[g.t.status]))}</Badge>
+              </div>
+              <div className="text-xs text-muted-foreground">BE {beOf(g.trip_id) ?? "—"} · BL {blOf(g.trip_id, g.station_id) ?? "—"} · {nm("vehicles", g.t.truck_id, "registration")} · {nm("drivers", g.t.driver_id, "full_name")}{g.t.eta ? ` · ETA ${format(new Date(g.t.eta), "dd/MM HH:mm")}` : ""}</div>
+              <div className="text-xs">{g.lines.map((l: Row) => `C${nm("compartments", l.compartment_id, "position")} ${nm("products", l.product_id)} ${fmt(l.qty_litres)} L`).join(" · ")}</div>
+            </div>
+          ))}
+          <p className="text-xs text-muted-foreground">{L("Dès que la livraison du site est confirmée, les compartiments passent ci-dessous pour être dépotés.", "Once the site delivery is confirmed, compartments move below to be discharged.")}</p>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="space-y-2"><CardTitle className="text-base">{L("Compartiments à dépoter", "Compartments to discharge")} <Badge variant="outline" className="ml-2">{pending.length}</Badge></CardTitle>
+          <div className="max-w-md"><Label>{L("Bon d'enlèvement / BL reçu", "Lifting order / delivery note")}</Label>
+            <Select value={pick} onValueChange={setPick}>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent><SelectItem value="all">{L("Tous les bons", "All")}</SelectItem>{groups.map(([k, l]) => <SelectItem key={k} value={k}>{labelOf(l)}</SelectItem>)}</SelectContent>
+            </Select></div>
+        </CardHeader>
         <CardContent className="overflow-x-auto">
           <Table>
             <TableHeader><TableRow>
-              <TableHead>{L("Transport", "Trip")}</TableHead><TableHead>{L("Station", "Station")}</TableHead>
+              <TableHead>{L("BE / BL", "LO / DN")}</TableHead><TableHead>{L("Station", "Station")}</TableHead>
               <TableHead>{L("Compartiment", "Compartment")}</TableHead><TableHead>{L("Produit", "Product")}</TableHead>
               <TableHead className="text-right">{L("Volume BL (L)", "BL volume (L)")}</TableHead><TableHead />
             </TableRow></TableHeader>
             <TableBody>
               {pending.length === 0 && <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground">{L("Aucun compartiment livré en attente de dépotage", "No delivered compartment awaiting discharge")}</TableCell></TableRow>}
-              {pending.map((l) => (
+              {shown.map((l) => (
                 <TableRow key={l.id}>
-                  <TableCell>{trip(l.trip_id)?.reference ?? "—"}</TableCell>
+                  <TableCell className="text-xs">{beOf(l.trip_id) ?? trip(l.trip_id)?.reference ?? "—"}<br />{blOf(l.trip_id, l.station_id) ?? "—"}</TableCell>
                   <TableCell>{nm("stations", l.station_id)}</TableCell>
                   <TableCell>N° {nm("compartments", l.compartment_id, "position")}</TableCell>
                   <TableCell>{nm("products", l.product_id)}</TableCell>
                   <TableCell className="text-right">{fmt(l.qty_litres)}</TableCell>
                   <TableCell className="text-right">
-                    <Button size="sm" disabled={!canValidate} onClick={() => { setCur(l); setForm({ tank: "", before: "", after: "", note: "" }); }}>{L("Dépoter", "Discharge")}</Button>
+                    <Button size="sm" disabled={!canValidate} onClick={() => { setCur(l); const c = tanks.filter((t) => t.station_id === l.station_id && (!t.product_id || t.product_id === l.product_id)); setForm({ tank: c.length === 1 ? c[0].id : "", before: "", after: "", note: "" }); }}>{L("Réceptionner", "Receive")}</Button>
                   </TableCell>
                 </TableRow>
               ))}

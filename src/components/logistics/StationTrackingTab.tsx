@@ -25,7 +25,7 @@ const LEVEL: Record<string, [string, string, "default" | "secondary" | "destruct
   critique: ["Critique", "Critical", "destructive"], rupture: ["Rupture", "Stock-out", "destructive"],
 };
 
-export const StationTrackingTab = ({ stations, products }: { stations: Row[]; products: Row[] }) => {
+export const StationTrackingTab = ({ stations, products, trips = [] }: { stations: Row[]; products: Row[]; trips?: Row[] }) => {
   const { language } = useLanguage();
   const L = (fr: string, en: string) => (language === "en" ? en : fr);
   const { tenantId, scopeQuery } = useScope();
@@ -43,7 +43,7 @@ export const StationTrackingTab = ({ stations, products }: { stations: Row[]; pr
       q("stock_levels").eq("location_type", "station"),
       q("supply_requests").gte("created_at", from).lte("created_at", `${to}T23:59:59`).order("created_at", { ascending: false }),
       q("logistics_trip_loads").not("station_id", "is", null),
-      q("logistics_load_deliveries").gte("delivered_at", from).lte("delivered_at", `${to}T23:59:59`),
+      q("logistics_load_deliveries"),
       scopeQuery(db.from("tanks").select("id,name")),
     ]).then(([s, r, l, dl, t]: Row[]) => {
       setData({ stock: s.data ?? [], supplies: r.data ?? [], loads: l.data ?? [], deliveries: dl.data ?? [], tanks: t.data ?? [] });
@@ -60,7 +60,9 @@ export const StationTrackingTab = ({ stations, products }: { stations: Row[]; pr
     return stations.map((st) => {
       const stock = (data.stock ?? []).filter((x) => x.station_id === st.id);
       const supplies = (data.supplies ?? []).filter((x) => x.station_id === st.id);
-      const dels: Row[] = (data.deliveries ?? []).map((x): Row => ({ ...x, load: loadById.get(x.load_id) })).filter((x) => x.load?.station_id === st.id);
+      const deliveredIds = new Set((data.deliveries ?? []).map((x) => x.load_id));
+      const incoming = (data.loads ?? []).filter((l) => l.station_id === st.id && !deliveredIds.has(l.id) && ["loaded", "in_transit", "arrived", "unloading"].includes(trips.find((t) => t.id === l.trip_id)?.status));
+      const dels: Row[] = (data.deliveries ?? []).filter((x) => x.delivered_at >= from && x.delivered_at <= `${to}T23:59:59`).map((x): Row => ({ ...x, load: loadById.get(x.load_id) })).filter((x) => x.load?.station_id === st.id);
       const qty = stock.reduce((a, x) => a + Number(x.theoretical ?? 0), 0);
       const cap = stock.reduce((a, x) => a + Number(x.capacity ?? 0), 0);
       const pending = supplies.filter((x) => !["received", "cancelled", "rejected"].includes(x.status));
@@ -72,7 +74,7 @@ export const StationTrackingTab = ({ stations, products }: { stations: Row[]; pr
       dels.forEach((x) => { const p = variancePct(Number(x.load.qty_litres), Number(x.qty_delivered)); if (Math.abs(p) > DELIVERY_TOLERANCE_PCT) alerts.push(L(`Écart livraison ${p.toFixed(2)} %`, `Delivery variance ${p.toFixed(2)}%`)); });
       supplies.forEach((x) => { const r = Number(x.qty_delivered ?? 0); if (r > 0 && Math.abs(variancePct(r, Number(x.qty_received ?? r))) > DELIVERY_TOLERANCE_PCT) alerts.push(L(`Écart réception ${x.reference}`, `Receipt variance ${x.reference}`)); });
       const worst = stock.some((x) => x.alert_level === "rupture") ? "rupture" : stock.some((x) => x.alert_level === "critique") ? "critique" : stock.some((x) => x.alert_level === "faible") ? "faible" : "normal";
-      return { st, stock, supplies, pending, dels, qty, cap, expected, delivered, recVar, alerts, worst };
+      return { st, incoming, stock, supplies, pending, dels, qty, cap, expected, delivered, recVar, alerts, worst };
     });
   }, [stations, data, language]); // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -118,6 +120,12 @@ export const StationTrackingTab = ({ stations, products }: { stations: Row[]; pr
         </CardContent></Card>
       )}
 
+      {one && !loading && one.incoming.length > 0 && (
+        <Card className="glass-card border-primary"><CardContent className="p-4 text-sm">
+          <b>{L("Approvisionnement en cours pour cette station", "Supply on the way to this station")}</b> : {one.incoming.map((l) => `${pName(l.product_id)} ${fmt(l.qty_litres)} L`).join(" · ")}
+          <div className="text-xs text-muted-foreground">{L("Passera en « livré » dès la confirmation de livraison ; à réceptionner dans l'onglet Dépotages.", "Turns 'delivered' on delivery confirmation; receive it in the Discharges tab.")}</div>
+        </CardContent></Card>
+      )}
       {one && !loading && (
         <div className="grid lg:grid-cols-2 gap-4">
           <Card className="glass-card"><CardHeader><CardTitle className="text-base">{L("Stock par cuve", "Stock by tank")}</CardTitle></CardHeader><CardContent className="space-y-3">

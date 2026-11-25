@@ -134,7 +134,6 @@ export const LogisticsModule = () => {
     dialog.fields.forEach((f) => { const v = dialog.values[f.k]; payload[f.k] = v === "" || v === undefined ? null : f.type === "number" ? Number(v) : v; });
     if (dialog.table === "logistics_documents") {
       payload.entity_type = payload.vehicle_id ? "vehicle" : "driver";
-      if (payload.vehicle_id) payload.driver_id = null;
     }
     const { error } = dialog.id
       ? await db.from(dialog.table).update(payload).eq("id", dialog.id)
@@ -189,8 +188,8 @@ export const LogisticsModule = () => {
     ] as Field[],
     document: [
       { k: "doc_type", fr: "Type de document", en: "Document type", type: "select", options: DOC_TYPES.map((v) => ({ v, l: v })) },
-      { k: "vehicle_id", fr: "Véhicule (ou)", en: "Vehicle (or)", type: "select", options: opts("vehicles", "registration") },
-      { k: "driver_id", fr: "Chauffeur", en: "Driver", type: "select", options: opts("drivers", "full_name") },
+      { k: "vehicle_id", fr: "Véhicule", en: "Vehicle", type: "select", options: opts("vehicles", "registration") },
+      { k: "driver_id", fr: "Chauffeur (pré-rempli selon le camion)", en: "Driver (pre-filled from truck)", type: "select", options: opts("drivers", "full_name") },
       { k: "doc_number", fr: "Numéro", en: "Number" },
       { k: "issued_on", fr: "Émis le", en: "Issued on", type: "date" }, { k: "expires_on", fr: "Expire le", en: "Expires on", type: "date" },
     ] as Field[],
@@ -277,7 +276,7 @@ export const LogisticsModule = () => {
         <TabsContent value="three_stocks"><ThreeStocksTab /></TabsContent>
         <TabsContent value="liftings"><LiftingOrdersTab canWrite={canWrite} canValidate={canValidate} /></TabsContent>
         <TabsContent value="depot_supply"><DepotSupplyTab canWrite={canWrite} canValidate={canValidate} /></TabsContent>
-        <TabsContent value="stations"><StationTrackingTab stations={d.stations ?? []} products={d.products ?? []} /></TabsContent>
+        <TabsContent value="stations"><StationTrackingTab stations={d.stations ?? []} products={d.products ?? []} trips={trips} /></TabsContent>
 
         <TabsContent value="trips">
           <Card className="glass-card">
@@ -404,7 +403,14 @@ export const LogisticsModule = () => {
               <div key={f.k} className="grid gap-1">
                 <Label>{L(f.fr, f.en)}</Label>
                 {f.type === "select" ? (
-                  <Select value={dialog.values[f.k] ?? ""} onValueChange={(v) => setDialog({ ...dialog, values: { ...dialog.values, [f.k]: v } })}>
+                  <Select value={dialog.values[f.k] ?? ""} onValueChange={(v) => {
+                    const values: Row = { ...dialog.values, [f.k]: v };
+                    if (dialog.table === "logistics_documents" && f.k === "vehicle_id") {
+                      const dr = (d.vehicles ?? []).find((x) => x.id === v)?.default_driver_id;
+                      if (dr) values.driver_id = dr;
+                    }
+                    setDialog({ ...dialog, values });
+                  }}>
                     <SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
                     <SelectContent>{f.options?.map((o) => <SelectItem key={o.v} value={o.v}>{o.l}</SelectItem>)}</SelectContent>
                   </Select>
