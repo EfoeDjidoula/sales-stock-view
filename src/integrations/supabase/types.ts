@@ -5678,6 +5678,8 @@ export type Database = {
           carrier_id: string | null
           country_id: string
           created_at: string
+          default_driver_id: string | null
+          default_trailer_id: string | null
           gps_device_id: string | null
           id: string
           kind: string
@@ -5696,6 +5698,8 @@ export type Database = {
           carrier_id?: string | null
           country_id: string
           created_at?: string
+          default_driver_id?: string | null
+          default_trailer_id?: string | null
           gps_device_id?: string | null
           id?: string
           kind: string
@@ -5714,6 +5718,8 @@ export type Database = {
           carrier_id?: string | null
           country_id?: string
           created_at?: string
+          default_driver_id?: string | null
+          default_trailer_id?: string | null
           gps_device_id?: string | null
           id?: string
           kind?: string
@@ -5739,6 +5745,20 @@ export type Database = {
             columns: ["country_id"]
             isOneToOne: false
             referencedRelation: "countries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "logistics_vehicles_default_driver_id_fkey"
+            columns: ["default_driver_id"]
+            isOneToOne: false
+            referencedRelation: "logistics_drivers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "logistics_vehicles_default_trailer_id_fkey"
+            columns: ["default_trailer_id"]
+            isOneToOne: false
+            referencedRelation: "logistics_vehicles"
             referencedColumns: ["id"]
           },
           {

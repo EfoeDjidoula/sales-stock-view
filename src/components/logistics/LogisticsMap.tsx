@@ -1,3 +1,4 @@
+import { isTowed } from "@/lib/fleet";
 import { useEffect, useMemo, useState } from "react";
 import { MapContainer, TileLayer, CircleMarker, Polyline, Popup } from "react-leaflet";
 import "leaflet/dist/leaflet.css";
@@ -111,7 +112,7 @@ export const LogisticsMap = ({ trips, vehicles, drivers, L, scopeQuery }: {
             <Table>
               <TableHeader><TableRow><TableHead>{L("Véhicule", "Vehicle")}</TableHead><TableHead>{L("Boîtier", "Device")}</TableHead><TableHead>{L("Dernier signal", "Last signal")}</TableHead></TableRow></TableHeader>
               <TableBody>
-                {vehicles.filter((v) => v.kind !== "tanker").map((v) => {
+                {vehicles.filter((v) => !isTowed(v.kind)).map((v) => {
                   const ls = lastSeen(v.id); const a = ago(ls);
                   return (
                     <TableRow key={v.id}>

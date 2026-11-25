@@ -1,3 +1,4 @@
+import { isTowed } from "@/lib/fleet";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 import { CheckCircle2, FileDown, History, PenLine, Plus, Search, XCircle } from "lucide-react";
@@ -63,7 +64,7 @@ export const LiftingOrdersTab = ({ canWrite, canValidate }: { canWrite: boolean;
     const res = await Promise.all([
       q("depot_purchase_orders", "*, depot_proformas(number, depot_id, supplier_id, suppliers(name), depots(name), depot_proforma_lines(*, petroleum_products(name)))").order("created_at", { ascending: false }).limit(300),
       q("depot_lifting_orders", "*, depot_lifting_lines(*)").order("created_at", { ascending: false }).limit(300),
-      q("logistics_vehicles", "id,registration,kind,capacity_litres,status").order("registration"),
+      q("logistics_vehicles", "id,registration,kind,capacity_litres,status,default_driver_id,default_trailer_id").order("registration"),
       q("logistics_compartments").order("position"),
       q("logistics_drivers", "id,full_name,phone,license_number").order("full_name"),
       q("petroleum_products", "id,name").order("name"),
@@ -140,7 +141,7 @@ export const LiftingOrdersTab = ({ canWrite, canValidate }: { canWrite: boolean;
     established: (d.liftings ?? []).filter((b) => b.status === "established").length,
     signed: (d.liftings ?? []).filter((b) => b.status === "signed").length,
     reserved: (d.liftings ?? []).filter((b) => b.status === "established").reduce((s, b) => s + Number(b.total_litres), 0),
-    trucks: (d.vAvail ?? []).filter((a) => a.available && a.kind !== "tanker").length,
+    trucks: (d.vAvail ?? []).filter((a) => a.available && !isTowed(a.kind)).length,
   };
 
   const beLoads = (b: Row) => ((d.loads ?? []) as (Row & { product_id: string; qty_litres: number })[]).filter((l) => l.trip_id === b.trip_id).sort((a, c) => (a.stop_order - c.stop_order) || 0);
@@ -297,17 +298,17 @@ export const LiftingOrdersTab = ({ canWrite, canValidate }: { canWrite: boolean;
           )}
           <div className="grid gap-3 md:grid-cols-4">
             <div><Label>{L("Camion (porteur / tracteur)", "Truck (rigid / tractor)")}</Label>
-              <Select value={f.vehicle_id ?? ""} onValueChange={(v) => setF({ ...f, vehicle_id: v, tanker_id: undefined })}><SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
-                <SelectContent>{(d.vehicles ?? []).filter((v) => v.kind !== "tanker").map((v) => <SelectItem key={v.id} value={v.id} disabled={!vAvail.get(v.id)?.available}>{optLabel(v.registration, vAvail.get(v.id))}</SelectItem>)}</SelectContent></Select></div>
+              <Select value={f.vehicle_id ?? ""} onValueChange={(v) => { const veh = (d.vehicles ?? []).find((x) => x.id === v); setF({ ...f, vehicle_id: v, tanker_id: veh?.kind === "tractor" ? veh?.default_trailer_id ?? undefined : undefined, driver_id: veh?.default_driver_id ?? f.driver_id }); }}><SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
+                <SelectContent>{(d.vehicles ?? []).filter((v) => !isTowed(v.kind)).map((v) => <SelectItem key={v.id} value={v.id} disabled={!vAvail.get(v.id)?.available}>{optLabel(v.registration, vAvail.get(v.id))}</SelectItem>)}</SelectContent></Select></div>
             {truck?.kind === "tractor" && <div><Label>{L("Citerne attelée", "Hitched tanker")}</Label>
               <Select value={f.tanker_id ?? ""} onValueChange={(v) => setF({ ...f, tanker_id: v })}><SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
-                <SelectContent>{(d.vehicles ?? []).filter((v) => v.kind === "tanker").map((v) => <SelectItem key={v.id} value={v.id} disabled={!vAvail.get(v.id)?.available}>{optLabel(v.registration, vAvail.get(v.id))}</SelectItem>)}</SelectContent></Select></div>}
+                <SelectContent>{(d.vehicles ?? []).filter((v) => isTowed(v.kind)).map((v) => <SelectItem key={v.id} value={v.id} disabled={!vAvail.get(v.id)?.available}>{optLabel(v.registration, vAvail.get(v.id))}</SelectItem>)}</SelectContent></Select></div>}
             <div><Label>{L("Chauffeur", "Driver")}</Label>
               <Select value={f.driver_id ?? ""} onValueChange={(v) => setF({ ...f, driver_id: v })}><SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
                 <SelectContent>{(d.drivers ?? []).map((x) => <SelectItem key={x.id} value={x.id} disabled={!dAvail.get(x.id)?.available}>{optLabel(x.full_name, dAvail.get(x.id))}</SelectItem>)}</SelectContent></Select></div>
             <div><Label>{L("Date d'enlèvement prévue", "Planned lifting date")}</Label><Input type="date" value={f.planned_date ?? ""} onChange={(e) => setF({ ...f, planned_date: e.target.value })} /></div>
           </div>
-          {(d.vehicles ?? []).some((v) => v.kind !== "tanker" && !vAvail.get(v.id)?.available) && <p className="text-xs text-muted-foreground">{L("Les camions grisés sont indisponibles : la raison est indiquée dans « Disponibilité des camions » sous ce tableau.", "Greyed trucks are unavailable: see the reason in “Truck availability” below.")}</p>}
+          {(d.vehicles ?? []).some((v) => !isTowed(v.kind) && !vAvail.get(v.id)?.available) && <p className="text-xs text-muted-foreground">{L("Les camions grisés sont indisponibles : la raison est indiquée dans « Disponibilité des camions » sous ce tableau.", "Greyed trucks are unavailable: see the reason in “Truck availability” below.")}</p>}
 
           {vehId && capacity > 0 && order && (
             <div className="space-y-2">

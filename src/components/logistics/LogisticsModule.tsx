@@ -21,6 +21,8 @@ import { StationProvisionTab } from "./StationProvisionTab";
 import { LogisticsDashboardTab } from "./LogisticsDashboardTab";
 import { DeliveryNotesTab } from "./DeliveryNotesTab";
 import { DischargesTab } from "./DischargesTab";
+import { FleetTab } from "./FleetTab";
+import { VEHICLE_KINDS, isTowed } from "@/lib/fleet";
 import { VARIANCE_CATEGORIES } from "./variance";
 import { SupplyWorkflowModule } from "@/components/supply/SupplyWorkflowModule";
 import { Package } from "lucide-react";
@@ -52,7 +54,7 @@ const NEXT: Record<string, [string, string, string]> = {
   arrived: ["start_unloading", "Début déchargement", "Start unloading"],
   unloading: ["deliver", "Livraison terminée", "Delivered"],
 };
-const KIND: Record<string, [string, string]> = { truck: ["Camion porteur", "Rigid truck"], tractor: ["Tracteur", "Tractor"], tanker: ["Citerne", "Tanker trailer"] };
+const KIND = VEHICLE_KINDS;
 const ALERT: Record<string, [string, string]> = {
   document_expired: ["Document expiré / à échéance", "Document expired / due"],
   delivery_late: ["Retard de livraison", "Late delivery"],
@@ -254,18 +256,17 @@ export const LogisticsModule = () => {
           <TabsTrigger value="allocation">6. {L("Répartition BE / BL", "LO / DN split")}</TabsTrigger>
           <TabsTrigger value="provision">7. {L("Mise à disposition stations", "Station provision")}</TabsTrigger>
           <TabsTrigger value="carriers">8. {L("Transporteurs", "Carriers")}</TabsTrigger>
-          <TabsTrigger value="vehicles">9. {L("Camions, tracteurs & citernes", "Trucks, tractors & tankers")}</TabsTrigger>
-          <TabsTrigger value="compartments">10. {L("Compartiments", "Compartments")}</TabsTrigger>
-          <TabsTrigger value="drivers">11. {L("Chauffeurs", "Drivers")}</TabsTrigger>
-          <TabsTrigger value="documents">12. {L("Documents", "Documents")}</TabsTrigger>
-          <TabsTrigger value="seals">13. {L("Scellés", "Seals")}</TabsTrigger>
-          <TabsTrigger value="supplies">14. {L("Demandes d'appro.", "Supply requests")}</TabsTrigger>
-          <TabsTrigger value="trips">15. {L("Chargements & transports", "Loadings & trips")}</TabsTrigger>
-          <TabsTrigger value="map"><MapPin className="h-4 w-4 mr-1" />16. {L("Carte & GPS", "Map & GPS")}</TabsTrigger>
-          <TabsTrigger value="alerts">17. {L("Alertes", "Alerts")} {alerts.length > 0 && <Badge variant="destructive" className="ml-1">{alerts.length}</Badge>}</TabsTrigger>
-          <TabsTrigger value="stations">18. {L("Suivi par station", "Station tracking")}</TabsTrigger>
-          <TabsTrigger value="three_stocks">19. {L("Bilan des 3 stocks", "3-stock balance")}</TabsTrigger>
-          <TabsTrigger value="dashboard">20. {L("Fiches de stock & tableau de bord", "Stock sheets & dashboard")}</TabsTrigger>
+          <TabsTrigger value="vehicles">9. {L("Flotte, citernes & compartiments", "Fleet, tankers & compartments")}</TabsTrigger>
+          <TabsTrigger value="drivers">10. {L("Chauffeurs", "Drivers")}</TabsTrigger>
+          <TabsTrigger value="documents">11. {L("Documents", "Documents")}</TabsTrigger>
+          <TabsTrigger value="seals">12. {L("Scellés", "Seals")}</TabsTrigger>
+          <TabsTrigger value="supplies">13. {L("Demandes d'appro.", "Supply requests")}</TabsTrigger>
+          <TabsTrigger value="trips">14. {L("Chargements & transports", "Loadings & trips")}</TabsTrigger>
+          <TabsTrigger value="map"><MapPin className="h-4 w-4 mr-1" />15. {L("Carte & GPS", "Map & GPS")}</TabsTrigger>
+          <TabsTrigger value="alerts">16. {L("Alertes", "Alerts")} {alerts.length > 0 && <Badge variant="destructive" className="ml-1">{alerts.length}</Badge>}</TabsTrigger>
+          <TabsTrigger value="stations">17. {L("Suivi par station", "Station tracking")}</TabsTrigger>
+          <TabsTrigger value="three_stocks">18. {L("Bilan des 3 stocks", "3-stock balance")}</TabsTrigger>
+          <TabsTrigger value="dashboard">19. {L("Fiches de stock & tableau de bord", "Stock sheets & dashboard")}</TabsTrigger>
         </TabsList>
         <TabsContent value="dashboard"><LogisticsDashboardTab d={d} L={L} /></TabsContent>
         <TabsContent value="provision"><StationProvisionTab d={d} L={L} /></TabsContent>
@@ -389,8 +390,7 @@ export const LogisticsModule = () => {
         </TabsContent>
 
         <TabsContent value="carriers">{simpleTable("carriers", [["Nom", "Name", (r) => r.name], ["Code", "Code", (r) => r.code ?? "—"], ["Téléphone", "Phone", (r) => r.phone ?? "—"], ["Statut", "Status", (r) => <Badge variant="outline">{r.status}</Badge>]], F.carrier, L("Transporteurs", "Carriers"))}</TabsContent>
-        <TabsContent value="vehicles">{simpleTable("vehicles", [["Immatriculation", "Registration", (r) => r.registration], ["Type", "Type", (r) => L(...KIND[r.kind])], ["Transporteur", "Carrier", (r) => name("carriers", r.carrier_id)], ["Capacité", "Capacity", (r) => fmt(r.capacity_litres)], ["GPS", "GPS", (r) => r.gps_device_id ?? "—"], ["Statut", "Status", (r) => <Badge variant="outline">{r.status}</Badge>]], F.vehicle, L("Véhicules", "Vehicles"))}</TabsContent>
-        <TabsContent value="compartments">{simpleTable("compartments", [["Véhicule", "Vehicle", (r) => name("vehicles", r.vehicle_id, "registration")], ["N°", "#", (r) => r.position], ["Capacité (L)", "Capacity (L)", (r) => fmt(r.capacity_litres)], ["Barème", "Calibration", (r) => r.calibration_ref ?? "—"]], F.compartment, L("Compartiments", "Compartments"))}</TabsContent>
+        <TabsContent value="vehicles"><FleetTab d={d} canWrite={canWrite} L={L} tenantId={tenantId} countryId={countryId} onSaved={load} /></TabsContent>
         <TabsContent value="drivers">{simpleTable("drivers", [["Nom", "Name", (r) => r.full_name], ["Permis", "License", (r) => r.license_number ?? "—"], ["Téléphone", "Phone", (r) => r.phone ?? "—"], ["Transporteur", "Carrier", (r) => name("carriers", r.carrier_id)], ["Statut", "Status", (r) => <Badge variant="outline">{r.status}</Badge>]], F.driver, L("Chauffeurs", "Drivers"))}</TabsContent>
         <TabsContent value="documents">{simpleTable("documents", [["Type", "Type", (r) => r.doc_type], ["Rattaché à", "Linked to", (r) => r.vehicle_id ? name("vehicles", r.vehicle_id, "registration") : name("drivers", r.driver_id, "full_name")], ["Numéro", "Number", (r) => r.doc_number ?? "—"], ["Expire le", "Expires", (r) => r.expires_on ?? "—"], ["État", "State", (r) => docBadge(r.expires_on)]], F.document, L("Documents véhicule / chauffeur", "Vehicle / driver documents"))}</TabsContent>
         <TabsContent value="seals">{simpleTable("seals", [["N° de série", "Serial", (r) => r.serial], ["Statut", "Status", (r) => <Badge variant={["broken", "anomaly"].includes(r.status) ? "destructive" : "outline"}>{r.status}</Badge>], ["Transport", "Trip", (r) => name("trips", r.trip_id, "reference")]], F.seal, L("Scellés", "Seals"))}</TabsContent>
@@ -436,8 +436,8 @@ export const LogisticsModule = () => {
                 {a === "create" && <>
                   {sel("supply_request_id", L("Approvisionnement lié", "Linked supply"), opts("supplies", "reference"))}
                   {sel("carrier_id", L("Transporteur", "Carrier"), opts("carriers", "name", (x) => x.status === "active"))}
-                  {sel("truck_id", L("Camion / tracteur", "Truck / tractor"), opts("vehicles", "registration", (x) => x.kind !== "tanker" && x.status === "active"))}
-                  {sel("tanker_id", L("Citerne (si tracteur)", "Tanker (if tractor)"), opts("vehicles", "registration", (x) => x.kind === "tanker" && x.status === "active"))}
+                  {sel("truck_id", L("Camion / tracteur", "Truck / tractor"), opts("vehicles", "registration", (x) => !isTowed(x.kind) && x.status === "active"))}
+                  {sel("tanker_id", L("Citerne (si tracteur)", "Tanker (if tractor)"), opts("vehicles", "registration", (x) => isTowed(x.kind) && x.status === "active"))}
                   {sel("driver_id", L("Chauffeur", "Driver"), opts("drivers", "full_name", (x) => x.status === "active"))}
                   {inp("planned_departure", L("Départ prévu", "Planned departure"), "datetime-local")}
                   {inp("eta", L("Arrivée estimée (ETA)", "ETA"), "datetime-local")}
