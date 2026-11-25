@@ -6,6 +6,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import ExcelJS from "exceljs";
+import { jsPDF } from "@/lib/pdf";
+import { Button } from "@/components/ui/button";
+import { FileSpreadsheet, FileText } from "lucide-react";
 import { execution, lossBy, rotation, stockSheet, type SheetLine } from "@/lib/logisticsKpis";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -62,6 +66,55 @@ export const LogisticsDashboardTab = ({ d, L }: Props) => {
   }, [d, pf, lines, dis, from, to, product]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const kind = { order: L("Bon de commande", "Purchase order"), lifting: L("Enlèvement (BE)", "Lifting"), delivery_note: "BL", discharge: L("Dépotage cuve", "Tank discharge") };
+
+  const sections = () => {
+    const pn = product === "all" ? L("Tous produits", "All products") : prod(product);
+    const lossRows = (rows: ReturnType<typeof lossBy>, k: string) => rows.map((r) => [r.id === "—" ? "—" : name(k, r.id), fmt(r.bl), fmt(r.measured), `${fmt(r.loss)} (${r.lossPct.toFixed(2)} %)`]);
+    const lossHead = [L("Nom", "Name"), "BL (L)", L("Jaugé (L)", "Measured"), L("Perte L (%)", "Loss L (%)")];
+    return { pn, list: [
+      { t: L("Synthèse des 3 stocks", "3-stock summary"), head: [L("Indicateur", "Indicator"), L("Valeur", "Value")], rows: [
+        [L("Commandé non enlevé", "Ordered not lifted"), `${fmt(m.last?.notLifted ?? 0)} L`], [L("En transit", "In transit"), `${fmt(m.last?.transit ?? 0)} L`],
+        [L("Réceptionné en cuves", "Received"), `${fmt(m.last?.received ?? 0)} L`], [L("Commandé (période)", "Ordered"), `${fmt(m.exec.ordered)} L`],
+        [L("Taux d'enlèvement", "Lifted rate"), `${m.exec.liftedPct.toFixed(0)} %`], [L("Taux de livraison", "Delivered rate"), `${m.exec.deliveredPct.toFixed(0)} %`]] },
+      { t: L("Délais moyens", "Average delays"), head: [L("Étape", "Step"), L("Durée", "Duration")], rows: [
+        [L("BE → chargement", "LO → loaded"), h(m.rot.beToLoad)], [L("Chargement → départ", "Loaded → departed"), h(m.rot.loadToDepart)], [L("Transit", "Transit"), h(m.rot.transit)],
+        [L("Livraison → dépotage", "Delivered → discharge"), h(m.rot.toDischarge)], [L("Rotation totale", "Total rotation"), h(m.rot.total)]] },
+      { t: L("Freinte par transporteur", "Loss by carrier"), head: lossHead, rows: lossRows(m.byCarrier, "carriers") },
+      { t: L("Freinte par camion", "Loss by truck"), head: lossHead, rows: lossRows(m.byTruck, "vehicles") },
+      { t: L("Freinte par chauffeur", "Loss by driver"), head: lossHead, rows: lossRows(m.byDriver, "drivers") },
+      { t: L("Fiche de mouvements de stock", "Stock movement sheet"), head: ["Date", L("Opération", "Operation"), L("Référence", "Reference"), L("Produit", "Product"), L("Qté", "Qty"), L("Non enlevé", "Not lifted"), L("Transit", "Transit"), L("Réceptionné", "Received")],
+        rows: m.period.map((x) => [x.date.split("-").reverse().join("/"), kind[x.kind], x.ref, prod(x.product_id), fmt(x.qty), fmt(x.notLifted), fmt(x.transit), fmt(x.received)]) },
+    ] };
+  };
+  const period = `${from.split("-").reverse().join("/")} – ${to.split("-").reverse().join("/")}`;
+  const exportPdf = () => {
+    const { pn, list } = sections();
+    const doc = new jsPDF({ unit: "mm", format: "a4", orientation: "landscape" }); const W = doc.internal.pageSize.getWidth(); const H = doc.internal.pageSize.getHeight(); let y = 34;
+    doc.setFont("helvetica", "bold"); doc.setFontSize(13); doc.text(L("TABLEAU DE BORD LOGISTIQUE & FICHES DE STOCK", "LOGISTICS DASHBOARD & STOCK SHEETS"), W / 2, y, { align: "center" }); y += 6;
+    doc.setFont("helvetica", "normal"); doc.setFontSize(9); doc.text(`${L("Période", "Period")} : ${period} · ${L("Produit", "Product")} : ${pn}`, W / 2, y, { align: "center" }); y += 8;
+    for (const sec of list) {
+      const cw = (W - 24) / sec.head.length;
+      if (y > H - 40) { doc.addPage(); y = 34; }
+      doc.setFont("helvetica", "bold"); doc.setFontSize(10); doc.text(sec.t, 12, y); y += 5; doc.setFontSize(8);
+      doc.setFillColor(230, 230, 230); doc.rect(12, y - 4, W - 24, 6, "F"); sec.head.forEach((c, i) => doc.text(c, 14 + i * cw, y)); y += 6; doc.setFont("helvetica", "normal");
+      if (sec.rows.length === 0) { doc.text(L("Aucune donnée", "No data"), 14, y); y += 6; }
+      for (const r of sec.rows) { if (y > H - 22) { doc.addPage(); y = 34; } r.forEach((c, i) => doc.text(String(c).slice(0, 40), 14 + i * cw, y)); doc.line(12, y + 1.5, W - 12, y + 1.5); y += 5.5; }
+      y += 5;
+    }
+    doc.save(`tableau-de-bord-logistique_${from}_${to}.pdf`);
+  };
+  const exportXlsx = async () => {
+    const { pn, list } = sections();
+    const wb = new ExcelJS.Workbook();
+    for (const sec of list) {
+      const ws = wb.addWorksheet(sec.t.slice(0, 31));
+      ws.addRow([sec.t]).font = { bold: true, size: 12 }; ws.addRow([`${L("Période", "Period")} : ${period} · ${L("Produit", "Product")} : ${pn}`]); ws.addRow([]);
+      ws.addRow(sec.head).font = { bold: true }; sec.rows.forEach((r) => ws.addRow(r));
+      ws.columns.forEach((c) => { c.width = 20; });
+    }
+    const blob = new Blob([await wb.xlsx.writeBuffer()], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+    const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `tableau-de-bord-logistique_${from}_${to}.xlsx`; a.click(); URL.revokeObjectURL(a.href);
+  };
   const Kpi = ({ t, v, s }: { t: string; v: string; s?: string }) => <Card className="glass-card"><CardContent className="p-4"><p className="text-xs text-muted-foreground">{t}</p><p className="text-2xl font-bold">{v}</p>{s && <p className="text-xs text-muted-foreground">{s}</p>}</CardContent></Card>;
   const LossTable = ({ title, rows, k }: { title: string; rows: ReturnType<typeof lossBy>; k: string }) => (
     <Card className="glass-card"><CardHeader className="pb-2"><CardTitle className="text-sm">{title}</CardTitle></CardHeader>
@@ -77,6 +130,10 @@ export const LogisticsDashboardTab = ({ d, L }: Props) => {
         <div><Label className="text-xs">{L("Au", "To")}</Label><Input type="date" value={to} onChange={(e) => setTo(e.target.value)} /></div>
         <div><Label className="text-xs">{L("Produit", "Product")}</Label>
           <Select value={product} onValueChange={setProduct}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent><SelectItem value="all">{L("Tous", "All")}</SelectItem>{(d.products ?? []).map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent></Select></div>
+        <div className="flex items-end gap-2">
+          <Button variant="outline" onClick={exportXlsx}><FileSpreadsheet className="h-4 w-4 mr-1" />Excel</Button>
+          <Button variant="outline" onClick={exportPdf}><FileText className="h-4 w-4 mr-1" />PDF</Button>
+        </div>
       </div>
       <p className="text-xs text-muted-foreground">{L("Lecture seule : aucun stock n'est modifié. Commandé = BC émis ; enlevé = BE signés ; réceptionné = dépotages en cuve (volume BL).", "Read-only. Ordered = POs; lifted = signed LOs; received = tank discharges (BL volume).")}</p>
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
