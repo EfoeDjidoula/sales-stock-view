@@ -34,9 +34,7 @@ Deno.serve(async (req) => {
 
     const { data: creator } = await admin.auth.admin.getUserById(ticket.created_by)
     const email = creator?.user?.email
-    const origin = req.headers.get('origin') ?? ''
-    const base = /^https:\/\/[a-z0-9-]+\.lovable\.app$/.test(origin) || /^http:\/\/localhost(:\d+)?$/.test(origin) ? origin : FALLBACK_ORIGIN
-    const link = `${base}/?tab=support&ticket=${ticket.id}`
+    const link = `${FALLBACK_ORIGIN}/?tab=support&ticket=${ticket.id}`
 
     let sent = 0
     for (const n of pending) {

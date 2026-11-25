@@ -575,6 +575,13 @@
       "when": 1795606291584,
       "tag": "0081_fleet_unified_vehicles",
       "breakpoints": true
+    },
+    {
+      "idx": 82,
+      "version": "7",
+      "when": 1795610597671,
+      "tag": "0082_migration",
+      "breakpoints": true
     }
   ]
 }
