@@ -68,7 +68,7 @@ const errMsg = (e: unknown) => (e as { message?: string })?.message ?? String(e)
 
 type Field = { k: string; fr: string; en: string; type?: "text" | "number" | "date" | "datetime" | "select" | "textarea"; options?: { v: string; l: string }[] };
 
-export const LogisticsModule = () => {
+export const LogisticsModule = ({ dischargesOnly = false }: { dischargesOnly?: boolean } = {}) => {
   const { language } = useLanguage();
   const L = (fr: string, en: string) => (language === "en" ? en : fr);
   const { tenantId, countryId, scopeQuery } = useScope();
@@ -77,8 +77,10 @@ export const LogisticsModule = () => {
   const canWrite = isPlatformAdmin || can("supplies", "create") || can("supplies", "edit") || can("supplies", "validate");
   const canValidate = isPlatformAdmin || can("supplies", "validate");
 
-  const [sub, setSub] = useState<string>(() => { const v = sessionStorage.getItem("logistics-subtab"); sessionStorage.removeItem("logistics-subtab"); return v || "depot_supply"; });
-  useEffect(() => { const on = (e: Event) => setSub(String((e as CustomEvent).detail)); window.addEventListener("lumatek:logistics-subtab", on); return () => window.removeEventListener("lumatek:logistics-subtab", on); }, []);
+  // Volet initial : 1 par défaut ; 5 seulement si demandé (« Saisir une réception »), demande consommée une fois
+  const [rawSub, setSub] = useState<string>(() => { const v = sessionStorage.getItem("logistics-subtab"); sessionStorage.removeItem("logistics-subtab"); return v || "depot_supply"; });
+  useEffect(() => { const on = (e: Event) => { sessionStorage.removeItem("logistics-subtab"); setSub(String((e as CustomEvent).detail)); }; window.addEventListener("lumatek:logistics-subtab", on); return () => window.removeEventListener("lumatek:logistics-subtab", on); }, []);
+  const sub = dischargesOnly ? "discharges" : rawSub;
   const [d, setD] = useState<Record<string, Row[]>>({});
   const [loading, setLoading] = useState(false);
   const [dialog, setDialog] = useState<{ table: string; title: string; fields: Field[]; values: Row; id?: string } | null>(null);
@@ -241,14 +243,14 @@ export const LogisticsModule = () => {
 
   return (
     <div className="space-y-4">
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+      <div className={dischargesOnly ? "hidden" : "grid grid-cols-2 md:grid-cols-4 gap-3"}>
         {[[L("Transports actifs", "Active trips"), kpis.active], [L("En transit", "In transit"), kpis.transit], [L("Incidents", "Incidents"), kpis.incident], [L("Alertes", "Alerts"), kpis.alerts]].map(([l, v]) => (
           <Card key={String(l)} className="glass-card"><CardContent className="p-4"><div className="text-xs text-muted-foreground">{l}</div><div className="text-2xl font-bold">{v}</div></CardContent></Card>
         ))}
       </div>
       {loading && <Loader2 className="h-5 w-5 animate-spin text-primary" />}
       <Tabs value={sub} onValueChange={setSub}>
-        <TabsList className="flex-wrap h-auto">
+        <TabsList className={dischargesOnly ? "hidden" : "flex-wrap h-auto"}>
           <TabsTrigger value="depot_supply">1. {L("Approvisionnement dépôt (pro-formas & BC)", "Depot supply (pro-formas & POs)")}</TabsTrigger>
           <TabsTrigger value="liftings">2. {L("Bons d'enlèvement", "Lifting orders")}</TabsTrigger>
           <TabsTrigger value="loading_tracking">3. {L("Suivi des chargements", "Loading tracking")}</TabsTrigger>

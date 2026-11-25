@@ -321,12 +321,6 @@ const Index = () => {
   const tabIsDefault = useRef(true);
   const selectTab = (tab: string) => {
     tabIsDefault.current = false;
-    // Menu Dépotages → volet 5 « Dépotages par compartiment » de la logistique
-    if (tab === "depotage" && canAccessTab("logistique_avancee")) {
-      sessionStorage.setItem("logistics-subtab", "discharges");
-      window.dispatchEvent(new CustomEvent("lumatek:logistics-subtab", { detail: "discharges" }));
-      tab = "logistique_avancee";
-    }
     setActiveTab(tab);
   };
 
@@ -352,6 +346,8 @@ const Index = () => {
   useEffect(() => {
     if (modulesLoading || roleLoading || permsLoading || license.isLoading) return;
     if (canAccessTab(activeTab)) return;
+    // Gérant (Dépotages seul) : la logistique reste ouverte, limitée au volet 5
+    if (activeTab === "logistique_avancee" && canAccessTab("depotage")) return;
     if (!tabIsDefault.current) {
       toast({
         variant: "destructive",
@@ -664,7 +660,8 @@ const Index = () => {
             {canAccessTab("hse") ? <HseModule /> : <AccessDenied onGoBack={() => setActiveTab(allowedTabs[0] ?? "ventes")} />}
           </TabsContent>
           <TabsContent value="logistique_avancee" className="animate-fade-in">
-            {canAccessTab("logistique_avancee") ? <LogisticsModule /> : <AccessDenied onGoBack={() => setActiveTab(allowedTabs[0] ?? "ventes")} />}
+            {/* Le gérant (Dépotages seul) n'y accède que pour le volet 5, via « Saisir une réception » */}
+            {canAccessTab("logistique_avancee") || canAccessTab("depotage") ? <LogisticsModule dischargesOnly={!canAccessTab("logistique_avancee")} /> : <AccessDenied onGoBack={() => setActiveTab(allowedTabs[0] ?? "ventes")} />}
           </TabsContent>
 
           {/* Dépotages Tab */}
