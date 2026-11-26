@@ -42,6 +42,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { RolesPermissionsMatrix } from "@/components/users/RolesPermissionsMatrix";
 import { UserAccessDialog } from "@/components/users/UserAccessDialog";
 import { useRbac } from "@/hooks/useRbac";
+import { legacyRoleFor } from "@/lib/businessRoles";
 import { useCountry } from "@/hooks/useCountry";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Loader2, Shield, ShieldCheck, User, UserCog, Crown, AlertTriangle, UserPlus, KeyRound, Power, PowerOff } from "lucide-react";
@@ -75,14 +76,12 @@ export const UsersModule = () => {
   const { user } = useAuth();
   const { users, currentUserRole, isAdmin, loading, assignRole, removeRole, toggleUserActive, sendPasswordReset, refetch } = useUserRoles();
   const [selectedUser, setSelectedUser] = useState<string | null>(null);
-  const [selectedRole, setSelectedRole] = useState<AppRole>("operator");
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [userToRemove, setUserToRemove] = useState<string | null>(null);
   const [newUserEmail, setNewUserEmail] = useState("");
   const [newUserName, setNewUserName] = useState("");
   const [newUserPassword, setNewUserPassword] = useState("");
-  const [newUserRole, setNewUserRole] = useState<AppRole>("operator");
   const [isCreating, setIsCreating] = useState(false);
   const { countries: grantableCountries, countryId: activeCountryId } = useCountry();
   const [newUserCountries, setNewUserCountries] = useState<string[]>([]);
@@ -90,11 +89,17 @@ export const UsersModule = () => {
   const [userToResetPassword, setUserToResetPassword] = useState<{ id: string; name: string; email: string } | null>(null);
   const [resetEmail, setResetEmail] = useState("");
   const [accessUser, setAccessUser] = useState<{ id: string; full_name: string | null; is_active: boolean } | null>(null);
-  const { roles, getUserRoleId } = useRbac();
+  const { roles, getUserRoleId, setUserRole } = useRbac();
+  const [newUserRbacRoleId, setNewUserRbacRoleId] = useState<string>("");
+  const [selectedRbacRoleId, setSelectedRbacRoleId] = useState<string>("");
+  const rbacById = (id: string) => roles.find((r) => r.id === id);
 
   const handleAssignRole = async () => {
     if (!selectedUser) return;
-    await assignRole(selectedUser, selectedRole);
+    const r = rbacById(selectedRbacRoleId);
+    if (!r) return;
+    await assignRole(selectedUser, legacyRoleFor(r.code));
+    await setUserRole(selectedUser, r.id);
     setIsDialogOpen(false);
     setSelectedUser(null);
   };
@@ -133,6 +138,12 @@ export const UsersModule = () => {
       return;
     }
 
+    const newRbac = rbacById(newUserRbacRoleId);
+    if (!newRbac) {
+      toast({ variant: "destructive", title: "Erreur", description: "Choisissez un rôle métier." });
+      return;
+    }
+
     setIsCreating(true);
     try {
       // Get the current session token
@@ -156,7 +167,8 @@ export const UsersModule = () => {
             email: newUserEmail,
             password: newUserPassword,
             full_name: newUserName,
-            role: newUserRole,
+            role: legacyRoleFor(newRbac.code),
+            rbac_role_id: newRbac.id,
             country_ids: newUserCountries,
           }),
         }
@@ -170,14 +182,14 @@ export const UsersModule = () => {
 
       toast({
         title: "Utilisateur créé",
-        description: `${newUserName} a été créé avec le rôle ${roleConfig[newUserRole].label}.`,
+        description: `${newUserName} a été créé avec le rôle ${newRbac.name}.`,
       });
 
       // Reset form
       setNewUserEmail("");
       setNewUserName("");
       setNewUserPassword("");
-      setNewUserRole("operator");
+      setNewUserRbacRoleId("");
       setNewUserCountries([]);
       setIsCreateDialogOpen(false);
       
@@ -394,7 +406,7 @@ export const UsersModule = () => {
                             size="sm"
                             onClick={() => {
                               setSelectedUser(u.id);
-                              setSelectedRole(u.role || "operator");
+                              setSelectedRbacRoleId(getUserRoleId(u.id) ?? "");
                               setIsDialogOpen(true);
                             }}
                           >
@@ -481,29 +493,24 @@ export const UsersModule = () => {
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 pt-4">
-            <Select value={selectedRole} onValueChange={(v) => setSelectedRole(v as AppRole)}>
+            <Select value={selectedRbacRoleId} onValueChange={setSelectedRbacRoleId}>
               <SelectTrigger>
-                <SelectValue />
+                <SelectValue placeholder="Choisir un rôle métier" />
               </SelectTrigger>
               <SelectContent>
-                {(Object.keys(roleConfig) as AppRole[]).map((role) => (
-                  <SelectItem key={role} value={role}>
-                    <div className="flex items-center gap-2">
-                      {roleConfig[role].icon}
-                      <span>{roleConfig[role].label}</span>
-                    </div>
-                  </SelectItem>
+                {roles.map((r) => (
+                  <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>
                 ))}
               </SelectContent>
             </Select>
             <p className="text-sm text-muted-foreground">
-              {roleConfig[selectedRole].description}
+              {rbacById(selectedRbacRoleId)?.description ?? "Les droits détaillés se règlent dans « Rôles & permissions »."}
             </p>
             <div className="flex justify-end gap-2">
               <Button variant="outline" onClick={() => setIsDialogOpen(false)}>
                 Annuler
               </Button>
-              <Button onClick={handleAssignRole}>
+              <Button onClick={handleAssignRole} disabled={!selectedRbacRoleId}>
                 Confirmer
               </Button>
             </div>
@@ -574,24 +581,19 @@ export const UsersModule = () => {
             </div>
             <div className="space-y-2">
               <Label htmlFor="role">Rôle à attribuer</Label>
-              <Select value={newUserRole} onValueChange={(v) => setNewUserRole(v as AppRole)}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {(Object.keys(roleConfig) as AppRole[]).map((role) => (
-                    <SelectItem key={role} value={role}>
-                      <div className="flex items-center gap-2">
-                        {roleConfig[role].icon}
-                        <span>{roleConfig[role].label}</span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <p className="text-xs text-muted-foreground">
-                {roleConfig[newUserRole].description}
-              </p>
+              <Select value={newUserRbacRoleId} onValueChange={setNewUserRbacRoleId}>
+              <SelectTrigger>
+                <SelectValue placeholder="Choisir un rôle métier" />
+              </SelectTrigger>
+              <SelectContent>
+                {roles.map((r) => (
+                  <SelectItem key={r.id} value={r.id}>{r.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="text-sm text-muted-foreground">
+              {rbacById(newUserRbacRoleId)?.description ?? "Les droits détaillés se règlent dans « Rôles & permissions »."}
+            </p>
             </div>
             <div className="space-y-2">
               <Label>Pays d'intervention *</Label>

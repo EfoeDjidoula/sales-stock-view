@@ -1,20 +1,13 @@
-import ProSuiteModule from "@/components/pro/ProSuiteModule";
-import PeriodicReportsModule from "@/components/reports/PeriodicReportsModule";
-import SynthesisModule from "@/components/synthesis/SynthesisModule";
-import WorkflowModule from "@/components/workflow/WorkflowModule";
-import HseModule from "@/components/hse/HseModule";
 import { ThemeToggle } from "@/components/theme/ThemeToggle";
 import { HelpButton } from "@/components/help/HelpDrawer";
 import { HELP_FOR_SCREEN } from "@/lib/help/manual";
-import AssetsMaintenanceModule from "@/components/maintenance/AssetsMaintenanceModule";
-import { useState, useMemo, useEffect, useRef, type CSSProperties } from "react";
+import { useState, useMemo, useEffect, useRef, lazy, Suspense, type CSSProperties } from "react";
 import { formatCurrency } from "@/data/stationsData";
 import { useUserRoles, AppRole } from "@/hooks/useUserRoles";
 import { useDashboardData, Period } from "@/hooks/useDashboardData";
 import { ProfileMenu } from "@/components/ProfileMenu";
 import { TenantSelector } from "@/components/tenant/TenantSelector";
 import { CountrySwitcher } from "@/components/tenant/CountrySwitcher";
-import { TenantSettingsModule } from "@/components/tenant/TenantSettingsModule";
 import { useTenant } from "@/hooks/useTenant";
 import { useBranding } from "@/hooks/useBranding";
 import { useLanguage } from "@/hooks/useLanguage";
@@ -27,31 +20,12 @@ import { LicenseBanner, LicenseBlockedScreen } from "@/components/license/Licens
 /** Onglets encore visibles en mode « accès limité » après expiration. */
 const LIMITED_TABS = ["ventes", "stock", "historique"];
 import { CommandCenter } from "@/components/command/CommandCenter";
-import { BiModule } from "@/components/bi/BiModule";
 import { SalesCard } from "@/components/dashboard/SalesCard";
 import { PeriodTabs } from "@/components/dashboard/PeriodTabs";
 import { SalesChart } from "@/components/dashboard/SalesChart";
 import { SalesTrendByStation } from "@/components/dashboard/SalesTrendByStation";
-import { StockModule } from "@/components/dashboard/StockModule";
 import { StationCard } from "@/components/dashboard/StationCard";
-import { OrdersModule } from "@/components/orders/OrdersModule";
 import { AccessDenied } from "@/components/AccessDenied";
-import { DepotageModule } from "@/components/depotage/DepotageModule";
-import { TrucksModule } from "@/components/trucks/TrucksModule";
-import { UsersModule } from "@/components/users/UsersModule";
-import { StockEngineModule } from "@/components/stock/StockEngineModule";
-import { LogisticsModule } from "@/components/logistics/LogisticsModule";
-import { SupplyWorkflowModule } from "@/components/supply/SupplyWorkflowModule";
-import { SalesClosureModule } from "@/components/sales/SalesClosureModule";
-import { ReconciliationModule } from "@/components/reconciliation/ReconciliationModule";
-import { FraudCenterModule } from "@/components/fraud/FraudCenterModule";
-import { FuelCardsModule } from "@/components/fuel/FuelCardsModule";
-import { StationManagement } from "@/components/stations/StationManagement";
-import { FiscalYearModule } from "@/components/fiscal/FiscalYearModule";
-import { HistoryModule } from "@/components/history/HistoryModule";
-import { PerequationModule } from "@/components/perequation/PerequationModule";
-import { ExcelImportDialog } from "@/components/import/ExcelImportDialog";
-import { ExcelExportDialog } from "@/components/import/ExcelExportDialog";
 import { DbStationSelector } from "@/components/dashboard/DbStationSelector";
 import type { DbStation } from "@/components/dashboard/DbStationSelector";
 import {
@@ -81,13 +55,6 @@ import {
   CreditCard,
   Scale,
 } from "lucide-react";
-import { ClientsModule } from "@/components/clients/ClientsModule";
-import { B2BModule } from "@/components/clients/B2BModule";
-import { SuppliersModule } from "@/components/suppliers/SuppliersModule";
-import { PriceStructureModule } from "@/components/pricing/PriceStructureModule";
-import { ProformaModule } from "@/components/proforma/ProformaModule";
-import { StationAnalysisModule } from "@/components/analysis/StationAnalysisModule";
-import { SupportTickets } from "@/components/support/SupportTickets";
 import { LifeBuoy } from "lucide-react";
 import { Link } from "react-router-dom";
 import { Tabs, TabsContent } from "@/components/ui/tabs";
@@ -109,6 +76,40 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "@/hooks/use-toast";
 import { useQueryClient } from "@tanstack/react-query";
+
+const ProSuiteModule = lazy(() => import("@/components/pro/ProSuiteModule"));
+const PeriodicReportsModule = lazy(() => import("@/components/reports/PeriodicReportsModule"));
+const SynthesisModule = lazy(() => import("@/components/synthesis/SynthesisModule"));
+const WorkflowModule = lazy(() => import("@/components/workflow/WorkflowModule"));
+const HseModule = lazy(() => import("@/components/hse/HseModule"));
+const AssetsMaintenanceModule = lazy(() => import("@/components/maintenance/AssetsMaintenanceModule"));
+const TenantSettingsModule = lazy(() => import("@/components/tenant/TenantSettingsModule").then((m) => ({ default: m.TenantSettingsModule })));
+const BiModule = lazy(() => import("@/components/bi/BiModule").then((m) => ({ default: m.BiModule })));
+const OrdersModule = lazy(() => import("@/components/orders/OrdersModule").then((m) => ({ default: m.OrdersModule })));
+const DepotageModule = lazy(() => import("@/components/depotage/DepotageModule").then((m) => ({ default: m.DepotageModule })));
+const TrucksModule = lazy(() => import("@/components/trucks/TrucksModule").then((m) => ({ default: m.TrucksModule })));
+const UsersModule = lazy(() => import("@/components/users/UsersModule").then((m) => ({ default: m.UsersModule })));
+const StockEngineModule = lazy(() => import("@/components/stock/StockEngineModule").then((m) => ({ default: m.StockEngineModule })));
+const LogisticsModule = lazy(() => import("@/components/logistics/LogisticsModule").then((m) => ({ default: m.LogisticsModule })));
+const SupplyWorkflowModule = lazy(() => import("@/components/supply/SupplyWorkflowModule").then((m) => ({ default: m.SupplyWorkflowModule })));
+const SalesClosureModule = lazy(() => import("@/components/sales/SalesClosureModule").then((m) => ({ default: m.SalesClosureModule })));
+const ReconciliationModule = lazy(() => import("@/components/reconciliation/ReconciliationModule").then((m) => ({ default: m.ReconciliationModule })));
+const FraudCenterModule = lazy(() => import("@/components/fraud/FraudCenterModule").then((m) => ({ default: m.FraudCenterModule })));
+const FuelCardsModule = lazy(() => import("@/components/fuel/FuelCardsModule").then((m) => ({ default: m.FuelCardsModule })));
+const StationManagement = lazy(() => import("@/components/stations/StationManagement").then((m) => ({ default: m.StationManagement })));
+const FiscalYearModule = lazy(() => import("@/components/fiscal/FiscalYearModule").then((m) => ({ default: m.FiscalYearModule })));
+const HistoryModule = lazy(() => import("@/components/history/HistoryModule").then((m) => ({ default: m.HistoryModule })));
+const PerequationModule = lazy(() => import("@/components/perequation/PerequationModule").then((m) => ({ default: m.PerequationModule })));
+const ClientsModule = lazy(() => import("@/components/clients/ClientsModule").then((m) => ({ default: m.ClientsModule })));
+const B2BModule = lazy(() => import("@/components/clients/B2BModule").then((m) => ({ default: m.B2BModule })));
+const SuppliersModule = lazy(() => import("@/components/suppliers/SuppliersModule").then((m) => ({ default: m.SuppliersModule })));
+const PriceStructureModule = lazy(() => import("@/components/pricing/PriceStructureModule").then((m) => ({ default: m.PriceStructureModule })));
+const ProformaModule = lazy(() => import("@/components/proforma/ProformaModule").then((m) => ({ default: m.ProformaModule })));
+const StationAnalysisModule = lazy(() => import("@/components/analysis/StationAnalysisModule").then((m) => ({ default: m.StationAnalysisModule })));
+const SupportTickets = lazy(() => import("@/components/support/SupportTickets").then((m) => ({ default: m.SupportTickets })));
+const StockModule = lazy(() => import("@/components/dashboard/StockModule").then((m) => ({ default: m.StockModule })));
+const ExcelImportDialog = lazy(() => import("@/components/import/ExcelImportDialog").then((m) => ({ default: m.ExcelImportDialog })));
+const ExcelExportDialog = lazy(() => import("@/components/import/ExcelExportDialog").then((m) => ({ default: m.ExcelExportDialog })));
 
 // Define tab access by role
 const TAB_PERMISSIONS: Record<string, AppRole[]> = {
@@ -503,12 +504,15 @@ const Index = () => {
             </div>
             <TabletPoleBar tabMeta={TAB_META} canAccessTab={canAccessTab} activeTab={activeTab} onSelect={selectTab} badges={badges} />
           </header>
-          {canEnterIndex && <ExcelImportDialog open={importOpen} onOpenChange={setImportOpen} />}
-          {canExport && <ExcelExportDialog open={exportOpen} onOpenChange={setExportOpen} />}
+          <Suspense fallback={null}>
+            {canEnterIndex && importOpen && <ExcelImportDialog open={importOpen} onOpenChange={setImportOpen} />}
+            {canExport && exportOpen && <ExcelExportDialog open={exportOpen} onOpenChange={setExportOpen} />}
+          </Suspense>
 
           {/* Main Content */}
           <main className="flex-1 w-full max-w-[1600px] mx-auto px-3 md:px-6 py-6">
             <LicenseBanner />
+            <Suspense fallback={<div className="space-y-4 py-6"><Skeleton className="h-10 w-1/3" /><Skeleton className="h-64 w-full" /></div>}>
             <Tabs value={activeTab} onValueChange={selectTab} className="space-y-6">
               {activeTab === "ventes" && (
                 <div className="flex justify-end">
@@ -798,6 +802,7 @@ const Index = () => {
             )}
           </TabsContent>
         </Tabs>
+            </Suspense>
           </main>
 
           {/* Footer */}

@@ -68,7 +68,7 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    const { email, password, full_name, role, country_ids }: CreateUserRequest = await req.json();
+    const { email, password, full_name, role, country_ids, rbac_role_id }: CreateUserRequest & { rbac_role_id?: string } = await req.json();
 
     // Validate required fields
     if (!email || !password || !full_name || !role) {
@@ -207,8 +207,17 @@ const handler = async (req: Request): Promise<Response> => {
       // Rôle RBAC équivalent (les droits réels reposent sur les permissions)
       const rbacCode = { admin: "client_admin", manager: "ops_manager", operator: "operator" }[role];
       if (callerProfile?.tenant_id) {
-        const { data: rbacRole } = await supabaseAdmin
-          .from("roles").select("id").eq("code", rbacCode).is("tenant_id", null).maybeSingle();
+        let rbacRole: { id: string } | null = null;
+        if (rbac_role_id) {
+          // Rôle métier choisi : système (global) ou propre à la société de l'appelant
+          const { data } = await supabaseAdmin.from("roles").select("id, tenant_id").eq("id", rbac_role_id).maybeSingle();
+          if (data && (data.tenant_id === null || data.tenant_id === callerProfile.tenant_id)) rbacRole = { id: data.id };
+        }
+        if (!rbacRole) {
+          const { data } = await supabaseAdmin
+            .from("roles").select("id").eq("code", rbacCode).is("tenant_id", null).maybeSingle();
+          rbacRole = data;
+        }
         if (rbacRole) {
           const { error: rbacError } = await supabaseAdmin.from("user_role_assignments").insert({
             user_id: userData.user.id, tenant_id: callerProfile.tenant_id, role_id: rbacRole.id,
