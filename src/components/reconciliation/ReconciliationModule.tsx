@@ -193,6 +193,7 @@ function Detail({ id, stationName, onClose, canAnalyze, canValidate, canRun }: {
               <Badge variant="outline" className={RECON_RESULT[r.result]?.cls}>{RECON_RESULT[r.result]?.label}</Badge>
               <Badge variant="secondary">{WORKFLOW[r.workflow]}</Badge>
               <Badge variant="outline">{t("Clôture :")} {d.closure_status ?? "absente"}</Badge>
+              {d.provisional && <Badge variant="secondary">{t("Estimation provisoire (index non validé)")}</Badge>}
             </div>
             <Card><CardHeader><CardTitle className="text-base">{t("Volumes par produit")}</CardTitle></CardHeader><CardContent className="p-0">
               <Table>
