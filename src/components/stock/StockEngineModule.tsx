@@ -181,7 +181,7 @@ const RegisterTab = ({ refs, reload, onChanged }: { refs: Record<string, Row[]>;
   const [search, setSearch] = useState("");
   const load = useCallback(() => {
     if (!tenantId) return;
-    scopeQuery(db.from("stock_movements").select("*")).order("created_at", { ascending: false }).limit(500)
+    scopeQuery(db.from("stock_movements").select("*")).order("movement_date", { ascending: false }).limit(500)
       .then(({ data }: { data: Row[] | null }) => setRows(data || []));
   }, [scopeQuery, tenantId]);
   useEffect(load, [load, reload]);
@@ -256,6 +256,8 @@ const MovementForm = ({ refs, onDone }: { refs: Record<string, Row[]>; onDone: (
   const [qty, setQty] = useState("");
   const [reason, setReason] = useState("");
   const [reference, setReference] = useState("");
+  const today = new Date().toISOString().slice(0, 10);
+  const [mvDate, setMvDate] = useState(() => new Date(Date.now() - 86400000).toISOString().slice(0, 10));
   const [saving, setSaving] = useState(false);
   const tank = refs.tanks.find((t) => t.id === loc.tank);
   const productId = tank?.product_id || product;
@@ -267,7 +269,9 @@ const MovementForm = ({ refs, onDone }: { refs: Record<string, Row[]>; onDone: (
     if (!productId) return toast.error("Choisissez un produit");
     if (!(n >= 0) || qty === "" || (type !== "inventory" && n <= 0)) return toast.error("Quantité invalide (nombre positif)");
     if (needsReason && !reason.trim()) return toast.error("Le motif est obligatoire");
+    if (!mvDate || mvDate > today) return toast.error("Date du mouvement invalide (pas de date future)");
     setSaving(true);
+    const movementDate = mvDate === today ? new Date().toISOString() : new Date(`${mvDate}T12:00:00`).toISOString();
     const { data, error } = await db.from("stock_movements").insert(scopeRow({
       location_type: loc.type,
       station_id: loc.type === "station" ? loc.id : null,
@@ -279,6 +283,7 @@ const MovementForm = ({ refs, onDone }: { refs: Record<string, Row[]>; onDone: (
       physical_level: type === "inventory" ? n : null,
       reason: reason || null,
       reference: reference || null,
+      movement_date: movementDate,
     })).select("status").single();
     setSaving(false);
     if (error) return toast.error(error.message);
@@ -306,6 +311,10 @@ const MovementForm = ({ refs, onDone }: { refs: Record<string, Row[]>; onDone: (
             <SelectContent>{refs.products.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent>
           </Select>
         </div>
+      </div>
+      <div className="grid gap-1 sm:max-w-xs">
+        <Label htmlFor="mv-date">Date du mouvement</Label>
+        <Input id="mv-date" type="date" max={today} value={mvDate} onChange={(e) => setMvDate(e.target.value)} />
       </div>
       <LocationPicker refs={refs} value={loc} onChange={setLoc} label="Emplacement" />
       <div className="grid sm:grid-cols-2 gap-3">

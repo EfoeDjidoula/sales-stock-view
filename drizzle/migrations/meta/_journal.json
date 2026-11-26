@@ -610,6 +610,13 @@
       "when": 1795716466300,
       "tag": "0086_lifting_from_depot_stock",
       "breakpoints": true
+    },
+    {
+      "idx": 87,
+      "version": "7",
+      "when": 1795718351342,
+      "tag": "0087_stock_movement_date_guard",
+      "breakpoints": true
     }
   ]
 }

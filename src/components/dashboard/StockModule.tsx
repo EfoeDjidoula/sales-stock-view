@@ -9,6 +9,7 @@ import { useTenant } from "@/hooks/useTenant";
 import { useCountry } from "@/hooks/useCountry";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useLanguage } from "@/hooks/useLanguage";
+import { StockLedgerPanel } from "@/components/stock/StockLedgerPanel";
 
 interface StockModuleProps {
   stationId?: string | null;
@@ -296,6 +297,7 @@ export const StockModule = ({ stationId }: StockModuleProps) => {
           ))}
         </div>
       )}
+      <StockLedgerPanel stationId={stationId} />
     </div>
   );
 };
