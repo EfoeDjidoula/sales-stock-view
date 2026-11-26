@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PendingTab, LedgerTab, VarianceTab, SummaryTab, TransfersTab, ThresholdsTab } from "./StockAnalysisTabs";
+import GlobalProductSheet from "./GlobalProductSheet";
 import { useLanguage } from "@/hooks/useLanguage";
 import { isStockMovementQuantityValid } from "@/lib/stockMovementRules";
 
@@ -422,6 +423,7 @@ export const StockEngineModule = () => {
            <TabsTrigger value="niveaux">{t("Niveaux & alertes")}</TabsTrigger>
            <TabsTrigger value="synthese">{t("Synthèse par produit")}</TabsTrigger>
            <TabsTrigger value="fiche">{t("Fiche de stock")}</TabsTrigger>
+           <TabsTrigger value="fiche_globale">{t("Fiche globale par produit")}</TabsTrigger>
            <TabsTrigger value="registre">{t("Registre des mouvements")}</TabsTrigger>
            <TabsTrigger value="validations">{t("Validations en attente")}</TabsTrigger>
            <TabsTrigger value="ecarts">{t("Écarts d'inventaire")}</TabsTrigger>
@@ -433,6 +435,7 @@ export const StockEngineModule = () => {
         <TabsContent value="niveaux" className="mt-4"><LevelsTab refs={refs} reload={reload} /></TabsContent>
         <TabsContent value="synthese" className="mt-4"><SummaryTab refs={refs} reload={reload} /></TabsContent>
         <TabsContent value="fiche" className="mt-4"><LedgerTab refs={refs} reload={reload} /></TabsContent>
+        <TabsContent value="fiche_globale" className="mt-4"><GlobalProductSheet refs={refs} /></TabsContent>
         <TabsContent value="registre" className="mt-4"><RegisterTab refs={refs} reload={reload} onChanged={bump} /></TabsContent>
         <TabsContent value="validations" className="mt-4"><PendingTab refs={refs} reload={reload} onChanged={bump} canValidate={isPlatformAdmin || can("stock", "validate")} /></TabsContent>
         <TabsContent value="ecarts" className="mt-4"><VarianceTab refs={refs} reload={reload} /></TabsContent>

@@ -1,5 +1,6 @@
 /** Exports des récaps ECAP et des fiches d'inventaire (Excel calqué sur les modèles + PDF sur papier à en-tête). */
 import ExcelJS from "exceljs";
+import type { GsDay } from "@/lib/globalStockSheet";
 import { jsPDF } from "@/lib/pdf";
 import { dateFr, section, signatures, table, type Col, type Doc } from "@/lib/accountClosingExport";
 import { interleaveFuels, type InventoryCash, type InventoryTankLine, type PumpRecap, type SalesLine, type VoucherRecap } from "@/lib/ecap";
@@ -247,4 +248,38 @@ export function exportNetworkPdf(rows: NetworkRow[], total: NetworkRow, from: st
   const end = table(doc, y, cols, [...rows.map((x) => ({ cells: fmt(x) })), { cells: fmt(total), bold: true }]);
   signatures(doc, end + 2, ["LE CONTRÔLEUR", "LE DIRECTEUR EXPLOITATION"]);
   doc.save(`Bilan_ventes_reseau_${from}_au_${to}.pdf`);
+}
+
+/* ---------- Fiche globale par produit (dépôt & répartition stations) ---------- */
+export const GLOBAL_HEADERS = ["Date", "Mouvement", "Référence", "Détail", "Entrées (L)", "Sorties (L)", "Stock (L)"];
+export function globalSheetRows(days: GsDay[]) {
+  const out: { cells: (string | number)[]; bold?: boolean }[] = [];
+  for (const d of days) {
+    out.push({ cells: [dateFr(d.date), "Stock début de journée", "", "", "", "", d.opening], bold: true });
+    d.purchases.forEach((p) => out.push({ cells: ["", "Achat (BC)", p.number, [p.proforma && `Pro-forma ${p.proforma}`, p.depot].filter(Boolean).join(" · "), p.qty, "", ""] }));
+    d.liftings.forEach((l) => {
+      out.push({ cells: ["", "Enlèvement (BE)", l.number, [l.truck, l.driver].filter(Boolean).join(" · "), "", l.qty, ""] });
+      l.stations.forEach((s) => out.push({ cells: ["", "  → Destination", "", s.name, "", s.qty, ""] }));
+    });
+    out.push({ cells: ["", "Stock fin de journée", "", "", d.inQty, d.outQty, d.closing], bold: true });
+  }
+  return out;
+}
+const globalTitle = (product: string, from: string, to: string) => [`FICHE GLOBALE DE MOUVEMENT & DISTRIBUTION — ${product.toUpperCase()}`, `PÉRIODE DU ${dateFr(from)} AU ${dateFr(to)}`];
+export async function exportGlobalXlsx(days: GsDay[], product: string, from: string, to: string, company: string) {
+  const wb = new ExcelJS.Workbook();
+  const ws = wb.addWorksheet("Fiche globale");
+  title(ws, [company, ...globalTitle(product, from, to)], GLOBAL_HEADERS.length);
+  grid(ws, GLOBAL_HEADERS, globalSheetRows(days));
+  ws.columns.forEach((c, i) => { c.width = [12, 24, 18, 36, 14, 14, 14][i]; });
+  await download(wb, `Fiche_globale_${safe(product)}_${from}_au_${to}.xlsx`);
+}
+export function exportGlobalPdf(days: GsDay[], product: string, from: string, to: string) {
+  const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+  const y = headerBlock(doc, globalTitle(product, from, to));
+  const cols: Col[] = GLOBAL_HEADERS.map((label, i) => ({ label, w: [24, 42, 34, 82, 30, 30, 30][i], right: i >= 4 }));
+  const rows = globalSheetRows(days).map((r) => ({ ...r, cells: r.cells.map((v) => (typeof v === "number" ? n0(v) : v)) }));
+  const end = table(doc, y, cols, rows);
+  signatures(doc, end + 2, ["LE RESPONSABLE DÉPÔT", "LE DIRECTEUR EXPLOITATION"]);
+  doc.save(`Fiche_globale_${safe(product)}_${from}_au_${to}.pdf`);
 }
