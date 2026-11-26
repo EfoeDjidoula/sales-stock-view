@@ -281,7 +281,7 @@ export const LogisticsModule = ({ dischargesOnly = false }: { dischargesOnly?: b
         <TabsContent value="provision"><StationProvisionTab d={d} L={L} /></TabsContent>
         <TabsContent value="allocation"><LiftingAllocationTab d={d} L={L} /></TabsContent>
         <TabsContent value="discharges"><DischargesTab d={d} L={L} canValidate={canValidate} onChanged={load} /></TabsContent>
-        <TabsContent value="delivery_notes"><DeliveryNotesTab trips={trips} canValidate={canValidate} onChanged={load} /></TabsContent>
+        <TabsContent value="delivery_notes"><DeliveryNotesTab trips={trips} d={d} canValidate={canValidate} onChanged={load} L={L} /></TabsContent>
         <TabsContent value="loading_tracking"><LoadingTrackingTab d={d} L={L} statusLabel={(x) => L(...(TRIP_STATUS[x] ?? [x, x]))} /></TabsContent>
         <TabsContent value="three_stocks"><ThreeStocksTab /></TabsContent>
         <TabsContent value="liftings"><LiftingOrdersTab canWrite={canWrite} canValidate={canValidate} /></TabsContent>
@@ -504,7 +504,7 @@ export const LogisticsModule = ({ dischargesOnly = false }: { dischargesOnly?: b
       <VarianceDialog trip={varTrip ? (d.trips ?? []).find((x) => x.id === varTrip.id) ?? varTrip : null} onClose={() => setVarTrip(null)} onSaved={load} L={L}
         loads={d.loads ?? []} deliveries={d.deliveries ?? []} compartments={d.compartments ?? []} products={d.products ?? []} stations={d.stations ?? []} clients={d.clients ?? []} />
       <LoadPlanDialog trip={planTrip} onClose={() => setPlanTrip(null)} onSaved={load} L={L}
-        vehicles={d.vehicles ?? []} compartments={d.compartments ?? []} products={d.products ?? []} stations={d.stations ?? []} clients={d.clients ?? []} loads={d.loads ?? []} />
+        vehicles={d.vehicles ?? []} compartments={d.compartments ?? []} products={d.products ?? []} drivers={d.drivers ?? []} stations={d.stations ?? []} clients={d.clients ?? []} loads={d.loads ?? []} />
 
       <Dialog open={!!detail} onOpenChange={(o) => !o && setDetail(null)}>
         <DialogContent className="max-w-2xl">

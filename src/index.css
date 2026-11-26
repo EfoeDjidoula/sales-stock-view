@@ -232,6 +232,43 @@
 
 
 
+/* Camion-citerne : remplissage progressif et départ après enregistrement. */
+.tanker-truck__liquid {
+  transition: y 550ms ease-out, height 550ms ease-out;
+}
+.tanker-truck__surface {
+  transition: d 550ms ease-out;
+}
+.tanker-truck--departing .tanker-truck__vehicle {
+  animation: tanker-departure 1800ms cubic-bezier(0.45, 0, 0.8, 0.35) forwards;
+}
+.tanker-truck--departing .tanker-truck__wheel {
+  animation: tanker-wheel 320ms linear infinite;
+  transform-box: fill-box;
+  transform-origin: center;
+}
+.tanker-truck__headlight {
+  filter: drop-shadow(0 0 7px hsl(var(--warning)));
+}
+@keyframes tanker-departure {
+  0% { transform: translateX(0); }
+  18% { transform: translateX(-12px); }
+  100% { transform: translateX(125%); }
+}
+@keyframes tanker-wheel {
+  to { transform: rotate(360deg); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .tanker-truck__liquid,
+  .tanker-truck__surface {
+    transition: none;
+  }
+  .tanker-truck--departing .tanker-truck__vehicle,
+  .tanker-truck--departing .tanker-truck__wheel {
+    animation-duration: 1ms;
+  }
+}
+
 /* Téléphone : pas de zoom automatique à la saisie, tableaux défilables, boutons tactiles. */
 @media (max-width: 767px) {
   input, select, textarea { font-size: 16px !important; }

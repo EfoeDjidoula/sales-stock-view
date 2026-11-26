@@ -5,10 +5,9 @@ import { Loader2, Plus, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { TankerTruckVisualizer } from "./TankerTruckVisualizer";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const db = supabase as any;
@@ -23,11 +22,11 @@ export const planTotals = (lines: { qty_litres: string | number }[], capacity: n
 
 interface Props {
   trip: Row | null; onClose: () => void; onSaved: () => void;
-  vehicles: Row[]; compartments: Row[]; products: Row[]; stations: Row[]; clients: Row[]; loads: Row[];
+  vehicles: Row[]; compartments: Row[]; products: Row[]; drivers: Row[]; stations: Row[]; clients: Row[]; loads: Row[];
   L: (fr: string, en: string) => string;
 }
 
-export const LoadPlanDialog = ({ trip, onClose, onSaved, vehicles, compartments, products, stations, clients, loads, L }: Props) => {
+export const LoadPlanDialog = ({ trip, onClose, onSaved, vehicles, compartments, products, drivers, stations, clients, loads, L }: Props) => {
   const vehId = trip ? trip.tanker_id ?? trip.truck_id : null;
   const veh = vehicles.find((v) => v.id === vehId);
   const comps = useMemo(() => compartments.filter((c) => c.vehicle_id === vehId).sort((a, b) => a.position - b.position), [compartments, vehId]);
@@ -37,9 +36,13 @@ export const LoadPlanDialog = ({ trip, onClose, onSaved, vehicles, compartments,
   const [monoProduct, setMonoProduct] = useState("");
   const [lines, setLines] = useState<Line[]>([]);
   const [busy, setBusy] = useState(false);
+  const [departing, setDeparting] = useState(false);
+  const [activeComp, setActiveComp] = useState<number>();
 
   useEffect(() => {
     if (!trip) return;
+    setDeparting(false);
+    setActiveComp(undefined);
     const existing = loads.filter((l) => l.trip_id === trip.id);
     const blank = (extra: Partial<Line> = {}): Line => ({ product_id: "", qty_litres: "", destination_type: "station", station_id: "", client_id: "", stop_order: "1", ...extra });
     const fromRow = (l: Row): Partial<Line> => ({ product_id: l.product_id, qty_litres: String(l.qty_litres), destination_type: l.destination_type, station_id: l.station_id ?? "", client_id: l.client_id ?? "", stop_order: String(l.stop_order) });
@@ -54,10 +57,11 @@ export const LoadPlanDialog = ({ trip, onClose, onSaved, vehicles, compartments,
 
   const upd = (i: number, patch: Partial<Line>) => setLines(lines.map((l, j) => (j === i ? { ...l, ...patch } : l)));
   const { total, full } = planTotals(lines, capacity);
-  const pct = capacity ? Math.min(100, (total / capacity) * 100) : 0;
+  const plan = lines.map((l) => ({ ...l, product_id: mode === "mono" ? monoProduct : l.product_id }));
+  const truck = vehicles.find((v) => v.id === trip?.truck_id);
 
   const save = async () => {
-    const payload = lines.map((l) => ({ ...l, product_id: mode === "mono" ? monoProduct : l.product_id }));
+    const payload = plan;
     if (payload.some((l) => !l.product_id)) return toast.error(L("Produit manquant", "Missing product"));
     if (payload.some((l) => (l.destination_type === "station" ? !l.station_id : !l.client_id))) return toast.error(L("Destination manquante", "Missing destination"));
     if (!full) return toast.error(L("Le camion doit être chargé à son volume total", "The truck must be loaded to full capacity"));
@@ -66,14 +70,17 @@ export const LoadPlanDialog = ({ trip, onClose, onSaved, vehicles, compartments,
     setBusy(false);
     if (error) return toast.error(error.message);
     toast.success(L("Plan de chargement enregistré", "Loading plan saved"));
-    onSaved(); onClose();
+    onSaved();
+    setDeparting(true);
+    const delay = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 150 : 1800;
+    window.setTimeout(() => { setDeparting(false); onClose(); }, delay);
   };
 
   const destinations = new Set(lines.map((l) => (l.destination_type === "station" ? l.station_id : l.client_id)).filter(Boolean)).size;
 
   return (
-    <Dialog open={!!trip} onOpenChange={(o) => !o && onClose()}>
-      <DialogContent className="max-w-4xl">
+    <Dialog open={!!trip} onOpenChange={(o) => { if (!o && !departing) onClose(); }}>
+      <DialogContent className="w-[calc(100vw-1rem)] min-w-0 max-w-6xl overflow-x-hidden [&>*]:min-w-0">
         <DialogHeader><DialogTitle>{L("Plan de chargement", "Loading plan")} {trip?.reference} — {veh?.registration ?? "—"}</DialogTitle></DialogHeader>
         {!vehId || capacity <= 0 ? (
           <p className="text-sm text-destructive">{L("Affectez un camion / une citerne avec capacité ou compartiments configurés.", "Assign a truck / tanker with capacity or compartments configured.")}</p>
@@ -88,15 +95,30 @@ export const LoadPlanDialog = ({ trip, onClose, onSaved, vehicles, compartments,
                   <SelectContent>{products.map((p) => <SelectItem key={p.id} value={p.id}>{p.name}</SelectItem>)}</SelectContent></Select></div>}
               <div className="text-sm">{L("Destinations", "Destinations")} : <b>{destinations}</b></div>
             </div>
-            <div>
-              <div className="flex justify-between text-sm mb-1">
-                <span>{L("Volume planifié", "Planned volume")} : <b>{total.toLocaleString("fr-FR")}</b> / {capacity.toLocaleString("fr-FR")} L</span>
-                <Badge variant={full ? "outline" : "destructive"}>{full ? L("Plein — 100 %", "Full — 100 %") : `${pct.toFixed(1)} %`}</Badge>
-              </div>
-              <Progress value={pct} />
-            </div>
+            <TankerTruckVisualizer
+              registration={truck?.registration ?? veh?.registration ?? "—"}
+              trailerRegistration={trip?.tanker_id ? veh?.registration : undefined}
+              driverName={drivers.find((driver) => driver.id === trip?.driver_id)?.full_name}
+              compartments={plan.map((l, i) => ({
+                id: l.compartment_id,
+                position: l.position ?? i + 1,
+                capacity: Number(l.capacity) || Number(l.qty_litres) || 0,
+                qty: l.qty_litres,
+                productName: products.find((p) => p.id === l.product_id)?.name,
+                destinationName: l.destination_type === "station" ? stations.find((s) => s.id === l.station_id)?.name : clients.find((c) => c.id === l.client_id)?.name,
+                stopOrder: l.stop_order,
+              }))}
+              capacity={capacity}
+              departing={departing}
+              activeIndex={activeComp}
+              L={L}
+              onCompartmentClick={(index) => {
+                setActiveComp(index);
+                document.getElementById(`load-plan-line-${index}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+              }}
+            />
             {lines.map((l, i) => (
-              <div key={i} className="grid md:grid-cols-6 gap-2 items-end border border-border/50 rounded-md p-2">
+              <div id={`load-plan-line-${i}`} key={i} className={`grid md:grid-cols-6 gap-2 items-end border rounded-md p-2 transition-colors ${activeComp === i ? "border-ring bg-primary/5" : "border-border/50"}`}>
                 <div className="text-sm font-medium">{l.compartment_id ? `${L("Compartiment", "Compartment")} ${l.position}` : `${L("Ligne", "Line")} ${i + 1}`}</div>
                 <div className="grid gap-1"><Label className="text-xs">{L("Volume (L)", "Volume (L)")}</Label>
                   <Input type="number" value={l.qty_litres} disabled={!!l.compartment_id} onChange={(e) => upd(i, { qty_litres: e.target.value })} /></div>
@@ -123,7 +145,7 @@ export const LoadPlanDialog = ({ trip, onClose, onSaved, vehicles, compartments,
               : L("Sans compartiments déclarés, répartissez la capacité totale entre destinations.", "Without declared compartments, split total capacity across destinations.")}</p>
           </div>
         )}
-        <DialogFooter><Button onClick={save} disabled={busy || !full}>{busy && <Loader2 className="h-4 w-4 animate-spin mr-1" />}{L("Enregistrer le plan", "Save plan")}</Button></DialogFooter>
+        <DialogFooter><Button onClick={save} disabled={busy || departing || !full}>{busy && <Loader2 className="h-4 w-4 animate-spin mr-1" />}{departing ? L("Départ vers le dépôt…", "Leaving for the depot…") : L("Enregistrer le plan", "Save plan")}</Button></DialogFooter>
       </DialogContent>
     </Dialog>
   );

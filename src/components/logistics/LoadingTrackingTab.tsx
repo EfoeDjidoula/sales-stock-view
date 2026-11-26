@@ -10,7 +10,8 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Eye } from "lucide-react";
+import { Eye, Truck } from "lucide-react";
+import { TankerTruckVisualizer } from "./TankerTruckVisualizer";
 import { LOADING_STAGES, loadingStage, matchesFilter, type LoadingStage, type TrackingFilter } from "@/lib/loadingTracking";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -28,6 +29,7 @@ export const LoadingTrackingTab = ({ d, L, statusLabel }: Props) => {
   const [f, setF] = useState<TrackingFilter>({});
   const [hist, setHist] = useState<Row | null>(null);
   const [events, setEvents] = useState<Row[]>([]);
+  const [visual, setVisual] = useState<Row | null>(null);
   const nm = (list: string, id?: string | null, key = "name") => (d[list] ?? []).find((x) => x.id === id)?.[key] ?? "—";
 
   const rows = useMemo(() => (d.trips ?? []).map((t) => {
@@ -107,13 +109,47 @@ export const LoadingTrackingTab = ({ d, L, statusLabel }: Props) => {
                   <TableCell className="text-right tabular-nums">{fmt(r.t.qty_loaded)}</TableCell>
                   <TableCell className="text-right tabular-nums">{fmt(r.t.qty_delivered)}</TableCell>
                   <TableCell><Badge variant={r.stage === "incident" || r.stage === "cancelled" ? "destructive" : r.stage === "closed" ? "outline" : "default"}>{L(...LOADING_STAGES[r.stage])}</Badge></TableCell>
-                  <TableCell><Button size="sm" variant="ghost" title={L("Historique", "History")} onClick={() => { setEvents([]); setHist(r); }}><Eye className="h-4 w-4" /></Button></TableCell>
+                  <TableCell><div className="flex gap-1">
+                    <Button size="sm" variant="ghost" title={L("Voir le camion et ses compartiments", "View truck and compartments")} onClick={() => setVisual(r)}><Truck className="h-4 w-4" /></Button>
+                    <Button size="sm" variant="ghost" title={L("Historique", "History")} onClick={() => { setEvents([]); setHist(r); }}><Eye className="h-4 w-4" /></Button>
+                  </div></TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
         </CardContent>
       </Card>
+      <Dialog open={!!visual} onOpenChange={(o) => !o && setVisual(null)}>
+        <DialogContent className="w-[calc(100vw-1rem)] min-w-0 max-w-6xl max-h-[90vh] overflow-y-auto overflow-x-hidden [&>*]:min-w-0">
+          <DialogHeader><DialogTitle>{L("Chargement du camion", "Truck load")} · {visual?.t.reference}</DialogTitle></DialogHeader>
+          {visual && <div className="space-y-3">
+            <Badge variant={visual.stage === "closed" ? "outline" : "default"}>{L(...LOADING_STAGES[visual.stage as LoadingStage])}</Badge>
+            <TankerTruckVisualizer
+              registration={nm("vehicles", visual.t.truck_id, "registration")}
+              trailerRegistration={visual.t.tanker_id ? nm("vehicles", visual.t.tanker_id, "registration") : undefined}
+              driverName={nm("drivers", visual.t.driver_id, "full_name")}
+              compartments={visual.loads.slice().sort((a: Row, b: Row) => {
+                const pa = (d.compartments ?? []).find((c) => c.id === a.compartment_id)?.position ?? 0;
+                const pb = (d.compartments ?? []).find((c) => c.id === b.compartment_id)?.position ?? 0;
+                return pa - pb;
+              }).map((load: Row, index: number) => {
+                const comp = (d.compartments ?? []).find((c) => c.id === load.compartment_id);
+                return {
+                  id: load.compartment_id ?? load.id,
+                  position: comp?.position ?? index + 1,
+                  capacity: Number(comp?.capacity_litres ?? load.qty_litres),
+                  qty: load.qty_litres,
+                  productName: nm("products", load.product_id),
+                  destinationName: load.destination_type === "station" ? nm("stations", load.station_id) : nm("clients", load.client_id),
+                  stopOrder: load.stop_order,
+                };
+              })}
+              L={L}
+            />
+          </div>}
+        </DialogContent>
+      </Dialog>
+
       <Dialog open={!!hist} onOpenChange={(o) => !o && setHist(null)}>
         <DialogContent className="max-w-3xl">
           <DialogHeader><DialogTitle>{L("Historique des transitions", "Transition history")} · {hist?.t.reference}</DialogTitle></DialogHeader>

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
-import { FileDown, PenLine, RefreshCw, UserCheck } from "lucide-react";
+import { FileDown, PenLine, RefreshCw, Truck, UserCheck } from "lucide-react";
+import { TankerTruckVisualizer } from "./TankerTruckVisualizer";
 import { supabase } from "@/integrations/supabase/client";
 import { useScope } from "@/hooks/useScope";
 import { useAuth } from "@/hooks/useAuth";
@@ -20,7 +21,7 @@ import { exportDeliveryNote } from "@/lib/deliveryNoteExport";
 const db = supabase as any;
 type Row = Record<string, any>; // eslint-disable-line @typescript-eslint/no-explicit-any
 
-export function DeliveryNotesTab({ trips, canValidate, onChanged }: { trips: Row[]; canValidate: boolean; onChanged: () => void }) {
+export function DeliveryNotesTab({ trips, d, canValidate, onChanged, L }: { trips: Row[]; d: Record<string, Row[]>; canValidate: boolean; onChanged: () => void; L: (fr: string, en: string) => string }) {
   const { tenantId, countryId } = useScope();
   const { user } = useAuth();
   const [notes, setNotes] = useState<DeliveryNote[]>([]);
@@ -34,6 +35,7 @@ export function DeliveryNotesTab({ trips, canValidate, onChanged }: { trips: Row
   const [png, setPng] = useState<string | null>(null);
   const [decision, setDecision] = useState("accepted");
   const [reserves, setReserves] = useState("");
+  const [visual, setVisual] = useState<DeliveryNote | null>(null);
 
   const load = useCallback(async () => {
     if (!tenantId || !countryId) return;
@@ -93,6 +95,7 @@ export function DeliveryNotesTab({ trips, canValidate, onChanged }: { trips: Row
                   <TableCell className="flex flex-wrap gap-1">
                     {canValidate && done === 0 && n.trip_status !== "cancelled" && <Button size="sm" variant="outline" title="Désigner les signataires" onClick={() => { setAssign(n); setWho({ shipper: n.shipper_user ?? "", carrier: n.carrier_user ?? "", consignee: n.consignee_user ?? "" }); }}><UserCheck className="h-4 w-4" /></Button>}
                     {mine && <Button size="sm" onClick={() => { setSign({ note: n, role: mine }); setPng(null); setDecision("accepted"); setReserves(""); }}><PenLine className="h-4 w-4 mr-1" />Signer</Button>}
+                    <Button size="sm" variant="ghost" title={L("Voir le camion et ses compartiments", "View truck and compartments")} onClick={() => setVisual(n)}><Truck className="h-4 w-4" /></Button>
                     <Button size="sm" variant="ghost" title="PDF" onClick={() => exportDeliveryNote(n).catch((e) => toast.error(String(e)))}><FileDown className="h-4 w-4" /></Button>
                   </TableCell>
                 </TableRow>
@@ -127,6 +130,43 @@ export function DeliveryNotesTab({ trips, canValidate, onChanged }: { trips: Row
           <p className="text-xs text-muted-foreground">Signature enregistrée au nom de votre compte, horodatée et non modifiable.</p>
           <DialogFooter><Button variant="outline" onClick={() => setSign(null)}>Annuler</Button>
             <Button disabled={busy || !png || (decision !== "accepted" && sign?.role === "consignee" && reserves.trim().length < 3)} onClick={async () => { if (sign && await run("sign", sign.note.id, { role: sign.role, png, decision, reserves }, "Signature enregistrée")) setSign(null); }}>Signer</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!visual} onOpenChange={(value) => !value && setVisual(null)}>
+        <DialogContent className="w-[calc(100vw-1rem)] min-w-0 max-w-6xl max-h-[90vh] overflow-y-auto overflow-x-hidden [&>*]:min-w-0">
+          <DialogHeader><DialogTitle>{L("Camion du bon de livraison", "Delivery note truck")} · {visual?.number}</DialogTitle></DialogHeader>
+          {visual && (() => {
+            const tripLoads = (d.loads ?? []).filter((load) => load.trip_id === visual.trip_id);
+            const compartments = tripLoads.length ? tripLoads.map((load, index) => {
+              const comp = (d.compartments ?? []).find((item) => item.id === load.compartment_id);
+              const station = (d.stations ?? []).find((item) => item.id === load.station_id)?.name;
+              const client = (d.clients ?? []).find((item) => item.id === load.client_id)?.name;
+              return {
+                id: load.compartment_id ?? load.id,
+                position: comp?.position ?? index + 1,
+                capacity: Number(comp?.capacity_litres ?? load.qty_litres),
+                qty: load.qty_litres,
+                productName: (d.products ?? []).find((item) => item.id === load.product_id)?.name,
+                destinationName: station ?? client,
+                stopOrder: load.stop_order,
+              };
+            }) : visual.snapshot.lines.map((line, index) => ({
+              id: line.load_id,
+              position: line.compartment ?? index + 1,
+              capacity: Number(line.litres),
+              qty: line.litres,
+              productName: line.product,
+              destinationName: visual.snapshot.site,
+            }));
+            return <TankerTruckVisualizer
+              registration={visual.snapshot.truck}
+              trailerRegistration={visual.snapshot.tanker ?? undefined}
+              driverName={visual.snapshot.driver}
+              compartments={compartments}
+              L={L}
+            />;
+          })()}
         </DialogContent>
       </Dialog>
     </Card>

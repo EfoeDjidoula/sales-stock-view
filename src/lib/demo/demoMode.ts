@@ -117,6 +117,16 @@ const readTable = (table: string, params: URLSearchParams) => {
       if (fk in r) o[e.key] = (db![e.table] ?? []).find((x) => x.id === r[fk]) ?? null;
       else o[e.key] = (db![e.table] ?? []).filter((x) => x[`${singular(table)}_id`] === r.id);
     }
+    // Nested PO → pro-forma → lines/supplier/depot relations used by depot stock and lifting orders.
+    if (table === "depot_purchase_orders" && r.proforma_id) {
+      const pf = (db!.depot_proformas ?? []).find((proforma) => proforma.id === r.proforma_id);
+      o.depot_proformas = pf ? {
+        ...pf,
+        depot_proforma_lines: (db!.depot_proforma_lines ?? []).filter((line) => line.proforma_id === pf.id),
+        suppliers: (db!.suppliers ?? []).find((supplier) => supplier.id === pf.supplier_id) ?? null,
+        depots: (db!.depots ?? []).find((depot) => depot.id === pf.depot_id) ?? null,
+      } : null;
+    }
     return o;
   });
   return { rows, total, off };

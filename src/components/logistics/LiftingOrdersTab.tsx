@@ -19,6 +19,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { SignaturePad } from "@/components/pro/EcmrSignDialog";
 import { depotBalances, planByProduct, planExcess, type LiftingStatus, type PaymentStatus } from "@/lib/depotSupply";
 import { jsPDF } from "@/lib/pdf";
+import { TankerTruckVisualizer } from "./TankerTruckVisualizer";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const db = supabase as any;
@@ -56,6 +57,8 @@ export const LiftingOrdersTab = ({ canWrite, canValidate }: { canWrite: boolean;
   const [reason, setReason] = useState("");
   const [history, setHistory] = useState<Row | null>(null);
   const [events, setEvents] = useState<Row[]>([]);
+  const [departing, setDeparting] = useState(false);
+  const [activeComp, setActiveComp] = useState<number>();
 
   const load = useCallback(async () => {
     if (!tenantId || !countryId) return;
@@ -108,7 +111,7 @@ export const LiftingOrdersTab = ({ canWrite, canValidate }: { canWrite: boolean;
   const byProduct = planByProduct(plan);
   const upd = (i: number, patch: Partial<Line>) => setLines(lines.map((l, j) => (j === i ? { ...l, ...patch } : l)));
 
-  const openNew = () => { setF({ planned_date: new Date().toISOString().slice(0, 10) }); setMode("mono"); setMonoProduct(""); setLines([]); setOpen(true); };
+  const openNew = () => { setF({ planned_date: new Date().toISOString().slice(0, 10) }); setMode("mono"); setMonoProduct(""); setLines([]); setActiveComp(undefined); setDeparting(false); setOpen(true); };
   const act = async (action: string, data: Row, ok: string) => {
     setBusy(true);
     const { error } = await db.rpc("depot_supply_action", { _action: action, _data: data });
@@ -123,7 +126,11 @@ export const LiftingOrdersTab = ({ canWrite, canValidate }: { canWrite: boolean;
     if (plan.some((l) => (l.destination_type === "station" ? !l.station_id : !l.client_id))) return toast.error(L("Site de destination manquant", "Missing destination"));
     if (total !== capacity) return toast.error(L("Le camion doit être chargé à son volume total", "The truck must be loaded to full capacity"));
     if (excess.length) return toast.error(L("Quantité supérieure au stock disponible du dépôt", "Quantity above the depot available stock"));
-    if (await act("create_lifting", { ...f, order_id: null, tenant_id: tenantId, country_id: countryId, tanker_id: truck?.kind === "tractor" ? f.tanker_id : null, load_mode: mode, lines: plan }, L("Bon d'enlèvement établi", "Lifting order drafted"))) setOpen(false);
+    if (await act("create_lifting", { ...f, order_id: null, tenant_id: tenantId, country_id: countryId, tanker_id: truck?.kind === "tractor" ? f.tanker_id : null, load_mode: mode, lines: plan }, L("Bon d'enlèvement établi", "Lifting order drafted"))) {
+      setDeparting(true);
+      const delay = window.matchMedia("(prefers-reduced-motion: reduce)").matches ? 150 : 1800;
+      window.setTimeout(() => { setOpen(false); setDeparting(false); }, delay);
+    }
   };
 
   const openHistory = async (b: Row) => {
@@ -275,8 +282,8 @@ export const LiftingOrdersTab = ({ canWrite, canValidate }: { canWrite: boolean;
       </div>
       <p className="text-xs text-muted-foreground">{L("Pour rendre un camion disponible : enregistrez ses documents (assurance, carte grise, visite technique) dans « Documents », et le permis poids lourd du chauffeur. Un camion reste indisponible tant que son chargement précédent n'est pas entièrement dépoté.", "To make a truck available: record its documents (insurance, registration, technical inspection) under “Documents”, and the driver's HGV licence. A truck stays unavailable until its previous load is fully unloaded.")}</p>
 
-      <Dialog open={open} onOpenChange={setOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+      <Dialog open={open} onOpenChange={(value) => { if (!departing) setOpen(value); }}>
+        <DialogContent className="w-[calc(100vw-1rem)] min-w-0 max-w-6xl max-h-[90vh] overflow-y-auto overflow-x-hidden [&>*]:min-w-0">
           <DialogHeader><DialogTitle>{L("Nouveau bon d'enlèvement", "New lifting order")}</DialogTitle></DialogHeader>
           <div className="grid gap-3 md:grid-cols-3">
             <div><Label>{L("Dépôt de chargement", "Loading depot")}</Label>
@@ -304,7 +311,29 @@ export const LiftingOrdersTab = ({ canWrite, canValidate }: { canWrite: boolean;
           {(d.vehicles ?? []).some((v) => !isTowed(v.kind) && !vAvail.get(v.id)?.available) && <p className="text-xs text-muted-foreground">{L("Les camions grisés sont indisponibles : la raison est indiquée dans « Disponibilité des camions » sous ce tableau.", "Greyed trucks are unavailable: see the reason in “Truck availability” below.")}</p>}
 
           {vehId && capacity > 0 && order && (
-            <div className="space-y-2">
+            <div className="space-y-3">
+              <TankerTruckVisualizer
+                registration={truck?.registration ?? "—"}
+                trailerRegistration={truck?.kind === "tractor" ? veh?.registration : undefined}
+                driverName={f.driver_id ? name("drivers", f.driver_id, "full_name") : undefined}
+                compartments={plan.map((l, i) => ({
+                  id: l.compartment_id,
+                  position: l.position ?? i + 1,
+                  capacity: Number(l.capacity) || Number(l.qty_litres) || 0,
+                  qty: l.qty_litres,
+                  productName: l.product_id ? name("products", l.product_id) : undefined,
+                  destinationName: l.destination_type === "station" ? (l.station_id ? name("stations", l.station_id) : undefined) : (l.client_id ? name("clients", l.client_id) : undefined),
+                  stopOrder: l.stop_order,
+                }))}
+                capacity={capacity}
+                departing={departing}
+                activeIndex={activeComp}
+                L={L}
+                onCompartmentClick={(index) => {
+                  setActiveComp(index);
+                  document.getElementById(`lifting-plan-line-${index}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
+                }}
+              />
               <div className="grid md:grid-cols-3 gap-3 items-end">
                 <div><Label>{L("Type de chargement", "Load type")}</Label>
                   <Select value={mode} onValueChange={(v) => setMode(v as "mono" | "mixed")}><SelectTrigger><SelectValue /></SelectTrigger>
@@ -315,7 +344,7 @@ export const LiftingOrdersTab = ({ canWrite, canValidate }: { canWrite: boolean;
                 <div className="text-sm">{L("Volume", "Volume")} : <b>{fmt(total)}</b> / {fmt(capacity)} L {total === capacity ? <Badge variant="outline">100 %</Badge> : <Badge variant="destructive">{L("incomplet", "incomplete")}</Badge>}</div>
               </div>
               {lines.map((l, i) => (
-                <div key={i} className="grid md:grid-cols-6 gap-2 items-end border border-border/50 rounded-md p-2">
+                <div id={`lifting-plan-line-${i}`} key={i} className={`grid md:grid-cols-6 gap-2 items-end border rounded-md p-2 transition-colors ${activeComp === i ? "border-ring bg-primary/5" : "border-border/50"}`}>
                   <div className="text-sm font-medium">{l.compartment_id ? `${L("Compartiment", "Compartment")} ${l.position}` : `${L("Ligne", "Line")} ${i + 1}`}{l.capacity ? <div className="text-xs text-muted-foreground">{L("max", "max")} {fmt(l.capacity)} L</div> : null}</div>
                   <div><Label className="text-xs">{L("Qté prévue (L)", "Planned (L)")}</Label><Input type="number" value={l.qty_litres} disabled={!!l.compartment_id} onChange={(e) => upd(i, { qty_litres: e.target.value })} /></div>
                   <div><Label className="text-xs">{L("Produit", "Product")}</Label>
@@ -342,7 +371,7 @@ export const LiftingOrdersTab = ({ canWrite, canValidate }: { canWrite: boolean;
           )}
           {vehId && capacity <= 0 && <p className="text-sm text-destructive">{L("Ce véhicule n'a ni capacité ni compartiments configurés.", "This vehicle has no capacity or compartments configured.")}</p>}
           <div><Label>{L("Observations", "Notes")}</Label><Textarea value={f.observations ?? ""} onChange={(e) => setF({ ...f, observations: e.target.value })} /></div>
-          <DialogFooter><Button disabled={busy || !order || !vehId || total !== capacity || excess.length > 0} onClick={save}>{L("Établir le BE", "Draft lifting order")}</Button></DialogFooter>
+          <DialogFooter><Button disabled={busy || departing || !order || !vehId || total !== capacity || excess.length > 0} onClick={save}>{departing ? L("Départ vers le dépôt…", "Leaving for the depot…") : L("Établir le BE", "Draft lifting order")}</Button></DialogFooter>
         </DialogContent>
       </Dialog>
 

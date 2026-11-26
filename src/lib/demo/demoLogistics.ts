@@ -47,7 +47,7 @@ export const buildLogistics = (base: any, stations: any[], products: any[], clie
   });
   const total = pfLines.reduce((s, l) => s + l.amount_ttc, 0);
   const depot_proformas = [{ ...base, id: id("e1800000", 1), supplier_id: suppliers[0].id, depot_id: depots[0].id, number: "PF-DEMO-0001", proforma_date: day(12), valid_until: day(-18), observations: "Pro-forma simulée", total_ht: total, total_tax: 0, total_ttc: total, created_by: userId }];
-  const depot_purchase_orders = [{ ...base, id: id("e1900000", 1), proforma_id: depot_proformas[0].id, number: "BC-DEMO-0001", issue_date: day(11), beneficiary_client_id: null, beneficiary_name: "DÉMO ÉNERGIE", payment_status: "paid", status_by: userId, status_by_name: "Démo — Directeur Général", status_at: ts(11), created_by: userId }];
+  const depot_purchase_orders = [{ ...base, id: id("e1900000", 1), proforma_id: depot_proformas[0].id, number: "BC-DEMO-0001", issue_date: day(11), beneficiary_client_id: null, beneficiary_name: "DÉMO ÉNERGIE", payment_status: "paiement_direct", status_by: userId, status_by_name: "Démo — Directeur Général", status_at: ts(11), created_by: userId }];
 
   const trips: any[] = [], loads: any[] = [], liftings: any[] = [], lines: any[] = [], deliveries: any[] = [];
   const be = (n: number, veh: any, drv: any, status: string, ago: number, dest: number, prod: any, tripStatus: string) => {
