@@ -1,0 +1,1 @@
+- Station isolation: useStations hooks filter by station_assignments (src/lib/myStations.ts); none = network; why: managers can't pick other stations.

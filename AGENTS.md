@@ -35,4 +35,3 @@
 - Country legal identity: tenant_countries legal fields (set_country_identity) override tenant ones via applyCountryIdentity; why: PDFs follow the active country.
 - create-user requires country_ids checked against tenant + caller access; why: no default all-country access.
 - Theme: :root light, .dark dark, via src/lib/theme.ts; why: one switch.
-- Station isolation: every station list goes through useStations hooks filtered by station_assignments (src/lib/myStations.ts); no assignment = network view; why: a manager never picks another station.
