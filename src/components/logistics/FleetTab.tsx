@@ -42,10 +42,30 @@ export const FleetTab = ({ d, canWrite, L, tenantId, countryId, onSaved }: Props
     const loadUnit = tr ?? v;
     const cs = compsOf(loadUnit.id).map((c) => ({ id: c.id, position: c.position, capacity_litres: Number(c.capacity_litres), calibration_ref: c.calibration_ref ?? "" }));
     setForm({ ...v, trailer_id: tr?.id, trailer_kind: tr?.kind ?? "semi_trailer", trailer_registration: tr?.registration ?? "",
-      capacity_litres: loadUnit.capacity_litres ?? "", comp_count: cs.length || "" });
+      capacity_litres: loadUnit.capacity_litres ?? "", comp_count: cs.length || "", orig_kind: v.kind, orig_count: cs.length });
     setRows(cs);
   };
   const set = (k: string, v: unknown) => setForm((f) => ({ ...f!, [k]: v }));
+  const mapComps = (id?: string) => compsOf(id).map((c) => ({ id: c.id, position: c.position, capacity_litres: Number(c.capacity_litres), calibration_ref: c.calibration_ref ?? "" }));
+  /** Change type, also on edit: a combined "AA/BB" registration is split into tractor + tank. */
+  const changeKind = (k: string) => setForm((f) => {
+    const n: Row = { ...f!, kind: k };
+    if (k === "tractor" && f!.kind !== "tractor" && f!.id) {
+      const [a, b] = String(f!.registration ?? "").split("/").map((x) => x.trim());
+      if (b) { const suf = /\d$/.test(a) ? (b.match(/[A-Z]+$/i)?.[0] ?? "") : ""; n.registration = a + suf; n.trailer_registration = b; }
+      n.trailer_id = undefined; // new tank unit, existing compartments move onto it
+    }
+    if (k !== "tractor" && f!.kind === "tractor" && f!.id) { n.trailer_id = undefined; setRows(mapComps(f!.id)); n.comp_count = compsOf(f!.id).length || ""; }
+    return n;
+  });
+  const linkedElsewhere = (id: string) => vehicles.some((v) => v.default_trailer_id === id && v.id !== form?.id);
+  const freeTrailers = vehicles.filter((v) => isTowed(v.kind) && v.id !== form?.id && !linkedElsewhere(v.id));
+  const pickTrailer = (id: string) => {
+    if (id === NONE) { setForm((f) => ({ ...f!, trailer_id: undefined })); return; }
+    const t = byId(id)!; const cs = mapComps(id);
+    setForm((f) => ({ ...f!, trailer_id: id, trailer_kind: t.kind, trailer_registration: t.registration, capacity_litres: t.capacity_litres ?? "", comp_count: cs.length || "", orig_count: cs.length }));
+    setRows(cs);
+  };
   const setCount = (n: string) => { set("comp_count", n); setRows((r) => resizeCompartments(r, Number(n))); };
 
   const save = async () => {
@@ -54,7 +74,7 @@ export const FleetTab = ({ d, canWrite, L, tenantId, countryId, onSaved }: Props
     const cap = Number(form.capacity_litres) || 0;
     if (!form.registration?.trim()) return toast.error(L("Immatriculation obligatoire", "Registration required"));
     if (tractor && !form.trailer_registration?.trim()) return toast.error(L("Immatriculation de la citerne / remorque obligatoire", "Trailer registration required"));
-    const existing = form.trailer_id || (!tractor && form.id) ? compsOf(tractor ? form.trailer_id : form.id).length : 0;
+    const existing = Number(form.orig_count) || 0;
     if (rows.length < existing) return toast.error(L(`Ce véhicule a déjà ${existing} compartiments : on ne peut pas en retirer (traçabilité des chargements).`, `This vehicle already has ${existing} compartments and they cannot be removed.`));
     const errs = compartmentErrors(rows, cap);
     if (errs.length) return toast.error(errs.join(" "));
@@ -76,7 +96,7 @@ export const FleetTab = ({ d, canWrite, L, tenantId, countryId, onSaved }: Props
           default_driver_id: isTowed(form.kind) ? null : form.default_driver_id || null });
       }
       for (const r of rows) {
-        const p = { position: r.position, capacity_litres: Number(r.capacity_litres), calibration_ref: r.calibration_ref || null };
+        const p = { vehicle_id: loadUnitId, position: r.position, capacity_litres: Number(r.capacity_litres), calibration_ref: r.calibration_ref || null };
         const res = r.id ? await db.from("logistics_compartments").update(p).eq("id", r.id)
           : await db.from("logistics_compartments").insert({ ...p, ...scope, vehicle_id: loadUnitId });
         if (res.error) throw res.error;
@@ -157,11 +177,15 @@ export const FleetTab = ({ d, canWrite, L, tenantId, countryId, onSaved }: Props
             <div className="space-y-4">
               <div className="grid gap-3 sm:grid-cols-2">
                 <div><Label>{L("Type de véhicule", "Vehicle type")}</Label>
-                  <Select value={form.kind} onValueChange={(v) => set("kind", v)} disabled={!!form.id}><SelectTrigger><SelectValue /></SelectTrigger>
+                  <Select value={form.kind} onValueChange={changeKind}><SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>{Object.keys(VEHICLE_KINDS).map((k) => <SelectItem key={k} value={k}>{kindLabel(k)}</SelectItem>)}</SelectContent></Select></div>
                 <div><Label>{tractor ? L("Immatriculation du tracteur", "Tractor registration") : L("Immatriculation", "Registration")}</Label>
                   <Input value={form.registration ?? ""} onChange={(e) => set("registration", e.target.value)} /></div>
                 {tractor && <>
+                  {freeTrailers.length > 0 && <div className="sm:col-span-2"><Label>{L("Citerne attelée existante", "Existing towed tank")}</Label>
+                    <Select value={form.trailer_id ?? NONE} onValueChange={pickTrailer}><SelectTrigger><SelectValue /></SelectTrigger>
+                      <SelectContent><SelectItem value={NONE}>{L("— Nouvelle citerne —", "— New tank —")}</SelectItem>
+                        {freeTrailers.concat(form.trailer_id && !freeTrailers.some((t) => t.id === form.trailer_id) ? [byId(form.trailer_id)!] : []).map((t) => <SelectItem key={t.id} value={t.id}>{t.registration} ({kindLabel(t.kind)})</SelectItem>)}</SelectContent></Select></div>}
                   <div><Label>{L("Type de citerne attelée", "Towed tank type")}</Label>
                     <Select value={form.trailer_kind} onValueChange={(v) => set("trailer_kind", v)}><SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>{TOWED_KINDS.map((k) => <SelectItem key={k} value={k}>{kindLabel(k)}</SelectItem>)}</SelectContent></Select></div>
