@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { depotBalances as _depotBalances, lineAmounts, orderCounters, planExcess, productBalances, proformaTotals, sumCounters } from "./depotSupply";
+import { depotBalances, depotBalances as _depotBalances, lineAmounts, orderCounters, planExcess, productBalances, proformaTotals, sumCounters } from "./depotSupply";
 
 describe("approvisionnement dépôt", () => {
   it("calcule HT, taxes et TTC d'une ligne", () => {
@@ -74,5 +74,10 @@ describe("depotBalances", () => {
   });
   it("ignores other depots and unpaid orders", () => {
     expect(_depotBalances(orders, "D2")).toEqual({ SUPER: 50000 });
+  });
+  it("BE puise d'abord dans le stock initial du dépôt : 10 000 L initial − 4 000 L déjà enlevés + BC 20 000 L = 26 000 L", () => {
+    const orders = [{ depot_id: "D1", status: "paiement_direct" as const, lines: [{ id: "x", product_id: "SUPER", qty_litres: 20000 }] }];
+    const lift = [{ proforma_line_id: null, qty_litres: 4000, status: "signed" as const, product_id: "SUPER", depot_id: "D1" }, { proforma_line_id: null, qty_litres: 3000, status: "cancelled" as const, product_id: "SUPER", depot_id: "D1" }];
+    expect(depotBalances(orders, "D1", lift, [{ depot_id: "D1", product_id: "SUPER", quantity: 10000 }])).toEqual({ SUPER: 26000 });
   });
 });

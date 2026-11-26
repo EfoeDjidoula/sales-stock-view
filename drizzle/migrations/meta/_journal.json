@@ -687,6 +687,13 @@
       "when": 1795724104643,
       "tag": "0097_allow_zero_initial_stock",
       "breakpoints": true
+    },
+    {
+      "idx": 98,
+      "version": "7",
+      "when": 1795725335994,
+      "tag": "0098_lifting_from_depot_initial_stock",
+      "breakpoints": true
     }
   ]
 }

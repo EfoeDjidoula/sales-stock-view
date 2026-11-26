@@ -17,7 +17,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { SignaturePad } from "@/components/pro/EcmrSignDialog";
-import { depotBalances, planByProduct, planExcess, type LiftingStatus, type PaymentStatus } from "@/lib/depotSupply";
+import { depotBalances, planByProduct, planExcess, type InitialStock, type LiftingStatus, type PaymentStatus } from "@/lib/depotSupply";
 import { jsPDF } from "@/lib/pdf";
 import { TankerTruckVisualizer } from "./TankerTruckVisualizer";
 
@@ -78,8 +78,9 @@ export const LiftingOrdersTab = ({ canWrite, canValidate }: { canWrite: boolean;
       q("logistics_trips", "id,reference,status"),
       db.rpc("logistics_vehicle_availability", { _tenant: tenantId, _country: countryId }),
       db.rpc("logistics_driver_availability", { _tenant: tenantId, _country: countryId }),
+      q("stock_movements", "depot_id,product_id,quantity").eq("location_type", "depot").eq("movement_type", "initial").eq("status", "validated"),
     ]);
-    const keys = ["orders", "liftings", "vehicles", "compartments", "drivers", "products", "stations", "clients", "depots", "loads", "trips", "vAvail", "dAvail"];
+    const keys = ["orders", "liftings", "vehicles", "compartments", "drivers", "products", "stations", "clients", "depots", "loads", "trips", "vAvail", "dAvail", "initial"];
     const out: Record<string, Row[]> = {};
     res.forEach((r: Row, i: number) => { out[keys[i]] = r.data ?? []; if (r.error) console.error(keys[i], r.error); });
     setD(out); setLoading(false);
@@ -89,9 +90,9 @@ export const LiftingOrdersTab = ({ canWrite, canValidate }: { canWrite: boolean;
   const name = (list: string, id?: string, key = "name") => (d[list] ?? []).find((x) => x.id === id)?.[key] ?? "—";
   const vAvail = useMemo(() => new Map((d.vAvail ?? []).map((a) => [a.vehicle_id, a])), [d.vAvail]);
   const dAvail = useMemo(() => new Map((d.dAvail ?? []).map((a) => [a.driver_id, a])), [d.dAvail]);
-  const reservedLines = useMemo(() => (d.liftings ?? []).flatMap((b) => (b.depot_lifting_lines ?? []).map((l: Row) => ({ ...l, status: b.status }))), [d.liftings]);
+  const reservedLines = useMemo(() => (d.liftings ?? []).flatMap((b) => (b.depot_lifting_lines ?? []).map((l: Row) => ({ ...l, status: b.status, depot_id: b.depot_id }))), [d.liftings]);
   const pooled = useMemo(() => (d.orders ?? []).map((o) => ({ depot_id: o.depot_proformas?.depot_id, status: o.payment_status as PaymentStatus, lines: o.depot_proformas?.depot_proforma_lines ?? [] })), [d.orders]);
-  const balances = useMemo(() => depotBalances(pooled, f.depot_id, reservedLines), [pooled, f.depot_id, reservedLines]);
+  const balances = useMemo(() => depotBalances(pooled, f.depot_id, reservedLines, (d.initial ?? []) as InitialStock[]), [pooled, f.depot_id, reservedLines, d.initial]);
   const order = f.depot_id ? { id: f.depot_id } : null;
   const orderProducts = Object.entries(balances).filter(([, q]) => q > 0).map(([id]) => ({ id, name: name("products", id) }));
   const truck = (d.vehicles ?? []).find((v) => v.id === f.vehicle_id);
@@ -203,7 +204,7 @@ export const LiftingOrdersTab = ({ canWrite, canValidate }: { canWrite: boolean;
           </CardContent></Card>
         ))}
       </div>
-      <p className="text-xs text-muted-foreground">{L("Un BE ne peut dépasser le stock disponible du dépôt, par produit (bons de commande payés ou à crédit, moins enlevé et réservé). La quantité est réservée dès l'établissement et comptée comme enlevée à la signature du responsable logistique ; le chargement du camion n'est possible qu'après signature.", "A lifting order cannot exceed the depot available stock per product (paid or credit POs, minus lifted and reserved). Quantity is reserved when drafted and counted as lifted once the logistics manager signs; loading is only possible after signature.")}</p>
+      <p className="text-xs text-muted-foreground">{L("Un BE ne peut dépasser le stock disponible du dépôt, par produit (stock initial du dépôt + bons de commande payés ou à crédit, moins enlevé et réservé). La quantité est réservée dès l'établissement et comptée comme enlevée à la signature du responsable logistique ; le chargement du camion n'est possible qu'après signature.", "A lifting order cannot exceed the depot available stock per product (depot opening stock + paid or credit POs, minus lifted and reserved). Quantity is reserved when drafted and counted as lifted once the logistics manager signs; loading is only possible after signature.")}</p>
 
       <Card className="glass-card">
         <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2">

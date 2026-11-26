@@ -1606,7 +1606,7 @@ export type Database = {
           id: string
           lifting_id: string
           product_id: string
-          proforma_line_id: string
+          proforma_line_id: string | null
           qty_litres: number
           tenant_id: string
         }
@@ -1615,7 +1615,7 @@ export type Database = {
           id?: string
           lifting_id: string
           product_id: string
-          proforma_line_id: string
+          proforma_line_id?: string | null
           qty_litres: number
           tenant_id: string
         }
@@ -1624,7 +1624,7 @@ export type Database = {
           id?: string
           lifting_id?: string
           product_id?: string
-          proforma_line_id?: string
+          proforma_line_id?: string | null
           qty_litres?: number
           tenant_id?: string
         }

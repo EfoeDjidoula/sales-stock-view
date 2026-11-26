@@ -39,7 +39,17 @@ export function sumCounters(list: Counters[]): Counters {
 /* ---------- Bons d'enlèvement (miroir de depot_supply_action create_lifting) ---------- */
 export type LiftingStatus = "established" | "signed" | "cancelled";
 export interface PoLine { id: string; product_id: string; qty_litres: number; qty_lifted?: number }
-export interface ReservedLine { proforma_line_id: string; qty_litres: number; status: LiftingStatus }
+export interface ReservedLine { proforma_line_id: string | null; qty_litres: number; status: LiftingStatus; product_id?: string; depot_id?: string | null }
+export interface InitialStock { depot_id: string | null; product_id: string; quantity: number }
+
+/** Stock initial validé du dépôt encore libre = initial − lignes BE puisées dans l'initial (établis ou signés). Miroir de depot_supply_action. */
+export function initialFree(initial: InitialStock[], depotId: string, liftings: ReservedLine[] = []): Record<string, number> {
+  const out: Record<string, number> = {};
+  for (const m of initial) if (m.depot_id === depotId) out[m.product_id] = (out[m.product_id] ?? 0) + (Number(m.quantity) || 0);
+  for (const l of liftings) if (l.proforma_line_id == null && l.depot_id === depotId && l.product_id && l.status !== "cancelled" && l.product_id in out) out[l.product_id] -= l.qty_litres || 0;
+  for (const k of Object.keys(out)) out[k] = Math.max(0, out[k]);
+  return out;
+}
 
 /** Solde disponible par produit = autorisé − déjà enlevé (BE signés) − réservé (BE établis non signés). */
 export function productBalances(lines: PoLine[], status: PaymentStatus | null | undefined, liftings: ReservedLine[] = []): Record<string, number> {
@@ -89,8 +99,9 @@ export function depotBalances(
   orders: { depot_id: string | null | undefined; status: PaymentStatus | null | undefined; lines: PoLine[] }[],
   depotId: string | null | undefined,
   liftings: ReservedLine[] = [],
+  initial: InitialStock[] = [],
 ): Record<string, number> {
-  const out: Record<string, number> = {};
+  const out: Record<string, number> = depotId ? initialFree(initial, depotId, liftings) : {};
   if (!depotId) return out;
   for (const o of orders) {
     if (o.depot_id !== depotId) continue;
