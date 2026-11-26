@@ -617,6 +617,13 @@
       "when": 1795718351342,
       "tag": "0087_stock_movement_date_guard",
       "breakpoints": true
+    },
+    {
+      "idx": 88,
+      "version": "7",
+      "when": 1795719022130,
+      "tag": "0088_index_read_station_scope",
+      "breakpoints": true
     }
   ]
 }

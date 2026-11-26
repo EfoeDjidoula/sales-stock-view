@@ -1,0 +1,3 @@
+CREATE POLICY "View station index entries" ON public.index_entries FOR SELECT TO authenticated USING (public.station_in_my_scope(station_id));
+CREATE POLICY "View station pump index entries" ON public.pump_index_entries FOR SELECT TO authenticated USING (public.station_in_my_scope(station_id));
+CREATE POLICY "View station tank readings" ON public.index_tank_readings FOR SELECT TO authenticated USING (public.station_in_my_scope(station_id));
