@@ -26,7 +26,9 @@ export default function EcapRecap() {
   const brand = useBranding();
   const [kind, setKind] = useState<"hebdo" | "mensuel">("hebdo");
   const [stationId, setStationId] = useState("");
-  const [weekDate, setWeekDate] = useState(yesterday);
+  const defWeek = weekOf(yesterday);
+  const [hFrom, setHFrom] = useState(defWeek.from);
+  const [hTo, setHTo] = useState(yesterday);
   const [month, setMonth] = useState(yesterday.slice(0, 7));
   const [includePending, setIncludePending] = useState(false);
   const [gerant, setGerant] = useState("");
@@ -37,9 +39,12 @@ export default function EcapRecap() {
   const { data: lastGerant } = useLastGerant(stationId);
   useEffect(() => { setGerant(lastGerant ?? ""); }, [stationId, lastGerant]);
 
-  const range = kind === "hebdo" ? weekOf(weekDate || yesterday) : monthOf(month || yesterday.slice(0, 7));
+  const range = kind === "hebdo"
+    ? (() => { const a = hFrom || defWeek.from; let b = hTo || yesterday; if (b < a) b = a; const cap = addDays(a, 61); return { from: a, to: b > cap ? cap : b }; })()
+    : monthOf(month || yesterday.slice(0, 7));
   const from = range.from;
   const to = range.to > yesterday ? yesterday : range.to;
+  const setWeek = (d: string) => { const w = weekOf(d); setHFrom(w.from); setHTo(w.to > yesterday ? yesterday : w.to); };
   const { data, isLoading, isFetching, error } = useSynthesisPeriod(from, to, includePending);
 
   const build = useCallback((id: string, name: string, ger: string): EcapSheet | null => {
@@ -74,7 +79,17 @@ export default function EcapRecap() {
               </Select>
             </div>
             {kind === "hebdo" ? (
-              <div className="space-y-1.5"><Label htmlFor="ecap-week">Un jour de la semaine</Label><Input id="ecap-week" type="date" value={weekDate} max={yesterday} onChange={(e) => setWeekDate(e.target.value)} /></div>
+              <div className="space-y-1.5">
+                <Label>Période (du – au, 62 jours max)</Label>
+                <div className="flex gap-2">
+                  <Input aria-label="Du" type="date" value={hFrom} max={yesterday} onChange={(e) => setHFrom(e.target.value)} />
+                  <Input aria-label="Au" type="date" value={hTo} min={hFrom} max={yesterday} onChange={(e) => setHTo(e.target.value)} />
+                </div>
+                <div className="flex gap-2 text-xs">
+                  <button type="button" className="underline text-primary" onClick={() => setWeek(yesterday)}>Semaine en cours</button>
+                  <button type="button" className="underline text-primary" onClick={() => setWeek(addDays(weekOf(yesterday).from, -7))}>Semaine précédente</button>
+                </div>
+              </div>
             ) : (
               <div className="space-y-1.5"><Label htmlFor="ecap-month">Mois</Label><Input id="ecap-month" type="month" value={month} max={yesterday.slice(0, 7)} onChange={(e) => setMonth(e.target.value)} /></div>
             )}
