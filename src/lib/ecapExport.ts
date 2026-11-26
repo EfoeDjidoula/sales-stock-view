@@ -221,3 +221,30 @@ export function exportInventoryPdf(s: InventorySheet) {
   doc.text(doc.splitTextToSize(s.observation || "", 240), 36, y + 4);
   doc.save(`Fiche_inventaire_${safe(s.stationName)}_${s.from}_au_${s.to}.pdf`);
 }
+
+/* ---------------- Bilan des ventes réseau ---------------- */
+import { NETWORK_HEADERS, networkCells, type NetworkRow } from "@/lib/networkSales";
+
+const networkTitle = (from: string, to: string, inc: boolean) => [
+  from === to ? `BILAN DES VENTES ET ENCAISSEMENTS DU ${dateFr(from)}` : `BILAN DES VENTES ET ENCAISSEMENTS DU ${dateFr(from)} AU ${dateFr(to)}`,
+  `RÉSEAU DES STATIONS   ·   ${pending(inc)}`,
+];
+
+export async function exportNetworkXlsx(rows: NetworkRow[], total: NetworkRow, from: string, to: string, inc: boolean, company: string) {
+  const wb = new ExcelJS.Workbook();
+  const ws = wb.addWorksheet("Bilan réseau");
+  title(ws, [company, ...networkTitle(from, to, inc)], NETWORK_HEADERS.length);
+  grid(ws, NETWORK_HEADERS, [...rows.map((x) => ({ cells: networkCells(x) })), { cells: networkCells(total), bold: true }]);
+  ws.columns.forEach((c, i) => { c.width = i === 0 ? 24 : i === 11 ? 20 : 15; });
+  await download(wb, `Bilan_ventes_reseau_${from}_au_${to}.xlsx`);
+}
+
+export function exportNetworkPdf(rows: NetworkRow[], total: NetworkRow, from: string, to: string, inc: boolean) {
+  const doc = new jsPDF({ orientation: "landscape", unit: "mm", format: "a4" });
+  const y = headerBlock(doc, networkTitle(from, to, inc));
+  const cols: Col[] = NETWORK_HEADERS.map((label, i) => ({ label, w: i === 0 ? 30 : i === 11 ? 27 : 22, right: i > 0 && i < 11 }));
+  const fmt = (x: NetworkRow) => networkCells(x).map((v) => (typeof v === "number" ? n0(v) : v));
+  const end = table(doc, y, cols, [...rows.map((x) => ({ cells: fmt(x) })), { cells: fmt(total), bold: true }]);
+  signatures(doc, end + 2, ["LE CONTRÔLEUR", "LE DIRECTEUR EXPLOITATION"]);
+  doc.save(`Bilan_ventes_reseau_${from}_au_${to}.pdf`);
+}

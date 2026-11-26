@@ -23,7 +23,7 @@ async function fetchAll<T>(build: (a: number, b: number) => Promise<{ data: T[] 
 
 export interface StationRef { id: string; name: string }
 export interface PeriodData {
-  entries: (SalesEntry & { id: string; station_id: string; status: string })[];
+  entries: (SalesEntry & { id: string; station_id: string; status: string; banque_nom?: string | null })[];
   pumps: (PumpEntryRow & { station_id: string })[];
   readings: (InvReading & { station_id: string })[];
   tanks: (InvTank & { station_id: string })[];
@@ -61,7 +61,7 @@ export function useSynthesisPeriod(from: string, to: string, includePending: boo
     queryFn: async (): Promise<PeriodData> => {
       const statuses = includePending ? ["valide", "pre_enregistre"] : ["valide"];
       const entries = await fetchAll<PeriodData["entries"][number]>((a, b) =>
-        scopeQuery(db.from("index_entries").select("id,station_id,status,entry_date,vente_globale,autoconso_montant,bons_clients_montant,tickets_valeur_montant,cartes_montant,versement_momo,versement_banque"))
+        scopeQuery(db.from("index_entries").select("id,station_id,status,entry_date,vente_globale,autoconso_montant,bons_clients_montant,tickets_valeur_montant,cartes_montant,versement_momo,versement_banque,banque_nom"))
           .gte("entry_date", from).lte("entry_date", to).in("status", statuses).order("entry_date").range(a, b));
       const ids = new Set(entries.map((e) => e.id));
       const [pumps, readings, tanks, names, structures, recRaw] = await Promise.all([
