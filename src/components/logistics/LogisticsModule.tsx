@@ -61,6 +61,7 @@ const ALERT: Record<string, [string, string]> = {
   quantity_variance: ["Écart de quantité", "Quantity variance"],
   seal_broken: ["Scellé rompu", "Broken seal"],
 };
+const DRIVER_DOC_TYPES = ["Permis poids lourd", "Attestation ADR"];
 const DOC_TYPES = ["Assurance", "Visite technique", "Carte grise", "Permis poids lourd", "Attestation ADR", "Certificat de jaugeage", "Autre"];
 const fmt = (n: unknown) => (n === null || n === undefined || n === "" ? "—" : Math.round(Number(n)).toLocaleString("fr-FR"));
 const fmtDt = (d?: string) => (d ? format(new Date(d), "dd/MM/yyyy HH:mm") : "—");
@@ -137,7 +138,11 @@ export const LogisticsModule = ({ dischargesOnly = false }: { dischargesOnly?: b
     const payload: Row = {};
     dialog.fields.forEach((f) => { const v = dialog.values[f.k]; payload[f.k] = v === "" || v === undefined ? null : f.type === "number" ? Number(v) : v; });
     if (dialog.table === "logistics_documents") {
-      payload.entity_type = payload.vehicle_id ? "vehicle" : "driver";
+      // DB rule: a document belongs to exactly one entity (vehicle XOR driver).
+      const driverDoc = DRIVER_DOC_TYPES.includes(String(payload.doc_type ?? "")) || !payload.vehicle_id;
+      payload.entity_type = driverDoc ? "driver" : "vehicle";
+      if (driverDoc) payload.vehicle_id = null; else payload.driver_id = null;
+      if (driverDoc && !payload.driver_id) { setBusy(false); return toast.error(L("Choisissez le chauffeur concerné par ce document.", "Choose the driver for this document.")); }
     }
     const { error } = dialog.id
       ? await db.from(dialog.table).update(payload).eq("id", dialog.id)
