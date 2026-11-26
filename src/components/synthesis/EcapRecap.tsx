@@ -79,11 +79,17 @@ export default function EcapRecap() {
               </Select>
             </div>
             {kind === "hebdo" ? (
-              <div className="space-y-1.5">
-                <Label>Période (du – au, 62 jours max)</Label>
-                <div className="flex gap-2">
-                  <Input aria-label="Du" type="date" value={hFrom} max={yesterday} onChange={(e) => setHFrom(e.target.value)} />
-                  <Input aria-label="Au" type="date" value={hTo} min={hFrom} max={yesterday} onChange={(e) => setHTo(e.target.value)} />
+              <div className="space-y-1.5 sm:col-span-2 lg:col-span-2">
+                <Label>Période (62 jours max)</Label>
+                <div className="grid grid-cols-2 gap-2">
+                  <div className="space-y-1">
+                    <Label htmlFor="ecap-from" className="text-xs font-normal text-muted-foreground">Date de début</Label>
+                    <Input id="ecap-from" aria-label="Date de début" type="date" value={hFrom} max={yesterday} onChange={(e) => setHFrom(e.target.value)} />
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="ecap-to" className="text-xs font-normal text-muted-foreground">Date de fin</Label>
+                    <Input id="ecap-to" aria-label="Date de fin" type="date" value={hTo} min={hFrom} max={yesterday} onChange={(e) => setHTo(e.target.value)} />
+                  </div>
                 </div>
                 <div className="flex gap-2 text-xs">
                   <button type="button" className="underline text-primary" onClick={() => setWeek(yesterday)}>Semaine en cours</button>
