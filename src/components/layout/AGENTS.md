@@ -1,1 +1,2 @@
 - Phone layout: shared mobile rules (ui/tabs.tsx scrollable tabs, index.css inputs, sidebar drawer below md in pages/Index.tsx); why: all screens adapt.
+- Index.tsx modules load via React.lazy; why: smaller first download.

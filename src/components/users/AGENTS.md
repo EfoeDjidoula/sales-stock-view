@@ -1,0 +1,1 @@
+- Business roles: user create/edit pick an RBAC role; legacy user_roles derived via src/lib/businessRoles.ts; why: one role choice.
