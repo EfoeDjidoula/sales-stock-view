@@ -128,17 +128,22 @@ export const LedgerTab = ({ refs, reload }: { refs: Refs; reload: number }) => {
     return q.lte("movement_date", `${to}T23:59:59`);
   }, [locType, locId, tankId, productId, to]);
   const { rows, loading } = useMovements(reload, filter);
-  const { opening, lines, totals } = useMemo(() => {
-    let bal = 0; let opening = 0; const lines: Row[] = []; const totals = { in: 0, out: 0 };
+  const { lines, perProduct } = useMemo(() => {
+    const bal: Record<string, number> = {}; const lines: Row[] = [];
+    const perProduct: Record<string, { open: number; in: number; out: number }> = {};
     for (const r of rows) {
-      const s = signed(r);
-      if (r.movement_date.slice(0, 10) < from) { bal += s; opening = bal; continue; }
-      bal += s;
-      if (s > 0) totals.in += s; else totals.out -= s;
-      lines.push({ ...r, s, bal });
+      const k = r.product_id || "_"; const s = signed(r);
+      const pp = (perProduct[k] ??= { open: 0, in: 0, out: 0 });
+      bal[k] = (bal[k] ?? 0) + s;
+      if (r.movement_date.slice(0, 10) < from) { pp.open += s; continue; }
+      if (s > 0) pp.in += s; else pp.out -= s;
+      lines.push({ ...r, s, bal: bal[k] });
     }
-    return { opening, lines, totals };
+    return { lines, perProduct };
   }, [rows, from]);
+  const prodKeys = Object.keys(perProduct).sort((a, b) => nameOf(refs.products, a).localeCompare(nameOf(refs.products, b)));
+  const cards: [string, (v: { open: number; in: number; out: number }) => number][] = [
+    ["Solde d'ouverture", (v) => v.open], ["Entrées", (v) => v.in], ["Sorties", (v) => v.out], ["Solde de clôture", (v) => v.open + v.in - v.out]];
   const list = locType === "station" ? refs.stations : refs.depots;
   const tanks = refs.tanks.filter((t) => t.station_id === locId);
   return (
@@ -173,8 +178,12 @@ export const LedgerTab = ({ refs, reload }: { refs: Refs; reload: number }) => {
       ) : (
         <>
           <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-            {[["Solde d'ouverture", opening], ["Entrées", totals.in], ["Sorties", totals.out], ["Solde de clôture", opening + totals.in - totals.out]].map(([l, v]) => (
-              <div key={l as string} className="rounded-xl border border-border bg-card p-3"><div className="text-xs text-muted-foreground">{l}</div><div className="text-xl font-display font-bold">{fmt(v)} L</div></div>
+            {cards.map(([l, f]) => (
+              <div key={l} className="rounded-xl border border-border bg-card p-3"><div className="text-xs text-muted-foreground">{t(l)}</div>
+                {prodKeys.length === 0 ? <div className="text-xl font-display font-bold">0 L</div> : prodKeys.map((k) => (
+                  <div key={k} className="flex justify-between gap-2 items-baseline"><span className="text-xs text-muted-foreground">{nameOf(refs.products, k)}</span><span className="text-lg font-display font-bold">{fmt(f(perProduct[k]))} L</span></div>
+                ))}
+              </div>
             ))}
           </div>
           <Table head={["Date", "Type", "Cuve", "Produit", "Entrée", "Sortie", "Solde", "Référence / motif"]} empty={lines.length === 0}>
