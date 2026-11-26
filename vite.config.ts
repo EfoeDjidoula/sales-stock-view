@@ -48,6 +48,8 @@ export default defineConfig(({ mode }) => ({
         maximumFileSizeToCacheInBytes: 8 * 1024 * 1024,
         navigateFallback: null,
         cleanupOutdatedCaches: true,
+        skipWaiting: true,
+        clientsClaim: true,
         runtimeCaching: [
           {
             urlPattern: ({ request, url }) => request.mode === "navigate" && !url.pathname.startsWith("/~oauth"),

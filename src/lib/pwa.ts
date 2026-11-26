@@ -37,5 +37,27 @@ export const setupServiceWorker = async () => {
     return;
   }
   const { registerSW } = await import("virtual:pwa-register");
-  registerSW({ immediate: true });
+  registerSW({
+    immediate: true,
+    // Ask the browser to check for a new release regularly and whenever the app comes back to the foreground.
+    onRegisteredSW(_url, reg) {
+      if (!reg) return;
+      const check = () => { if (navigator.onLine) reg.update().catch(() => undefined); };
+      setInterval(check, 15 * 60 * 1000);
+      document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible") check(); });
+    },
+  });
+};
+
+/** A lazily loaded screen from a previous release is gone after a deploy: reload once onto the new version. */
+export const setupStaleChunkRecovery = () => {
+  if (typeof window === "undefined") return;
+  window.addEventListener("vite:preloadError", (event) => {
+    const key = "lumatek:chunk-reload";
+    const last = Number(sessionStorage.getItem(key) || 0);
+    if (Date.now() - last < 30_000) return; // avoid reload loops
+    sessionStorage.setItem(key, String(Date.now()));
+    event.preventDefault();
+    window.location.reload();
+  });
 };
