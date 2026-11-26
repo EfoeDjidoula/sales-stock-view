@@ -22,6 +22,7 @@ import { LogisticsDashboardTab } from "./LogisticsDashboardTab";
 import { DeliveryNotesTab } from "./DeliveryNotesTab";
 import { DischargesTab } from "./DischargesTab";
 import { FleetTab } from "./FleetTab";
+import { DocumentsComplianceTab } from "./DocumentsComplianceTab";
 import { VEHICLE_KINDS, isTowed } from "@/lib/fleet";
 import { VARIANCE_CATEGORIES } from "./variance";
 import { SupplyWorkflowModule } from "@/components/supply/SupplyWorkflowModule";
@@ -266,7 +267,7 @@ export const LogisticsModule = ({ dischargesOnly = false }: { dischargesOnly?: b
           <TabsTrigger value="carriers">8. {L("Transporteurs", "Carriers")}</TabsTrigger>
           <TabsTrigger value="vehicles">9. {L("Flotte, citernes & compartiments", "Fleet, tankers & compartments")}</TabsTrigger>
           <TabsTrigger value="drivers">10. {L("Chauffeurs", "Drivers")}</TabsTrigger>
-          <TabsTrigger value="documents">11. {L("Documents", "Documents")}</TabsTrigger>
+          <TabsTrigger value="documents">11. {L("Documents & échéances", "Documents & due dates")}</TabsTrigger>
           <TabsTrigger value="seals">12. {L("Scellés", "Seals")}</TabsTrigger>
           <TabsTrigger value="supplies">13. {L("Demandes d'appro.", "Supply requests")}</TabsTrigger>
           <TabsTrigger value="trips">14. {L("Chargements & transports", "Loadings & trips")}</TabsTrigger>
@@ -400,7 +401,7 @@ export const LogisticsModule = ({ dischargesOnly = false }: { dischargesOnly?: b
         <TabsContent value="carriers">{simpleTable("carriers", [["Nom", "Name", (r) => r.name], ["Code", "Code", (r) => r.code ?? "—"], ["Téléphone", "Phone", (r) => r.phone ?? "—"], ["Statut", "Status", (r) => <Badge variant="outline">{r.status}</Badge>]], F.carrier, L("Transporteurs", "Carriers"))}</TabsContent>
         <TabsContent value="vehicles"><FleetTab d={d} canWrite={canWrite} L={L} tenantId={tenantId} countryId={countryId} onSaved={load} /></TabsContent>
         <TabsContent value="drivers">{simpleTable("drivers", [["Nom", "Name", (r) => r.full_name], ["Permis", "License", (r) => r.license_number ?? "—"], ["Téléphone", "Phone", (r) => r.phone ?? "—"], ["Transporteur", "Carrier", (r) => name("carriers", r.carrier_id)], ["Statut", "Status", (r) => <Badge variant="outline">{r.status}</Badge>]], F.driver, L("Chauffeurs", "Drivers"))}</TabsContent>
-        <TabsContent value="documents">{simpleTable("documents", [["Type", "Type", (r) => r.doc_type], ["Rattaché à", "Linked to", (r) => r.vehicle_id ? name("vehicles", r.vehicle_id, "registration") : name("drivers", r.driver_id, "full_name")], ["Numéro", "Number", (r) => r.doc_number ?? "—"], ["Expire le", "Expires", (r) => r.expires_on ?? "—"], ["État", "State", (r) => docBadge(r.expires_on)]], F.document, L("Documents véhicule / chauffeur", "Vehicle / driver documents"))}</TabsContent>
+        <TabsContent value="documents"><DocumentsComplianceTab d={d} L={L} canWrite={canWrite} onAdd={(p) => setDialog({ table: "logistics_documents", title: L("Document véhicule / chauffeur", "Vehicle / driver document"), fields: F.document, values: { ...(p ?? {}) } })} onEdit={(r) => openForm("logistics_documents", L("Document véhicule / chauffeur", "Vehicle / driver document"), F.document, r)} /></TabsContent>
         <TabsContent value="seals">{simpleTable("seals", [["N° de série", "Serial", (r) => r.serial], ["Statut", "Status", (r) => <Badge variant={["broken", "anomaly"].includes(r.status) ? "destructive" : "outline"}>{r.status}</Badge>], ["Transport", "Trip", (r) => name("trips", r.trip_id, "reference")]], F.seal, L("Scellés", "Seals"))}</TabsContent>
       </Tabs>
 
