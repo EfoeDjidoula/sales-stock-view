@@ -9516,6 +9516,7 @@ export type Database = {
         }
         Returns: string
       }
+      depot_po_edit: { Args: { _action: string; _data: Json }; Returns: string }
       depot_supply_action: {
         Args: { _action: string; _data: Json }
         Returns: string

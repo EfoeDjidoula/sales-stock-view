@@ -41,3 +41,22 @@ describe("bons d'enlèvement", () => {
     expect(planExcess([{ product_id: "super", qty_litres: 20000 }], b)).toEqual([]);
   });
 });
+
+import { productCounters, isEditableOrder } from "./depotSupply";
+describe("productCounters", () => {
+  it("sépare Super et Gasoil au lieu de cumuler", () => {
+    const r = productCounters([
+      { status: "paiement_direct", lines: [{ product_id: "s", product_name: "Super", qty_litres: 30000, qty_lifted: 10000 }, { product_id: "g", product_name: "Gasoil", qty_litres: 20000 }] },
+      { status: "non_paye", lines: [{ product_id: "s", product_name: "Super", qty_litres: 5000 }] },
+    ]);
+    expect(r.find((x) => x.product_id === "s")).toMatchObject({ ordered: 35000, authorized: 30000, lifted: 10000, available: 20000 });
+    expect(r.find((x) => x.product_id === "g")).toMatchObject({ ordered: 20000, available: 20000 });
+  });
+});
+describe("isEditableOrder", () => {
+  it("refuse dès qu'un bon d'enlèvement existe", () => {
+    expect(isEditableOrder(0, [{ qty_lifted: 0 }])).toBe(true);
+    expect(isEditableOrder(1, [{ qty_lifted: 0 }])).toBe(false);
+    expect(isEditableOrder(0, [{ qty_lifted: 5 }])).toBe(false);
+  });
+});

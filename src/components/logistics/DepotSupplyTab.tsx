@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
-import { FileDown, Plus, Trash2, FileText } from "lucide-react";
+import { FileDown, Plus, Trash2, FileText, Pencil, FileSpreadsheet } from "lucide-react";
+import ExcelJS from "exceljs";
 import { supabase } from "@/integrations/supabase/client";
 import { useScope } from "@/hooks/useScope";
 import { useLanguage } from "@/hooks/useLanguage";
@@ -15,7 +16,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { lineAmounts, orderCounters, proformaTotals, sumCounters, type PaymentStatus } from "@/lib/depotSupply";
+import { isEditableOrder, lineAmounts, orderCounters, productCounters, proformaTotals, type PaymentStatus } from "@/lib/depotSupply";
 import { jsPDF } from "@/lib/pdf";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -50,6 +51,7 @@ export const DepotSupplyTab = ({ canWrite, canValidate }: { canWrite: boolean; c
   const [reason, setReason] = useState("");
   const [history, setHistory] = useState<Row | null>(null);
   const [events, setEvents] = useState<Row[]>([]);
+  const [editId, setEditId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     if (!tenantId) return;
@@ -59,7 +61,7 @@ export const DepotSupplyTab = ({ canWrite, canValidate }: { canWrite: boolean; c
       scopeQuery(db.from("depots").select("id,name")).order("name"),
       scopeQuery(db.from("petroleum_products").select("id,name")).order("name"),
       scopeQuery(db.from("clients").select("id,name")).order("name"),
-      scopeQuery(db.from("depot_proformas").select("*, suppliers(name), depots(name), depot_proforma_lines(*, petroleum_products(name)), depot_purchase_orders(*)"))
+      scopeQuery(db.from("depot_proformas").select("*, suppliers(name), depots(name), depot_proforma_lines(*, petroleum_products(name)), depot_purchase_orders(*, depot_lifting_orders(id))"))
         .order("proforma_date", { ascending: false }).limit(500),
     ]);
     setLoading(false);
@@ -80,12 +82,64 @@ export const DepotSupplyTab = ({ canWrite, canValidate }: { canWrite: boolean; c
   const numLines = lines.map((l) => ({ ...l, qty_litres: Number(l.qty_litres) || 0, unit_price: Number(l.unit_price) || 0, tax_rate: Number(l.tax_rate) || 0 }));
   const draftTotals = proformaTotals(numLines);
   const counters = useMemo(() => proformas.map((p) => orderCounters(p.depot_proforma_lines ?? [], p.order?.payment_status)), [proformas]);
-  const total = sumCounters(counters);
+  const byProduct = useMemo(() => productCounters(proformas.map((p) => ({ status: p.order?.payment_status, lines: (p.depot_proforma_lines ?? []).map((l: Row) => ({ ...l, product_name: l.petroleum_products?.name })) }))), [proformas]);
+  const editable = (p: Row) => isEditableOrder((p.order?.depot_lifting_orders ?? []).length, p.depot_proforma_lines ?? []);
+  const startEdit = (p: Row) => {
+    setEditId(p.id); setDirect(false);
+    setPf({ supplier_id: p.supplier_id, depot_id: p.depot_id, number: p.number, proforma_date: p.proforma_date, valid_until: p.valid_until ?? "", observations: p.observations ?? "" });
+    setLines((p.depot_proforma_lines ?? []).map((l: Row) => ({ product_id: l.product_id, qty_litres: String(l.qty_litres), unit_price: String(l.unit_price), tax_rate: String(l.tax_rate) })));
+    setBenef({ client_id: p.order?.beneficiary_client_id ?? "", name: p.order?.beneficiary_name ?? "" });
+    setOpenPf(true);
+  };
+  const editRpc = async (action: "update" | "delete", data: Row, ok: string) => {
+    setBusy(true);
+    const { error } = await db.rpc("depot_po_edit", { _action: action, _data: data });
+    setBusy(false);
+    if (error) { toast.error(error.message); return false; }
+    toast.success(ok); load(); return true;
+  };
+  const removePf = async (p: Row) => {
+    if (!window.confirm(L(`Supprimer définitivement ${p.order ? "le bon de commande " + p.order.number + " et " : ""}le pro-forma ${p.number} ?`, `Permanently delete ${p.order ? "PO " + p.order.number + " and " : ""}pro-forma ${p.number}?`))) return;
+    await editRpc("delete", { proforma_id: p.id }, L("Supprimé", "Deleted"));
+  };
+  const rowsForExport = () => proformas.flatMap((p) => (p.depot_proforma_lines ?? []).map((l: Row) => ({
+    bc: p.order?.number ?? "", date: p.order?.issue_date ?? p.proforma_date, pf: p.number, fournisseur: p.suppliers?.name ?? "", depot: p.depots?.name ?? "",
+    beneficiaire: p.order?.beneficiary_name ?? "", produit: l.petroleum_products?.name ?? "", qte: Number(l.qty_litres), enleve: Number(l.qty_lifted || 0),
+    pu: Number(l.unit_price), ttc: Number(l.amount_ttc), statut: p.order ? STATUS[p.order.payment_status as PaymentStatus].fr : "Pro-forma",
+  })));
+  const exportExcel = async () => {
+    const wb = new ExcelJS.Workbook(); const ws = wb.addWorksheet("Bons de commande");
+    ws.columns = [["N° BC","bc",16],["Date","date",12],["Pro-forma","pf",14],["Fournisseur","fournisseur",20],["Dépôt","depot",18],["Bénéficiaire","beneficiaire",22],["Produit","produit",14],["Quantité (L)","qte",14],["Enlevé (L)","enleve",14],["Prix unit.","pu",12],["Montant TTC","ttc",16],["Statut","statut",18]].map(([header,key,width]) => ({ header: header as string, key: key as string, width: width as number }));
+    ws.getRow(1).font = { bold: true };
+    rowsForExport().forEach((r) => ws.addRow(r));
+    const blob = new Blob([await wb.xlsx.writeBuffer()], { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+    const a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = `bons-de-commande-${new Date().toISOString().slice(0, 10)}.xlsx`; a.click(); URL.revokeObjectURL(a.href);
+  };
+  const exportPdfList = () => {
+    const doc = new jsPDF({ unit: "mm", format: "a4", orientation: "landscape" }); const W = doc.internal.pageSize.getWidth(); let y = 16;
+    doc.setFont("helvetica", "bold"); doc.setFontSize(13); doc.text("LISTE DES BONS DE COMMANDE", W / 2, y, { align: "center" }); y += 8;
+    doc.setFontSize(8.5);
+    const cols = [10, 38, 60, 100, 140, 170, 200, 225, 250]; const head = ["N° BC", "Date", "Fournisseur", "Bénéficiaire", "Produit", "Qté (L)", "Enlevé (L)", "TTC", "Statut"];
+    const header = () => { doc.setFont("helvetica", "bold"); doc.setFillColor(230, 230, 230); doc.rect(8, y - 4.5, W - 16, 6.5, "F"); head.forEach((h, i) => doc.text(h, cols[i], y)); y += 6.5; doc.setFont("helvetica", "normal"); };
+    header();
+    rowsForExport().forEach((r) => {
+      if (y > 195) { doc.addPage(); y = 16; header(); }
+      [r.bc || "—", new Date(r.date).toLocaleDateString("fr-FR"), r.fournisseur.slice(0, 22), r.beneficiaire.slice(0, 24), r.produit, fmt(r.qte), fmt(r.enleve), fmt(r.ttc), r.statut].forEach((v, i) => doc.text(String(v), cols[i], y));
+      y += 5.5;
+    });
+    y += 4; doc.setFont("helvetica", "bold");
+    byProduct.forEach((c) => { if (y > 200) { doc.addPage(); y = 16; } doc.text(`${c.product_name} : commandé ${fmt(c.ordered)} L · autorisé ${fmt(c.authorized)} L · enlevé ${fmt(c.lifted)} L · disponible ${fmt(c.available)} L`, 10, y); y += 5.5; });
+    doc.save(`bons-de-commande-${new Date().toISOString().slice(0, 10)}.pdf`);
+  };
 
   const savePf = async () => {
     if (!pf.number || !pf.proforma_date) return toast.error(L("Numéro et date obligatoires", "Number and date required"));
     if (numLines.some((l) => !l.product_id || l.qty_litres <= 0)) return toast.error(L("Chaque ligne doit avoir un produit et une quantité", "Each line needs a product and quantity"));
     if (direct && !benef.name.trim()) return toast.error(L("Nom du bénéficiaire obligatoire", "Beneficiary name required"));
+    if (editId) {
+      if (await editRpc("update", { ...pf, proforma_id: editId, lines: numLines, client_id: benef.client_id || null, beneficiary_name: benef.name }, L("Modifications enregistrées", "Changes saved"))) { setOpenPf(false); setEditId(null); setPf({}); setLines([emptyLine()]); }
+      return;
+    }
     const pid = await act("create_proforma", { ...pf, tenant_id: tenantId, country_id: countryId, lines: numLines }, L("Pro-forma enregistré", "Pro-forma saved"));
     if (!pid) return;
     if (direct && typeof pid === "string") {
@@ -130,11 +184,17 @@ export const DepotSupplyTab = ({ canWrite, canValidate }: { canWrite: boolean; c
 
   return (
     <div className="space-y-4">
-      <div className="grid gap-3 md:grid-cols-4">
-        {([[L("Qté commandée", "Ordered"), total.ordered], [L("Qté autorisée", "Authorized"), total.authorized], [L("Qté enlevée", "Lifted"), total.lifted], [L("Disponible à l'enlèvement", "Available to lift"), total.available]] as [string, number][]).map(([l, v]) => (
-          <Card key={l} className="glass-card"><CardContent className="p-4">
-            <div className="text-xs text-muted-foreground">{l}</div>
-            {loading ? <Skeleton className="h-8 w-24 mt-1" /> : <div className="text-2xl font-bold font-display">{fmt(v)} L</div>}
+      <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
+        {loading && <Skeleton className="h-28 w-full" />}
+        {!loading && byProduct.length === 0 && <Card className="glass-card"><CardContent className="p-4 text-sm text-muted-foreground">{L("Aucun produit commandé", "No product ordered")}</CardContent></Card>}
+        {!loading && byProduct.map((c) => (
+          <Card key={c.product_id} className="glass-card"><CardContent className="p-4 space-y-2">
+            <div className="flex items-center justify-between"><span className="font-display font-semibold">{c.product_name}</span><Badge variant="secondary">{L("Disponible", "Available")} {fmt(c.available)} L</Badge></div>
+            <div className="grid grid-cols-3 gap-2 text-xs">
+              {([[L("Commandé", "Ordered"), c.ordered], [L("Autorisé", "Authorized"), c.authorized], [L("Enlevé", "Lifted"), c.lifted]] as [string, number][]).map(([l, v]) => (
+                <div key={l}><div className="text-muted-foreground">{l}</div><div className="font-medium text-sm">{fmt(v)} L</div></div>
+              ))}
+            </div>
           </CardContent></Card>
         ))}
       </div>
@@ -144,8 +204,10 @@ export const DepotSupplyTab = ({ canWrite, canValidate }: { canWrite: boolean; c
         <CardHeader className="flex flex-row items-center justify-between">
           <CardTitle className="text-base">{L("Pro-formas & bons de commande", "Pro-formas & purchase orders")}</CardTitle>
           <div className="flex flex-wrap gap-2">
-            {canValidate && <Button size="sm" onClick={() => { setDirect(true); setBenef({ client_id: "", name: brand.legalName || brand.companyName || "" }); setOpenPf(true); }}><FileText className="h-4 w-4 mr-1" />{L("Nouveau bon de commande", "New purchase order")}</Button>}
-            {canWrite && <Button size="sm" variant="outline" onClick={() => { setDirect(false); setOpenPf(true); }}><Plus className="h-4 w-4 mr-1" />{L("Nouveau pro-forma", "New pro-forma")}</Button>}
+            <Button size="sm" variant="outline" disabled={!proformas.length} onClick={exportPdfList}><FileDown className="h-4 w-4 mr-1" />PDF</Button>
+            <Button size="sm" variant="outline" disabled={!proformas.length} onClick={exportExcel}><FileSpreadsheet className="h-4 w-4 mr-1" />Excel</Button>
+            {canValidate && <Button size="sm" onClick={() => { setEditId(null); setPf({}); setLines([emptyLine()]); setDirect(true); setBenef({ client_id: "", name: brand.legalName || brand.companyName || "" }); setOpenPf(true); }}><FileText className="h-4 w-4 mr-1" />{L("Nouveau bon de commande", "New purchase order")}</Button>}
+            {canWrite && <Button size="sm" variant="outline" onClick={() => { setEditId(null); setPf({}); setLines([emptyLine()]); setDirect(false); setOpenPf(true); }}><Plus className="h-4 w-4 mr-1" />{L("Nouveau pro-forma", "New pro-forma")}</Button>}
           </div>
         </CardHeader>
         <CardContent className="p-0 overflow-x-auto">
@@ -178,7 +240,13 @@ export const DepotSupplyTab = ({ canWrite, canValidate }: { canWrite: boolean; c
                       </div>)}
                     </TableCell>
                     <TableCell className="text-right font-medium">{fmt(counters[i]?.available ?? 0)} L</TableCell>
-                    <TableCell>{o && <Button size="icon" variant="ghost" title="PDF" onClick={() => pdfOrder(p)}><FileDown className="h-4 w-4" /></Button>}</TableCell>
+                    <TableCell><div className="flex">
+                      {o && <Button size="icon" variant="ghost" title="PDF" onClick={() => pdfOrder(p)}><FileDown className="h-4 w-4" /></Button>}
+                      {canValidate && editable(p) && <>
+                        <Button size="icon" variant="ghost" title={L("Modifier", "Edit")} disabled={busy} onClick={() => startEdit(p)}><Pencil className="h-4 w-4" /></Button>
+                        <Button size="icon" variant="ghost" title={L("Supprimer", "Delete")} disabled={busy} onClick={() => removePf(p)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                      </>}
+                    </div></TableCell>
                   </TableRow>
                 );
               })}
@@ -187,9 +255,9 @@ export const DepotSupplyTab = ({ canWrite, canValidate }: { canWrite: boolean; c
         </CardContent>
       </Card>
 
-      <Dialog open={openPf} onOpenChange={setOpenPf}>
+      <Dialog open={openPf} onOpenChange={(v) => { setOpenPf(v); if (!v) setEditId(null); }}>
         <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader><DialogTitle>{direct ? L("Nouveau bon de commande (à partir du pro-forma dépôt)", "New purchase order (from depot pro-forma)") : L("Enregistrer un pro-forma dépôt", "Record a depot pro-forma")}</DialogTitle></DialogHeader>
+          <DialogHeader><DialogTitle>{editId ? L("Modifier le pro-forma / bon de commande", "Edit pro-forma / purchase order") : direct ? L("Nouveau bon de commande (à partir du pro-forma dépôt)", "New purchase order (from depot pro-forma)") : L("Enregistrer un pro-forma dépôt", "Record a depot pro-forma")}</DialogTitle></DialogHeader>
           <div className="grid gap-3 md:grid-cols-2">
             <div><Label>{L("Fournisseur", "Supplier")}</Label>
               <Select value={pf.supplier_id ?? ""} onValueChange={(v) => setPf({ ...pf, supplier_id: v })}><SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
@@ -224,7 +292,7 @@ export const DepotSupplyTab = ({ canWrite, canValidate }: { canWrite: boolean; c
             <div className="text-right text-sm">HT {fmt(draftTotals.amount_ht)} · {L("Taxes", "Taxes")} {fmt(draftTotals.tax_amount)} · <b>TTC {fmt(draftTotals.amount_ttc)} FCFA</b></div>
           </div>
           <div><Label>{L("Observations", "Notes")}</Label><Textarea value={pf.observations ?? ""} onChange={(e) => setPf({ ...pf, observations: e.target.value })} /></div>
-          {direct && (
+          {(direct || (editId && proformas.find((x) => x.id === editId)?.order)) && (
             <div className="grid gap-3 md:grid-cols-2 border-t border-border pt-3">
               <div><Label>{L("Client bénéficiaire du BC", "PO beneficiary client")}</Label>
                 <Select value={benef.client_id || "self"} onValueChange={(v) => setBenef(v === "self" ? { client_id: "", name: brand.legalName || brand.companyName || "" } : { client_id: v, name: (ref.clients ?? []).find((c) => c.id === v)?.name ?? "" })}>
@@ -235,7 +303,7 @@ export const DepotSupplyTab = ({ canWrite, canValidate }: { canWrite: boolean; c
               <p className="md:col-span-2 text-xs text-muted-foreground">{L("Le BC est numéroté automatiquement et créé en NON PAYÉ ; choisissez ensuite le règlement dans le tableau.", "The PO is auto-numbered and starts UNPAID; then set payment in the table.")}</p>
             </div>
           )}
-          <DialogFooter><Button disabled={busy} onClick={savePf}>{direct ? L("Enregistrer et émettre le BC", "Save and issue PO") : L("Enregistrer", "Save")}</Button></DialogFooter>
+          <DialogFooter><Button disabled={busy} onClick={savePf}>{editId ? L("Enregistrer les modifications", "Save changes") : direct ? L("Enregistrer et émettre le BC", "Save and issue PO") : L("Enregistrer", "Save")}</Button></DialogFooter>
         </DialogContent>
       </Dialog>
 
@@ -268,7 +336,7 @@ export const DepotSupplyTab = ({ canWrite, canValidate }: { canWrite: boolean; c
           <div className="space-y-2 text-sm">
             {events.map((e) => (
               <div key={e.id} className="border-b border-border pb-2">
-                <div className="font-medium">{e.action === "issue" ? L("Émission", "Issued") : `${e.from_status ? STATUS[e.from_status as PaymentStatus]?.fr : ""} → ${STATUS[e.to_status as PaymentStatus]?.fr}`}</div>
+                <div className="font-medium">{e.action === "issue" ? L("Émission", "Issued") : e.action === "edit" ? L("Modification", "Edited") : `${e.from_status ? STATUS[e.from_status as PaymentStatus]?.fr : ""} → ${STATUS[e.to_status as PaymentStatus]?.fr}`}</div>
                 <div className="text-xs text-muted-foreground">{new Date(e.created_at).toLocaleString("fr-FR")} · {e.author_name ?? "—"}{e.reason && ` · ${e.reason}`}</div>
               </div>
             ))}

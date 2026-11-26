@@ -64,3 +64,22 @@ export function planExcess(plan: { product_id: string; qty_litres: number | stri
     .filter(([pid, q]) => q > (balances[pid] ?? 0))
     .map(([product_id, requested]) => ({ product_id, requested, available: balances[product_id] ?? 0 }));
 }
+
+/** Compteurs ventilés par produit (aucun cumul entre Super, Gasoil, etc.). */
+export function productCounters(
+  orders: { lines: { product_id: string; product_name?: string; qty_litres: number; qty_lifted?: number }[]; status: PaymentStatus | null | undefined }[],
+): (Counters & { product_id: string; product_name: string })[] {
+  const out = new Map<string, Counters & { product_id: string; product_name: string }>();
+  for (const o of orders) for (const l of o.lines) {
+    const c = out.get(l.product_id) ?? { product_id: l.product_id, product_name: l.product_name ?? "—", ordered: 0, authorized: 0, lifted: 0, available: 0 };
+    const x = orderCounters([l], o.status);
+    c.ordered += x.ordered; c.authorized += x.authorized; c.lifted += x.lifted; c.available += x.available;
+    out.set(l.product_id, c);
+  }
+  return [...out.values()].sort((a, b) => a.product_name.localeCompare(b.product_name));
+}
+
+/** Un BC est modifiable/supprimable tant qu'aucun bon d'enlèvement n'y est rattaché et rien n'est enlevé. */
+export function isEditableOrder(liftingCount: number, lines: { qty_lifted?: number }[]): boolean {
+  return liftingCount === 0 && lines.every((l) => !(l.qty_lifted || 0));
+}
