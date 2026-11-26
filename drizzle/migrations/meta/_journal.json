@@ -582,6 +582,13 @@
       "when": 1795610597671,
       "tag": "0082_migration",
       "breakpoints": true
+    },
+    {
+      "idx": 83,
+      "version": "7",
+      "when": 1795653368902,
+      "tag": "0083_station_scope_write_guard",
+      "breakpoints": true
     }
   ]
 }

@@ -9733,6 +9733,7 @@ export type Database = {
         Args: { _other_user_id: string; _user_id: string }
         Returns: boolean
       }
+      station_in_my_scope: { Args: { _station_id: string }; Returns: boolean }
       stock_theoretical: {
         Args: {
           _location_id: string
