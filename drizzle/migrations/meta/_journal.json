@@ -624,6 +624,48 @@
       "when": 1795719022130,
       "tag": "0088_index_read_station_scope",
       "breakpoints": true
+    },
+    {
+      "idx": 89,
+      "version": "7",
+      "when": 1795720322083,
+      "tag": "0089_automatic_tank_opening_stock",
+      "breakpoints": true
+    },
+    {
+      "idx": 90,
+      "version": "7",
+      "when": 1795720394039,
+      "tag": "0090_inventory_variance_at_count_view",
+      "breakpoints": true
+    },
+    {
+      "idx": 91,
+      "version": "7",
+      "when": 1795720437077,
+      "tag": "0091_opening_stock_applies_to_index_counts",
+      "breakpoints": true
+    },
+    {
+      "idx": 92,
+      "version": "7",
+      "when": 1795720465379,
+      "tag": "0092_inventory_end_of_day_local_balance",
+      "breakpoints": true
+    },
+    {
+      "idx": 93,
+      "version": "7",
+      "when": 1795720492245,
+      "tag": "0093_inventory_variance_uses_validated_tank_balance",
+      "breakpoints": true
+    },
+    {
+      "idx": 94,
+      "version": "7",
+      "when": 1795720522238,
+      "tag": "0094_first_standalone_inventory_as_opening",
+      "breakpoints": true
     }
   ]
 }

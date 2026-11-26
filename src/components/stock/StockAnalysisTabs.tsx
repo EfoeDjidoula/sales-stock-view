@@ -46,14 +46,14 @@ const Period = ({ from, to, setFrom, setTo }: { from: string; to: string; setFro
 );
 
 /** Charge les mouvements de la portée active. */
-const useMovements = (reload: number, filter?: (q: any) => any) => { // eslint-disable-line @typescript-eslint/no-explicit-any
+const useMovements = (reload: number, filter?: (q: any) => any, table = "stock_movements") => { // eslint-disable-line @typescript-eslint/no-explicit-any
   const { scopeQuery, tenantId } = useScope();
   const [rows, setRows] = useState<Row[]>([]);
   const [loading, setLoading] = useState(true);
   const load = useCallback(() => {
     if (!tenantId) return;
     setLoading(true);
-    let q = scopeQuery(db.from("stock_movements").select("*"));
+    let q = scopeQuery(db.from(table).select("*"));
     if (filter) q = filter(q);
     q.order("movement_date", { ascending: true }).order("created_at", { ascending: true }).limit(2000)
       .then(({ data, error }: { data: Row[] | null; error: Error | null }) => {
@@ -61,7 +61,7 @@ const useMovements = (reload: number, filter?: (q: any) => any) => { // eslint-d
         setRows(data || []);
         setLoading(false);
       });
-  }, [scopeQuery, tenantId, filter]);
+  }, [scopeQuery, tenantId, filter, table]);
   useEffect(() => { load(); }, [load, reload]);
   return { rows, loading, load };
 };
@@ -203,7 +203,7 @@ export const VarianceTab = ({ refs, reload }: { refs: Refs; reload: number }) =>
   const [from, setFrom] = useState(daysAgo(90));
   const [to, setTo] = useState(today());
   const filter = useCallback((q: any) => q.eq("movement_type", "inventory").neq("status", "rejected").gte("movement_date", from).lte("movement_date", `${to}T23:59:59`), [from, to]); // eslint-disable-line @typescript-eslint/no-explicit-any
-  const { rows, loading } = useMovements(reload, filter);
+  const { rows, loading } = useMovements(reload, filter, "stock_inventory_variances");
   const list: Row[] = rows.map((r): Row => {
     const th = Number(r.theoretical_at_count ?? 0); const ph = Number(r.physical_level ?? 0);
     const v = ph - th; const pct = th ? (v / th) * 100 : 0;

@@ -9279,6 +9279,77 @@ export type Database = {
         }
         Relationships: []
       }
+      stock_inventory_variances: {
+        Row: {
+          country_id: string | null
+          created_at: string | null
+          depot_id: string | null
+          id: string | null
+          location_type: string | null
+          movement_date: string | null
+          movement_type: string | null
+          physical_level: number | null
+          product_id: string | null
+          quantity: number | null
+          reason: string | null
+          reference: string | null
+          requested_by: string | null
+          requested_by_name: string | null
+          station_id: string | null
+          status: string | null
+          tank_id: string | null
+          tenant_id: string | null
+          theoretical_at_count: number | null
+          transfer_id: string | null
+          validated_at: string | null
+          validated_by: string | null
+          validation_note: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stock_movements_country_id_fkey"
+            columns: ["country_id"]
+            isOneToOne: false
+            referencedRelation: "countries"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_movements_depot_id_fkey"
+            columns: ["depot_id"]
+            isOneToOne: false
+            referencedRelation: "depots"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_movements_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "petroleum_products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_movements_station_id_fkey"
+            columns: ["station_id"]
+            isOneToOne: false
+            referencedRelation: "stations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_movements_tank_id_fkey"
+            columns: ["tank_id"]
+            isOneToOne: false
+            referencedRelation: "tanks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "stock_movements_tenant_id_fkey"
+            columns: ["tenant_id"]
+            isOneToOne: false
+            referencedRelation: "tenants"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       stock_levels: {
         Row: {
           alert_level: string | null
@@ -9594,6 +9665,10 @@ export type Database = {
         }
         Returns: number
       }
+      initialize_tank_opening: {
+        Args: { _entry_id: string; _tank_id: string }
+        Returns: number
+      }
       integration_action: {
         Args: { _action: string; _data: Json; _id: string }
         Returns: Json
@@ -9710,6 +9785,10 @@ export type Database = {
         Args: { _action: string; _comment: string; _id: string }
         Returns: string
       }
+      reconciliation_gauge_variance: {
+        Args: { _date: string; _product: string; _station: string }
+        Returns: number
+      }
       refresh_pending_tank_readings: {
         Args: { _at: string; _tank: string }
         Returns: number
@@ -9735,6 +9814,16 @@ export type Database = {
         Returns: boolean
       }
       station_in_my_scope: { Args: { _station_id: string }; Returns: boolean }
+      stock_balance_internal: {
+        Args: {
+          _location_id: string
+          _location_type: string
+          _product_id: string
+          _tank_id: string
+          _until?: string
+        }
+        Returns: number
+      }
       stock_theoretical: {
         Args: {
           _location_id: string

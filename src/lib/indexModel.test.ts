@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { nozzleOutput, salesCascade, tankBalance, venteGlobale } from "./indexModel";
+import { automaticOpeningStock, nozzleOutput, salesCascade, tankBalance, venteGlobale } from "./indexModel";
 
 describe("modèle unifié de saisie des index", () => {
   it("sortie réelle = (index arrivée − index départ) − retour en cuve", () => {
@@ -35,5 +35,17 @@ describe("modèle unifié de saisie des index", () => {
     const b2 = tankBalance(1733, 5000, 428, 6280);
     expect(b2.stockCloture).toBe(6305);
     expect(b2.ecart).toBe(-25);
+  });
+
+  it("conserve le stock d'ouverture déjà saisi à la première jauge", () => {
+    expect(automaticOpeningStock(7636, 0, 954.01, 6634)).toBe(7636);
+  });
+
+  it("reconstitue l'ouverture absente avec jauge + sorties − dépotages", () => {
+    expect(automaticOpeningStock(0, 4000, 1284.75, 3817)).toBeCloseTo(1101.75, 2);
+  });
+
+  it("ne crée jamais un stock d'ouverture négatif", () => {
+    expect(automaticOpeningStock(0, 9000, 500, 1000)).toBe(0);
   });
 });

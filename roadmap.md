@@ -77,3 +77,9 @@
 - [x] Dépotages : approvisionnements attendus (BE/BL, camion, chauffeur, ETA) + choix du BE/BL à réceptionner ; suivi par station signale l'appro en cours.
 - [ ] Retirer/masquer « Demandes d'appro » et « Chargements & transports » — attend la décision de l'utilisateur.
 - [ ] Ensuite : bilan des 3 stocks, fiches de stock & tableau de bord.
+
+## Initialisation automatique des stocks
+- [x] Créer le stock d'ouverture à la première jauge validée de chaque cuve, dans tous les pays, si aucun initial n'existe.
+- [x] Régulariser les stocks initiaux et ventes validées absents du registre, sans doublon.
+- [x] Recalculer les écarts d'inventaire à la date du comptage et aligner les réconciliations sur la même ouverture.
+- [x] Tester les formules et vérifier les niveaux après régularisation.

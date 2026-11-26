@@ -79,3 +79,13 @@ export const tankBalance = (stockOuverture: number, depotage: number, sortie: nu
   const stockCloture = stockOuverture + depotage - sortie;
   return { stockOuverture, depotage, sortie, stockCloture, jauge, ecart: jauge - stockCloture };
 };
+
+/**
+ * Première jauge d'une cuve sans stock initial : une ouverture déjà saisie est
+ * conservée ; sinon elle est reconstituée depuis le bilan physique du jour.
+ * Le serveur applique la même règle dans initialize_tank_opening.
+ */
+export const automaticOpeningStock = (stockOuverture: number, depotage: number, sortie: number, jauge: number): number => {
+  if (stockOuverture > 0) return stockOuverture;
+  return Math.max(0, jauge + sortie - depotage);
+};
