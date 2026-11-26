@@ -45,7 +45,7 @@ import { useRbac } from "@/hooks/useRbac";
 import { legacyRoleFor } from "@/lib/businessRoles";
 import { useCountry } from "@/hooks/useCountry";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Loader2, Shield, ShieldCheck, User, UserCog, Crown, AlertTriangle, UserPlus, KeyRound, Power, PowerOff } from "lucide-react";
+import { Loader2, Shield, ShieldCheck, User, UserCog, Crown, AlertTriangle, UserPlus, KeyRound, Power, PowerOff, Pencil } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import { supabase } from "@/integrations/supabase/client";
@@ -93,6 +93,42 @@ export const UsersModule = () => {
   const [newUserRbacRoleId, setNewUserRbacRoleId] = useState<string>("");
   const [selectedRbacRoleId, setSelectedRbacRoleId] = useState<string>("");
   const rbacById = (id: string) => roles.find((r) => r.id === id);
+  const [editUser, setEditUser] = useState<{ id: string; name: string; email: string; origEmail: string; loading: boolean } | null>(null);
+  const [isSavingEdit, setIsSavingEdit] = useState(false);
+
+  const openEditUser = async (id: string, name: string) => {
+    setEditUser({ id, name, email: "", origEmail: "", loading: true });
+    const { data } = await supabase.functions.invoke("update-user", { body: { action: "get", user_id: id } });
+    const email = (data as { email?: string } | null)?.email ?? "";
+    setEditUser((prev) => (prev && prev.id === id ? { ...prev, email, origEmail: email, loading: false } : prev));
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editUser) return;
+    const name = editUser.name.trim();
+    const email = editUser.email.trim().toLowerCase();
+    if (name.length < 2 || name.length > 100) {
+      toast({ title: "Nom invalide", description: "Le nom doit contenir entre 2 et 100 caractères.", variant: "destructive" });
+      return;
+    }
+    if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      toast({ title: "Email invalide", description: "Vérifiez l'adresse email.", variant: "destructive" });
+      return;
+    }
+    setIsSavingEdit(true);
+    const body: Record<string, string> = { user_id: editUser.id, full_name: name };
+    if (email && email !== editUser.origEmail.toLowerCase()) body.email = email;
+    const { data, error } = await supabase.functions.invoke("update-user", { body });
+    setIsSavingEdit(false);
+    const err = (data as { error?: string } | null)?.error ?? (error ? "Modification impossible" : null);
+    if (err) {
+      toast({ title: "Erreur", description: err, variant: "destructive" });
+      return;
+    }
+    toast({ title: "Utilisateur modifié", description: "Le nom et l'email ont été mis à jour." });
+    setEditUser(null);
+    await refetch();
+  };
 
   const handleAssignRole = async () => {
     if (!selectedUser) return;
@@ -415,6 +451,14 @@ export const UsersModule = () => {
                           <Button
                             variant="outline"
                             size="sm"
+                            title="Modifier le nom et l'email"
+                            onClick={() => openEditUser(u.id, u.full_name || "")}
+                          >
+                            <Pencil className="w-4 h-4" />
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
                             onClick={() =>
                               setAccessUser({ id: u.id, full_name: u.full_name, is_active: u.is_active })
                             }
@@ -512,6 +556,41 @@ export const UsersModule = () => {
               </Button>
               <Button onClick={handleAssignRole} disabled={!selectedRbacRoleId}>
                 Confirmer
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit User Dialog */}
+      <Dialog open={!!editUser} onOpenChange={(o) => !o && setEditUser(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <Pencil className="w-5 h-5" />
+              Modifier l'utilisateur
+            </DialogTitle>
+            <DialogDescription>Corrigez le nom complet et l'adresse email de connexion.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 pt-2">
+            <div className="space-y-2">
+              <Label htmlFor="edit-name">Nom complet *</Label>
+              <Input id="edit-name" maxLength={100} value={editUser?.name ?? ""}
+                onChange={(e) => setEditUser((p) => (p ? { ...p, name: e.target.value } : p))} />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="edit-email">Email</Label>
+              <Input id="edit-email" type="email" maxLength={255} disabled={editUser?.loading}
+                placeholder={editUser?.loading ? "Chargement…" : "Ex: jean.dupont@email.com"}
+                value={editUser?.email ?? ""}
+                onChange={(e) => setEditUser((p) => (p ? { ...p, email: e.target.value } : p))} />
+              <p className="text-xs text-muted-foreground">La nouvelle adresse servira à la connexion.</p>
+            </div>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" onClick={() => setEditUser(null)}>Annuler</Button>
+              <Button onClick={handleSaveEdit} disabled={isSavingEdit || editUser?.loading}>
+                {isSavingEdit && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                Enregistrer
               </Button>
             </div>
           </div>
