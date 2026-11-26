@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { lineAmounts, orderCounters, planExcess, productBalances, proformaTotals, sumCounters } from "./depotSupply";
+import { depotBalances as _depotBalances, lineAmounts, orderCounters, planExcess, productBalances, proformaTotals, sumCounters } from "./depotSupply";
 
 describe("approvisionnement dépôt", () => {
   it("calcule HT, taxes et TTC d'une ligne", () => {
@@ -58,5 +58,21 @@ describe("isEditableOrder", () => {
     expect(isEditableOrder(0, [{ qty_lifted: 0 }])).toBe(true);
     expect(isEditableOrder(1, [{ qty_lifted: 0 }])).toBe(false);
     expect(isEditableOrder(0, [{ qty_lifted: 5 }])).toBe(false);
+  });
+});
+
+
+describe("depotBalances", () => {
+  const orders = [
+    { depot_id: "D1", status: "paiement_direct" as const, lines: [{ id: "a", product_id: "SUPER", qty_litres: 30000, qty_lifted: 10000 }] },
+    { depot_id: "D1", status: "pret_credit" as const, lines: [{ id: "b", product_id: "SUPER", qty_litres: 20000 }, { id: "c", product_id: "GASOIL", qty_litres: 15000 }] },
+    { depot_id: "D1", status: "non_paye" as const, lines: [{ id: "d", product_id: "GASOIL", qty_litres: 99000 }] },
+    { depot_id: "D2", status: "paiement_direct" as const, lines: [{ id: "e", product_id: "SUPER", qty_litres: 50000 }] },
+  ];
+  it("pools paid/credit orders of the depot per product, without a specific PO", () => {
+    expect(_depotBalances(orders, "D1", [{ proforma_line_id: "b", qty_litres: 5000, status: "established" }])).toEqual({ SUPER: 35000, GASOIL: 15000 });
+  });
+  it("ignores other depots and unpaid orders", () => {
+    expect(_depotBalances(orders, "D2")).toEqual({ SUPER: 50000 });
   });
 });

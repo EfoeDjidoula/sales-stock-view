@@ -83,3 +83,19 @@ export function productCounters(
 export function isEditableOrder(liftingCount: number, lines: { qty_lifted?: number }[]): boolean {
   return liftingCount === 0 && lines.every((l) => !(l.qty_lifted || 0));
 }
+
+/** Stock disponible au dépôt par produit = BC payés/crédit du dépôt − enlevé (BE signés) − réservé (BE établis). Aucun BC précis n'est requis. */
+export function depotBalances(
+  orders: { depot_id: string | null | undefined; status: PaymentStatus | null | undefined; lines: PoLine[] }[],
+  depotId: string | null | undefined,
+  liftings: ReservedLine[] = [],
+): Record<string, number> {
+  const out: Record<string, number> = {};
+  if (!depotId) return out;
+  for (const o of orders) {
+    if (o.depot_id !== depotId) continue;
+    const b = productBalances(o.lines, o.status, liftings);
+    for (const [pid, q] of Object.entries(b)) out[pid] = (out[pid] ?? 0) + q;
+  }
+  return out;
+}

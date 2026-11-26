@@ -1666,7 +1666,7 @@ export type Database = {
           load_mode: string
           number: string
           observations: string | null
-          order_id: string
+          order_id: string | null
           planned_date: string
           signature_png: string | null
           signed_at: string | null
@@ -1693,7 +1693,7 @@ export type Database = {
           load_mode?: string
           number: string
           observations?: string | null
-          order_id: string
+          order_id?: string | null
           planned_date?: string
           signature_png?: string | null
           signed_at?: string | null
@@ -1720,7 +1720,7 @@ export type Database = {
           load_mode?: string
           number?: string
           observations?: string | null
-          order_id?: string
+          order_id?: string | null
           planned_date?: string
           signature_png?: string | null
           signed_at?: string | null

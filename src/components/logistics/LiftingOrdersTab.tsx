@@ -17,7 +17,7 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { SignaturePad } from "@/components/pro/EcmrSignDialog";
-import { isAuthorized, planByProduct, planExcess, productBalances, type LiftingStatus, type PaymentStatus } from "@/lib/depotSupply";
+import { depotBalances, planByProduct, planExcess, type LiftingStatus, type PaymentStatus } from "@/lib/depotSupply";
 import { jsPDF } from "@/lib/pdf";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -87,13 +87,10 @@ export const LiftingOrdersTab = ({ canWrite, canValidate }: { canWrite: boolean;
   const vAvail = useMemo(() => new Map((d.vAvail ?? []).map((a) => [a.vehicle_id, a])), [d.vAvail]);
   const dAvail = useMemo(() => new Map((d.dAvail ?? []).map((a) => [a.driver_id, a])), [d.dAvail]);
   const reservedLines = useMemo(() => (d.liftings ?? []).flatMap((b) => (b.depot_lifting_lines ?? []).map((l: Row) => ({ ...l, status: b.status }))), [d.liftings]);
-  const balancesOf = useCallback((o: Row) => productBalances(o?.depot_proformas?.depot_proforma_lines ?? [], o?.payment_status as PaymentStatus, reservedLines), [reservedLines]);
-  const liftableOrders = (d.orders ?? []).filter((o) => isAuthorized(o.payment_status) && Object.values(balancesOf(o)).some((v) => v > 0));
-
-  const order = (d.orders ?? []).find((o) => o.id === f.order_id);
-  const balances = order ? balancesOf(order) : {};
-  const orderProducts = (order?.depot_proformas?.depot_proforma_lines ?? []).map((l: Row) => ({ id: l.product_id, name: l.petroleum_products?.name ?? "—" }))
-    .filter((p: Row, i: number, a: Row[]) => a.findIndex((x) => x.id === p.id) === i);
+  const pooled = useMemo(() => (d.orders ?? []).map((o) => ({ depot_id: o.depot_proformas?.depot_id, status: o.payment_status as PaymentStatus, lines: o.depot_proformas?.depot_proforma_lines ?? [] })), [d.orders]);
+  const balances = useMemo(() => depotBalances(pooled, f.depot_id, reservedLines), [pooled, f.depot_id, reservedLines]);
+  const order = f.depot_id ? { id: f.depot_id } : null;
+  const orderProducts = Object.entries(balances).filter(([, q]) => q > 0).map(([id]) => ({ id, name: name("products", id) }));
   const truck = (d.vehicles ?? []).find((v) => v.id === f.vehicle_id);
   const vehId = truck?.kind === "tractor" ? f.tanker_id : f.vehicle_id;
   const veh = (d.vehicles ?? []).find((v) => v.id === vehId);
@@ -120,13 +117,13 @@ export const LiftingOrdersTab = ({ canWrite, canValidate }: { canWrite: boolean;
     toast.success(ok); load(); return true;
   };
   const save = async () => {
-    if (!f.order_id || !f.vehicle_id || !f.driver_id) return toast.error(L("Bon de commande, camion et chauffeur obligatoires", "Purchase order, truck and driver required"));
+    if (!f.depot_id || !f.vehicle_id || !f.driver_id) return toast.error(L("Dépôt, camion et chauffeur obligatoires", "Depot, truck and driver required"));
     if (truck?.kind === "tractor" && !f.tanker_id) return toast.error(L("Choisissez la citerne attelée au tracteur", "Choose the tanker hitched to the tractor"));
     if (plan.some((l) => !l.product_id)) return toast.error(L("Produit manquant", "Missing product"));
     if (plan.some((l) => (l.destination_type === "station" ? !l.station_id : !l.client_id))) return toast.error(L("Site de destination manquant", "Missing destination"));
     if (total !== capacity) return toast.error(L("Le camion doit être chargé à son volume total", "The truck must be loaded to full capacity"));
-    if (excess.length) return toast.error(L("Quantité supérieure au solde disponible du BC", "Quantity above the PO available balance"));
-    if (await act("create_lifting", { ...f, tanker_id: truck?.kind === "tractor" ? f.tanker_id : null, load_mode: mode, lines: plan }, L("Bon d'enlèvement établi", "Lifting order drafted"))) setOpen(false);
+    if (excess.length) return toast.error(L("Quantité supérieure au stock disponible du dépôt", "Quantity above the depot available stock"));
+    if (await act("create_lifting", { ...f, order_id: null, tenant_id: tenantId, country_id: countryId, tanker_id: truck?.kind === "tractor" ? f.tanker_id : null, load_mode: mode, lines: plan }, L("Bon d'enlèvement établi", "Lifting order drafted"))) setOpen(false);
   };
 
   const openHistory = async (b: Row) => {
@@ -199,7 +196,7 @@ export const LiftingOrdersTab = ({ canWrite, canValidate }: { canWrite: boolean;
           </CardContent></Card>
         ))}
       </div>
-      <p className="text-xs text-muted-foreground">{L("Un BE ne peut dépasser le solde disponible du bon de commande (payé ou à crédit). La quantité est réservée dès l'établissement et comptée comme enlevée à la signature du responsable logistique ; le chargement du camion n'est possible qu'après signature.", "A lifting order cannot exceed the PO available balance (paid or credit). Quantity is reserved when drafted and counted as lifted once the logistics manager signs; loading is only possible after signature.")}</p>
+      <p className="text-xs text-muted-foreground">{L("Un BE ne peut dépasser le stock disponible du dépôt, par produit (bons de commande payés ou à crédit, moins enlevé et réservé). La quantité est réservée dès l'établissement et comptée comme enlevée à la signature du responsable logistique ; le chargement du camion n'est possible qu'après signature.", "A lifting order cannot exceed the depot available stock per product (paid or credit POs, minus lifted and reserved). Quantity is reserved when drafted and counted as lifted once the logistics manager signs; loading is only possible after signature.")}</p>
 
       <Card className="glass-card">
         <CardHeader className="flex flex-row flex-wrap items-center justify-between gap-2">
@@ -282,17 +279,13 @@ export const LiftingOrdersTab = ({ canWrite, canValidate }: { canWrite: boolean;
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader><DialogTitle>{L("Nouveau bon d'enlèvement", "New lifting order")}</DialogTitle></DialogHeader>
           <div className="grid gap-3 md:grid-cols-3">
-            <div className="md:col-span-2"><Label>{L("Bon de commande (payé ou à crédit)", "Purchase order (paid or credit)")}</Label>
-              <Select value={f.order_id ?? ""} onValueChange={(v) => { const o = (d.orders ?? []).find((x) => x.id === v); setF({ ...f, order_id: v, depot_id: o?.depot_proformas?.depot_id ?? f.depot_id }); setMonoProduct(""); }}>
-                <SelectTrigger><SelectValue placeholder={liftableOrders.length ? "—" : L("Aucun BC avec solde disponible", "No PO with available balance")} /></SelectTrigger>
-                <SelectContent>{liftableOrders.map((o) => <SelectItem key={o.id} value={o.id}>{o.number} · {o.depot_proformas?.suppliers?.name ?? "—"} · {o.beneficiary_name}</SelectItem>)}</SelectContent></Select></div>
             <div><Label>{L("Dépôt de chargement", "Loading depot")}</Label>
-              <Select value={f.depot_id ?? ""} onValueChange={(v) => setF({ ...f, depot_id: v })}><SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
+              <Select value={f.depot_id ?? ""} onValueChange={(v) => { setF({ ...f, depot_id: v }); setMonoProduct(""); }}><SelectTrigger><SelectValue placeholder="—" /></SelectTrigger>
                 <SelectContent>{(d.depots ?? []).map((x) => <SelectItem key={x.id} value={x.id}>{x.name}</SelectItem>)}</SelectContent></Select></div>
           </div>
           {order && (
             <div className="rounded-md border border-border p-2 text-sm">
-              <div className="text-xs text-muted-foreground mb-1">{L("Solde disponible à l'enlèvement", "Available to lift")}</div>
+              <div className="text-xs text-muted-foreground mb-1">{L("Stock disponible au dépôt (par produit)", "Depot available stock (per product)")}</div>
               <div className="flex flex-wrap gap-3">{orderProducts.map((p: Row) => <span key={p.id}><b>{p.name}</b> : {fmt(balances[p.id] ?? 0)} L</span>)}</div>
             </div>
           )}
@@ -342,7 +335,7 @@ export const LiftingOrdersTab = ({ canWrite, canValidate }: { canWrite: boolean;
               <div className="rounded-md border border-border p-2 text-sm space-y-1">
                 {Object.entries(byProduct).filter(([pid]) => pid).map(([pid, q]) => {
                   const over = q > (balances[pid] ?? 0);
-                  return <div key={pid} className={over ? "text-destructive font-medium" : ""}>{name("products", pid)} : {fmt(q)} L {L("demandés", "requested")} / {fmt(balances[pid] ?? 0)} L {L("disponibles", "available")}{over && ` — ${L("dépassement du solde du BC", "exceeds PO balance")}`}</div>;
+                  return <div key={pid} className={over ? "text-destructive font-medium" : ""}>{name("products", pid)} : {fmt(q)} L {L("demandés", "requested")} / {fmt(balances[pid] ?? 0)} L {L("disponibles", "available")}{over && ` — ${L("dépassement du stock du dépôt", "exceeds depot stock")}`}</div>;
                 })}
               </div>
             </div>
@@ -356,7 +349,7 @@ export const LiftingOrdersTab = ({ canWrite, canValidate }: { canWrite: boolean;
       <Dialog open={!!signFor} onOpenChange={(o) => !o && setSignFor(null)}>
         <DialogContent>
           <DialogHeader><DialogTitle>{L("Signer le bon d'enlèvement", "Sign lifting order")} {signFor?.number}</DialogTitle></DialogHeader>
-          <p className="text-sm">{L("En signant comme responsable logistique, vous validez le BE : il ne sera plus modifiable et sa quantité sera comptée comme enlevée sur le bon de commande.", "By signing as logistics manager you validate the order: it becomes read-only and its quantity counts as lifted on the PO.")} <b>{fmt(signFor?.total_litres)} L</b></p>
+          <p className="text-sm">{L("En signant comme responsable logistique, vous validez le BE : il ne sera plus modifiable et sa quantité sera comptée comme enlevée sur le stock du dépôt.", "By signing as logistics manager you validate the order: it becomes read-only and its quantity counts as lifted on the PO.")} <b>{fmt(signFor?.total_litres)} L</b></p>
           <SignaturePad onChange={setPng} />
           <DialogFooter><Button disabled={busy || !png} onClick={async () => { if (await act("sign_lifting", { lifting_id: signFor!.id, signature_png: png }, L("BE signé", "Order signed"))) setSignFor(null); }}><CheckCircle2 className="h-4 w-4 mr-1" />{L("Signer et valider", "Sign and validate")}</Button></DialogFooter>
         </DialogContent>
