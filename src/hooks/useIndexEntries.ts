@@ -1,3 +1,4 @@
+import { fetchMyStationIds, restrictToMine } from "@/lib/myStations";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
@@ -157,14 +158,15 @@ export const useStations = () => {
   const { scopeQuery, tenantId, countryId } = useScope();
 
   return useQuery({
-    queryKey: ["stations", tenantId, countryId],
+    queryKey: ["stations", tenantId, countryId, user?.id],
     queryFn: async () => {
-      const { data, error } = await scopeQuery(
-        supabase.from("stations").select("*")
-      ).order("name");
+      const [{ data, error }, mine] = await Promise.all([
+        scopeQuery(supabase.from("stations").select("*")).order("name"),
+        fetchMyStationIds(user!.id),
+      ]);
 
       if (error) throw error;
-      return data;
+      return restrictToMine(data || [], mine);
     },
     enabled: !!user,
   });

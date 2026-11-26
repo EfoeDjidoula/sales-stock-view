@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useTenant } from "@/hooks/useTenant";
 import { useCountry } from "@/hooks/useCountry";
+import { useAuth } from "@/hooks/useAuth";
+import { fetchMyStationIds, restrictToMine } from "@/lib/myStations";
 
 export interface DbStation {
   id: string;
@@ -15,6 +17,7 @@ export const useStations = () => {
   const [loading, setLoading] = useState(true);
   const { tenantId } = useTenant();
   const { countryId } = useCountry();
+  const { user } = useAuth();
 
   const fetchStations = async () => {
     if (!tenantId) return;
@@ -22,10 +25,10 @@ export const useStations = () => {
     try {
       let q = supabase.from("stations").select("*").eq("tenant_id", tenantId).order("name");
       if (countryId) q = q.eq("country_id", countryId);
-      const { data, error } = await q;
+      const [{ data, error }, mine] = await Promise.all([q, user ? fetchMyStationIds(user.id) : Promise.resolve(null)]);
 
       if (error) throw error;
-      setStations(data || []);
+      setStations(restrictToMine((data || []) as DbStation[], mine));
     } catch (error) {
       console.error("Error fetching stations:", error);
     } finally {
@@ -36,7 +39,7 @@ export const useStations = () => {
   useEffect(() => {
     fetchStations();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tenantId, countryId]);
+  }, [tenantId, countryId, user?.id]);
 
   return { stations, loading, refetch: fetchStations };
 };
