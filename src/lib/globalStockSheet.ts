@@ -31,3 +31,8 @@ export function splitByStation(total: number, loads: { name: string; qty: number
   if (rest > 0) out.push({ name: "Non ventilé", qty: rest });
   return out;
 }
+
+/** Stock réel disponible du dépôt à ce jour = stocks initiaux + achats autorisés − enlèvements (toutes dates). */
+export function depotAvailable(purchases: GsPurchase[], liftings: GsLifting[]): number {
+  return purchases.reduce((s, p) => s + p.qty, 0) - liftings.reduce((s, l) => s + l.qty, 0);
+}
