@@ -680,6 +680,13 @@
       "when": 1795722686226,
       "tag": "0096_reconciliation_nozzle_index_volume",
       "breakpoints": true
+    },
+    {
+      "idx": 97,
+      "version": "7",
+      "when": 1795724104643,
+      "tag": "0097_allow_zero_initial_stock",
+      "breakpoints": true
     }
   ]
 }

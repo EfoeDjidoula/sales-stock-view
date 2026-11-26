@@ -14,6 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PendingTab, LedgerTab, VarianceTab, SummaryTab, TransfersTab, ThresholdsTab } from "./StockAnalysisTabs";
 import { useLanguage } from "@/hooks/useLanguage";
+import { isStockMovementQuantityValid } from "@/lib/stockMovementRules";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const db = supabase as any;
@@ -267,7 +268,7 @@ const MovementForm = ({ refs, onDone }: { refs: Record<string, Row[]>; onDone: (
     const n = Number(qty);
     if (!loc.id) return toast.error("Choisissez un emplacement");
     if (!productId) return toast.error("Choisissez un produit");
-    if (!(n >= 0) || qty === "" || (type !== "inventory" && n <= 0)) return toast.error("Quantité invalide (nombre positif)");
+    if (!isStockMovementQuantityValid(type, qty)) return toast.error("Quantité invalide : 0 L est autorisé uniquement pour un stock initial ou un inventaire");
     if (needsReason && !reason.trim()) return toast.error("Le motif est obligatoire");
     if (!mvDate || mvDate > today) return toast.error("Date du mouvement invalide (pas de date future)");
     setSaving(true);
@@ -321,6 +322,7 @@ const MovementForm = ({ refs, onDone }: { refs: Record<string, Row[]>; onDone: (
         <div className="grid gap-1">
           <Label htmlFor="mv-qty">{type === "inventory" ? "Niveau physique mesuré (L)" : "Quantité (L)"}</Label>
           <Input id="mv-qty" type="number" min={0} value={qty} onChange={(e) => setQty(e.target.value)} />
+          {type === "initial" && <p className="text-xs text-muted-foreground">Saisissez 0 L pour tracer officiellement une cuve ou un emplacement vide.</p>}
         </div>
         <div className="grid gap-1">
           <Label htmlFor="mv-ref">Référence (BL, bon, ticket…)</Label>
