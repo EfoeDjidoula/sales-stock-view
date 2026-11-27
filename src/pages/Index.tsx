@@ -130,6 +130,7 @@ const TAB_PERMISSIONS: Record<string, AppRole[]> = {
   maintenance: ["admin", "manager", "operator"],
   hse: ["admin", "manager", "operator"],
   depotage: ["admin", "manager", "operator"],
+  depotage_compartiment: ["admin", "manager", "operator"],
   camions: ["admin", "manager", "operator"],
   clients: ["admin", "manager", "operator"],
   b2b: ["admin", "manager", "operator"],
@@ -164,6 +165,7 @@ const TAB_META: Record<string, { label: string; icon: typeof TrendingUp }> = {
   chaine_appro: { label: "Appro. & réception", icon: Truck },
   logistique_avancee: { label: "Chaîne logistique & appro", icon: Truck },
   depotage: { label: "Dépotages", icon: Droplets },
+  depotage_compartiment: { label: "Dépotage par compartiment", icon: Droplets },
   camions: { label: "Camions", icon: Truck },
   stations: { label: "Stations", icon: LayoutDashboard },
   maintenance: { label: "Assets & Maintenance", icon: Settings2 },
@@ -201,6 +203,7 @@ const TAB_RBAC: Record<string, string[] | null> = {
   chaine_appro: ["supplies.view"],
   logistique_avancee: ["supplies.view"],
   depotage: ["depotages.view"],
+  depotage_compartiment: ["depotages.view"],
   camions: ["trucks.view"],
   stations: ["stations.view"],
   maintenance: ["stations.view"],
@@ -236,6 +239,7 @@ const TAB_MODULE: Record<string, string> = {
   chaine_appro: "livraisons",
   logistique_avancee: "livraisons",
   depotage: "depots",
+  depotage_compartiment: "depots",
   camions: "livraisons",
   stations: "stations",
   maintenance: "stations",
@@ -666,6 +670,10 @@ const Index = () => {
           <TabsContent value="logistique_avancee" className="animate-fade-in">
             {/* Le gérant (Dépotages seul) n'y accède que pour le volet 5, via « Saisir une réception » */}
             {canAccessTab("logistique_avancee") || canAccessTab("depotage") ? <LogisticsModule dischargesOnly={!canAccessTab("logistique_avancee")} /> : <AccessDenied onGoBack={() => setActiveTab(allowedTabs[0] ?? "ventes")} />}
+          </TabsContent>
+
+          <TabsContent value="depotage_compartiment" className="animate-fade-in">
+            {canAccessTab("depotage_compartiment") ? <LogisticsModule dischargesOnly /> : <AccessDenied onGoBack={() => setActiveTab(allowedTabs[0] ?? "ventes")} />}
           </TabsContent>
 
           {/* Dépotages Tab */}

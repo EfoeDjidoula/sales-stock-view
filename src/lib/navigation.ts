@@ -15,7 +15,7 @@ export interface NavPole {
 export const NAV_POLES: NavPole[] = [
   { id: "pilotage", number: 1, label: "Pilotage & Direction", icon: Gauge, tabs: ["command", "bi", "analyse_ia"] },
   { id: "exploitation", number: 2, label: "Exploitation & Stations", icon: Fuel, tabs: ["ventes", "ventes_cloture", "historique", "stations"] },
-  { id: "stocks", number: 3, label: "Stocks & Logistique", icon: Truck, tabs: ["stock", "moteur_stock", "commandes", "logistique_avancee", "depotage"] },
+  { id: "stocks", number: 3, label: "Stocks & Logistique", icon: Truck, tabs: ["stock", "moteur_stock", "commandes", "logistique_avancee", "depotage", "depotage_compartiment"] },
   { id: "audit", number: 4, label: "Audit, Contrôle & Finance", icon: ShieldAlert, tabs: ["etats_synthese", "reconciliation", "anti_fraude", "perequation", "structure_prix"] },
   { id: "clients", number: 5, label: "Clients, B2B & Cartes", icon: Contact, tabs: ["clients", "b2b", "fuel_cards", "proforma", "fournisseurs"] },
   { id: "conformite", number: 6, label: "Conformité, Actifs & Reporting", icon: ShieldCheck, tabs: ["maintenance", "hse", "rapports", "suite_pro"] },
