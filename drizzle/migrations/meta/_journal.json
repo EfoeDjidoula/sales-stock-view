@@ -708,6 +708,13 @@
       "when": 1795774776515,
       "tag": "0100_discharge_confirms_delivery",
       "breakpoints": true
+    },
+    {
+      "idx": 101,
+      "version": "7",
+      "when": 1795775249277,
+      "tag": "0101_discharge_date_choice",
+      "breakpoints": true
     }
   ]
 }

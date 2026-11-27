@@ -32,7 +32,7 @@ export const DischargesTab = ({ d, L, canValidate, onChanged }: Props) => {
   const [tanks, setTanks] = useState<Row[]>([]);
   const [done, setDone] = useState<Row[]>([]);
   const [cur, setCur] = useState<Row | null>(null);
-  const [form, setForm] = useState({ tank: "", before: "", after: "", note: "" });
+  const [form, setForm] = useState({ tank: "", before: "", after: "", note: "", date: "" });
   const [busy, setBusy] = useState(false);
   const [notes, setNotes] = useState<Row[]>([]);
   const [pick, setPick] = useState<string>("all");
@@ -75,13 +75,14 @@ export const DischargesTab = ({ d, L, canValidate, onChanged }: Props) => {
   const candTanks = cur ? tanks.filter((t) => allowed(t.station_id) && t.station_id === cur.station_id && (!t.product_id || t.product_id === cur.product_id)) : [];
   const tk = tanks.find((t) => t.id === form.tank);
   const b = Number(form.before), a = Number(form.after);
-  const ok = !!form.tank && form.before !== "" && form.after !== "" && validGauges(b, a, tk?.capacity_liters);
+  const today = format(new Date(), "yyyy-MM-dd");
+  const ok = !!form.date && form.date <= today && !!form.tank && form.before !== "" && form.after !== "" && validGauges(b, a, tk?.capacity_liters);
   const v = cur && ok ? dischargeVariance(Number(cur.qty_litres), b, a) : null;
 
   const submit = async () => {
     if (!cur) return;
     setBusy(true);
-    const { error } = await db.rpc("logistics_discharge", { _load: cur.id, _tank: form.tank, _before: b, _after: a, _note: form.note || null });
+    const { error } = await db.rpc("logistics_discharge", { _load: cur.id, _tank: form.tank, _before: b, _after: a, _note: form.note || null, _date: form.date });
     setBusy(false);
     if (error) return toast.error(error.message);
     toast.success(L("Dépotage enregistré", "Discharge recorded"));
@@ -134,7 +135,7 @@ export const DischargesTab = ({ d, L, canValidate, onChanged }: Props) => {
                   <TableCell>{nm("products", l.product_id)}</TableCell>
                   <TableCell className="text-right">{fmt(l.qty_litres)}</TableCell>
                   <TableCell className="text-right">
-                    <Button size="sm" disabled={!canValidate} onClick={() => { setCur(l); const c = tanks.filter((t) => t.station_id === l.station_id && (!t.product_id || t.product_id === l.product_id)); setForm({ tank: c.length === 1 ? c[0].id : "", before: "", after: "", note: "" }); }}>{L("Réceptionner en cuve", "Receive into tank")}</Button>
+                    <Button size="sm" disabled={!canValidate} onClick={() => { setCur(l); const c = tanks.filter((t) => t.station_id === l.station_id && (!t.product_id || t.product_id === l.product_id)); setForm({ tank: c.length === 1 ? c[0].id : "", before: "", after: "", note: "", date: format(new Date(Date.now() - 86400000), "yyyy-MM-dd") }); }}>{L("Réceptionner en cuve", "Receive into tank")}</Button>
                   </TableCell>
                 </TableRow>
               ))}
@@ -158,7 +159,7 @@ export const DischargesTab = ({ d, L, canValidate, onChanged }: Props) => {
               {done.length === 0 && <TableRow><TableCell colSpan={10} className="text-center text-muted-foreground">{L("Aucun dépotage", "No discharge")}</TableCell></TableRow>}
               {done.map((r) => (
                 <TableRow key={r.id}>
-                  <TableCell>{format(new Date(r.created_at), "dd/MM/yyyy HH:mm")}</TableCell>
+                  <TableCell>{r.discharge_date ? format(new Date(r.discharge_date + "T12:00:00"), "dd/MM/yyyy") : format(new Date(r.created_at), "dd/MM/yyyy HH:mm")}</TableCell>
                   <TableCell>{trip(r.trip_id)?.reference ?? "—"}</TableCell>
                   <TableCell>{nm("stations", r.station_id)}</TableCell>
                   <TableCell>{tankName(r.tank_id)}</TableCell>
@@ -185,6 +186,7 @@ export const DischargesTab = ({ d, L, canValidate, onChanged }: Props) => {
                 <SelectContent>{candTanks.map((t) => <SelectItem key={t.id} value={t.id}>{t.name} ({fmt(t.capacity_liters)} L)</SelectItem>)}</SelectContent>
               </Select>
             </div>
+            <div><Label>{L("Date du dépotage", "Discharge date")}</Label><Input type="date" max={today} value={form.date} onChange={(e) => setForm({ ...form, date: e.target.value })} /><p className="text-xs text-muted-foreground">{L("Le stock de la cuve est crédité à cette date (même jour que les index).", "Tank stock is booked on this date (same day as the index).")}</p></div>
             <div className="grid grid-cols-2 gap-3">
               <div><Label>{L("Jauge avant (L)", "Gauge before (L)")}</Label><Input inputMode="decimal" type="number" min={0} value={form.before} onChange={(e) => setForm({ ...form, before: e.target.value })} /></div>
               <div><Label>{L("Jauge après (L)", "Gauge after (L)")}</Label><Input inputMode="decimal" type="number" min={0} value={form.after} onChange={(e) => setForm({ ...form, after: e.target.value })} /></div>

@@ -4951,6 +4951,7 @@ export type Database = {
           author_id: string | null
           country_id: string
           created_at: string
+          discharge_date: string | null
           gauge_after: number
           gauge_before: number
           id: string
@@ -4971,6 +4972,7 @@ export type Database = {
           author_id?: string | null
           country_id: string
           created_at?: string
+          discharge_date?: string | null
           gauge_after: number
           gauge_before: number
           id?: string
@@ -4991,6 +4993,7 @@ export type Database = {
           author_id?: string | null
           country_id?: string
           created_at?: string
+          discharge_date?: string | null
           gauge_after?: number
           gauge_before?: number
           id?: string
@@ -9719,6 +9722,7 @@ export type Database = {
         Args: {
           _after: number
           _before: number
+          _date?: string
           _load: string
           _note?: string
           _tank: string
