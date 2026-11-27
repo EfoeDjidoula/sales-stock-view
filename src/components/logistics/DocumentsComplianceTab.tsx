@@ -116,7 +116,7 @@ export function DocumentsComplianceTab({ d, L, canWrite, onAdd, onEdit }: Props)
         {filter !== "all" && <Button size="sm" variant="ghost" onClick={() => setFilter("all")}>{L("Tout afficher", "Show all")}</Button>}
         {canWrite && <Button size="sm" className="ml-auto" onClick={() => onAdd()}><Plus className="h-4 w-4 mr-1" />{L("Ajouter un document", "Add document")}</Button>}
       </div>
-      <p className="text-xs text-muted-foreground">{L("Un camion ou chauffeur avec un document expiré est refusé au chargement.", "Trucks or drivers with an expired document are refused for loading.")}</p>
+      <p className="text-xs text-muted-foreground">{L("Un camion avec un document expiré est refusé au chargement ; les documents des chauffeurs sont suivis sans bloquer.", "Trucks with an expired document are refused for loading; driver documents are tracked without blocking.")}</p>
       {group !== "drivers" && matrix(L("Camions & citernes", "Trucks & tankers"), vehicles.map((e) => ({ id: e.v.id, name: e.v.registration, sub: e.v.kind, cells: e.cells, worst: e.worst, blocked: e.blocked, prefill: { vehicle_id: e.v.id, driver_id: e.v.default_driver_id } })), VEHICLE_REQUIRED_DOCS)}
       {group !== "vehicles" && matrix(L("Chauffeurs", "Drivers"), drivers.map((e) => ({ id: e.x.id, name: e.x.full_name, sub: e.x.license_number, cells: e.cells, worst: e.worst, blocked: e.blocked, prefill: { driver_id: e.x.id } })), DRIVER_REQUIRED_DOCS)}
       <Card className="glass-card">

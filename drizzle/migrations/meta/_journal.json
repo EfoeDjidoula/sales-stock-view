@@ -694,6 +694,13 @@
       "when": 1795725335994,
       "tag": "0098_lifting_from_depot_initial_stock",
       "breakpoints": true
+    },
+    {
+      "idx": 99,
+      "version": "7",
+      "when": 1795771465808,
+      "tag": "0099_driver_availability_without_documents",
+      "breakpoints": true
     }
   ]
 }
