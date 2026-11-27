@@ -1,3 +1,4 @@
+import { debounce } from "@/lib/debounce";
 import { formatNumber } from "@/data/stationsData";
 import { StockGauge } from "./StockGauge";
 import { Fuel, Droplet, AlertTriangle } from "lucide-react";
@@ -26,18 +27,19 @@ export const StockModule = ({ stationId }: StockModuleProps) => {
   // avec le tableau de bord dès qu'une saisie d'index change.
   useEffect(() => {
     if (!user) return;
-    const invalidate = () => {
+    const invalidate = debounce(() => {
       queryClient.invalidateQueries({ queryKey: ["stock-jauges"] });
       queryClient.invalidateQueries({ queryKey: ["latest-jauge"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard-chart"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard-entries"] });
-    };
+    }, 1500);
     const channel = supabase
       .channel(`stock-realtime-${Math.random().toString(36).slice(2)}`)
       .on("postgres_changes", { event: "*", schema: "public", table: "index_entries" }, invalidate)
       .on("postgres_changes", { event: "*", schema: "public", table: "pump_index_entries" }, invalidate)
       .subscribe();
     return () => {
+      invalidate.cancel();
       supabase.removeChannel(channel);
     };
   }, [user, queryClient]);

@@ -227,6 +227,7 @@ export const persistIndexEntry = async (data: IndexEntryData, userId: string, sc
 
   if (error) throw error;
 
+  const writePumps = async () => {
   // Persist pump-level rows if provided
   if (data.pumpEntries && data.pumpEntries.length > 0) {
     // Wipe out previous pump rows for this entry to avoid stale lines (pump removed/relinked)
@@ -252,6 +253,8 @@ export const persistIndexEntry = async (data: IndexEntryData, userId: string, sc
     if (insErr) throw insErr;
   }
 
+  };
+  const writeTanks = async () => {
   // Bilan cuve : le serveur recalcule ouverture (veille), dépotages validés et sorties pistolets
   if (data.tankReadings && data.tankReadings.length > 0) {
     const db = supabase as any;
@@ -272,10 +275,14 @@ export const persistIndexEntry = async (data: IndexEntryData, userId: string, sc
     if (insT) throw insT;
   }
 
+  };
+  await Promise.all([writePumps(), writeTanks()]);
+
   // Relire la saisie avec les montants recalculés côté serveur
-  const { data: fresh } = await supabase.from("index_entries").select("*").eq("id", result.id).maybeSingle();
-  const { data: readings } = await (supabase as any)
-    .from("index_tank_readings").select("*").eq("entry_id", result.id);
+  const [{ data: fresh }, { data: readings }] = await Promise.all([
+    supabase.from("index_entries").select("*").eq("id", result.id).maybeSingle(),
+    (supabase as any).from("index_tank_readings").select("*").eq("entry_id", result.id),
+  ]);
   return { entry: (fresh || result) as any, readings: (readings || []) as any[] };
 };
 

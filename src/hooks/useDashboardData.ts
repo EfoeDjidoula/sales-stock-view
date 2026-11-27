@@ -1,3 +1,4 @@
+import { debounce } from "@/lib/debounce";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -55,11 +56,11 @@ export const useDashboardData = (period: Period, stationId?: string | null) => {
   // dès qu'une saisie d'index change (insertion, modification, suppression).
   useEffect(() => {
     if (!user) return;
-    const invalidate = () => {
+    const invalidate = debounce(() => {
       queryClient.invalidateQueries({ queryKey: ["dashboard-entries"] });
       queryClient.invalidateQueries({ queryKey: ["dashboard-chart"] });
       queryClient.invalidateQueries({ queryKey: ["latest-jauge"] });
-    };
+    }, 1500);
     const channel = supabase
       // Nom unique par instance : plusieurs écrans utilisent ce hook en même temps
       .channel(`dashboard-realtime-${Math.random().toString(36).slice(2)}`)
@@ -67,6 +68,7 @@ export const useDashboardData = (period: Period, stationId?: string | null) => {
       .on("postgres_changes", { event: "*", schema: "public", table: "pump_index_entries" }, invalidate)
       .subscribe();
     return () => {
+      invalidate.cancel();
       supabase.removeChannel(channel);
     };
   }, [user, queryClient]);

@@ -13,7 +13,7 @@ const LEGACY_KEYS = ["lumatek.queryCache"];
 const THROTTLE_MS = 2000;
 
 export const createAppQueryClient = () =>
-  new QueryClient({ defaultOptions: { queries: { gcTime: OFFLINE_CACHE_MAX_AGE } } });
+  new QueryClient({ defaultOptions: { queries: { gcTime: OFFLINE_CACHE_MAX_AGE, staleTime: 30_000, refetchOnWindowFocus: false } } });
 
 let pending: PersistedClient | null = null;
 let timer: ReturnType<typeof setTimeout> | null = null;
