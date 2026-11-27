@@ -49,8 +49,12 @@ export const DischargesTab = ({ d, L, canValidate, onChanged }: Props) => {
 
   const nm = (list: string, id?: string | null, key = "name") => (d[list] ?? []).find((r) => r.id === id)?.[key] ?? "—";
   const trip = (id: string) => (d.trips ?? []).find((t) => t.id === id);
-  const pending = useMemo(() => (pendingDischarges((d.loads ?? []) as Row[] as never[],
-    new Set((d.deliveries ?? []).map((r) => r.load_id)), new Set(done.map((r) => r.load_id))) as Row[]).filter((l) => allowed(l.station_id)), [d, done, mine]); // eslint-disable-line react-hooks/exhaustive-deps
+  // Compartiments réceptionnables : livraison confirmée, ou camion arrivé / en déchargement (le dépotage confirme la livraison)
+  const pending = useMemo(() => {
+    const ok = new Set((d.deliveries ?? []).map((r) => r.load_id));
+    (d.loads ?? []).forEach((l) => { if (["arrived", "unloading"].includes(trip(l.trip_id)?.status)) ok.add(l.id); });
+    return (pendingDischarges((d.loads ?? []) as Row[] as never[], ok, new Set(done.map((r) => r.load_id))) as Row[]).filter((l) => allowed(l.station_id));
+  }, [d, done, mine]); // eslint-disable-line react-hooks/exhaustive-deps
   const beOf = (tripId: string) => (d.liftings ?? []).find((b) => b.trip_id === tripId)?.number;
   const blOf = (tripId: string, st?: string) => notes.find((n) => n.trip_id === tripId && n.station_id === st)?.number;
   const keyOf = (l: Row) => `${l.trip_id}|${l.station_id}`;
@@ -62,7 +66,7 @@ export const DischargesTab = ({ d, L, canValidate, onChanged }: Props) => {
     const m = new Map<string, Row>();
     (d.loads ?? []).forEach((l) => {
       const t = trip(l.trip_id);
-      if (!l.station_id || !allowed(l.station_id) || delivered.has(l.id) || !t || !["loaded", "in_transit", "arrived", "unloading"].includes(t.status)) return;
+      if (!l.station_id || !allowed(l.station_id) || delivered.has(l.id) || !t || !["loaded", "in_transit"].includes(t.status)) return;
       const k = keyOf(l); const g = m.get(k) ?? { ...l, t, lines: [] as Row[] }; g.lines.push(l); m.set(k, g);
     });
     return [...m.values()];
@@ -101,7 +105,7 @@ export const DischargesTab = ({ d, L, canValidate, onChanged }: Props) => {
               <div className="text-xs">{g.lines.map((l: Row) => `C${nm("compartments", l.compartment_id, "position")} ${nm("products", l.product_id)} ${fmt(l.qty_litres)} L`).join(" · ")}</div>
             </div>
           ))}
-          <p className="text-xs text-muted-foreground">{L("Dès que la livraison du site est confirmée, les compartiments passent ci-dessous pour être dépotés.", "Once the site delivery is confirmed, compartments move below to be discharged.")}</p>
+          <p className="text-xs text-muted-foreground">{L("Dès que le camion arrive à la station, ses compartiments passent ci-dessous pour être réceptionnés en cuve.", "Once the truck arrives, compartments move below to be received into tanks.")}</p>
         </CardContent>
       </Card>
 
@@ -130,7 +134,7 @@ export const DischargesTab = ({ d, L, canValidate, onChanged }: Props) => {
                   <TableCell>{nm("products", l.product_id)}</TableCell>
                   <TableCell className="text-right">{fmt(l.qty_litres)}</TableCell>
                   <TableCell className="text-right">
-                    <Button size="sm" disabled={!canValidate} onClick={() => { setCur(l); const c = tanks.filter((t) => t.station_id === l.station_id && (!t.product_id || t.product_id === l.product_id)); setForm({ tank: c.length === 1 ? c[0].id : "", before: "", after: "", note: "" }); }}>{L("Réceptionner", "Receive")}</Button>
+                    <Button size="sm" disabled={!canValidate} onClick={() => { setCur(l); const c = tanks.filter((t) => t.station_id === l.station_id && (!t.product_id || t.product_id === l.product_id)); setForm({ tank: c.length === 1 ? c[0].id : "", before: "", after: "", note: "" }); }}>{L("Réceptionner en cuve", "Receive into tank")}</Button>
                   </TableCell>
                 </TableRow>
               ))}

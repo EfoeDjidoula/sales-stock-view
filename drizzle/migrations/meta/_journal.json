@@ -701,6 +701,13 @@
       "when": 1795771465808,
       "tag": "0099_driver_availability_without_documents",
       "breakpoints": true
+    },
+    {
+      "idx": 100,
+      "version": "7",
+      "when": 1795774776515,
+      "tag": "0100_discharge_confirms_delivery",
+      "breakpoints": true
     }
   ]
 }

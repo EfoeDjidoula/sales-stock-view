@@ -78,6 +78,7 @@ export const LogisticsModule = ({ dischargesOnly = false }: { dischargesOnly?: b
   const { isPlatformAdmin } = usePlatformAdmin();
   const canWrite = isPlatformAdmin || can("supplies", "create") || can("supplies", "edit") || can("supplies", "validate");
   const canValidate = isPlatformAdmin || can("supplies", "validate");
+  const canDischarge = canValidate || can("depotages", "create");
 
   // Volet initial : 1 par défaut ; 5 seulement si demandé (« Saisir une réception »), demande consommée une fois
   const [rawSub, setSub] = useState<string>(() => { const v = sessionStorage.getItem("logistics-subtab"); sessionStorage.removeItem("logistics-subtab"); return v || "depot_supply"; });
@@ -280,7 +281,7 @@ export const LogisticsModule = ({ dischargesOnly = false }: { dischargesOnly?: b
         <TabsContent value="dashboard"><LogisticsDashboardTab d={d} L={L} /></TabsContent>
         <TabsContent value="provision"><StationProvisionTab d={d} L={L} /></TabsContent>
         <TabsContent value="allocation"><LiftingAllocationTab d={d} L={L} /></TabsContent>
-        <TabsContent value="discharges"><DischargesTab d={d} L={L} canValidate={canValidate} onChanged={load} /></TabsContent>
+        <TabsContent value="discharges"><DischargesTab d={d} L={L} canValidate={canDischarge} onChanged={load} /></TabsContent>
         <TabsContent value="delivery_notes"><DeliveryNotesTab trips={trips} d={d} canValidate={canValidate} onChanged={load} L={L} /></TabsContent>
         <TabsContent value="loading_tracking"><LoadingTrackingTab d={d} L={L} statusLabel={(x) => L(...(TRIP_STATUS[x] ?? [x, x]))}
           nextStep={(t) => (canWrite && NEXT[t.status] ? L(NEXT[t.status][1], NEXT[t.status][2]) : null)}
