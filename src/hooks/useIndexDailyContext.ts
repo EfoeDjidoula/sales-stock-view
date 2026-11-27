@@ -143,6 +143,29 @@ export const useTankDayContext = (stationId?: string, date?: string, tanks: Tank
           variance: constate - qty,
         });
       }
+      // 4. Dépotages par compartiment (logistique) portés au stock, à la date de dépotage
+      const { data: dis } = await scopeQuery(
+        db.from("logistics_discharges").select("tank_id, qty_bl, gauge_before, gauge_after, stock_booked, discharge_date, logistics_trips(reference)"),
+      )
+        .eq("station_id", stationId)
+        .eq("discharge_date", date)
+        .eq("stock_booked", true);
+      for (const d of (dis || []) as any[]) {
+        if (!d.tank_id || !out[d.tank_id]) continue;
+        const qty = Number(d.qty_bl) || 0;
+        const constate = (Number(d.gauge_after) || 0) - (Number(d.gauge_before) || 0);
+        out[d.tank_id].depotage += qty;
+        out[d.tank_id].depotageConstate += constate;
+        out[d.tank_id].ecartCamion += constate - qty;
+        out[d.tank_id].receptions.push({
+          reference: d.logistics_trips?.reference ?? "Dépotage",
+          bl: null,
+          driver: null,
+          qty,
+          qtyConstatee: constate,
+          variance: constate - qty,
+        });
+      }
       return out;
     },
     enabled: !!user && !!stationId && !!date && tanks.length > 0,
