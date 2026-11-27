@@ -3,7 +3,7 @@ import { CheckCircle2, Truck } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { cn } from "@/lib/utils";
-import { compartmentFill, productTone } from "@/lib/tankerVisual";
+import { compartmentFill, compartmentVisualSlot, productTone } from "@/lib/tankerVisual";
 
 export type TankerVisualCompartment = {
   id?: string;
@@ -48,10 +48,10 @@ export function TankerTruckVisualizer({
   const tankX = 42;
   const tankY = 58;
   const tankH = 108;
-  const slotW = 176;
-  const tankW = Math.max(352, items.length * slotW);
+  const slotW = 150;
+  const tankW = Math.max(300, items.length * slotW);
   const actualSlotW = tankW / items.length;
-  const cabinX = tankX + tankW + 44;
+  const cabinX = tankX + tankW + 30;
   const svgW = cabinX + 250;
   const svgH = 348;
   const total = items.reduce((sum, item) => sum + (Number(item.qty) || 0), 0);
@@ -96,19 +96,28 @@ export function TankerTruckVisualizer({
         <svg viewBox={`0 0 ${svgW} ${svgH}`} className="h-auto w-full" style={{ minWidth: Math.max(680, svgW * 0.78) }} role="img" aria-label={`${registration} — ${fmt(total)} ${L("litres sur", "litres of")} ${fmt(totalCapacity)}`}>
           <defs>
             {items.map((item, index) => {
-              const x = tankX + index * actualSlotW + 5;
-              return <clipPath key={item.id ?? index} id={`${uid}-comp-${index}`}><rect x={x} y={tankY} width={actualSlotW - 10} height={tankH} rx="13" /></clipPath>;
+              const x = tankX + compartmentVisualSlot(index, items.length) * actualSlotW + 5;
+              return <clipPath key={item.id ?? index} id={`${uid}-comp-${index}`}><rect x={x} y={tankY} width={actualSlotW - 10} height={tankH} rx="5" /></clipPath>;
             })}
+            <clipPath id={`${uid}-tank`}><rect x={tankX} y={tankY - 4} width={tankW} height={tankH + 8} rx="36" /></clipPath>
+            <linearGradient id={`${uid}-metal`} x1="0" y1="0" x2="0" y2="1">
+              <stop offset="0" stopColor={token("secondary")} />
+              <stop offset="0.3" stopColor={token("card")} />
+              <stop offset="0.7" stopColor={token("muted")} />
+              <stop offset="1" stopColor={token("secondary")} />
+            </linearGradient>
           </defs>
 
           <g className="tanker-truck__vehicle">
             {departing && <path d={`M ${cabinX + 211} 126 L ${cabinX + 252} 103 L ${cabinX + 252} 151 Z`} fill={token("warning")} opacity="0.16" />}
             <rect x={tankX - 8} y={tankY + tankH - 2} width={tankW + 34} height="13" rx="5" fill={token("secondary")} stroke={token("border")} />
-            <rect x={tankX + 16} y={tankY - 15} width={tankW - 32} height="18" rx="8" fill={token("secondary")} stroke={token("border")} />
-            <rect x={tankX + tankW * 0.46} y={tankY - 24} width="58" height="12" rx="5" fill={token("muted")} stroke={token("border")} />
+            <path d={`M ${tankX + 30} ${tankY - 16} H ${tankX + tankW - 30} M ${tankX + 30} ${tankY - 7} H ${tankX + tankW - 30}`} stroke={token("muted-foreground")} strokeWidth="2" fill="none" />
+            {items.map((_, index) => <path key={index} d={`M ${tankX + index * actualSlotW + actualSlotW / 2} ${tankY - 17} V ${tankY - 5}`} stroke={token("muted-foreground")} strokeWidth="2" />)}
+            <rect x={tankX} y={tankY - 4} width={tankW} height={tankH + 8} rx="36" fill={`url(#${uid}-metal)`} stroke={token("muted-foreground")} strokeWidth="2" />
 
+            <g clipPath={`url(#${uid}-tank)`}>
             {items.map((item, index) => {
-              const x = tankX + index * actualSlotW + 5;
+              const x = tankX + compartmentVisualSlot(index, items.length) * actualSlotW + 5;
               const w = actualSlotW - 10;
               const ratio = item.productName ? compartmentFill(item.qty, item.capacity) : 0;
               const fillH = ratio * tankH;
@@ -123,7 +132,7 @@ export function TankerTruckVisualizer({
                   className={interactive ? "cursor-pointer outline-none" : undefined}
                   onClick={interactive ? activate : undefined}
                 >
-                  <rect x={x} y={tankY} width={w} height={tankH} rx="13" fill={token("card")} stroke={activeIndex === index ? token("ring") : token("border")} strokeWidth={activeIndex === index ? 4 : 2} />
+                  <rect x={x} y={tankY} width={w} height={tankH} rx="5" fill={`url(#${uid}-metal)`} stroke={activeIndex === index ? token("ring") : token("border")} strokeWidth={activeIndex === index ? 4 : 2} />
                   <g clipPath={`url(#${uid}-comp-${index})`}>
                     <rect className="tanker-truck__liquid" x={x} y={fillY} width={w} height={fillH} fill={token(tone)} opacity={tone === "muted" ? 0.35 : 0.9} />
                     {ratio > 0 && ratio < 1 && <path className="tanker-truck__surface" d={`M ${x} ${fillY} Q ${x + w * 0.25} ${fillY - 4} ${x + w * 0.5} ${fillY} T ${x + w} ${fillY}`} fill="none" stroke={token(tone)} strokeWidth="4" />}
@@ -131,10 +140,6 @@ export function TankerTruckVisualizer({
                   <text x={x + w / 2} y={tankY + 31} textAnchor="middle" fill={labelColor} fontSize="14" fontWeight="700">{L("COMP.", "COMP.")} {item.position ?? index + 1}</text>
                   <text x={x + w / 2} y={tankY + 57} textAnchor="middle" fill={labelColor} fontSize="18" fontWeight="700">{Math.round(ratio * 100)} %</text>
                   <text x={x + w / 2} y={tankY + 80} textAnchor="middle" fill={labelColor} fontSize="12">{fmt(item.capacity)} L</text>
-                  <rect x={x + w / 2 - 8} y={tankY - 9} width="16" height="9" rx="3" fill={token("muted")} stroke={token("border")} />
-                  <text x={x + w / 2} y={tankY + tankH + 84} textAnchor="middle" fill={tone === "muted" ? token("muted-foreground") : token(tone)} fontSize="14" fontWeight="700">{short(item.productName ?? L("VIDE", "EMPTY"))}</text>
-                  <text x={x + w / 2} y={tankY + tankH + 104} textAnchor="middle" fill={token("foreground")} fontSize="12">{fmt(item.qty)} L</text>
-                  <text x={x + w / 2} y={tankY + tankH + 124} textAnchor="middle" fill={token("muted-foreground")} fontSize="12">{short(item.destinationName ?? L("Destination à choisir", "Destination to choose"))}{item.stopOrder ? ` · #${item.stopOrder}` : ""}</text>
                   {interactive && <rect
                     x={x} y={tankY} width={w} height={tankH} rx="13"
                     fill={token("card")} opacity="0"
@@ -145,6 +150,18 @@ export function TankerTruckVisualizer({
                 </g>
               );
             })}
+            </g>
+            {items.map((item, index) => {
+              const cx = tankX + (compartmentVisualSlot(index, items.length) + 0.5) * actualSlotW;
+              return <g key={item.id ?? index}>
+                <rect x={cx - 14} y={tankY - 10} width="28" height="8" rx="3" fill={token("secondary")} stroke={token("muted-foreground")} />
+                <path d={`M ${cx} 169 V 182 H ${cx + 10}`} stroke={token("muted-foreground")} strokeWidth="3" fill="none" />
+                <circle cx={cx + 10} cy="182" r="4" fill={token("primary")} />
+                <text x={cx} y={tankY + tankH + 84} textAnchor="middle" fill={productTone(item.productName) === "muted" ? token("muted-foreground") : token(productTone(item.productName))} fontSize="14" fontWeight="700">{short(item.productName ?? L("VIDE", "EMPTY"), 16)}</text>
+                <text x={cx} y={tankY + tankH + 104} textAnchor="middle" fill={token("foreground")} fontSize="12">{fmt(item.qty)} L</text>
+                <text x={cx} y={tankY + tankH + 124} textAnchor="middle" fill={token("muted-foreground")} fontSize="11">{short(item.destinationName ?? L("Destination à choisir", "Destination to choose"), 17)}{item.stopOrder ? ` · #${item.stopOrder}` : ""}</text>
+              </g>;
+            })}
 
             <path d={`M ${tankX + tankW + 5} 139 L ${cabinX + 17} 139 L ${cabinX + 17} 164 L ${tankX + tankW + 5} 164 Z`} fill={token("secondary")} stroke={token("border")} />
             <path d={`M ${cabinX + 21} 67 L ${cabinX + 146} 67 L ${cabinX + 196} 111 L ${cabinX + 207} 111 L ${cabinX + 207} 181 L ${cabinX + 10} 181 L ${cabinX + 10} 99 Q ${cabinX + 10} 67 ${cabinX + 21} 67 Z`} fill={token("secondary")} stroke={token("foreground")} strokeWidth="2" />
@@ -154,9 +171,16 @@ export function TankerTruckVisualizer({
             <text x={cabinX + 72} y="149" textAnchor="middle" fill={token("foreground")} fontSize="12" fontWeight="700">{short(registration, 15)}</text>
             <rect x={cabinX + 193} y="130" width="15" height="19" rx="4" fill={departing ? token("warning") : token("muted")} className={departing ? "tanker-truck__headlight" : undefined} />
             <rect x={cabinX + 11} y="177" width="197" height="13" rx="4" fill={token("foreground")} />
+            <path d={`M ${cabinX + 28} 66 L ${cabinX + 38} 45 H ${cabinX + 114} L ${cabinX + 146} 66 Z`} fill={token("secondary")} stroke={token("foreground")} strokeWidth="2" />
+            <path d={`M ${cabinX + 108} 116 V 172 H ${cabinX + 26} V 116 M ${cabinX + 194} 155 H ${cabinX + 206} M ${cabinX + 194} 161 H ${cabinX + 206} M ${cabinX + 194} 167 H ${cabinX + 206}`} fill="none" stroke={token("muted-foreground")} strokeWidth="2" />
+            <rect x={cabinX + 89} y="120" width="13" height="4" rx="2" fill={token("muted-foreground")} />
+            <path d={`M ${cabinX + 181} 111 H ${cabinX + 190} V 99`} stroke={token("foreground")} strokeWidth="3" fill="none" />
+            <rect x={cabinX + 186} y="88" width="8" height="15" rx="3" fill={token("foreground")} />
+            <path d={`M ${tankX + tankW - 45} 178 V 211 H ${tankX + tankW - 30}`} stroke={token("muted-foreground")} strokeWidth="4" fill="none" />
 
-            {[tankX + tankW * 0.18, tankX + tankW * 0.33, tankX + tankW * 0.79, cabinX + 55, cabinX + 168].map((cx, index) => (
+            {[tankX + 58, tankX + 112, tankX + 166, cabinX + 55, cabinX + 168].map((cx, index) => (
               <g key={cx} className="tanker-truck__wheel">
+                <path d={`M ${cx - 29} 191 A 29 29 0 0 1 ${cx + 29} 191`} stroke={token("muted-foreground")} strokeWidth="5" fill="none" />
                 <circle cx={cx} cy="193" r="25" fill={token("foreground")} />
                 <circle cx={cx} cy="193" r="13" fill={token("muted")} stroke={token("border")} strokeWidth="2" />
                 <path d={`M ${cx - 10} 193 H ${cx + 10} M ${cx} 183 V 203`} stroke={token("border")} strokeWidth="2" />

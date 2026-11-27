@@ -1,5 +1,8 @@
 export type FuelTone = "super" | "gasoil" | "accent" | "muted";
 
+/** Cab faces right: original form indices stay intact, compartment 1 is nearest the cab. */
+export const compartmentVisualSlot = (index: number, count: number) => count - 1 - index;
+
 export const productTone = (name?: string): FuelTone => {
   const value = (name ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
   if (!value.trim()) return "muted";

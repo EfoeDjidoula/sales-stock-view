@@ -82,6 +82,7 @@
 - [ ] Ensuite : bilan des 3 stocks, fiches de stock & tableau de bord.
 
 ## Initialisation automatique des stocks
+- [x] Camion visuel : inverser les compartiments, améliorer la silhouette et réduire légèrement la longueur ; vérifier les clics.
 - [x] Créer le stock d'ouverture à la première jauge validée de chaque cuve, dans tous les pays, si aucun initial n'existe.
 - [x] Régulariser les stocks initiaux et ventes validées absents du registre, sans doublon.
 - [x] Recalculer les écarts d'inventaire à la date du comptage et aligner les réconciliations sur la même ouverture.
