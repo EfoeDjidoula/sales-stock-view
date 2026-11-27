@@ -282,7 +282,10 @@ export const LogisticsModule = ({ dischargesOnly = false }: { dischargesOnly?: b
         <TabsContent value="allocation"><LiftingAllocationTab d={d} L={L} /></TabsContent>
         <TabsContent value="discharges"><DischargesTab d={d} L={L} canValidate={canValidate} onChanged={load} /></TabsContent>
         <TabsContent value="delivery_notes"><DeliveryNotesTab trips={trips} d={d} canValidate={canValidate} onChanged={load} L={L} /></TabsContent>
-        <TabsContent value="loading_tracking"><LoadingTrackingTab d={d} L={L} statusLabel={(x) => L(...(TRIP_STATUS[x] ?? [x, x]))} /></TabsContent>
+        <TabsContent value="loading_tracking"><LoadingTrackingTab d={d} L={L} statusLabel={(x) => L(...(TRIP_STATUS[x] ?? [x, x]))}
+          nextStep={(t) => (canWrite && NEXT[t.status] ? L(NEXT[t.status][1], NEXT[t.status][2]) : null)}
+          onAdvance={(t) => { const n = NEXT[t.status]; if (!n) return; if (n[0] === "deliver" && !siteProgress((d.loads ?? []).filter((x) => x.trip_id === t.id), (d.deliveries ?? []).filter((x) => x.trip_id === t.id)).allDelivered && siteProgress((d.loads ?? []).filter((x) => x.trip_id === t.id), []).total) { setCheckTrip(t); return; } setActionData({}); setAction({ trip: t, action: n[0], title: L(n[1], n[2]) }); }}
+          onIncident={canWrite ? (t) => { setActionData({}); setAction({ trip: t, action: "incident", title: L("Déclarer un incident", "Report incident") }); } : undefined} /></TabsContent>
         <TabsContent value="three_stocks"><ThreeStocksTab /></TabsContent>
         <TabsContent value="liftings"><LiftingOrdersTab canWrite={canWrite} canValidate={canValidate} /></TabsContent>
         <TabsContent value="depot_supply"><DepotSupplyTab canWrite={canWrite} canValidate={canValidate} /></TabsContent>

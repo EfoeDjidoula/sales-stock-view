@@ -22,9 +22,11 @@ const fmtDt = (d?: string) => (d ? format(new Date(d), "dd/MM/yyyy HH:mm") : "â€
 const ALL = "__all";
 const ORDER: LoadingStage[] = ["waiting", "loading", "loaded", "en_route", "partial", "delivered", "closed"];
 
-interface Props { d: Record<string, Row[]>; L: (fr: string, en: string) => string; statusLabel: (s: string) => string }
+interface Props { d: Record<string, Row[]>; L: (fr: string, en: string) => string; statusLabel: (s: string) => string;
+  /** Next lifecycle step label for a trip (null = none) and its trigger; writes go through logistics_trip_action in LogisticsModule. */
+  nextStep?: (t: Row) => string | null; onAdvance?: (t: Row) => void; onIncident?: (t: Row) => void }
 
-export const LoadingTrackingTab = ({ d, L, statusLabel }: Props) => {
+export const LoadingTrackingTab = ({ d, L, statusLabel, nextStep, onAdvance, onIncident }: Props) => {
   const { scopeQuery } = useScope();
   const [f, setF] = useState<TrackingFilter>({});
   const [hist, setHist] = useState<Row | null>(null);
@@ -112,6 +114,8 @@ export const LoadingTrackingTab = ({ d, L, statusLabel }: Props) => {
                   <TableCell><div className="flex gap-1">
                     <Button size="sm" variant="ghost" title={L("Voir le camion et ses compartiments", "View truck and compartments")} onClick={() => setVisual(r)}><Truck className="h-4 w-4" /></Button>
                     <Button size="sm" variant="ghost" title={L("Historique", "History")} onClick={() => { setEvents([]); setHist(r); }}><Eye className="h-4 w-4" /></Button>
+                    {onAdvance && nextStep?.(r.t) && <Button size="sm" onClick={() => onAdvance(r.t)}>{nextStep(r.t)}</Button>}
+                    {onIncident && !["delivered", "incident", "cancelled"].includes(r.t.status) && <Button size="sm" variant="destructive" title={L("DÃ©clarer un incident", "Report incident")} onClick={() => onIncident(r.t)}>!</Button>}
                   </div></TableCell>
                 </TableRow>
               ))}
