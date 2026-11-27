@@ -50,6 +50,8 @@
 - [x] Récaps ECAP hebdo/mensuel (station ou toutes stations) et fiches d'inventaire (pompes, cuves au volume BL, caisse comptée), Excel/PDF.
 
 ## Priorité 3 — Logistique
+- [x] Exporter les documents camions/chauffeurs en Excel/PDF avec états vert >30 j, orange 16–30 j, rouge ≤15 j et expirés (exports réels téléchargés, 12 tests).
+- [ ] Activer les rappels automatiques d'échéance aux responsables et directeurs — bloqué : domaine d'envoi non vérifié et envois groupés programmés non pris en charge par le service actuel ; nécessite un service adapté choisi par l'utilisateur.
 - [x] Rectification par compartiment / justification des écarts de livraison (outil livré ; TRP-20261010-B04F5F reste à traiter par l'utilisateur avec les quantités réelles).
 - [x] Phase 1 : pro-formas dépôt, bons de commande, statut de règlement (onglet 1).
 - [x] Phase 2 : bons d'enlèvement (solde BC, camions/chauffeurs disponibles, documents obligatoires, signature, annulation motivée, PDF).
