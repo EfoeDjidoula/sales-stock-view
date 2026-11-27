@@ -116,7 +116,7 @@ export const LogisticsModule = ({ dischargesOnly = false }: { dischargesOnly?: b
       db.from("clients").select("id,name").eq("tenant_id", tenantId).order("name"),
       q("logistics_load_deliveries"),
       q("logistics_trip_events").in("action", ["rectify_delivery", "justify_variance"]).order("created_at", { ascending: false }).limit(200),
-      q("depot_lifting_orders", "trip_id,number,status,depot_id"),
+      q("depot_lifting_orders", "trip_id,number,status,depot_id,planned_date,vehicle_id,tanker_id"),
       q("depots", "id,name"),
     ]);
     const keys = ["trips", "carriers", "vehicles", "compartments", "drivers", "documents", "seals", "alerts", "supplies", "loads", "products", "stations", "clients", "deliveries", "corrections", "liftings", "depots"];

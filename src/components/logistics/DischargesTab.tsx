@@ -56,6 +56,8 @@ export const DischargesTab = ({ d, L, canValidate, onChanged }: Props) => {
     return (pendingDischarges((d.loads ?? []) as Row[] as never[], ok, new Set(done.map((r) => r.load_id))) as Row[]).filter((l) => allowed(l.station_id));
   }, [d, done, mine]); // eslint-disable-line react-hooks/exhaustive-deps
   const beOf = (tripId: string) => (d.liftings ?? []).find((b) => b.trip_id === tripId)?.number;
+  const beDate = (tripId: string) => { const x = (d.liftings ?? []).find((b) => b.trip_id === tripId)?.planned_date; return x ? format(new Date(x + "T12:00:00"), "dd/MM/yyyy") : null; };
+  const truckOf = (tripId: string) => { const t = trip(tripId); if (!t) return "—"; const a = nm("vehicles", t.truck_id, "registration"); return t.tanker_id ? `${a} + ${nm("vehicles", t.tanker_id, "registration")}` : a; };
   const blOf = (tripId: string, st?: string) => notes.find((n) => n.trip_id === tripId && n.station_id === st)?.number;
   const keyOf = (l: Row) => `${l.trip_id}|${l.station_id}`;
   const labelOf = (l: Row) => `${beOf(l.trip_id) ?? trip(l.trip_id)?.reference ?? "—"} · ${blOf(l.trip_id, l.station_id) ?? L("BL à venir", "BL pending")} · ${nm("stations", l.station_id)}`;
@@ -102,7 +104,7 @@ export const DischargesTab = ({ d, L, canValidate, onChanged }: Props) => {
                 <b>{nm("stations", g.station_id)}</b>
                 <Badge>{L(...((({ loaded: ["Chargé", "Loaded"], in_transit: ["En route", "On the way"], arrived: ["Arrivé", "Arrived"], unloading: ["Déchargement", "Unloading"] }) as Record<string, [string, string]>)[g.t.status]))}</Badge>
               </div>
-              <div className="text-xs text-muted-foreground">BE {beOf(g.trip_id) ?? "—"} · BL {blOf(g.trip_id, g.station_id) ?? "—"} · {nm("vehicles", g.t.truck_id, "registration")} · {nm("drivers", g.t.driver_id, "full_name")}{g.t.eta ? ` · ETA ${format(new Date(g.t.eta), "dd/MM HH:mm")}` : ""}</div>
+              <div className="text-xs text-muted-foreground">BE {beOf(g.trip_id) ?? "—"}{beDate(g.trip_id) ? ` (${beDate(g.trip_id)})` : ""} · BL {blOf(g.trip_id, g.station_id) ?? "—"} · {nm("vehicles", g.t.truck_id, "registration")} · {nm("drivers", g.t.driver_id, "full_name")}{g.t.eta ? ` · ETA ${format(new Date(g.t.eta), "dd/MM HH:mm")}` : ""}</div>
               <div className="text-xs">{g.lines.map((l: Row) => `C${nm("compartments", l.compartment_id, "position")} ${nm("products", l.product_id)} ${fmt(l.qty_litres)} L`).join(" · ")}</div>
             </div>
           ))}
@@ -121,15 +123,16 @@ export const DischargesTab = ({ d, L, canValidate, onChanged }: Props) => {
         <CardContent className="overflow-x-auto">
           <Table>
             <TableHeader><TableRow>
-              <TableHead>{L("BE / BL", "LO / DN")}</TableHead><TableHead>{L("Station", "Station")}</TableHead>
+              <TableHead>{L("BE / BL", "LO / DN")}</TableHead><TableHead>{L("Camion", "Truck")}</TableHead><TableHead>{L("Station", "Station")}</TableHead>
               <TableHead>{L("Compartiment", "Compartment")}</TableHead><TableHead>{L("Produit", "Product")}</TableHead>
               <TableHead className="text-right">{L("Volume BL (L)", "BL volume (L)")}</TableHead><TableHead />
             </TableRow></TableHeader>
             <TableBody>
-              {pending.length === 0 && <TableRow><TableCell colSpan={6} className="text-center text-muted-foreground">{L("Aucun compartiment livré en attente de dépotage", "No delivered compartment awaiting discharge")}</TableCell></TableRow>}
+              {pending.length === 0 && <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground">{L("Aucun compartiment livré en attente de dépotage", "No delivered compartment awaiting discharge")}</TableCell></TableRow>}
               {shown.map((l) => (
                 <TableRow key={l.id}>
-                  <TableCell className="text-xs">{beOf(l.trip_id) ?? trip(l.trip_id)?.reference ?? "—"}<br />{blOf(l.trip_id, l.station_id) ?? "—"}</TableCell>
+                  <TableCell className="text-xs">{beOf(l.trip_id) ?? trip(l.trip_id)?.reference ?? "—"}<br />{blOf(l.trip_id, l.station_id) ?? "—"}{beDate(l.trip_id) && <div className="text-muted-foreground">{L("BE du ", "LO of ")}{beDate(l.trip_id)}</div>}</TableCell>
+                  <TableCell className="text-xs">{truckOf(l.trip_id)}</TableCell>
                   <TableCell>{nm("stations", l.station_id)}</TableCell>
                   <TableCell>N° {nm("compartments", l.compartment_id, "position")}</TableCell>
                   <TableCell>{nm("products", l.product_id)}</TableCell>
@@ -149,18 +152,19 @@ export const DischargesTab = ({ d, L, canValidate, onChanged }: Props) => {
         <CardContent className="overflow-x-auto">
           <Table>
             <TableHeader><TableRow>
-              <TableHead>{L("Date", "Date")}</TableHead><TableHead>{L("Transport", "Trip")}</TableHead><TableHead>{L("Station", "Station")}</TableHead>
+              <TableHead>{L("Date", "Date")}</TableHead><TableHead>{L("Transport", "Trip")}</TableHead><TableHead>{L("Camion", "Truck")}</TableHead><TableHead>{L("Station", "Station")}</TableHead>
               <TableHead>{L("Cuve", "Tank")}</TableHead><TableHead className="text-right">BL</TableHead>
               <TableHead className="text-right">{L("Jauge avant", "Gauge before")}</TableHead><TableHead className="text-right">{L("Jauge après", "Gauge after")}</TableHead>
               <TableHead className="text-right">{L("Jaugé", "Measured")}</TableHead><TableHead className="text-right">{L("Écart", "Variance")}</TableHead>
               <TableHead>{L("Stock", "Stock")}</TableHead>
             </TableRow></TableHeader>
             <TableBody>
-              {done.length === 0 && <TableRow><TableCell colSpan={10} className="text-center text-muted-foreground">{L("Aucun dépotage", "No discharge")}</TableCell></TableRow>}
+              {done.length === 0 && <TableRow><TableCell colSpan={11} className="text-center text-muted-foreground">{L("Aucun dépotage", "No discharge")}</TableCell></TableRow>}
               {done.map((r) => (
                 <TableRow key={r.id}>
                   <TableCell>{r.discharge_date ? format(new Date(r.discharge_date + "T12:00:00"), "dd/MM/yyyy") : format(new Date(r.created_at), "dd/MM/yyyy HH:mm")}</TableCell>
-                  <TableCell>{trip(r.trip_id)?.reference ?? "—"}</TableCell>
+                  <TableCell className="text-xs">{beOf(r.trip_id) ?? trip(r.trip_id)?.reference ?? "—"}{beDate(r.trip_id) && <div className="text-muted-foreground">{L("BE du ", "LO of ")}{beDate(r.trip_id)}</div>}</TableCell>
+                  <TableCell className="text-xs">{truckOf(r.trip_id)}</TableCell>
                   <TableCell>{nm("stations", r.station_id)}</TableCell>
                   <TableCell>{tankName(r.tank_id)}</TableCell>
                   <TableCell className="text-right">{fmt(r.qty_bl)}</TableCell>
