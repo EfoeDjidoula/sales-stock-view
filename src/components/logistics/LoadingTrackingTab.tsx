@@ -142,7 +142,8 @@ export const LoadingTrackingTab = ({ d, L, statusLabel, nextStep, onAdvance, onI
                   id: load.compartment_id ?? load.id,
                   position: comp?.position ?? index + 1,
                   capacity: Number(comp?.capacity_litres ?? load.qty_litres),
-                  qty: load.qty_litres,
+                  // Remaining volume: a discharged / delivered compartment empties dynamically
+                  qty: Math.max(0, Number(load.qty_litres) - (d.deliveries ?? []).filter((x) => x.load_id === load.id).reduce((sum, x) => sum + Number(x.qty_delivered || 0), 0)),
                   productName: nm("products", load.product_id),
                   destinationName: load.destination_type === "station" ? nm("stations", load.station_id) : nm("clients", load.client_id),
                   stopOrder: load.stop_order,

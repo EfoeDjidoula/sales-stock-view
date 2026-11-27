@@ -146,7 +146,7 @@ export function DeliveryNotesTab({ trips, d, canValidate, onChanged, L }: { trip
                 id: load.compartment_id ?? load.id,
                 position: comp?.position ?? index + 1,
                 capacity: Number(comp?.capacity_litres ?? load.qty_litres),
-                qty: load.qty_litres,
+                qty: Math.max(0, Number(load.qty_litres) - (d.deliveries ?? []).filter((x) => x.load_id === load.id).reduce((sum, x) => sum + Number(x.qty_delivered || 0), 0)),
                 productName: (d.products ?? []).find((item) => item.id === load.product_id)?.name,
                 destinationName: station ?? client,
                 stopOrder: load.stop_order,
