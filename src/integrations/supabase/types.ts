@@ -6707,25 +6707,34 @@ export type Database = {
           action: string
           code: string
           created_at: string
+          group_label: string
           id: string
           label: string
           module: string
+          prerequisites: string[]
+          screen_label: string | null
         }
         Insert: {
           action: string
           code: string
           created_at?: string
+          group_label?: string
           id?: string
           label: string
           module: string
+          prerequisites?: string[]
+          screen_label?: string | null
         }
         Update: {
           action?: string
           code?: string
           created_at?: string
+          group_label?: string
           id?: string
           label?: string
           module?: string
+          prerequisites?: string[]
+          screen_label?: string | null
         }
         Relationships: []
       }
@@ -9789,6 +9798,45 @@ export type Database = {
           registration: string
           vehicle_id: string
         }[]
+      }
+      rbac_assign_role: {
+        Args: { _role?: string; _user: string }
+        Returns: undefined
+      }
+      rbac_legacy_role: {
+        Args: { _role: string }
+        Returns: Database["public"]["Enums"]["app_role"]
+      }
+      rbac_require_permission: { Args: { _code: string }; Returns: undefined }
+      rbac_role_action: {
+        Args: {
+          _action: string
+          _description?: string
+          _name?: string
+          _role?: string
+          _tenant: string
+        }
+        Returns: {
+          code: string
+          created_at: string
+          description: string | null
+          id: string
+          is_system: boolean
+          name: string
+          position: number
+          tenant_id: string | null
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "roles"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      rbac_save_role_permissions: {
+        Args: { _permission_ids: string[]; _role: string }
+        Returns: undefined
       }
       recon_classify: {
         Args: {

@@ -1,3 +1,4 @@
+- [ ] Refonte des droits : recenser les écrans et actions métier, élargir les choix par profil, appliquer les restrictions côté serveur et vérifier le parcours connecté sans changer les affectations existantes.
 - [x] Ajouter un choix Français / English visible à côté du profil, conservé par utilisateur et initialisé selon la langue du client.
 - [x] Traduire les parcours visibles : connexion, choix de pays, navigation, tableau de bord, saisie et administration.
 - [x] Vérifier le changement de langue et sa conservation dans l'application.

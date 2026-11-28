@@ -16,12 +16,24 @@ const EXTRA = "sales.create,sales.validate,sales.export,sales.edit,sales.view,re
 const ALL_PERMS = [...PERM_AREAS.flatMap((a) => ACTIONS.map((x) => `${a}.${x}`)), ...EXTRA];
 
 export const permissionsFor = (role: DemoRole): string[] => {
-  if (role === "admin") return ALL_PERMS;
-  if (role === "operator")
-    return ["dashboard.view", "index_entries.view", "index_entries.create", "index_entries.edit", "stock.view", "depotages.view", "depotages.create", "supplies.validate", "sales.view", "sales.create", "stations.view", "reports.view"];
-  return ALL_PERMS.filter((p) =>
+  const base = role === "admin" ? ALL_PERMS : role === "operator"
+    ? ["dashboard.view", "index_entries.view", "index_entries.create", "index_entries.edit", "stock.view", "depotages.view", "depotages.create", "supplies.validate", "sales.view", "sales.create", "stations.view", "reports.view"]
+    : ALL_PERMS.filter((p) =>
     /^(dashboard|stock|depotages|orders|supplies|clients|trucks|suppliers|proforma)\./.test(p) ||
     ["sales.view", "reports.view", "reports.export", "index_entries.view", "index_entries.validate", "fuel_cards.view", "reconciliation.view", "stations.view"].includes(p));
+  const extra: string[] = [];
+  const views: Record<string, string[]> = {
+    "reports.view": ["bi", "assistant", "periodic_reports", "pro_suite", "ecmr"],
+    "supplies.view": ["depot_purchases", "lifting_orders", "transport", "delivery_notes", "fleet", "carriers", "drivers", "vehicle_documents", "seals", "loading_tracking", "lifting_allocation", "station_provision", "logistics_map", "logistics_alerts", "station_tracking", "three_stocks", "logistics_dashboard"],
+    "stations.view": ["maintenance", "maintenance_assets", "maintenance_plans", "maintenance_work_orders", "maintenance_alerts", "hse_inspections", "hse_events", "hse_nonconformities", "hse_safety", "hse_checklists", "hse_agents", "hse_scores"],
+    "clients.view": ["b2b"],
+    "synthesis.view": ["manager_accounts", "account_closings", "ecap_recaps", "inventory_sheets", "network_sales"],
+    "depotages.view": ["delivery_notes"],
+  };
+  Object.entries(views).forEach(([parent, modules]) => { if (base.includes(parent)) extra.push(...modules.map((m) => `${m}.view`)); });
+  if (base.includes("supplies.validate") || base.includes("depotages.create")) extra.push("delivery_notes.sign_driver", "delivery_notes.sign_consignee");
+  if (base.includes("supplies.validate")) extra.push("lifting_orders.create", "lifting_orders.sign_logistics", "lifting_orders.sign_director", "lifting_orders.cancel", "depot_purchases.create_proforma", "depot_purchases.issue_order", "depot_purchases.set_payment_status", "depot_purchases.edit_order", "depot_purchases.delete_order", "delivery_notes.generate", "delivery_notes.assign", "delivery_notes.sign_shipper", "ecmr.sign_shipper", "ecmr.sign_driver", "ecmr.sign_consignee", ...["fleet", "carriers", "drivers", "vehicle_documents", "seals"].flatMap((m) => [`${m}.create`, `${m}.edit`]), ...["create", "start_loading", "finish_loading", "depart", "arrive", "start_unloading", "deliver", "incident", "resume", "position", "set_loads", "confirm_site", "rectify", "justify"].map((a) => `transport.${a}`));
+  return [...new Set([...base, ...extra])];
 };
 
 export const modulesFor = (role: DemoRole): string[] => {

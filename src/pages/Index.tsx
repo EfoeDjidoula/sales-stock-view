@@ -191,7 +191,7 @@ const TAB_META: Record<string, { label: string; icon: typeof TrendingUp }> = {
 // Permission RBAC (au moins une) requise pour chaque onglet ; null = toujours visible
 const TAB_RBAC: Record<string, string[] | null> = {
   command: ["dashboard.view"],
-  bi: ["reports.view"],
+  bi: ["bi.view"],
   ventes: ["dashboard.view", "index_entries.view"],
   stock: ["stock.view", "dashboard.view"],
   moteur_stock: ["stock.view"],
@@ -206,23 +206,23 @@ const TAB_RBAC: Record<string, string[] | null> = {
   depotage_compartiment: ["depotages.view"],
   camions: ["trucks.view"],
   stations: ["stations.view"],
-  maintenance: ["stations.view"],
-  hse: ["stations.view"],
+  maintenance: ["maintenance.view"],
+  hse: ["hse_scores.view", "hse_inspections.view", "hse_events.view", "hse_nonconformities.view", "hse_safety.view", "hse_checklists.view", "hse_agents.view"],
   perequation: ["perequation.view"],
   structure_prix: ["price_structures.view"],
   proforma: ["proforma.view"],
-  analyse_ia: ["reports.view"],
+  analyse_ia: ["assistant.view"],
   support: null,
   clients: ["clients.view"],
-  b2b: ["clients.view"],
+  b2b: ["b2b.view"],
   fuel_cards: ["fuel_cards.view"],
   fournisseurs: ["suppliers.view"],
   exercices: ["fiscal_years.view"],
   droits: ["users.view", "users.administer"],
   societe: ["settings.administer", "settings.edit"],
   workflows: ["workflows.view", "workflows.manage"],
-  suite_pro: ["reports.view"],
-  rapports: ["reports.view"],
+  suite_pro: ["pro_suite.view"],
+  rapports: ["periodic_reports.view"],
   etats_synthese: ["synthesis.view"],
 };
 
@@ -293,22 +293,15 @@ const Index = () => {
 
   // Get allowed tabs for current user
   // Onglets affichés selon les permissions RBAC réelles (Super Admin : tout).
-  // Repli sur l'ancien rôle uniquement si l'utilisateur n'a aucune permission RBAC.
+  // Aucun repli sur un rôle historique : un profil sans droit reste sans accès métier.
   const allowedTabs = useMemo(() => {
-    const hasRbac = permissions.size > 0;
     const base = isPlatformAdmin
       ? Object.keys(TAB_PERMISSIONS)
-      : hasRbac
-      ? Object.keys(TAB_PERMISSIONS).filter((tab) => {
+      : Object.keys(TAB_PERMISSIONS).filter((tab) => {
           const perm = TAB_RBAC[tab];
           if (perm === null) return true;
           return (perm ?? []).some((p) => permissions.has(p));
-        })
-      : !currentUserRole
-      ? ["ventes", "stock", "stations"]
-      : Object.entries(TAB_PERMISSIONS)
-          .filter(([_, roles]) => roles.includes(currentUserRole))
-          .map(([tab]) => tab);
+        });
     return base.filter((tab) => {
       if (license.isLimited && !LIMITED_TABS.includes(tab)) return false;
       const keys = [TAB_MODULE[tab], TAB_EXTRA_MODULE[tab]].filter(Boolean) as string[];

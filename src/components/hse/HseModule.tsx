@@ -219,7 +219,7 @@ const HseModule = () => {
           <Card key={l} className="glass-card"><CardContent className="p-4"><p className="text-xs text-muted-foreground">{l}</p><p className="text-2xl font-bold">{v}</p></CardContent></Card>))}
       </div>
 
-      <Tabs defaultValue="scores">
+      <Tabs defaultValue="scores" permissionMap={{ scores: "hse_scores.view", inspections: "hse_inspections.view", events: "hse_events.view", nc: "hse_nonconformities.view", safety: "hse_safety.view", checklists: "hse_checklists.view", agents: "hse_agents.view" }}>
         <TabsList className="flex-wrap h-auto">
           <TabsTrigger value="scores">Compliance Score</TabsTrigger>
           <TabsTrigger value="inspections">Inspections</TabsTrigger>

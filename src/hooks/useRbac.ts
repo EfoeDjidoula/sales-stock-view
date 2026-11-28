@@ -20,6 +20,9 @@ export interface RbacPermission {
   module: string;
   action: string;
   label: string;
+  screen_label?: string | null;
+  group_label?: string;
+  prerequisites?: string[];
 }
 
 export interface RbacAssignment {
@@ -73,6 +76,27 @@ export const ACTION_LABELS: Record<string, string> = {
   export: "Exporter",
   administer: "Administrer",
   manage: "Gérer",
+  reject: "Rejeter", submit: "Soumettre", reopen: "Rouvrir", cancel: "Annuler",
+  create_proforma: "Créer une pro-forma", issue_order: "Émettre un BC", set_payment_status: "Enregistrer le règlement",
+  edit_order: "Modifier le BC", delete_order: "Supprimer le BC",
+  sign_logistics: "Visa logistique", sign_director: "Visa directeur d’exploitation",
+  sign_shipper: "Visa expéditeur", sign_driver: "Recueillir la signature chauffeur", sign_consignee: "Signer la réception",
+  start_loading: "Débuter le chargement", finish_loading: "Terminer le chargement", depart: "Enregistrer le départ",
+  arrive: "Enregistrer l’arrivée", start_unloading: "Débuter le déchargement", deliver: "Confirmer la livraison",
+  incident: "Déclarer un incident", resume: "Reprendre le transport", position: "Enregistrer une position GPS",
+  set_loads: "Affecter les compartiments", confirm_site: "Confirmer un site", rectify: "Rectifier un écart", justify: "Justifier un écart",
+  generate: "Générer les BL", assign: "Désigner le destinataire", complete: "Clôturer l’intervention",
+  start: "Démarrer l’action", submit_closure: "Soumettre la clôture", validate_closure: "Valider la clôture", reject_closure: "Rejeter la clôture",
+  terms: "Définir les conditions contractuelles", exception: "Accorder une dérogation de crédit", consumption: "Saisir une consommation",
+  invoice: "Émettre une facture", payment: "Enregistrer un paiement", account: "Créer un compte",
+  vehicle: "Gérer les véhicules", driver: "Gérer les conducteurs", card: "Émettre une carte", status: "Bloquer / débloquer",
+  replace: "Remplacer une carte", topup: "Recharger le compte", allocate: "Allouer un montant", return: "Restituer une allocation",
+  limit: "Modifier les plafonds", restrictions: "Configurer les restrictions", purchase: "Enregistrer un achat", invoice_payment: "Encaisser une facture",
+  approve: "Approuver", escalate: "Escalader", comment: "Commenter", update: "Modifier le connecteur",
+  set_status: "Activer / suspendre", set_schedule: "Planifier la synchronisation", set_mapping: "Configurer les correspondances",
+  delete_mapping: "Supprimer une correspondance", enqueue: "Lancer une synchronisation", retry: "Relancer un traitement",
+  order: "Commander", load: "Charger", receive: "Valider la réception", analyze: "Analyser",
+  request_justification: "Demander une justification", confirm: "Confirmer l’alerte", false_positive: "Classer sans suite", close: "Clore l’alerte",
 };
 
 export const ACTION_ORDER = [
@@ -123,11 +147,16 @@ export const useRbac = () => {
   const rolePermissionsQuery = useQuery({
     queryKey: ["rbac-role-permissions", tenantId],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("role_permissions")
-        .select("role_id, permission_id");
-      if (error) throw error;
-      return (data || []) as { role_id: string; permission_id: string }[];
+      const rows: { role_id: string; permission_id: string }[] = [];
+      for (let offset = 0; ; offset += 1000) {
+        const { data, error } = await supabase.from("role_permissions")
+          .select("role_id, permission_id").order("role_id").order("permission_id")
+          .range(offset, offset + 999);
+        if (error) throw error;
+        rows.push(...(data ?? []));
+        if (!data || data.length < 1000) break;
+      }
+      return rows;
     },
     enabled: !!user?.id,
   });
@@ -160,6 +189,16 @@ export const useRbac = () => {
     queryClient.invalidateQueries({ queryKey: ["rbac-assignments"] });
     queryClient.invalidateQueries({ queryKey: ["rbac-country-access"] });
     queryClient.invalidateQueries({ queryKey: ["my-permissions"] });
+  };
+
+  const saveRolePermissions = async (roleId: string, permissionIds: string[]) => {
+    const { error } = await supabase.rpc("rbac_save_role_permissions", {
+      _role: roleId, _permission_ids: permissionIds,
+    });
+    if (error) { toast.error(error.message); return false; }
+    invalidate();
+    toast.success("Droits du profil enregistrés");
+    return true;
   };
 
   /** Active / désactive une permission sur un rôle de la société. */
@@ -195,29 +234,11 @@ export const useRbac = () => {
   const duplicateRole = async (role: RbacRole, name?: string) => {
     if (!tenantId) return null;
     try {
-      const { data: created, error } = await supabase
-        .from("roles")
-        .insert({
-          tenant_id: tenantId,
-          code: `${role.code}_${Date.now().toString(36)}`,
-          name: name || `${role.name} (personnalisé)`,
-          description: role.description,
-          is_system: false,
-          position: role.position,
-        })
-        .select()
-        .single();
+      const { data: created, error } = await supabase.rpc("rbac_role_action", {
+        _action: "duplicate", _tenant: tenantId, _role: role.id,
+        _name: name || `${role.name} (personnalisé)`, _description: role.description ?? undefined,
+      });
       if (error) throw error;
-
-      const source = (rolePermissionsQuery.data || []).filter(
-        (rp) => rp.role_id === role.id
-      );
-      if (source.length) {
-        const { error: rpError } = await supabase.from("role_permissions").insert(
-          source.map((rp) => ({ role_id: created.id, permission_id: rp.permission_id }))
-        );
-        if (rpError) throw rpError;
-      }
       invalidate();
       toast.success("Rôle dupliqué : vous pouvez maintenant l'adapter");
       return created as RbacRole;
@@ -231,18 +252,9 @@ export const useRbac = () => {
   const createRole = async (name: string, description?: string) => {
     if (!tenantId) return null;
     try {
-      const { data, error } = await supabase
-        .from("roles")
-        .insert({
-          tenant_id: tenantId,
-          code: `custom_${Date.now().toString(36)}`,
-          name,
-          description: description || null,
-          is_system: false,
-          position: 99,
-        })
-        .select()
-        .single();
+      const { data, error } = await supabase.rpc("rbac_role_action", {
+        _action: "create", _tenant: tenantId, _name: name, _description: description,
+      });
       if (error) throw error;
       invalidate();
       toast.success("Rôle créé");
@@ -255,14 +267,19 @@ export const useRbac = () => {
   };
 
   const deleteRole = async (roleId: string) => {
+    if (!tenantId) return false;
     try {
-      const { error } = await supabase.from("roles").delete().eq("id", roleId);
+      const { error } = await supabase.rpc("rbac_role_action", {
+        _action: "delete", _tenant: tenantId, _role: roleId,
+      });
       if (error) throw error;
       invalidate();
       toast.success("Rôle supprimé");
+      return true;
     } catch (e) {
       console.error(e);
-      toast.error("Suppression impossible");
+      toast.error((e as { message?: string }).message ?? "Suppression impossible");
+      return false;
     }
   };
 
@@ -270,20 +287,10 @@ export const useRbac = () => {
   const setUserRole = async (userId: string, roleId: string | null) => {
     if (!tenantId) return;
     try {
-      const { error: delError } = await supabase
-        .from("user_role_assignments")
-        .delete()
-        .eq("user_id", userId)
-        .eq("tenant_id", tenantId);
-      if (delError) throw delError;
-
-      if (roleId) {
-        const { error } = await supabase
-          .from("user_role_assignments")
-          .insert({ user_id: userId, tenant_id: tenantId, role_id: roleId });
-        if (error) throw error;
-      }
+      const { error } = await supabase.rpc("rbac_assign_role", { _user: userId, _role: roleId ?? undefined });
+      if (error) throw error;
       invalidate();
+      queryClient.invalidateQueries({ queryKey: ["user-roles"] });
     } catch (e) {
       console.error(e);
       toast.error("Attribution du rôle impossible");
@@ -356,6 +363,7 @@ export const useRbac = () => {
       permissionsQuery.isLoading ||
       rolePermissionsQuery.isLoading,
     toggleRolePermission,
+    saveRolePermissions,
     duplicateRole,
     createRole,
     deleteRole,

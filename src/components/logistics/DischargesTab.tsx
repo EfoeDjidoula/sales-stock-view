@@ -16,6 +16,7 @@ import { dischargeVariance, pendingDischarges, validGauges } from "@/lib/dischar
 import { PenLine } from "lucide-react";
 import { BlSignDialog, VarianceBadge } from "./BlParts";
 import { blQuantities, nextSignatureRole, signatureProgress, type BlRole, type DeliveryNote } from "@/lib/deliveryNotes";
+import { usePermissions } from "@/hooks/usePermissions";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const db = supabase as any;
@@ -27,6 +28,7 @@ interface Props { d: Record<string, Row[]>; L: (fr: string, en: string) => strin
 export const DischargesTab = ({ d, L, canValidate, onChanged }: Props) => {
   const { scopeQuery } = useScope();
   const { user } = useAuth();
+  const { can } = usePermissions();
   /** Stations affectées au compte (gérant) : null = aucune affectation → vue réseau complète. */
   const [mine, setMine] = useState<Set<string> | null>(null);
   useEffect(() => { if (!user) return; db.from("station_assignments").select("station_id").eq("user_id", user.id)
@@ -184,7 +186,7 @@ export const DischargesTab = ({ d, L, canValidate, onChanged }: Props) => {
                   <TableCell className="text-right tabular-nums">{fmt(q.received)}</TableCell>
                   <TableCell className="text-right"><VarianceBadge v={q.variance} /></TableCell>
                   <TableCell><Badge variant="secondary">{signatureProgress(n.signatures)}/3</Badge></TableCell>
-                  <TableCell>{role && role !== "shipper" && <Button size="sm" onClick={() => setSign({ note: n, role })}><PenLine className="h-4 w-4 mr-1" />{role === "carrier" ? L("Faire signer le chauffeur", "Driver signature") : L("Signer la réception", "Sign reception")}</Button>}</TableCell>
+                  <TableCell>{role && role !== "shipper" && can(role === "carrier" ? "delivery_notes.sign_driver" : "delivery_notes.sign_consignee") && <Button size="sm" onClick={() => setSign({ note: n, role })}><PenLine className="h-4 w-4 mr-1" />{role === "carrier" ? L("Faire signer le chauffeur", "Driver signature") : L("Signer la réception", "Sign reception")}</Button>}</TableCell>
                 </TableRow>); })}
             </TableBody>
           </Table>

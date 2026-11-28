@@ -256,7 +256,7 @@ export const LogisticsModule = ({ dischargesOnly = false }: { dischargesOnly?: b
         ))}
       </div>
       {loading && <Loader2 className="h-5 w-5 animate-spin text-primary" />}
-      <Tabs value={sub} onValueChange={setSub}>
+      <Tabs value={sub} onValueChange={setSub} permissionMap={{ depot_supply: "depot_purchases.view", liftings: "lifting_orders.view", loading_tracking: "loading_tracking.view", delivery_notes: "delivery_notes.view", discharges: "depotages.view", allocation: "lifting_allocation.view", provision: "station_provision.view", carriers: "carriers.view", vehicles: "fleet.view", drivers: "drivers.view", documents: "vehicle_documents.view", seals: "seals.view", supplies: "supplies.view", trips: "transport.view", map: "logistics_map.view", alerts: "logistics_alerts.view", stations: "station_tracking.view", three_stocks: "three_stocks.view", dashboard: "logistics_dashboard.view" }}>
         <TabsList className={dischargesOnly ? "hidden" : "flex-wrap h-auto"}>
           <TabsTrigger value="depot_supply">1. {L("Approvisionnement dépôt (pro-formas & BC)", "Depot supply (pro-formas & POs)")}</TabsTrigger>
           <TabsTrigger value="liftings">2. {L("Bons d'enlèvement", "Lifting orders")}</TabsTrigger>

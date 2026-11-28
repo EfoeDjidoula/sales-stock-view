@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useUserRoles, AppRole } from "@/hooks/useUserRoles";
 import { useAuth } from "@/hooks/useAuth";
+import { usePermissions } from "@/hooks/usePermissions";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -74,7 +75,8 @@ const roleConfig: Record<AppRole, { label: string; icon: React.ReactNode; classN
 
 export const UsersModule = () => {
   const { user } = useAuth();
-  const { users, currentUserRole, isAdmin, loading, assignRole, removeRole, toggleUserActive, sendPasswordReset, refetch } = useUserRoles();
+  const { can, isLoading: permissionsLoading } = usePermissions();
+  const { users, currentUserRole, loading, toggleUserActive, sendPasswordReset, refetch } = useUserRoles();
   const [selectedUser, setSelectedUser] = useState<string | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
@@ -134,15 +136,16 @@ export const UsersModule = () => {
     if (!selectedUser) return;
     const r = rbacById(selectedRbacRoleId);
     if (!r) return;
-    await assignRole(selectedUser, legacyRoleFor(r.code));
     await setUserRole(selectedUser, r.id);
+    await refetch();
     setIsDialogOpen(false);
     setSelectedUser(null);
   };
 
   const handleRemoveRole = async () => {
     if (!userToRemove) return;
-    await removeRole(userToRemove);
+    await setUserRole(userToRemove, null);
+    await refetch();
     setUserToRemove(null);
   };
 
@@ -243,7 +246,7 @@ export const UsersModule = () => {
     }
   };
 
-  if (loading) {
+  if (loading || permissionsLoading) {
     return (
       <div className="flex items-center justify-center py-12">
         <Loader2 className="w-8 h-8 animate-spin text-primary" />
@@ -252,7 +255,7 @@ export const UsersModule = () => {
   }
 
   // Show access denied if not admin
-  if (!isAdmin && currentUserRole !== null) {
+  if (!can("users.view") && !can("users.administer")) {
     return (
       <div className="space-y-6">
         <Card className="border-destructive/50 bg-destructive/5">
@@ -264,7 +267,7 @@ export const UsersModule = () => {
               <div>
                 <h3 className="font-semibold text-lg">Accès restreint</h3>
                 <p className="text-muted-foreground">
-                  Seuls les administrateurs peuvent gérer les rôles utilisateurs.
+                  Le droit de consultation des utilisateurs est requis.
                 </p>
               </div>
             </div>
@@ -298,34 +301,6 @@ export const UsersModule = () => {
     );
   }
 
-  // First admin setup - if no admin exists yet
-  if (currentUserRole === null && users.every((u) => u.role !== "admin")) {
-    return (
-      <div className="space-y-6">
-        <Card className="border-primary/50 bg-primary/5">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Crown className="w-5 h-5 text-primary" />
-              Configuration initiale
-            </CardTitle>
-            <CardDescription>
-              Aucun administrateur n'est configuré. Attribuez-vous le rôle d'administrateur pour commencer.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button 
-              onClick={() => user && assignRole(user.id, "admin")}
-              className="gap-2"
-            >
-              <Crown className="w-4 h-4" />
-              Devenir administrateur
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between flex-wrap gap-4">
@@ -336,6 +311,7 @@ export const UsersModule = () => {
           </p>
         </div>
         <Button
+          disabled={!can("users.create")}
           onClick={() => {
             setNewUserCountries(activeCountryId ? [activeCountryId] : []);
             setIsCreateDialogOpen(true);
@@ -354,21 +330,6 @@ export const UsersModule = () => {
         </TabsList>
 
         <TabsContent value="users" className="mt-6 space-y-6">
-      {/* Role Legend */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {(Object.keys(roleConfig) as AppRole[]).map((role) => (
-          <Card key={role} className="border-l-4" style={{ borderLeftColor: role === "admin" ? "#ef4444" : role === "manager" ? "#3b82f6" : "#22c55e" }}>
-            <CardContent className="pt-4">
-              <div className="flex items-center gap-2 mb-2">
-                {roleConfig[role].icon}
-                <span className="font-medium">{roleConfig[role].label}</span>
-              </div>
-              <p className="text-sm text-muted-foreground">{roleConfig[role].description}</p>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
       {/* Users Table */}
       <Card>
         <CardHeader>
@@ -420,17 +381,7 @@ export const UsersModule = () => {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        {u.role ? (
-                          <Badge className={`gap-1 ${roleConfig[u.role].className}`}>
-                            {roleConfig[u.role].icon}
-                            {roleConfig[u.role].label}
-                          </Badge>
-                        ) : (
-                          <span className="text-muted-foreground text-sm">Non attribué</span>
-                        )}
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {roles.find((r) => r.id === getUserRoleId(u.id))?.name ?? "Aucun rôle détaillé"}
-                        </p>
+                        <Badge variant="outline">{roles.find((r) => r.id === getUserRoleId(u.id))?.name ?? "Aucun profil attribué"}</Badge>
                       </TableCell>
                       <TableCell>
                         {format(new Date(u.created_at), "dd MMM yyyy", { locale: fr })}
@@ -438,6 +389,7 @@ export const UsersModule = () => {
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end gap-1 flex-wrap">
                           <Button
+                            disabled={!can("users.administer")}
                             variant="outline"
                             size="sm"
                             onClick={() => {
@@ -452,6 +404,7 @@ export const UsersModule = () => {
                             variant="outline"
                             size="sm"
                             title="Modifier le nom et l'email"
+                            disabled={!can("users.edit")}
                             onClick={() => openEditUser(u.id, u.full_name || "")}
                           >
                             <Pencil className="w-4 h-4" />
@@ -459,13 +412,14 @@ export const UsersModule = () => {
                           <Button
                             variant="outline"
                             size="sm"
+                            disabled={!can("users.administer")}
                             onClick={() =>
                               setAccessUser({ id: u.id, full_name: u.full_name, is_active: u.is_active })
                             }
                           >
                             Accès
                           </Button>
-                          {u.id !== user?.id && (
+                          {u.id !== user?.id && can("users.edit") && (
                             <>
                               <Button
                                 variant="ghost"

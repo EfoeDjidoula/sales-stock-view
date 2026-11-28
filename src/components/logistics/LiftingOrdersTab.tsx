@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useScope } from "@/hooks/useScope";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useBranding } from "@/hooks/useBranding";
+import { usePermissions } from "@/hooks/usePermissions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -42,6 +43,7 @@ export const LiftingOrdersTab = ({ canWrite, canValidate }: { canWrite: boolean;
   const L = (fr: string, en: string) => (language === "en" ? en : fr);
   const { scopeQuery, tenantId, countryId } = useScope();
   const brand = useBranding();
+  const { can } = usePermissions();
   const [d, setD] = useState<Record<string, Row[]>>({});
   const [loading, setLoading] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -218,7 +220,7 @@ export const LiftingOrdersTab = ({ canWrite, canValidate }: { canWrite: boolean;
             <div className="relative"><Search className="h-4 w-4 absolute left-2 top-2.5 text-muted-foreground" /><Input className="pl-8 h-9 w-48" placeholder={L("BE, BC, camion…", "LO, PO, truck…")} value={filter.q} onChange={(e) => setFilter({ ...filter, q: e.target.value })} /></div>
             <Select value={filter.status} onValueChange={(v) => setFilter({ ...filter, status: v })}><SelectTrigger className="h-9 w-40"><SelectValue /></SelectTrigger>
               <SelectContent><SelectItem value="all">{L("Tous statuts", "All statuses")}</SelectItem>{(Object.keys(STATUS) as LiftingStatus[]).map((s) => <SelectItem key={s} value={s}>{L(STATUS[s][0], STATUS[s][1])}</SelectItem>)}</SelectContent></Select>
-            {canWrite && <Button size="sm" onClick={openNew}><Plus className="h-4 w-4 mr-1" />{L("Nouveau bon d'enlèvement", "New lifting order")}</Button>}
+            {canWrite && can("lifting_orders.create") && <Button size="sm" onClick={openNew}><Plus className="h-4 w-4 mr-1" />{L("Nouveau bon d'enlèvement", "New lifting order")}</Button>}
           </div>
         </CardHeader>
         <CardContent className="p-0 overflow-x-auto">
@@ -246,11 +248,11 @@ export const LiftingOrdersTab = ({ canWrite, canValidate }: { canWrite: boolean;
                       {b.status === "signed" && <div className="text-[11px] text-muted-foreground">{L("Logistique", "Logistics")} : {b.signed_by_name} · {fmtD(b.signed_at)}</div>}
                       {b.status === "signed" && <div className="text-[11px] text-muted-foreground">{L("Dir. exploitation", "Ops director")} : {b.director_signed_at ? `${b.director_signed_by_name ?? ""} · ${fmtD(b.director_signed_at)}` : L("visa en attente", "pending")}</div>}</TableCell>
                     <TableCell><div className="flex gap-1">
-                      {canValidate && b.status === "established" && <Button size="sm" onClick={() => { setSignFor(b); setPng(null); }}><PenLine className="h-4 w-4 mr-1" />{L("Signer", "Sign")}</Button>}
-                      {canValidate && b.status === "signed" && !b.director_signed_at && <Button size="sm" variant="outline" onClick={() => { setDirFor(b); setPng(null); }}><PenLine className="h-4 w-4 mr-1" />{L("Visa directeur", "Director visa")}</Button>}
+                      {canValidate && can("lifting_orders.sign_logistics") && b.status === "established" && <Button size="sm" onClick={() => { setSignFor(b); setPng(null); }}><PenLine className="h-4 w-4 mr-1" />{L("Signer", "Sign")}</Button>}
+                      {canValidate && can("lifting_orders.sign_director") && b.status === "signed" && !b.director_signed_at && <Button size="sm" variant="outline" onClick={() => { setDirFor(b); setPng(null); }}><PenLine className="h-4 w-4 mr-1" />{L("Visa directeur", "Director visa")}</Button>}
                       <Button size="icon" variant="ghost" title="PDF" onClick={() => pdf(b)}><FileDown className="h-4 w-4" /></Button>
                       <Button size="icon" variant="ghost" title={L("Historique", "History")} onClick={() => openHistory(b)}><History className="h-4 w-4" /></Button>
-                      {canValidate && b.status !== "cancelled" && trip?.status === "planned" && <Button size="icon" variant="ghost" title={L("Annuler", "Cancel")} onClick={() => { setCancelFor(b); setReason(""); }}><XCircle className="h-4 w-4 text-destructive" /></Button>}
+                      {canValidate && can("lifting_orders.cancel") && b.status !== "cancelled" && trip?.status === "planned" && <Button size="icon" variant="ghost" title={L("Annuler", "Cancel")} onClick={() => { setCancelFor(b); setReason(""); }}><XCircle className="h-4 w-4 text-destructive" /></Button>}
                     </div></TableCell>
                   </TableRow>
                 );

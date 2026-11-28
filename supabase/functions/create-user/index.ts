@@ -54,24 +54,20 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Check if caller is admin
-    const { data: callerRole, error: roleError } = await supabaseAdmin
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", caller.id)
-      .single();
-
-    if (roleError || callerRole?.role !== "admin") {
+    const { data: mayCreate, error: permissionError } = await supabaseAdmin.rpc("has_permission", {
+      _user_id: caller.id, _permission_code: "users.create",
+    });
+    if (permissionError || !mayCreate) {
       return new Response(
-        JSON.stringify({ error: "Only admins can create users" }),
+        JSON.stringify({ error: "Droit de création des utilisateurs requis" }),
         { status: 403, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }
 
-    const { email, password, full_name, role, country_ids, rbac_role_id }: CreateUserRequest & { rbac_role_id?: string } = await req.json();
+    const { email, password, full_name, role: requestedRole, country_ids, rbac_role_id }: CreateUserRequest & { rbac_role_id?: string } = await req.json();
 
     // Validate required fields
-    if (!email || !password || !full_name || !role) {
+    if (!email || !password || !full_name || !requestedRole) {
       return new Response(
         JSON.stringify({ error: "Missing required fields" }),
         { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
@@ -97,7 +93,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Validate role
     const VALID_ROLES = ["admin", "manager", "operator"];
-    if (!VALID_ROLES.includes(role)) {
+    if (!VALID_ROLES.includes(requestedRole)) {
       return new Response(
         JSON.stringify({ error: "Invalid role" }),
         { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } }
@@ -146,6 +142,28 @@ const handler = async (req: Request): Promise<Response> => {
       allowedCountries = requested;
     }
 
+    if (!callerProfile?.tenant_id) return new Response(JSON.stringify({ error: "Société requise" }), { status: 403, headers: { "Content-Type": "application/json", ...corsHeaders } });
+    const roleQuery = supabaseAdmin.from("roles").select("id,tenant_id");
+    const { data: selectedRole, error: selectedRoleError } = rbac_role_id
+      ? await roleQuery.eq("id", rbac_role_id).maybeSingle()
+      : await roleQuery.eq("code", { admin: "client_admin", manager: "ops_manager", operator: "operator" }[requestedRole]).is("tenant_id", null).maybeSingle();
+    if (selectedRoleError || !selectedRole || (selectedRole.tenant_id !== null && selectedRole.tenant_id !== callerProfile.tenant_id)) {
+      return new Response(JSON.stringify({ error: "Profil métier non autorisé" }), { status: 403, headers: { "Content-Type": "application/json", ...corsHeaders } });
+    }
+    const { data: mayAdminister } = await supabaseAdmin.rpc("has_permission", { _user_id: caller.id, _permission_code: "users.administer" });
+    if (!mayAdminister) {
+      const [{ data: own, error: ownError }, { data: target, error: targetError }] = await Promise.all([
+        supabaseAdmin.rpc("get_user_permissions", { _user_id: caller.id }),
+        supabaseAdmin.from("role_permissions").select("permissions(code)").eq("role_id", selectedRole.id),
+      ]);
+      const ownCodes = new Set((own ?? []).map((p: { code: string }) => p.code));
+      if (ownError || targetError || (target ?? []).some((p: { permissions: { code: string } | null }) => !p.permissions || !ownCodes.has(p.permissions.code))) {
+        return new Response(JSON.stringify({ error: "Vous ne pouvez pas attribuer des droits supérieurs aux vôtres" }), { status: 403, headers: { "Content-Type": "application/json", ...corsHeaders } });
+      }
+    }
+    const { data: role, error: legacyError } = await supabaseAdmin.rpc("rbac_legacy_role", { _role: selectedRole.id });
+    if (legacyError || !role) return new Response(JSON.stringify({ error: "Profil métier invalide" }), { status: 400, headers: { "Content-Type": "application/json", ...corsHeaders } });
+
     // Create user using admin API (doesn't affect current session)
     const { data: userData, error: createError } = await supabaseAdmin.auth.admin.createUser({
       email,
@@ -166,6 +184,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Rattache le nouvel utilisateur à la société de l'administrateur et aux pays choisis
     if (userData.user && callerProfile?.tenant_id) {
+      const createdUserId = userData.user.id;
       const { error: profileScopeError } = await supabaseAdmin
         .from("profiles")
         .update({
@@ -178,7 +197,7 @@ const handler = async (req: Request): Promise<Response> => {
       }
       const { error: accessError } = await supabaseAdmin.from("user_country_access").insert(
         allowedCountries.map((country_id) => ({
-          user_id: userData.user!.id,
+          user_id: createdUserId,
           tenant_id: callerProfile.tenant_id,
           country_id,
         }))
@@ -204,26 +223,12 @@ const handler = async (req: Request): Promise<Response> => {
         console.error("Error assigning role:", roleInsertError);
       }
 
-      // Rôle RBAC équivalent (les droits réels reposent sur les permissions)
-      const rbacCode = { admin: "client_admin", manager: "ops_manager", operator: "operator" }[role];
-      if (callerProfile?.tenant_id) {
-        let rbacRole: { id: string } | null = null;
-        if (rbac_role_id) {
-          // Rôle métier choisi : système (global) ou propre à la société de l'appelant
-          const { data } = await supabaseAdmin.from("roles").select("id, tenant_id").eq("id", rbac_role_id).maybeSingle();
-          if (data && (data.tenant_id === null || data.tenant_id === callerProfile.tenant_id)) rbacRole = { id: data.id };
-        }
-        if (!rbacRole) {
-          const { data } = await supabaseAdmin
-            .from("roles").select("id").eq("code", rbacCode).is("tenant_id", null).maybeSingle();
-          rbacRole = data;
-        }
-        if (rbacRole) {
-          const { error: rbacError } = await supabaseAdmin.from("user_role_assignments").insert({
-            user_id: userData.user.id, tenant_id: callerProfile.tenant_id, role_id: rbacRole.id,
-          });
-          if (rbacError) console.error("Error assigning RBAC role:", rbacError);
-        }
+      const { error: rbacError } = await supabaseAdmin.from("user_role_assignments").insert({
+        user_id: userData.user.id, tenant_id: callerProfile.tenant_id, role_id: selectedRole.id,
+      });
+      if (rbacError || roleInsertError) {
+        await supabaseAdmin.auth.admin.deleteUser(userData.user.id);
+        return new Response(JSON.stringify({ error: "Profil non enregistré ; compte non créé" }), { status: 500, headers: { "Content-Type": "application/json", ...corsHeaders } });
       }
     }
 

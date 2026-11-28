@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 import { CheckCircle2, Eraser, Loader2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
+import { usePermissions } from "@/hooks/usePermissions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -46,6 +47,8 @@ export interface CmrSite { key: string; label: string; delivered: boolean }
 interface Props { trip: Row | null; sites: CmrSite[]; signatures: Row[]; onClose: () => void; onSaved: (receipt?: Row) => void }
 
 export function EcmrSignDialog({ trip, sites, signatures, onClose, onSaved }: Props) {
+  const { can } = usePermissions();
+  const permissionFor = (r: string) => r === "carrier" ? "ecmr.sign_driver" : r === "shipper" ? "ecmr.sign_shipper" : "ecmr.sign_consignee";
   const [role, setRole] = useState("shipper");
   const [site, setSite] = useState("");
   const [name, setName] = useState("");
@@ -67,12 +70,13 @@ export function EcmrSignDialog({ trip, sites, signatures, onClose, onSaved }: Pr
   useEffect(() => { if (role === "carrier" && driverName) setName(driverName); else if (role !== "carrier" && name === driverName) setName(""); }, [role, driverName]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const submit = async () => {
+    if (!trip || !can(permissionFor(role))) return toast.error("Droit de signature requis");
     if (name.trim().length < 2) return toast.error("Nom du signataire requis");
     if (!png) return toast.error("Signature manquante");
     if (role === "consignee" && !site) return toast.error("Choisissez le site destinataire");
     if (role === "consignee" && decision !== "accepted" && reserves.trim().length < 3) return toast.error("Précisez les réserves");
     setBusy(true);
-    const { data, error } = await db.rpc("logistics_sign_cmr", { _trip: trip!.id, _role: role, _site_key: role === "consignee" ? site : "", _name: name, _png: png, _decision: role === "consignee" ? decision : "signed", _reserves: role === "consignee" ? reserves : null });
+    const { data, error } = await db.rpc("logistics_sign_cmr", { _trip: trip.id, _role: role, _site_key: role === "consignee" ? site : "", _name: name, _png: png, _decision: role === "consignee" ? decision : "signed", _reserves: role === "consignee" ? reserves : null });
     setBusy(false);
     if (error) return toast.error(error.message);
     toast.success(role === "consignee" ? `Accusé de réception ${data.receipt_number} émis` : "Signature enregistrée");
@@ -95,7 +99,7 @@ export function EcmrSignDialog({ trip, sites, signatures, onClose, onSaved }: Pr
           <div className="grid sm:grid-cols-2 gap-3">
             <div><Label>Signataire</Label>
               <Select value={role} onValueChange={setRole}><SelectTrigger><SelectValue /></SelectTrigger>
-                <SelectContent>{Object.entries(ROLE_LABEL).map(([k, v]) => <SelectItem key={k} value={k}>{v}</SelectItem>)}</SelectContent></Select></div>
+                <SelectContent>{Object.entries(ROLE_LABEL).map(([k, v]) => <SelectItem key={k} value={k} disabled={!can(permissionFor(k))}>{v}</SelectItem>)}</SelectContent></Select></div>
             {role === "consignee" && <div><Label>Site destinataire</Label>
               <Select value={site} onValueChange={setSite}><SelectTrigger><SelectValue placeholder="Choisir" /></SelectTrigger>
                 <SelectContent>{sites.map((s) => <SelectItem key={s.key} value={s.key}>{s.label}{s.delivered ? "" : " (non livré)"}</SelectItem>)}</SelectContent></Select></div>}
@@ -111,7 +115,7 @@ export function EcmrSignDialog({ trip, sites, signatures, onClose, onSaved }: Pr
               {decision !== "accepted" && <div><Label>Réserves / motif</Label><Textarea value={reserves} onChange={(e) => setReserves(e.target.value)} placeholder="Scellé abîmé, manquant constaté…" /></div>}
             </div>}
             <div><Label>Signature (doigt ou souris)</Label><SignaturePad key={padKey} onChange={setPng} /></div>
-            <Button onClick={submit} disabled={busy}>{busy && <Loader2 className="h-4 w-4 animate-spin mr-1" />}{role === "consignee" ? "Valider la réception et émettre l'accusé" : "Enregistrer la signature"}</Button>
+            <Button onClick={submit} disabled={busy || !can(permissionFor(role))}>{busy && <Loader2 className="h-4 w-4 animate-spin mr-1" />}{role === "consignee" ? "Valider la réception et émettre l'accusé" : "Enregistrer la signature"}</Button>
           </>}
           <p className="text-xs text-muted-foreground">Chaque signature est horodatée, liée à votre compte et ne peut plus être modifiée. Le destinataire signe après la validation de la livraison de son site.</p>
         </div>

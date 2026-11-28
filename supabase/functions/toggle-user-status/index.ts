@@ -39,16 +39,12 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Verify caller is admin
-    const { data: callerRole, error: roleError } = await supabaseAdmin
-      .from("user_roles")
-      .select("role")
-      .eq("user_id", caller.id)
-      .single();
-
-    if (roleError || callerRole?.role !== "admin") {
+    const { data: mayEdit, error: permissionError } = await supabaseAdmin.rpc("has_permission", {
+      _user_id: caller.id, _permission_code: "users.edit",
+    });
+    if (permissionError || !mayEdit) {
       return new Response(
-        JSON.stringify({ error: "Only admins can toggle user status" }),
+        JSON.stringify({ error: "Droit de modification des utilisateurs requis" }),
         { status: 403, headers: { "Content-Type": "application/json", ...corsHeaders } }
       );
     }

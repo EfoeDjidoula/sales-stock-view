@@ -17,9 +17,9 @@ const handler = async (req: Request): Promise<Response> => {
     const { data: { user: caller } } = await admin.auth.getUser(token);
     if (!caller) return json({ error: "Unauthorized" }, 401);
 
-    const { data: callerRole } = await admin.from("user_roles").select("role").eq("user_id", caller.id).maybeSingle();
     const { data: platformAdmin } = await admin.from("platform_admins").select("id").eq("user_id", caller.id).maybeSingle();
-    if (callerRole?.role !== "admin" && !platformAdmin) return json({ error: "Seuls les administrateurs peuvent modifier un utilisateur" }, 403);
+    const { data: mayEdit, error: permissionError } = await admin.rpc("has_permission", { _user_id: caller.id, _permission_code: "users.edit" });
+    if (permissionError || !mayEdit) return json({ error: "Droit de modification des utilisateurs requis" }, 403);
 
     const body = await req.json().catch(() => ({}));
     const user_id = typeof body.user_id === "string" ? body.user_id : "";

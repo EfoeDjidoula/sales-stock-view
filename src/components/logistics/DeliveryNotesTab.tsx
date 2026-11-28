@@ -6,6 +6,7 @@ import { TankerTruckVisualizer } from "./TankerTruckVisualizer";
 import { supabase } from "@/integrations/supabase/client";
 import { useScope } from "@/hooks/useScope";
 import { useAuth } from "@/hooks/useAuth";
+import { usePermissions } from "@/hooks/usePermissions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -24,6 +25,7 @@ type Row = Record<string, any>; // eslint-disable-line @typescript-eslint/no-exp
 export function DeliveryNotesTab({ trips, d, canValidate, onChanged, L }: { trips: Row[]; d: Record<string, Row[]>; canValidate: boolean; onChanged: () => void; L: (fr: string, en: string) => string }) {
   const { tenantId, countryId } = useScope();
   const { user } = useAuth();
+  const { can } = usePermissions();
   const [notes, setNotes] = useState<DeliveryNote[]>([]);
   const [people, setPeople] = useState<Row[]>([]);
   const [portal, setPortal] = useState<Row[]>([]);
@@ -70,7 +72,7 @@ export function DeliveryNotesTab({ trips, d, canValidate, onChanged, L }: { trip
       </CardHeader>
       <CardContent className="space-y-3 overflow-x-auto">
         <p className="text-xs text-muted-foreground">Un BL est créé par destination à la fin du chargement. Visas : responsable logistique (reporté du bon d'enlèvement), chauffeur (sans compte, il signe sur le téléphone du gérant ou du responsable de site, à son nom rattaché au camion), puis gérant de station ou responsable de site / chantier après la livraison. Aucune signature du dépôt.</p>
-        {canValidate && pending.map((t) => (
+        {canValidate && can("delivery_notes.generate") && pending.map((t) => (
           <div key={t.id} className="flex items-center justify-between rounded-md border border-border p-2 text-sm">
             <span>Transport {t.reference} chargé sans BL</span>
             <Button size="sm" disabled={busy} onClick={() => run("generate", t.id, {}, "BL générés")}>Générer les BL</Button>
@@ -93,8 +95,8 @@ export function DeliveryNotesTab({ trips, d, canValidate, onChanged, L }: { trip
                   <TableCell className="text-right"><VarianceBadge v={q.variance} /></TableCell>
                   <TableCell><Badge variant={dec === "refused" ? "destructive" : done === 3 ? "outline" : "secondary"}>{done}/3{done === 3 ? ` · ${DECISION_LABEL[dec]}` : ""}</Badge><div className="text-xs text-muted-foreground mt-1">{n.signatures.map((x) => roleLabel(n, x.role)).join(" · ") || "—"}</div></TableCell>
                   <TableCell className="flex flex-wrap gap-1">
-                    {canValidate && done === 0 && n.trip_status !== "cancelled" && <Button size="sm" variant="outline" title="Désigner le destinataire" onClick={() => { setAssign(n); setWho({ shipper: n.shipper_user ?? "", carrier: "", consignee: n.consignee_user ?? "" }); }}><UserCheck className="h-4 w-4" /></Button>}
-                    {mine && <Button size="sm" onClick={() => setSign({ note: n, role: mine })}><PenLine className="h-4 w-4 mr-1" />{mine === "carrier" ? "Faire signer le chauffeur" : "Signer"}</Button>}
+                    {canValidate && can("delivery_notes.assign") && done === 0 && n.trip_status !== "cancelled" && <Button size="sm" variant="outline" title="Désigner le destinataire" onClick={() => { setAssign(n); setWho({ shipper: n.shipper_user ?? "", carrier: "", consignee: n.consignee_user ?? "" }); }}><UserCheck className="h-4 w-4" /></Button>}
+                    {mine && can(mine === "carrier" ? "delivery_notes.sign_driver" : mine === "shipper" ? "delivery_notes.sign_shipper" : "delivery_notes.sign_consignee") && <Button size="sm" onClick={() => setSign({ note: n, role: mine })}><PenLine className="h-4 w-4 mr-1" />{mine === "carrier" ? "Faire signer le chauffeur" : "Signer"}</Button>}
                     <Button size="sm" variant="ghost" title="Détail des quantités" onClick={() => setDetail(n)}><Eye className="h-4 w-4" /></Button>
                     <Button size="sm" variant="ghost" title={L("Voir le camion et ses compartiments", "View truck and compartments")} onClick={() => setVisual(n)}><Truck className="h-4 w-4" /></Button>
                     <Button size="sm" variant="ghost" title="PDF" onClick={() => exportDeliveryNote(n).catch((e) => toast.error(String(e)))}><FileDown className="h-4 w-4" /></Button>

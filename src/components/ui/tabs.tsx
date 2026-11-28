@@ -2,8 +2,19 @@ import * as React from "react";
 import * as TabsPrimitive from "@radix-ui/react-tabs";
 
 import { cn } from "@/lib/utils";
+import { usePermissions } from "@/hooks/usePermissions";
 
-const Tabs = TabsPrimitive.Root;
+const PermissionContext = React.createContext<Record<string, string>>({});
+type TabsProps = React.ComponentPropsWithoutRef<typeof TabsPrimitive.Root> & { permissionMap?: Record<string, string> };
+const Tabs = React.forwardRef<React.ElementRef<typeof TabsPrimitive.Root>, TabsProps>(
+  ({ permissionMap = {}, value, defaultValue, ...props }, ref) => {
+    const { can } = usePermissions();
+    const firstAllowed = Object.entries(permissionMap).find(([, code]) => can(code))?.[0];
+    const allowedValue = (v?: string) => v && permissionMap[v] && !can(permissionMap[v]) ? firstAllowed : v;
+    return <PermissionContext.Provider value={permissionMap}><TabsPrimitive.Root ref={ref} value={allowedValue(value)} defaultValue={allowedValue(defaultValue)} {...props} /></PermissionContext.Provider>;
+  },
+);
+Tabs.displayName = "Tabs";
 
 const TabsList = React.forwardRef<
   React.ElementRef<typeof TabsPrimitive.List>,
@@ -23,7 +34,11 @@ TabsList.displayName = TabsPrimitive.List.displayName;
 const TabsTrigger = React.forwardRef<
   React.ElementRef<typeof TabsPrimitive.Trigger>,
   React.ComponentPropsWithoutRef<typeof TabsPrimitive.Trigger>
->(({ className, ...props }, ref) => (
+>(({ className, ...props }, ref) => {
+  const map = React.useContext(PermissionContext);
+  const { can } = usePermissions();
+  if (map[props.value] && !can(map[props.value])) return null;
+  return (
   <TabsPrimitive.Trigger
     ref={ref}
     className={cn(
@@ -32,13 +47,17 @@ const TabsTrigger = React.forwardRef<
     )}
     {...props}
   />
-));
+); });
 TabsTrigger.displayName = TabsPrimitive.Trigger.displayName;
 
 const TabsContent = React.forwardRef<
   React.ElementRef<typeof TabsPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof TabsPrimitive.Content>
->(({ className, ...props }, ref) => (
+>(({ className, ...props }, ref) => {
+  const map = React.useContext(PermissionContext);
+  const { can } = usePermissions();
+  if (map[props.value] && !can(map[props.value])) return null;
+  return (
   <TabsPrimitive.Content
     ref={ref}
     className={cn(
@@ -47,7 +66,7 @@ const TabsContent = React.forwardRef<
     )}
     {...props}
   />
-));
+); });
 TabsContent.displayName = TabsPrimitive.Content.displayName;
 
 export { Tabs, TabsList, TabsTrigger, TabsContent };

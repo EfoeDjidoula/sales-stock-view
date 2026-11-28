@@ -174,7 +174,7 @@ const AssetsMaintenanceModule = () => {
         {kpi("Alertes", String(alerts.length), `${alerts.filter((a) => a.level === "overdue").length} critiques`)}
       </div>
 
-      <Tabs defaultValue="assets">
+      <Tabs defaultValue="assets" permissionMap={{ assets: "maintenance_assets.view", plans: "maintenance_plans.view", orders: "maintenance_work_orders.view", alerts: "maintenance_alerts.view" }}>
         <TabsList className="flex-wrap h-auto">
           <TabsTrigger value="assets">Équipements</TabsTrigger>
           <TabsTrigger value="plans">Maintenance préventive</TabsTrigger>

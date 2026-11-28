@@ -6,6 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useScope } from "@/hooks/useScope";
 import { useLanguage } from "@/hooks/useLanguage";
 import { useBranding } from "@/hooks/useBranding";
+import { usePermissions } from "@/hooks/usePermissions";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,6 +38,7 @@ export const DepotSupplyTab = ({ canWrite, canValidate }: { canWrite: boolean; c
   const L = (fr: string, en: string) => (language === "en" ? en : fr);
   const { scopeQuery, tenantId, countryId } = useScope();
   const brand = useBranding();
+  const { can } = usePermissions();
   const [ref, setRef] = useState<Record<string, Row[]>>({});
   const [proformas, setProformas] = useState<Row[]>([]);
   const [loading, setLoading] = useState(false);
@@ -206,8 +208,8 @@ export const DepotSupplyTab = ({ canWrite, canValidate }: { canWrite: boolean; c
           <div className="flex flex-wrap gap-2">
             <Button size="sm" variant="outline" disabled={!proformas.length} onClick={exportPdfList}><FileDown className="h-4 w-4 mr-1" />PDF</Button>
             <Button size="sm" variant="outline" disabled={!proformas.length} onClick={exportExcel}><FileSpreadsheet className="h-4 w-4 mr-1" />Excel</Button>
-            {canValidate && <Button size="sm" onClick={() => { setEditId(null); setPf({}); setLines([emptyLine()]); setDirect(true); setBenef({ client_id: "", name: brand.legalName || brand.companyName || "" }); setOpenPf(true); }}><FileText className="h-4 w-4 mr-1" />{L("Nouveau bon de commande", "New purchase order")}</Button>}
-            {canWrite && <Button size="sm" variant="outline" onClick={() => { setEditId(null); setPf({}); setLines([emptyLine()]); setDirect(false); setOpenPf(true); }}><Plus className="h-4 w-4 mr-1" />{L("Nouveau pro-forma", "New pro-forma")}</Button>}
+            {canValidate && can("depot_purchases.issue_order") && can("depot_purchases.create_proforma") && <Button size="sm" onClick={() => { setEditId(null); setPf({}); setLines([emptyLine()]); setDirect(true); setBenef({ client_id: "", name: brand.legalName || brand.companyName || "" }); setOpenPf(true); }}><FileText className="h-4 w-4 mr-1" />{L("Nouveau bon de commande", "New purchase order")}</Button>}
+            {canWrite && can("depot_purchases.create_proforma") && <Button size="sm" variant="outline" onClick={() => { setEditId(null); setPf({}); setLines([emptyLine()]); setDirect(false); setOpenPf(true); }}><Plus className="h-4 w-4 mr-1" />{L("Nouveau pro-forma", "New pro-forma")}</Button>}
           </div>
         </CardHeader>
         <CardContent className="p-0 overflow-x-auto">
@@ -228,12 +230,12 @@ export const DepotSupplyTab = ({ canWrite, canValidate }: { canWrite: boolean; c
                     <TableCell><div>{p.suppliers?.name ?? "—"}</div><div className="text-xs text-muted-foreground">{p.depots?.name ?? "—"}</div></TableCell>
                     <TableCell className="text-xs">{(p.depot_proforma_lines ?? []).map((l: Row) => <div key={l.id}>{l.petroleum_products?.name} · {fmt(l.qty_litres)} L</div>)}</TableCell>
                     <TableCell className="text-right">{fmt(p.total_ttc)}</TableCell>
-                    <TableCell>{o ? <button className="underline text-sm" onClick={() => openHistory(o)}>{o.number}</button> : canValidate ? <Button size="sm" variant="outline" disabled={busy} onClick={() => { setIssueFor(p); setBenef({ client_id: "", name: brand.legalName || brand.companyName || "" }); }}><FileText className="h-4 w-4 mr-1" />{L("Émettre BC", "Issue PO")}</Button> : <span className="text-muted-foreground text-xs">—</span>}</TableCell>
+                    <TableCell>{o ? <Button variant="link" className="h-auto p-0" onClick={() => openHistory(o)}>{o.number}</Button> : canValidate && can("depot_purchases.issue_order") ? <Button size="sm" variant="outline" disabled={busy} onClick={() => { setIssueFor(p); setBenef({ client_id: "", name: brand.legalName || brand.companyName || "" }); }}><FileText className="h-4 w-4 mr-1" />{L("Émettre BC", "Issue PO")}</Button> : <span className="text-muted-foreground text-xs">—</span>}</TableCell>
                     <TableCell>{o && (
                       <div className="flex flex-wrap gap-1">
                         {(Object.keys(STATUS) as PaymentStatus[]).map((s) => (
                           <Button key={s} size="sm" variant={o.payment_status === s ? (STATUS[s].variant === "destructive" ? "destructive" : "default") : "outline"} className="h-7 px-2 text-[11px]"
-                            disabled={!canValidate || busy || o.payment_status === s} onClick={() => { setStatusFor({ order: o, status: s }); setReason(""); }}>
+                            disabled={!canValidate || !can("depot_purchases.set_payment_status") || busy || o.payment_status === s} onClick={() => { setStatusFor({ order: o, status: s }); setReason(""); }}>
                             {language === "en" ? STATUS[s].en : STATUS[s].fr}
                           </Button>
                         ))}
@@ -243,8 +245,8 @@ export const DepotSupplyTab = ({ canWrite, canValidate }: { canWrite: boolean; c
                     <TableCell><div className="flex">
                       {o && <Button size="icon" variant="ghost" title="PDF" onClick={() => pdfOrder(p)}><FileDown className="h-4 w-4" /></Button>}
                       {canValidate && editable(p) && <>
-                        <Button size="icon" variant="ghost" title={L("Modifier", "Edit")} disabled={busy} onClick={() => startEdit(p)}><Pencil className="h-4 w-4" /></Button>
-                        <Button size="icon" variant="ghost" title={L("Supprimer", "Delete")} disabled={busy} onClick={() => removePf(p)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                        {can("depot_purchases.edit_order") && <Button size="icon" variant="ghost" title={L("Modifier", "Edit")} disabled={busy} onClick={() => startEdit(p)}><Pencil className="h-4 w-4" /></Button>}
+                        {can("depot_purchases.delete_order") && <Button size="icon" variant="ghost" title={L("Supprimer", "Delete")} disabled={busy} onClick={() => removePf(p)}><Trash2 className="h-4 w-4 text-destructive" /></Button>}
                       </>}
                     </div></TableCell>
                   </TableRow>

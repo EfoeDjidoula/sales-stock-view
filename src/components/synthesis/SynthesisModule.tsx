@@ -9,7 +9,7 @@ import NetworkSalesReport from "./NetworkSalesReport";
 /** Menu « États de synthèse & Contrôle » : compte des gérants, arrêtés, récaps ECAP et inventaires. */
 export default function SynthesisModule() {
   return (
-    <Tabs defaultValue="compte" className="space-y-5">
+    <Tabs defaultValue="compte" className="space-y-5" permissionMap={{ compte: "manager_accounts.view", arrete: "account_closings.view", ecap: "ecap_recaps.view", inventaire: "inventory_sheets.view", bilan: "network_sales.view" }}>
       <TabsList className="flex h-auto flex-wrap justify-start gap-1">
         <TabsTrigger value="compte" className="gap-2"><Scale className="w-4 h-4" />Compte des gérants</TabsTrigger>
         <TabsTrigger value="arrete" className="gap-2"><CalendarRange className="w-4 h-4" />Arrêté des comptes</TabsTrigger>
