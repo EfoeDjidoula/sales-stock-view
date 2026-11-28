@@ -1661,6 +1661,10 @@ export type Database = {
           created_at: string
           created_by: string | null
           depot_id: string | null
+          director_signature_png: string | null
+          director_signed_at: string | null
+          director_signed_by: string | null
+          director_signed_by_name: string | null
           driver_id: string
           id: string
           load_mode: string
@@ -1688,6 +1692,10 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           depot_id?: string | null
+          director_signature_png?: string | null
+          director_signed_at?: string | null
+          director_signed_by?: string | null
+          director_signed_by_name?: string | null
           driver_id: string
           id?: string
           load_mode?: string
@@ -1715,6 +1723,10 @@ export type Database = {
           created_at?: string
           created_by?: string | null
           depot_id?: string | null
+          director_signature_png?: string | null
+          director_signed_at?: string | null
+          director_signed_by?: string | null
+          director_signed_by_name?: string | null
           driver_id?: string
           id?: string
           load_mode?: string
@@ -9590,6 +9602,10 @@ export type Database = {
         }
         Returns: string
       }
+      depot_lifting_director_sign: {
+        Args: { _id: string; _png: string }
+        Returns: string
+      }
       depot_po_edit: { Args: { _action: string; _data: Json }; Returns: string }
       depot_supply_action: {
         Args: { _action: string; _data: Json }
@@ -9714,6 +9730,7 @@ export type Database = {
         Args: { _country?: string; _offset?: number; _tenant?: string }
         Returns: Json
       }
+      logistics_bl_received: { Args: { _note: string }; Returns: Json }
       logistics_confirm_site: {
         Args: { _lines: Json; _note?: string; _trip: string }
         Returns: number

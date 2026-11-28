@@ -15,7 +15,7 @@ type Row = Record<string, any>;
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const db = supabase as any;
 
-export const ROLE_LABEL: Record<string, string> = { shipper: "Expéditeur (dépôt)", carrier: "Transporteur / chauffeur", consignee: "Destinataire" };
+export const ROLE_LABEL: Record<string, string> = { shipper: "Expéditeur (responsable logistique)", carrier: "Chauffeur", consignee: "Destinataire" };
 export const DECISION_LABEL: Record<string, string> = { signed: "Signé", accepted: "Reçu conforme", accepted_with_reserves: "Reçu avec réserves", refused: "Refusé" };
 
 export function SignaturePad({ onChange }: { onChange: (png: string | null) => void }) {
@@ -56,7 +56,15 @@ export function EcmrSignDialog({ trip, sites, signatures, onClose, onSaved }: Pr
   const [padKey, setPadKey] = useState(0);
   const sigs = signatures.filter((s) => s.trip_id === trip?.id);
   const has = (r: string, k = "") => sigs.find((s) => s.role === r && s.site_key === k);
+  const [driverName, setDriverName] = useState("");
   useEffect(() => { setRole("shipper"); setSite(""); setName(""); setPng(null); setReserves(""); setDecision("accepted"); setPadKey((k) => k + 1); }, [trip?.id]);
+  // Chauffeur rattaché au transport (sans compte) : son nom est proposé automatiquement.
+  useEffect(() => {
+    setDriverName("");
+    if (!trip?.driver_id) return;
+    db.from("logistics_drivers").select("full_name").eq("id", trip.driver_id).maybeSingle().then(({ data }: { data: Row | null }) => setDriverName(data?.full_name ?? ""));
+  }, [trip?.driver_id]);
+  useEffect(() => { if (role === "carrier" && driverName) setName(driverName); else if (role !== "carrier" && name === driverName) setName(""); }, [role, driverName]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const submit = async () => {
     if (name.trim().length < 2) return toast.error("Nom du signataire requis");
@@ -95,7 +103,7 @@ export function EcmrSignDialog({ trip, sites, signatures, onClose, onSaved }: Pr
           {already ? <p className="text-sm text-muted-foreground">Déjà signé par <b>{already.signer_name}</b> le {new Date(already.signed_at).toLocaleString("fr-FR")}{already.receipt_number && role === "consignee" ? ` — AR ${already.receipt_number}` : ""}.</p>
           : role === "consignee" && siteObj && !siteObj.delivered ? <p className="text-sm text-destructive">Validez d'abord la livraison de ce site dans le check-in logistique.</p>
           : <>
-            <div><Label>Nom et fonction du signataire</Label><Input value={name} onChange={(e) => setName(e.target.value)} placeholder="Ex. : Koffi A., gérant de station" /></div>
+            <div><Label>Nom et fonction du signataire</Label><Input value={name} readOnly={role === "carrier" && !!driverName} onChange={(e) => setName(e.target.value)} placeholder="Ex. : Koffi A., gérant de station" />{role === "carrier" && driverName && <p className="text-xs text-muted-foreground mt-1">Chauffeur rattaché au camion : il signe sur cet appareil, sans compte.</p>}</div>
             {role === "consignee" && <div className="grid gap-3">
               <div><Label>Décision du destinataire</Label>
                 <Select value={decision} onValueChange={setDecision}><SelectTrigger><SelectValue /></SelectTrigger>

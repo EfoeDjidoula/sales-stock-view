@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
-import { FileDown, PenLine, RefreshCw, Truck, UserCheck } from "lucide-react";
+import { Eye, FileDown, PenLine, RefreshCw, Truck, UserCheck } from "lucide-react";
+import { BlQuantitiesTable, BlSignDialog, VarianceBadge } from "./BlParts";
 import { TankerTruckVisualizer } from "./TankerTruckVisualizer";
 import { supabase } from "@/integrations/supabase/client";
 import { useScope } from "@/hooks/useScope";
@@ -9,12 +10,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { SignaturePad, DECISION_LABEL } from "@/components/pro/EcmrSignDialog";
-import { BL_ROLES, BL_ROLE_LABEL, blDecision, nextSignatureRole, signatureProgress, type BlRole, type DeliveryNote } from "@/lib/deliveryNotes";
+import { DECISION_LABEL } from "@/components/pro/EcmrSignDialog";
+import { blDecision, blQuantities, consigneeLabel, nextSignatureRole, roleLabel, signatureProgress, type BlRole, type DeliveryNote } from "@/lib/deliveryNotes";
 import { exportDeliveryNote } from "@/lib/deliveryNoteExport";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -32,9 +32,7 @@ export function DeliveryNotesTab({ trips, d, canValidate, onChanged, L }: { trip
   const [assign, setAssign] = useState<DeliveryNote | null>(null);
   const [who, setWho] = useState<Record<BlRole, string>>({ shipper: "", carrier: "", consignee: "" });
   const [sign, setSign] = useState<{ note: DeliveryNote; role: BlRole } | null>(null);
-  const [png, setPng] = useState<string | null>(null);
-  const [decision, setDecision] = useState("accepted");
-  const [reserves, setReserves] = useState("");
+  const [detail, setDetail] = useState<DeliveryNote | null>(null);
   const [visual, setVisual] = useState<DeliveryNote | null>(null);
 
   const load = useCallback(async () => {
@@ -71,7 +69,7 @@ export function DeliveryNotesTab({ trips, d, canValidate, onChanged, L }: { trip
         <Button size="sm" variant="outline" onClick={load}><RefreshCw className="h-4 w-4" /></Button>
       </CardHeader>
       <CardContent className="space-y-3 overflow-x-auto">
-        <p className="text-xs text-muted-foreground">Un BL est créé par destination à la fin du chargement. Signatures dans l'ordre : responsable logistique, chauffeur, puis destinataire après confirmation de la livraison du site. Chaque personne signe avec son propre compte.</p>
+        <p className="text-xs text-muted-foreground">Un BL est créé par destination à la fin du chargement. Visas : responsable logistique (reporté du bon d'enlèvement), chauffeur (sans compte, il signe sur le téléphone du gérant ou du responsable de site, à son nom rattaché au camion), puis gérant de station ou responsable de site / chantier après la livraison. Aucune signature du dépôt.</p>
         {canValidate && pending.map((t) => (
           <div key={t.id} className="flex items-center justify-between rounded-md border border-border p-2 text-sm">
             <span>Transport {t.reference} chargé sans BL</span>
@@ -79,22 +77,25 @@ export function DeliveryNotesTab({ trips, d, canValidate, onChanged, L }: { trip
           </div>
         ))}
         <Table>
-          <TableHeader><TableRow><TableHead>N° BL</TableHead><TableHead>BE / transport</TableHead><TableHead>Destination</TableHead><TableHead className="text-right">Volume BL (L)</TableHead><TableHead>Signataires</TableHead><TableHead>Visas</TableHead><TableHead /></TableRow></TableHeader>
+          <TableHeader><TableRow><TableHead>N° BL</TableHead><TableHead>BE / transport</TableHead><TableHead>Camion / chauffeur</TableHead><TableHead>Destination</TableHead><TableHead className="text-right">Volume BL (L)</TableHead><TableHead className="text-right">Qté dépotée (L)</TableHead><TableHead className="text-right">Écart chauffeur</TableHead><TableHead>Visas</TableHead><TableHead /></TableRow></TableHeader>
           <TableBody>
-            {!notes.length && <TableRow><TableCell colSpan={7} className="text-center text-muted-foreground">Aucun bon de livraison</TableCell></TableRow>}
+            {!notes.length && <TableRow><TableCell colSpan={9} className="text-center text-muted-foreground">Aucun bon de livraison</TableCell></TableRow>}
             {notes.map((n) => {
-              const done = signatureProgress(n.signatures); const dec = blDecision(n.signatures); const mine = user ? nextSignatureRole(n, user.id) : null;
+              const done = signatureProgress(n.signatures); const dec = blDecision(n.signatures); const mine = user ? nextSignatureRole(n, user.id, canValidate) : null; const q = blQuantities(n);
               return (
                 <TableRow key={n.id}>
                   <TableCell className="font-mono text-xs">{n.number}</TableCell>
                   <TableCell className="text-xs">{n.snapshot.be ?? "—"}<br />{n.snapshot.trip}</TableCell>
-                  <TableCell>{n.snapshot.site}</TableCell>
-                  <TableCell className="text-right tabular-nums">{n.snapshot.lines.reduce((s, l) => s + Number(l.litres), 0).toLocaleString("fr-FR")}</TableCell>
-                  <TableCell className="text-xs">{BL_ROLES.map((r) => <div key={r}>{BL_ROLE_LABEL[r]} : {personName(n[`${r}_user`])}</div>)}</TableCell>
-                  <TableCell><Badge variant={dec === "refused" ? "destructive" : done === 3 ? "outline" : "secondary"}>{done}/3{done === 3 ? ` · ${DECISION_LABEL[dec]}` : ""}</Badge></TableCell>
+                  <TableCell className="text-xs">{n.snapshot.truck ?? "—"}{n.snapshot.tanker ? ` / ${n.snapshot.tanker}` : ""}<br /><b>{n.snapshot.driver ?? "—"}</b></TableCell>
+                  <TableCell>{n.snapshot.site}<div className="text-xs text-muted-foreground">{consigneeLabel(n)} : {personName(n.consignee_user)}</div></TableCell>
+                  <TableCell className="text-right tabular-nums">{q.bl.toLocaleString("fr-FR")}</TableCell>
+                  <TableCell className="text-right tabular-nums">{q.received === null ? <span className="text-muted-foreground">—</span> : Math.round(q.received).toLocaleString("fr-FR")}{q.received !== null && !q.complete && <div className="text-xs text-muted-foreground">partiel</div>}</TableCell>
+                  <TableCell className="text-right"><VarianceBadge v={q.variance} /></TableCell>
+                  <TableCell><Badge variant={dec === "refused" ? "destructive" : done === 3 ? "outline" : "secondary"}>{done}/3{done === 3 ? ` · ${DECISION_LABEL[dec]}` : ""}</Badge><div className="text-xs text-muted-foreground mt-1">{n.signatures.map((x) => roleLabel(n, x.role)).join(" · ") || "—"}</div></TableCell>
                   <TableCell className="flex flex-wrap gap-1">
-                    {canValidate && done === 0 && n.trip_status !== "cancelled" && <Button size="sm" variant="outline" title="Désigner les signataires" onClick={() => { setAssign(n); setWho({ shipper: n.shipper_user ?? "", carrier: n.carrier_user ?? "", consignee: n.consignee_user ?? "" }); }}><UserCheck className="h-4 w-4" /></Button>}
-                    {mine && <Button size="sm" onClick={() => { setSign({ note: n, role: mine }); setPng(null); setDecision("accepted"); setReserves(""); }}><PenLine className="h-4 w-4 mr-1" />Signer</Button>}
+                    {canValidate && done === 0 && n.trip_status !== "cancelled" && <Button size="sm" variant="outline" title="Désigner le destinataire" onClick={() => { setAssign(n); setWho({ shipper: n.shipper_user ?? "", carrier: "", consignee: n.consignee_user ?? "" }); }}><UserCheck className="h-4 w-4" /></Button>}
+                    {mine && <Button size="sm" onClick={() => setSign({ note: n, role: mine })}><PenLine className="h-4 w-4 mr-1" />{mine === "carrier" ? "Faire signer le chauffeur" : "Signer"}</Button>}
+                    <Button size="sm" variant="ghost" title="Détail des quantités" onClick={() => setDetail(n)}><Eye className="h-4 w-4" /></Button>
                     <Button size="sm" variant="ghost" title={L("Voir le camion et ses compartiments", "View truck and compartments")} onClick={() => setVisual(n)}><Truck className="h-4 w-4" /></Button>
                     <Button size="sm" variant="ghost" title="PDF" onClick={() => exportDeliveryNote(n).catch((e) => toast.error(String(e)))}><FileDown className="h-4 w-4" /></Button>
                   </TableCell>
@@ -107,29 +108,35 @@ export function DeliveryNotesTab({ trips, d, canValidate, onChanged, L }: { trip
 
       <Dialog open={!!assign} onOpenChange={(v) => !v && setAssign(null)}>
         <DialogContent>
-          <DialogHeader><DialogTitle>Signataires du {assign?.number}</DialogTitle></DialogHeader>
-          {BL_ROLES.map((r) => <div key={r} className="space-y-1"><Label>{BL_ROLE_LABEL[r]}</Label>
+          <DialogHeader><DialogTitle>Destinataire du {assign?.number}</DialogTitle></DialogHeader>
+          {assign && <p className="text-sm">Chauffeur : <b>{assign.snapshot.driver ?? "—"}</b> (rattaché au camion, signe sans compte). Responsable logistique : {personName(assign.shipper_user)}.</p>}
+          {(["consignee", ...(assign?.shipper_user ? [] : ["shipper"])] as BlRole[]).map((r) => <div key={r} className="space-y-1"><Label>{assign ? roleLabel(assign, r) : r}</Label>
             <Select value={who[r]} onValueChange={(v) => setWho({ ...who, [r]: v })}><SelectTrigger><SelectValue placeholder="Choisir un compte" /></SelectTrigger>
               <SelectContent>{people.map((p) => <SelectItem key={p.user_id} value={p.user_id}>{p.full_name || p.user_id}</SelectItem>)}
                 {r === "consignee" && assign && portal.filter((p) => p.client_id && p.client_id === noteClient[assign.id]).map((p) => <SelectItem key={"c" + p.user_id} value={p.user_id}>{p.full_name} · Espace client</SelectItem>)}</SelectContent></Select></div>)}
           <p className="text-xs text-muted-foreground">Le destinataire d'une station doit être affecté à cette station. Pour un client B2B, choisissez son compte « Espace client » : il signera depuis son espace.</p>
           <DialogFooter><Button variant="outline" onClick={() => setAssign(null)}>Annuler</Button>
-            <Button disabled={busy || !who.shipper || !who.carrier || !who.consignee} onClick={async () => { if (assign && await run("assign", assign.id, who, "Signataires enregistrés")) setAssign(null); }}>Enregistrer</Button></DialogFooter>
+            <Button disabled={busy || !who.consignee || (!assign?.shipper_user && !who.shipper)} onClick={async () => { if (assign && await run("assign", assign.id, { shipper: who.shipper, consignee: who.consignee }, "Destinataire enregistré")) setAssign(null); }}>Enregistrer</Button></DialogFooter>
         </DialogContent>
       </Dialog>
 
-      <Dialog open={!!sign} onOpenChange={(v) => !v && setSign(null)}>
-        <DialogContent>
-          <DialogHeader><DialogTitle>{sign && BL_ROLE_LABEL[sign.role]} · {sign?.note.number}</DialogTitle></DialogHeader>
-          {sign?.role === "consignee" && <>
-            <div className="space-y-1"><Label>Décision</Label><Select value={decision} onValueChange={setDecision}><SelectTrigger><SelectValue /></SelectTrigger>
-              <SelectContent>{["accepted", "accepted_with_reserves", "refused"].map((d) => <SelectItem key={d} value={d}>{DECISION_LABEL[d]}</SelectItem>)}</SelectContent></Select></div>
-            {decision !== "accepted" && <div className="space-y-1"><Label>Motif / réserves</Label><Textarea value={reserves} onChange={(e) => setReserves(e.target.value)} maxLength={1000} /></div>}
+      <BlSignDialog sign={sign} onClose={() => setSign(null)} onDone={() => { load(); onChanged(); }} />
+
+      <Dialog open={!!detail} onOpenChange={(v) => !v && setDetail(null)}>
+        <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader><DialogTitle>{detail?.number} · {detail?.snapshot.site}</DialogTitle></DialogHeader>
+          {detail && <>
+            <div className="grid sm:grid-cols-2 gap-1 text-sm">
+              <div>BE : {detail.snapshot.be ?? "—"} · Transport : {detail.snapshot.trip}</div>
+              <div>Camion : {detail.snapshot.truck ?? "—"}{detail.snapshot.tanker ? ` / ${detail.snapshot.tanker}` : ""}</div>
+              <div>Chauffeur : <b>{detail.snapshot.driver ?? "—"}</b>{detail.snapshot.license ? ` · Permis ${detail.snapshot.license}` : ""}</div>
+              <div>{consigneeLabel(detail)} : {personName(detail.consignee_user)}</div>
+            </div>
+            <BlQuantitiesTable note={detail} />
+            <div className="grid sm:grid-cols-3 gap-2">{(["shipper", "carrier", "consignee"] as BlRole[]).map((r) => { const g = detail.signatures.find((x) => x.role === r); return (
+              <div key={r} className="rounded-md border border-border p-2 text-xs space-y-1"><div className="font-semibold">{roleLabel(detail, r)}</div>
+                {g ? <><img src={g.signature_png} alt={`Signature ${g.signer_name}`} className="h-14 bg-white rounded" /><div>{g.signer_name}</div><div className="text-muted-foreground">{new Date(g.signed_at).toLocaleString("fr-FR")}{r === "consignee" ? ` · ${DECISION_LABEL[g.decision]}` : ""}</div></> : <div className="text-muted-foreground">En attente</div>}</div>); })}</div>
           </>}
-          <SignaturePad key={sign?.note.id + (sign?.role ?? "")} onChange={setPng} />
-          <p className="text-xs text-muted-foreground">Signature enregistrée au nom de votre compte, horodatée et non modifiable.</p>
-          <DialogFooter><Button variant="outline" onClick={() => setSign(null)}>Annuler</Button>
-            <Button disabled={busy || !png || (decision !== "accepted" && sign?.role === "consignee" && reserves.trim().length < 3)} onClick={async () => { if (sign && await run("sign", sign.note.id, { role: sign.role, png, decision, reserves }, "Signature enregistrée")) setSign(null); }}>Signer</Button></DialogFooter>
         </DialogContent>
       </Dialog>
 

@@ -13,6 +13,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { dischargeVariance, pendingDischarges, validGauges } from "@/lib/discharges";
+import { PenLine } from "lucide-react";
+import { BlSignDialog, VarianceBadge } from "./BlParts";
+import { blQuantities, nextSignatureRole, signatureProgress, type BlRole, type DeliveryNote } from "@/lib/deliveryNotes";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 const db = supabase as any;
@@ -36,12 +39,13 @@ export const DischargesTab = ({ d, L, canValidate, onChanged }: Props) => {
   const [busy, setBusy] = useState(false);
   const [notes, setNotes] = useState<Row[]>([]);
   const [pick, setPick] = useState<string>("all");
+  const [sign, setSign] = useState<{ note: DeliveryNote; role: BlRole } | null>(null);
 
   const load = async () => {
     const [t, x, n] = await Promise.all([
       scopeQuery(db.from("tanks").select("id,name,station_id,product_id,capacity_liters")),
       scopeQuery(db.from("logistics_discharges").select("*").order("created_at", { ascending: false }).limit(500)),
-      scopeQuery(db.from("logistics_delivery_notes").select("id,number,trip_id,station_id")),
+      scopeQuery(db.from("logistics_delivery_notes").select("*, logistics_delivery_note_signatures(*)").order("created_at", { ascending: false }).limit(200)),
     ]);
     setTanks(t.data ?? []); setDone(x.data ?? []); setNotes(n.data ?? []);
   };
@@ -73,6 +77,18 @@ export const DischargesTab = ({ d, L, canValidate, onChanged }: Props) => {
     });
     return [...m.values()];
   }, [d, notes, mine]); // eslint-disable-line react-hooks/exhaustive-deps
+  /** BL des stations du compte, avec quantité dépotée (jauge) ou livrée par compartiment. */
+  const stationNotes: DeliveryNote[] = useMemo(() => notes.filter((n) => n.station_id && allowed(n.station_id)).map((n) => {
+    const received: Record<string, number> = {};
+    for (const l of (n.snapshot?.lines ?? [])) {
+      const dc = done.filter((x) => x.load_id === l.load_id);
+      const dl = (d.deliveries ?? []).filter((x) => x.load_id === l.load_id);
+      if (dc.length) received[l.load_id] = dc.reduce((s2, x) => s2 + Number(x.qty_measured || 0), 0);
+      else if (dl.length) received[l.load_id] = dl.reduce((s2, x) => s2 + Number(x.qty_delivered || 0), 0);
+    }
+    const t = trip(n.trip_id);
+    return { ...n, received, trip_status: t?.status ?? "", signatures: n.logistics_delivery_note_signatures ?? [], events: [] } as DeliveryNote;
+  }).filter((n) => n.trip_status !== "cancelled"), [notes, done, d, mine]); // eslint-disable-line react-hooks/exhaustive-deps
   const tankName = (id: string) => tanks.find((t) => t.id === id)?.name ?? "—";
   const candTanks = cur ? tanks.filter((t) => allowed(t.station_id) && t.station_id === cur.station_id && (!t.product_id || t.product_id === cur.product_id)) : [];
   const tk = tanks.find((t) => t.id === form.tank);
@@ -146,6 +162,36 @@ export const DischargesTab = ({ d, L, canValidate, onChanged }: Props) => {
           </Table>
         </CardContent>
       </Card>
+
+      <Card>
+        <CardHeader><CardTitle className="text-base">{L("Bons de livraison de la station", "Station delivery notes")}</CardTitle></CardHeader>
+        <CardContent className="overflow-x-auto space-y-2">
+          <p className="text-xs text-muted-foreground">{L("Le chauffeur n'a pas de compte : après le dépotage, remettez-lui ce téléphone pour qu'il signe à son nom, puis signez la réception.", "Drivers have no account: after discharge, hand them this phone to sign under their name, then sign the reception.")}</p>
+          <Table>
+            <TableHeader><TableRow>
+              <TableHead>{L("N° BL", "DN #")}</TableHead><TableHead>{L("Camion / chauffeur", "Truck / driver")}</TableHead><TableHead>{L("Station", "Station")}</TableHead>
+              <TableHead className="text-right">{L("Volume BL (L)", "BL volume (L)")}</TableHead><TableHead className="text-right">{L("Qté dépotée (L)", "Discharged (L)")}</TableHead><TableHead className="text-right">{L("Écart chauffeur", "Driver variance")}</TableHead>
+              <TableHead>{L("Visas", "Signatures")}</TableHead><TableHead />
+            </TableRow></TableHeader>
+            <TableBody>
+              {stationNotes.length === 0 && <TableRow><TableCell colSpan={8} className="text-center text-muted-foreground">{L("Aucun bon de livraison", "No delivery note")}</TableCell></TableRow>}
+              {stationNotes.map((n) => { const q = blQuantities(n); const role = user ? nextSignatureRole(n, user.id, true) : null; return (
+                <TableRow key={n.id}>
+                  <TableCell className="font-mono text-xs">{n.number}<div className="text-muted-foreground">{n.snapshot.be ?? "—"}</div></TableCell>
+                  <TableCell className="text-xs">{n.snapshot.truck ?? "—"}{n.snapshot.tanker ? ` / ${n.snapshot.tanker}` : ""}<br /><b>{n.snapshot.driver ?? "—"}</b></TableCell>
+                  <TableCell>{n.snapshot.site}</TableCell>
+                  <TableCell className="text-right tabular-nums">{fmt(q.bl)}</TableCell>
+                  <TableCell className="text-right tabular-nums">{fmt(q.received)}</TableCell>
+                  <TableCell className="text-right"><VarianceBadge v={q.variance} /></TableCell>
+                  <TableCell><Badge variant="secondary">{signatureProgress(n.signatures)}/3</Badge></TableCell>
+                  <TableCell>{role && role !== "shipper" && <Button size="sm" onClick={() => setSign({ note: n, role })}><PenLine className="h-4 w-4 mr-1" />{role === "carrier" ? L("Faire signer le chauffeur", "Driver signature") : L("Signer la réception", "Sign reception")}</Button>}</TableCell>
+                </TableRow>); })}
+            </TableBody>
+          </Table>
+        </CardContent>
+      </Card>
+
+      <BlSignDialog sign={sign} onClose={() => setSign(null)} onDone={() => { load(); onChanged(); }} />
 
       <Card>
         <CardHeader><CardTitle className="text-base">{L("Dépotages enregistrés (non modifiables)", "Recorded discharges (locked)")}</CardTitle></CardHeader>

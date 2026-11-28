@@ -52,6 +52,7 @@ export const LiftingOrdersTab = ({ canWrite, canValidate }: { canWrite: boolean;
   const [monoProduct, setMonoProduct] = useState("");
   const [lines, setLines] = useState<Line[]>([]);
   const [signFor, setSignFor] = useState<Row | null>(null);
+  const [dirFor, setDirFor] = useState<Row | null>(null);
   const [png, setPng] = useState<string | null>(null);
   const [cancelFor, setCancelFor] = useState<Row | null>(null);
   const [reason, setReason] = useState("");
@@ -181,10 +182,14 @@ export const LiftingOrdersTab = ({ canWrite, canValidate }: { canWrite: boolean;
     Object.entries(planByProduct(beLoads(b))).forEach(([pid, q]) => { doc.text(`Total ${name("products", pid)}`, 110, y); doc.text(`${fmt(q)} L`, W - 14, y, { align: "right" }); y += 6; });
     doc.text("Total chargé", 110, y); doc.text(`${fmt(b.total_litres)} L`, W - 14, y, { align: "right" }); y += 12;
     doc.setFont("helvetica", "normal");
-    doc.text("Le Responsable Logistique", 20, y); doc.text("Le Chauffeur", W / 2 - 10, y); doc.text("Le Dépôt", W - 50, y); y += 3;
+    doc.text("Le Responsable Logistique", 20, y); doc.text("Le Directeur d'Exploitation", W - 80, y); y += 3;
     if (b.signature_png) {
       try { doc.addImage(b.signature_png, "PNG", 16, y, 50, 16); } catch { /* signature illisible */ }
-      doc.setFontSize(8); doc.text(`${b.signed_by_name ?? ""} — ${fmtDt(b.signed_at)}`, 16, y + 20);
+      doc.setFontSize(8); doc.text(`${b.signed_by_name ?? ""} — ${fmtDt(b.signed_at)}`, 16, y + 20); doc.setFontSize(9.5);
+    }
+    if (b.director_signature_png) {
+      try { doc.addImage(b.director_signature_png, "PNG", W - 84, y, 50, 16); } catch { /* signature illisible */ }
+      doc.setFontSize(8); doc.text(`${b.director_signed_by_name ?? ""} — ${fmtDt(b.director_signed_at)}`, W - 84, y + 20);
     }
     doc.save(`${b.number}.pdf`);
   };
@@ -238,9 +243,11 @@ export const LiftingOrdersTab = ({ canWrite, canValidate }: { canWrite: boolean;
                     <TableCell className="text-xs">{[...new Set(ls.map(dest))].join(", ") || "—"}</TableCell>
                     <TableCell><Badge variant={STATUS[b.status as LiftingStatus][2]}>{L(STATUS[b.status as LiftingStatus][0], STATUS[b.status as LiftingStatus][1])}</Badge>
                       {trip && <div className="text-[11px] text-muted-foreground mt-1">{trip.reference}</div>}
-                      {b.status === "signed" && <div className="text-[11px] text-muted-foreground">{b.signed_by_name} · {fmtD(b.signed_at)}</div>}</TableCell>
+                      {b.status === "signed" && <div className="text-[11px] text-muted-foreground">{L("Logistique", "Logistics")} : {b.signed_by_name} · {fmtD(b.signed_at)}</div>}
+                      {b.status === "signed" && <div className="text-[11px] text-muted-foreground">{L("Dir. exploitation", "Ops director")} : {b.director_signed_at ? `${b.director_signed_by_name ?? ""} · ${fmtD(b.director_signed_at)}` : L("visa en attente", "pending")}</div>}</TableCell>
                     <TableCell><div className="flex gap-1">
                       {canValidate && b.status === "established" && <Button size="sm" onClick={() => { setSignFor(b); setPng(null); }}><PenLine className="h-4 w-4 mr-1" />{L("Signer", "Sign")}</Button>}
+                      {canValidate && b.status === "signed" && !b.director_signed_at && <Button size="sm" variant="outline" onClick={() => { setDirFor(b); setPng(null); }}><PenLine className="h-4 w-4 mr-1" />{L("Visa directeur", "Director visa")}</Button>}
                       <Button size="icon" variant="ghost" title="PDF" onClick={() => pdf(b)}><FileDown className="h-4 w-4" /></Button>
                       <Button size="icon" variant="ghost" title={L("Historique", "History")} onClick={() => openHistory(b)}><History className="h-4 w-4" /></Button>
                       {canValidate && b.status !== "cancelled" && trip?.status === "planned" && <Button size="icon" variant="ghost" title={L("Annuler", "Cancel")} onClick={() => { setCancelFor(b); setReason(""); }}><XCircle className="h-4 w-4 text-destructive" /></Button>}
@@ -382,6 +389,19 @@ export const LiftingOrdersTab = ({ canWrite, canValidate }: { canWrite: boolean;
           <p className="text-sm">{L("En signant comme responsable logistique, vous validez le BE : il ne sera plus modifiable et sa quantité sera comptée comme enlevée sur le stock du dépôt.", "By signing as logistics manager you validate the order: it becomes read-only and its quantity counts as lifted on the PO.")} <b>{fmt(signFor?.total_litres)} L</b></p>
           <SignaturePad onChange={setPng} />
           <DialogFooter><Button disabled={busy || !png} onClick={async () => { if (await act("sign_lifting", { lifting_id: signFor!.id, signature_png: png }, L("BE signé", "Order signed"))) setSignFor(null); }}><CheckCircle2 className="h-4 w-4 mr-1" />{L("Signer et valider", "Sign and validate")}</Button></DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={!!dirFor} onOpenChange={(o) => !o && setDirFor(null)}>
+        <DialogContent>
+          <DialogHeader><DialogTitle>{L("Visa du directeur d'exploitation", "Operations director visa")} {dirFor?.number}</DialogTitle></DialogHeader>
+          <p className="text-sm">{L("Second visa du BE, après le responsable logistique (personne différente). Le dépôt ne signe pas le bon d'enlèvement.", "Second visa after the logistics manager (different person). The depot does not sign the lifting order.")}</p>
+          <SignaturePad key={dirFor?.id} onChange={setPng} />
+          <DialogFooter><Button disabled={busy || !png} onClick={async () => {
+            setBusy(true); const { error } = await db.rpc("depot_lifting_director_sign", { _id: dirFor!.id, _png: png }); setBusy(false);
+            if (error) return toast.error(error.message);
+            toast.success(L("Visa enregistré", "Visa recorded")); setDirFor(null); load();
+          }}><CheckCircle2 className="h-4 w-4 mr-1" />{L("Apposer le visa", "Sign")}</Button></DialogFooter>
         </DialogContent>
       </Dialog>
 
